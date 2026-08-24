@@ -165,9 +165,32 @@
         </profile>
         <profile>
             <activation>
-                <condition>matches(rust.skip, true)||matches(skipRust, true)</condition>
+                <property>
+                    <name>rust.skip</name>
+                    <value>true</value>
+                </property>
             </activation>
             <id>rust-skip-all</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <activation>
+                <property>
+                    <name>skipRust</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <id>rust-skip-all-alias</id>
             <build>
                 <plugins>
                     <plugin>
