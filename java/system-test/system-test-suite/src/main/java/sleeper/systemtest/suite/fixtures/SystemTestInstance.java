@@ -222,6 +222,7 @@ public class SystemTestInstance {
     private static SleeperInstanceConfiguration createCompactionCreationConfiguration() {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
+        properties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 0);
         setSystemTestTags(properties, "compactionCreation", "Sleeper Maven system test compaction creation");
         return createInstanceConfiguration(properties);
     }

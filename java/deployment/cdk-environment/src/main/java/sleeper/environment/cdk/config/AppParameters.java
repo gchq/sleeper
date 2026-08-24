@@ -44,4 +44,5 @@ public class AppParameters {
     public static final IntParameter NIGHTLY_TEST_RUN_HOUR_UTC = IntParameter.keyAndDefault("nightlyTestHourUtc", 3);
     public static final OptionalStringParameter NIGHTLY_TEST_BUCKET = OptionalStringParameter.key("nightlyTestBucket");
     public static final StringListParameter NIGHTLY_TEST_SUBNETS = StringListParameter.key("subnetIds");
+    public static final MapParameter TAGS = MapParameter.key("tags");
 }

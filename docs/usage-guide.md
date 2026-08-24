@@ -36,8 +36,8 @@ In the future it will be possible to export Sleeper table data in bulk. See the 
 
 ## Clients and scripts
 
-There are clients and scripts in the `scripts/deploy` and `scripts/utility` directories that can be used to work with an
-existing instance.
+There are clients and scripts in the `scripts/deploy`, `scripts/report`, `scripts/table` and `scripts/utility`
+directories that can be used to work with an existing instance.
 
 Also see the [tables documentation](usage/tables.md#add-edit-a-table) for scripts to add/edit Sleeper tables.
 
@@ -57,7 +57,7 @@ look at. To adjust property values it will open a text editor for a temporary fi
 You can run this client with the following command:
 
 ```bash
-./scripts/utility/adminClient.sh ${INSTANCE_ID}
+./scripts/utility/instance/adminClient.sh ${INSTANCE_ID}
 ```
 
 ### Compact all files
@@ -67,7 +67,7 @@ partition, you can run the following script to force compactions to be created f
 skipped by the compaction strategy:
 
 ```bash
-./scripts/utility/compactAllFiles.sh ${INSTANCE_ID} <table-name-1> <table-name-2> ...
+./scripts/utility/files/compactAllFiles.sh ${INSTANCE_ID} <table-name-1> <table-name-2> ...
 ```
 
 ## Java API

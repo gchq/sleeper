@@ -1474,7 +1474,7 @@
             "ClusterName": {
               "Ref": "EksBulkImportClusterCA73CFAF"
             },
-            "Manifest": "[{\"apiVersion\":\"karpenter.sh/v1\",\"kind\":\"NodePool\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c8c5e13b0fab04ec5d18917b3479d3fcd9b1b6f365\":\"\"},\"name\":\"sleeper-general-purpose\"},\"spec\":{\"disruption\":{\"budgets\":[{\"nodes\":\"10%\"}],\"consolidateAfter\":\"30s\",\"consolidationPolicy\":\"WhenEmpty\"},\"limits\":{\"cpu\":\"256\"},\"template\":{\"spec\":{\"expireAfter\":\"336h\",\"nodeClassRef\":{\"group\":\"eks.amazonaws.com\",\"kind\":\"NodeClass\",\"name\":\"default\"},\"requirements\":[{\"key\":\"karpenter.sh/capacity-type\",\"operator\":\"In\",\"values\":[\"on-demand\"]},{\"key\":\"node.kubernetes.io/instance-type\",\"operator\":\"In\",\"values\":[\"m7g.xlarge\",\"m7g.2xlarge\",\"m7g.4xlarge\",\"m7g.8xlarge\",\"m7g.12xlarge\",\"m7g.16xlarge\",\"m7gd.xlarge\",\"m7gd.2xlarge\",\"m7gd.4xlarge\",\"m7gd.8xlarge\",\"m7gd.12xlarge\",\"m7gd.16xlarge\",\"m7i.xlarge\",\"m7i.2xlarge\",\"m7i.4xlarge\",\"m7i.8xlarge\",\"m7i.12xlarge\",\"m7i.16xlarge\",\"m6id.xlarge\",\"m6id.2xlarge\",\"m6id.4xlarge\",\"m6id.8xlarge\",\"m6id.12xlarge\",\"m6id.16xlarge\"]},{\"key\":\"kubernetes.io/os\",\"operator\":\"In\",\"values\":[\"linux\"]}],\"terminationGracePeriod\":\"24h0m0s\"}}}}]"
+            "Manifest": "[{\"apiVersion\":\"karpenter.sh/v1\",\"kind\":\"NodePool\",\"metadata\":{\"labels\":{\"aws.cdk.eks/prune-c8c5e13b0fab04ec5d18917b3479d3fcd9b1b6f365\":\"\"},\"name\":\"sleeper-general-purpose\"},\"spec\":{\"disruption\":{\"budgets\":[{\"nodes\":\"10%\"}],\"consolidateAfter\":\"30s\",\"consolidationPolicy\":\"WhenEmpty\"},\"limits\":{\"cpu\":\"256\"},\"template\":{\"spec\":{\"expireAfter\":\"336h\",\"nodeClassRef\":{\"group\":\"eks.amazonaws.com\",\"kind\":\"NodeClass\",\"name\":\"default\"},\"requirements\":[{\"key\":\"karpenter.sh/capacity-type\",\"operator\":\"In\",\"values\":[\"on-demand\"]},{\"key\":\"node.kubernetes.io/instance-type\",\"operator\":\"In\",\"values\":[\"m8g.xlarge\",\"m8g.2xlarge\",\"m8g.4xlarge\",\"m8g.8xlarge\",\"m8g.12xlarge\",\"m8g.16xlarge\",\"m8gd.xlarge\",\"m8gd.2xlarge\",\"m8gd.4xlarge\",\"m8gd.8xlarge\",\"m8gd.12xlarge\",\"m8gd.16xlarge\",\"m8i.xlarge\",\"m8i.2xlarge\",\"m8i.4xlarge\",\"m8i.8xlarge\",\"m8i.12xlarge\",\"m8i.16xlarge\",\"m8id.xlarge\",\"m8id.2xlarge\",\"m8id.4xlarge\",\"m8id.8xlarge\",\"m8id.12xlarge\",\"m8id.16xlarge\"]},{\"key\":\"kubernetes.io/os\",\"operator\":\"In\",\"values\":[\"linux\"]}],\"terminationGracePeriod\":\"24h0m0s\"}}}}]"
           }
         },
         "BulkImportEKSJobDeadLetterQueue8A2BEEE4": {
@@ -1501,7 +1501,7 @@
             "Description": "/opt/awscli/aws",
             "Content": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "a72522445441e9b66c2f16956c54d4786af8c61c156b80c48a6e7c32fcc49023.zip"
+              "S3Key": "98f62bef9320f8c0a0a7be21d7c746f069131f196f51ffe3008a6bb730b368ec.zip"
             }
           }
         },

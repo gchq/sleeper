@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package sleeper.clients.util;
+package sleeper.core.util;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,7 +26,7 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class ClientUtilsTest {
+public class FilesUtilTest {
 
     @DisplayName("Clear directories")
     @Nested
@@ -42,7 +41,7 @@ class ClientUtilsTest {
             Files.createFile(newFile);
 
             // When
-            ClientUtils.clearDirectory(tempDir);
+            FilesUtil.clearDirectory(tempDir);
 
             // Then
             assertThat(newFile).doesNotExist();
@@ -51,7 +50,7 @@ class ClientUtilsTest {
         @Test
         void shouldNotRemoveRootDirectory() throws IOException {
             // Given/When
-            ClientUtils.clearDirectory(tempDir);
+            FilesUtil.clearDirectory(tempDir);
 
             // Then
             assertThat(tempDir).exists();
@@ -68,7 +67,7 @@ class ClientUtilsTest {
             Files.createFile(tempDir.resolve("dir2/nested2/file2"));
 
             // When
-            ClientUtils.clearDirectory(tempDir);
+            FilesUtil.clearDirectory(tempDir);
 
             // Then
             assertThat(tempDir).isEmptyDirectory();

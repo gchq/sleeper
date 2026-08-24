@@ -64,6 +64,16 @@ sleeper environment deploy <environment-id> -c deployEc2=false
 sleeper environment deploy <environment-id> -c vpcId=[vpc-id]
 ```
 
+You can apply tags to every resource created for the environment with a comma-separated list of
+`key,value` pairs. Entries are read in order as alternating keys and values, so there must be an even
+number of them (a value for every key):
+
+```bash
+sleeper environment deploy <environment-id> -c tags=Project,sleeper,Owner,john
+```
+
+The tags are shown for confirmation before deploying.
+
 If someone else has already created an environment that you want to share, you can add it as long as you have access
 and the EC2 is currently running. You can create your own user on the EC2, but there's no authorisation that links your
 identity to a particular user. Anyone with access to the EC2 can connect as any user. Users will have separate instances

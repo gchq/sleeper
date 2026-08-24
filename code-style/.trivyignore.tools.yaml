@@ -3,58 +3,40 @@ vulnerabilities:
 
   # Dependencies of the latest version of Docker:
 
-  # Golang stdlib
-  - id: CVE-2026-39822
-  - id: CVE-2026-42505
-  # google.golang.org/grpc
-  - id: GHSA-hrxh-6v49-42gf
-  # golang.org/x/crypto
-  - id: CVE-2026-39827
-  - id: CVE-2026-39828
-  - id: CVE-2026-39829
-  - id: CVE-2026-39830
-  - id: CVE-2026-39835
-  - id: CVE-2026-42508
-  - id: CVE-2026-46595
-  - id: CVE-2026-46597
-  - id: CVE-2026-39831
-  - id: CVE-2026-39832
-  - id: CVE-2026-39833
-  - id: CVE-2026-39834
-  - id: CVE-2026-46598
-  # golang.org/x/net
-  - id: CVE-2026-25680
-  - id: CVE-2026-25681
-  - id: CVE-2026-27136
+  ## Golang
+  # stdlib
   - id: CVE-2026-39821
-  - id: CVE-2026-42502
-  - id: CVE-2026-42506
   - id: CVE-2026-46600
-  # golang.org/x/text
-  - id: CVE-2026-56852
-  # github.com/containerd/containerd/v2
-  - id: CVE-2026-53488
-  - id: CVE-2026-53489
-  - id: CVE-2026-53492
-  - id: CVE-2026-47262
-  - id: CVE-2026-50195
+  - id: CVE-2026-56859
+  - id: CVE-2026-56860
+  - id: CVE-2026-56853
+  - id: CVE-2026-56858
+  - id: CVE-2026-56862
+  - id: CVE-2026-33818
   # github.com/docker/docker
   - id: CVE-2026-34040
   - id: CVE-2026-33997
-
-  # Due to AWS SDK using a shaded version of Jackson, we are unable to update until below has been resolved:
-  # https://github.com/gchq/sleeper/issues/7459
-  # com.fasterxml.jackson.core:jackson-databind
-  - id: CVE-2026-54515
+  # golang.org/x/mod
+  - id: CVE-2026-56864
+  - id: CVE-2026-56865
+  # golang.org/x/net
+  - id: CVE-2026-46600
+  # github.com/cilium/ebpf
+  - id: CVE-2026-10722
 
   # AWS SDK supports supports up to version 24.x of node.js. Therefore are unable to update for issue below
   # until support is provided.
+  ## Node.js (node-pkg)
+  # brace-expansion
   - id: CVE-2026-14257
-  - id: GHSA-r292-9mhp-454m
   - id: CVE-2026-69152
-  - id: CVE-2026-69192
+  # ip-address
   - id: CVE-2026-54272
+  - id: CVE-2026-69192
   - id: CVE-2026-69198
-  - id: CVE-2026-15157
+  # tar
+  - id: GHSA-r292-9mhp-454m
+  # undici
   - id: CVE-2026-16728
   - id: CVE-2026-16729
+  - id: CVE-2026-15157

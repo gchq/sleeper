@@ -21,6 +21,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.schema.Schema;
@@ -143,8 +144,8 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     @Override
-    protected SleeperPropertiesPrettyPrinter<TableProperty> getPrettyPrinter(PrintWriter writer) {
-        return createPrettyPrinter(writer);
+    protected Builder<TableProperty> prettyPrinterBuilder() {
+        return createPrettyPrinterBuilder();
     }
 
     /**
@@ -154,9 +155,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
      * @return        the pretty printer
      */
     public static SleeperPropertiesPrettyPrinter<TableProperty> createPrettyPrinter(PrintWriter writer) {
-        return SleeperPropertiesPrettyPrinter.builder()
-                .properties(TableProperty.getAll(), TablePropertyGroup.getAll())
-                .writer(writer).build();
+        return createPrettyPrinterBuilder().writer(writer).build();
     }
 
     /**
@@ -168,11 +167,31 @@ public class TableProperties extends SleeperProperties<TableProperty> {
      */
     public static SleeperPropertiesPrettyPrinter<TableProperty> createPrettyPrinterWithGroup(
             PrintWriter writer, PropertyGroup group) {
+        return createPrettyPrinterBuilderWithGroup(group).writer(writer).build();
+    }
+
+    /**
+     * Creates a builder for a printer to be used to display all table properties.
+     *
+     * @return the pretty printer builder
+     */
+    public static SleeperPropertiesPrettyPrinter.Builder<TableProperty> createPrettyPrinterBuilder() {
+        return SleeperPropertiesPrettyPrinter.builder()
+                .properties(TableProperty.getAll(), TablePropertyGroup.getAll());
+    }
+
+    /**
+     * Creates a builder for a printer to be used to display table properties in a given group.
+     *
+     * @param  group the group to display
+     * @return       the pretty printer builder
+     */
+    public static SleeperPropertiesPrettyPrinter.Builder<TableProperty> createPrettyPrinterBuilderWithGroup(PropertyGroup group) {
         return SleeperPropertiesPrettyPrinter.builder()
                 .sortedProperties(TableProperty.getAll().stream()
                         .filter(property -> property.getPropertyGroup().equals(group))
                         .collect(Collectors.toList()))
-                .writer(writer).hideUnknownProperties(true).build();
+                .hideUnknownProperties(true);
     }
 
     public TableStatus getStatus() {

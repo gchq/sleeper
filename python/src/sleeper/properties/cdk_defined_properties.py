@@ -18,6 +18,10 @@ class QueryCdkProperty:
     BULK_EXPORT_QUEUE_URL = InstanceProperty("sleeper.bulk.export.queue.url")
 
 
+class RestCdkProperty:
+    REST_BASE_URL = InstanceProperty("sleeper.rest.api.url")
+
+
 class CommonCdkProperty:
     ACCOUNT = InstanceProperty("sleeper.account")
     CONFIG_BUCKET = InstanceProperty("sleeper.config.bucket")
