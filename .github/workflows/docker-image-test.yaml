@@ -84,6 +84,9 @@ jobs:
       - name: Add RIE to Docker image
         if: ${{ inputs.testClassNames != '' && inputs.isLambda }}
         run:  docker build --build-arg BASE_IMAGE=${{ inputs.imageName }}:test-no-rie -t ${{ inputs.imageName }}:test ${{ inputs.dockerOptions }} ./java/common/docker-lambda/add-rie/
+      - name: Re-tag non-lambda Docker image
+        if: ${{ inputs.testClassNames != '' && !inputs.isLambda }}
+        run: docker tag ${{ inputs.imageName }}:test-no-rie ${{ inputs.imageName }}:test
       - name: Delete build output to free disk space
         run: |
           rm -rf ./scripts/docker
