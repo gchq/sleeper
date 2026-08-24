@@ -60,7 +60,7 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
       - name: Cache dependencies
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: java/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
