@@ -32,7 +32,6 @@ import sleeper.clients.table.AddTableClient;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -53,7 +52,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REST_API_URL;
-import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
 public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsSleeperTablesDriver.class);
@@ -77,8 +75,7 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
 
     @Override
     public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
-        if (instanceProperties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
-                .anyMatch(stack -> stack == OptionalStack.RestApiStack)) {
+        if (instanceProperties.isSet(REST_API_URL)) {
             LOGGER.info("Adding table via REST API");
             addTableViaRest(instanceProperties, properties);
         } else {
