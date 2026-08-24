@@ -102,7 +102,7 @@ public class UploadDockerImages {
         boolean anyUseBaseImage = imagesToUpload.stream().anyMatch(StackDockerImage::isUseDefaultBaseImage);
 
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD
-                && createMultiplatformBuilder && anyUseBaseImage) {
+                && createMultiplatformBuilder) {
             useBuildXBuilder(commandRunner);
         }
 

@@ -28,12 +28,12 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.model.LambdaDeployType;
 
-import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
@@ -124,10 +124,9 @@ public class SystemTestStandaloneProperties
     }
 
     @Override
-    protected SleeperPropertiesPrettyPrinter<SystemTestProperty> getPrettyPrinter(PrintWriter writer) {
+    protected Builder<SystemTestProperty> prettyPrinterBuilder() {
         return SleeperPropertiesPrettyPrinter.builder()
-                .properties(SystemTestProperty.getAll(), List.of(InstancePropertyGroup.COMMON))
-                .build();
+                .properties(SystemTestProperty.getAll(), List.of(InstancePropertyGroup.COMMON));
     }
 
     public InstanceProperties toInstancePropertiesForCdkUtils() {

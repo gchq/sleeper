@@ -65,7 +65,7 @@ if they are likely to either affect performance or involve changes to the way th
 10. Test a simple query:
 
 ```bash
-./scripts/utility/query.sh ${ID}
+./scripts/utility/query/query.sh ${ID}
 ```
 
 Choose a range query, choose 'y' for the first two questions and then choose a range such as 'aaaaaa' to 'aaaazz'.
@@ -75,7 +75,7 @@ should be in the region of 900 results.
 11. Test a query that will be executed by lambda:
 
 ```bash
-./scripts/utility/lambdaQuery.sh ${ID}
+./scripts/utility/query/lambdaQuery.sh ${ID}
 ```
 
 Choose the S3 results bucket option and then choose the same options as above. It should say "COMPLETED".
@@ -85,7 +85,7 @@ should be quicker.
 12. Test a query that will be executed by lambda with the results being returned over a websocket:
 
 ```bash
-./scripts/utility/webSocketQuery.sh ${ID}
+./scripts/utility/query/webSocketQuery.sh ${ID}
 ```
 
 Choose the same options as above, and results should be returned.

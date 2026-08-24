@@ -15,6 +15,9 @@
  */
 package sleeper.clients.query.exception;
 
+/**
+ * Thrown when an error response is received via the WebSocket API during a query.
+ */
 public class WebSocketErrorException extends WebSocketException {
     public WebSocketErrorException(String errorMessage) {
         super("Error while running queries: " + errorMessage);
