@@ -16,31 +16,15 @@
 set -e
 unset CDPATH
 
-#####################
-# Initial variables #
-#####################
-
 if [[ -z $1 ]]; then
   echo "Usage: $0 <instance-id>"
   exit 1
 fi
 
-INSTANCE_ID=$1
-
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
-
-TEMPLATE_DIR=${SCRIPTS_DIR}/templates
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 JAR_DIR=${SCRIPTS_DIR}/jars
 
-VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
-GENERATED_DIR=${SCRIPTS_DIR}/generated
-
-# Download to temporary directory
-TEMP_DIR=$(mktemp -d)
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.properties.DownloadConfig "$INSTANCE_ID" "$TEMP_DIR"
-
-# Overwrite generated directory
-mkdir -p "$GENERATED_DIR"
-rm -rf "${GENERATED_DIR:?}"/*
-mv "$TEMP_DIR"/* "$GENERATED_DIR"
-rmdir "$TEMP_DIR"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" \
+  --add-opens java.base/java.nio=ALL-UNNAMED \
+  sleeper.clients.admin.AdminClient "${SCRIPTS_DIR}" "$@"

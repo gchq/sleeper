@@ -98,8 +98,12 @@ public class IngestBatcher {
         TableStatus table = properties.getStatus();
         LOGGER.info("Attempting to batch {} files of total size {} for table {}",
                 inputFiles.size(), formatBytes(totalBytes), table);
+        IngestQueue ingestQueue = properties.getEnumValue(INGEST_BATCHER_INGEST_QUEUE, IngestQueue.class);
+        if (ingestQueue.getJobQueueUrl(instanceProperties) == null) {
+            LOGGER.warn("No queue configured for table {}, leaving {} files pending", table, inputFiles.size());
+            return;
+        }
         if (shouldCreateBatches(properties, inputFiles, time)) {
-            IngestQueue ingestQueue = properties.getEnumValue(INGEST_BATCHER_INGEST_QUEUE, IngestQueue.class);
             LOGGER.info("Creating batches for {} files with total size of {} for table {}",
                     inputFiles.size(), formatBytes(totalBytes), table);
             List<Instant> receivedTimes = inputFiles.stream()
@@ -154,6 +158,9 @@ public class IngestBatcher {
             return;
         }
         long totalBytes = totalBytes(batch);
+        List<IngestBatcherTrackedFile> assignedFiles = batch.stream()
+                .filter(file -> files.contains(file.getFile()))
+                .collect(toList());
         IngestJob job = IngestJob.builder()
                 .id(jobId)
                 .tableId(table.getTableUniqueId())
@@ -162,14 +169,16 @@ public class IngestBatcher {
         try {
             String jobQueueUrl = ingestQueue.getJobQueueUrl(instanceProperties);
             if (jobQueueUrl == null) {
-                LOGGER.error("Discarding created job with no queue configured for table {}: {}", table, job);
+                LOGGER.error("No queue configured for table {}, unassigning files from job {}: {}", table, jobId, job);
+                store.unassignFiles(jobId, assignedFiles);
             } else {
                 LOGGER.info("Sending ingest job of id {} with {} files and total size of {} to {}",
                         jobId, job.getFiles().size(), formatBytes(totalBytes), ingestQueue);
                 queueClient.send(jobQueueUrl, job);
             }
         } catch (RuntimeException e) {
-            LOGGER.error("Failed sending job: {}", job, e);
+            LOGGER.error("Failed sending job {}, unassigning files: {}", jobId, job, e);
+            store.unassignFiles(jobId, assignedFiles);
         }
     }
 

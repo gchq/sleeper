@@ -48,9 +48,9 @@ The ingest batcher uses bulk import by default.
 Here's an example of how to use the scripts to ingest with the batcher:
 
 ```bash
-./scripts/utility/sendToIngestBatcher.sh <instance-id> <table-name> bucket-name/path/to/file.parquet bucket-name/path/to/folder
-./scripts/utility/ingestBatcherReport.sh <instance-id> standard -a
-./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -a
+./scripts/table/sendToIngestBatcher.sh <instance-id> <table-name> bucket-name/path/to/file.parquet bucket-name/path/to/folder
+./scripts/report/ingestBatcherReport.sh <instance-id> standard -a
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> standard -a
 ```
 
 The batcher will wait until enough data is present in the files to create an ingest or bulk import job. You can
@@ -155,18 +155,18 @@ We may add a REST API to serve this purpose in the future. You can also use the 
 of jobs manually:
 
 ```bash
-./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters>
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters>
 ```
 
 For example:
 
 ```bash
-./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> # Prompt for report type
-./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -a # All jobs
-./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -u # Unfinished jobs
-./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -n # Rejected jobs
-./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -r 20250523090000,20250523100000 # Date range in format yyyyMMddhhmmss
-./scripts/utility/ingestJobStatusReport.sh <instance-id> <table-name> standard -d <job-id> # Job details
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> # Prompt for report type
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> standard -a # All jobs
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> standard -u # Unfinished jobs
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> standard -n # Rejected jobs
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> standard -r 20250523090000,20250523100000 # Date range in format yyyyMMddhhmmss
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> standard -d <job-id> # Job details
 ```
 
 Note that if a run of the job has finished, it may still be uncommitted. This means the data has been sorted and written
@@ -186,13 +186,13 @@ We may add a REST API to serve this purpose in the future. You can also use the 
 of files manually:
 
 ```bash
-./scripts/utility/ingestBatcherReport.sh <instance-id> <report-type-standard-or-json> <optional-query-type>
+./scripts/report/ingestBatcherReport.sh <instance-id> <report-type-standard-or-json> <optional-query-type>
 ```
 
 For example:
 
 ```bash
-./scripts/utility/ingestBatcherReport.sh <instance-id> # Prompt for report type
-./scripts/utility/ingestBatcherReport.sh <instance-id> standard -a # All files
-./scripts/utility/ingestBatcherReport.sh <instance-id> standard -p # Pending files (not yet in a job)
+./scripts/report/ingestBatcherReport.sh <instance-id> # Prompt for report type
+./scripts/report/ingestBatcherReport.sh <instance-id> standard -a # All files
+./scripts/report/ingestBatcherReport.sh <instance-id> standard -p # Pending files (not yet in a job)
 ```

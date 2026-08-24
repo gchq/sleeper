@@ -19,9 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 
-import sleeper.clients.util.ClientUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
+import sleeper.core.util.FilesUtil;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -137,7 +137,7 @@ public class TearDownInstance {
         Path generatedDir = scriptsDir.resolve("generated");
         if (Files.isDirectory(generatedDir)) {
             LOGGER.info("Removing generated files");
-            ClientUtils.clearDirectory(generatedDir);
+            FilesUtil.clearDirectory(generatedDir);
         } else {
             LOGGER.info("Generated directory not found");
         }

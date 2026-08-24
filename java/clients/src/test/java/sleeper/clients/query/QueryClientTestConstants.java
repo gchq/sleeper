@@ -16,6 +16,9 @@
 
 package sleeper.clients.query;
 
+/**
+ * Constants used in tests for query command-line clients.
+ */
 public class QueryClientTestConstants {
     private QueryClientTestConstants() {
     }

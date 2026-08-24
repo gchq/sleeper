@@ -20,7 +20,10 @@ import sleeper.core.row.Row;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class QueryWebSocketFuture<T> extends CompletableFuture<List<Row>> implements QueryWebSocketHandler {
+/**
+ * A future that completes with query results received via a WebSocket connection.
+ */
+public class QueryWebSocketFuture extends CompletableFuture<List<Row>> implements QueryWebSocketHandler {
 
     @Override
     public void handleException(RuntimeException e) {
