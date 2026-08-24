@@ -10,11 +10,13 @@ jobs:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: ingest
+      mavenOptions: -DskipRust
   bulk-import-runner:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: bulk-import-runner
       trivyIgnore: code-style/.trivyignore.eks.yaml
+      mavenOptions: -DskipRust
   compaction-job-execution:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
@@ -35,51 +37,61 @@ jobs:
     with:
       imageName: bulk-import-starter-lambda
       isLambda: true
+      mavenOptions: -DskipRust
   bulk-export-planner:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: bulk-export-planner
       isLambda: true
+      mavenOptions: -DskipRust
   bulk-export-task-creator:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: bulk-export-task-creator
       isLambda: true
+      mavenOptions: -DskipRust
   ingest-task-creator-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: ingest-task-creator-lambda
       isLambda: true
+      mavenOptions: -DskipRust
   ingest-batcher-submitter-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: ingest-batcher-submitter-lambda
       isLambda: true
+      mavenOptions: -DskipRust
   ingest-batcher-job-creator-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: ingest-batcher-job-creator-lambda
       isLambda: true
+      mavenOptions: -DskipRust
   garbage-collector-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: garbage-collector-lambda
       isLambda: true
+      mavenOptions: -DskipRust
   compaction-job-creator-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: compaction-job-creator-lambda
       isLambda: true
+      mavenOptions: -DskipRust
   compaction-task-creator-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: compaction-task-creator-lambda
       isLambda: true
+      mavenOptions: -DskipRust
   partition-splitter-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: partition-splitter-lambda
       isLambda: true
+      mavenOptions: -DskipRust
   query-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
@@ -92,13 +104,16 @@ jobs:
     with:
       imageName: custom-resources-lambda
       isLambda: true
+      mavenOptions: -DskipRust
   metrics-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: metrics-lambda
       isLambda: true
+      mavenOptions: -DskipRust
   statestore-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: statestore-lambda
       isLambda: true
+      mavenOptions: -DskipRust

@@ -42,7 +42,7 @@ fi
 
 pushd "$MAVEN_DIR"
 
-mvn verify -PsystemTest -DskipRust=true \
+mvn verify -PsystemTest -Drust.skip=true \
   -Dsleeper.system.test.short.id="$SHORT_ID" \
   -Dsleeper.system.test.vpc.id="$VPC" \
   -Dsleeper.system.test.subnet.ids="$SUBNETS" \

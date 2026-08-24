@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Copyright 2022-2026 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,19 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+ARG BASE_IMAGE=sleeper-base:current
+FROM ${BASE_IMAGE}
 
-set -e
-unset CDPATH
+# Install Lambda Runtime Interface Emulator
+RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.35/aws-lambda-rie && \
+    mv ./aws-lambda-rie /usr/local/bin/ && \
+    chmod +x /usr/local/bin/aws-lambda-rie
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
-PROJECT_ROOT=$(cd "$SCRIPTS_DIR" && cd .. && pwd)
-
-COMPACTION_DOCKER_DIR="$SCRIPTS_DIR/docker/compaction-job-execution"
-cp "$PROJECT_ROOT/java/compaction/compaction-job-execution/docker/Dockerfile" "$COMPACTION_DOCKER_DIR"
-docker build -t "compaction-job-execution:test" "$COMPACTION_DOCKER_DIR"
-
-pushd "$PROJECT_ROOT/java"
-echo "Running..."
-mvn verify -PsystemTest -Drust.skip=true -pl clients "-DrunIT=*DockerImageST"
-popd
+COPY entrypoint.sh /
+ENTRYPOINT [ "/entrypoint.sh" ]

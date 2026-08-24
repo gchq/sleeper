@@ -24,7 +24,7 @@ JARS_DIR="${SCRIPTS_DIR}/jars"
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
 pushd "$JAVA_DIR"
-mvn package -Pquick -pl clients -am -DskipRust
+mvn package -Pquick -pl clients -am -Drust.skip
 popd
 
 cp "$JAVA_DIR/clients/target/clients-$VERSION-utility.jar" "$JARS_DIR/clients-$VERSION-utility.jar"
