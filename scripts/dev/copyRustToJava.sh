@@ -25,5 +25,5 @@ popd
 
 pushd "$PROJECT_ROOT/java"
 # The foreign-bridge module uses maven-resources-plugin, which defaults to running in the process-resources phase
-mvn process-resources -DskipRust
+mvn process-resources -Drust.skip
 popd
