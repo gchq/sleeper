@@ -158,7 +158,7 @@ public interface EKSProperty {
             .description("(EKS mode only) The number of cores used by a Spark executor. Used to set spark.executor.cores. " +
                     "Should reflect the Fargate task shape rather than the EMR EC2 instance type.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("5")
+            .defaultValue("4")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_CORES = Index.propertyBuilder("sleeper.bulk.import.eks.spark.driver.cores")
             .description("(EKS mode only) The number of cores used by the Spark driver. Used to set spark.driver.cores. " +

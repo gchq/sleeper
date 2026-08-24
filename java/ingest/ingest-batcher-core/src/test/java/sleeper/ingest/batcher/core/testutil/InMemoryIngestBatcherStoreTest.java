@@ -193,6 +193,51 @@ class InMemoryIngestBatcherStoreTest {
     }
 
     @Nested
+    @DisplayName("Unassign files from jobs")
+    class UnassignFilesFromJobs {
+
+        @Test
+        void shouldUnassignFileFromJob() {
+            // Given
+            IngestBatcherTrackedFile fileIngestRequest = fileRequest()
+                    .file("test-bucket/test.parquet")
+                    .tableId("test-table").build();
+            store.addFile(fileIngestRequest);
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest));
+
+            // When
+            store.unassignFiles("test-job", List.of(fileIngestRequest));
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst()).containsExactly(fileIngestRequest);
+            assertThat(store.getPendingFilesOldestFirst()).containsExactly(fileIngestRequest);
+        }
+
+        @Test
+        void shouldUnassignOnlyTheSpecifiedFile() {
+            // Given
+            IngestBatcherTrackedFile fileIngestRequest1 = fileRequest()
+                    .file("test-bucket/test-1.parquet")
+                    .tableId("test-table").build();
+            IngestBatcherTrackedFile fileIngestRequest2 = fileRequest()
+                    .file("test-bucket/test-2.parquet")
+                    .tableId("test-table").build();
+            store.addFile(fileIngestRequest1);
+            store.addFile(fileIngestRequest2);
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest1, fileIngestRequest2));
+
+            // When
+            store.unassignFiles("test-job", List.of(fileIngestRequest1));
+
+            // Then
+            assertThat(store.getPendingFilesOldestFirst()).containsExactly(fileIngestRequest1);
+            assertThat(store.getAllFilesNewestFirst()).containsExactly(
+                    onJob("test-job", fileIngestRequest2),
+                    fileIngestRequest1);
+        }
+    }
+
+    @Nested
     @DisplayName("Order files returned from the store")
     class OrderFilesReturnedFromStore {
 

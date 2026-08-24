@@ -20,6 +20,9 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A fake WebSocket connection for use in tests, simulating the behaviour of a real WebSocket connection.
+ */
 public class FakeWebSocketConnection implements QueryWebSocketClient.Connection {
     private boolean connected = false;
     private boolean closed = false;
@@ -27,6 +30,11 @@ public class FakeWebSocketConnection implements QueryWebSocketClient.Connection 
     private List<String> sentMessages = new ArrayList<>();
     private List<WebSocketResponse> responses;
 
+    /**
+     * Returns an adapter backed by this fake connection.
+     *
+     * @return an adapter backed by this fake connection
+     */
     public QueryWebSocketClient.Adapter createAdapter() {
         return this::connect;
     }
@@ -72,21 +80,44 @@ public class FakeWebSocketConnection implements QueryWebSocketClient.Connection 
         return sentMessages;
     }
 
+    /**
+     * Delivers a message to the listener as if it arrived from the server.
+     *
+     * @param message the raw message to deliver
+     */
     public void onMessage(String message) {
         listener.onMessage(message);
     }
 
+    /**
+     * Simulates the server closing the connection.
+     *
+     * @param reason the close reason
+     */
     public void onClose(String reason) {
         listener.onClose(reason);
         connected = false;
         closed = true;
     }
 
+    /**
+     * Simulates an error on the connection.
+     *
+     * @param error the exception to deliver
+     */
     public void onError(Exception error) {
         listener.onError(error);
     }
 
+    /**
+     * A pre-defined response to be delivered to the listener when the connection is opened in tests.
+     */
     public interface WebSocketResponse {
+        /**
+         * Sends this response to the given fake connection.
+         *
+         * @param client the fake connection to send to
+         */
         void sendTo(FakeWebSocketConnection client);
     }
 }

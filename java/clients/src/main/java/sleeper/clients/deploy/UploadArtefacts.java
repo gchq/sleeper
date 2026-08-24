@@ -67,7 +67,6 @@ public class UploadArtefacts {
                         CommandOption.shortOption('i', "id"),
                         CommandOption.longFlag("create-builder"),
                         CommandOption.longFlag("create-deployment"),
-                        CommandOption.longFlag("overwrite-existing"),
                         CommandOption.shortOption('u', "upload"),
                         CommandOption.longOption("cdk-app")))
                 .helpSummary("Uploads jars and Docker images to AWS. You must set either an instance properties file " +
@@ -96,10 +95,6 @@ public class UploadArtefacts {
                         "By default, we assume you have deployed an artefacts deployment separately. If you set this " +
                         "flag, this tool will deploy a new artefacts CDK deployment for you.\n" +
                         "\n" +
-                        "--overwrite-existing\n" +
-                        "By default, images are only uploaded if they do not already exist for this version of " +
-                        "Sleeper. This flag disables that check.\n" +
-                        "\n" +
                         "--upload, -u\n" +
                         "By default, all artefacts are uploaded. You can use \"--upload jars\" to only upload the " +
                         "jars, or \"--upload images\" to only upload the container images.\n" +
@@ -126,7 +121,6 @@ public class UploadArtefacts {
                         .orElse(SleeperInternalCdkApp.STANDARD),
                 arguments.isFlagSetWithDefault("create-builder", true),
                 arguments.isFlagSetWithDefault("create-deployment", false),
-                arguments.isFlagSetWithDefault("overwrite-existing", false),
                 arguments.getOptionalString("upload").map(ToUpload::fromString).orElse(ToUpload.ALL)));
 
         String deploymentId;
@@ -179,7 +173,6 @@ public class UploadArtefacts {
                 uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
                         .ecrPrefix(ecrPrefix)
                         .images(images)
-                        .overwriteExistingTag(args.overwriteExisting())
                         .build());
             }
         }
@@ -192,7 +185,6 @@ public class UploadArtefacts {
             SleeperInternalCdkApp cdkApp,
             boolean createMultiplatformBuilder,
             boolean createDeployment,
-            boolean overwriteExisting,
             ToUpload toUpload) {
 
         public Arguments {
