@@ -38,9 +38,8 @@ vulnerabilities:
   - id: CVE-2026-69198
   # tar
   - id: GHSA-r292-9mhp-454m
+  - id: CVE-2026-73566
   # undici
   - id: CVE-2026-16728
   - id: CVE-2026-16729
   - id: CVE-2026-15157
-  # tar
-  - id: CVE-2026-73566
