@@ -21,7 +21,7 @@ PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
 pushd "${PROJECT_ROOT}/java"
 echo "Compiling..."
-mvn clean install -Pquick,skipShade -q -pl clients,system-test/system-test-suite -am -DskipRust
+mvn clean install -Pquick,skipShade -q -pl clients,system-test/system-test-suite -am -Drust.skip
 
 echo "Regenerating templates..."
 mvn exec:java -q -pl clients \
