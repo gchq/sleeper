@@ -90,7 +90,7 @@ work. Starting from the root of the Git repository:
 ./scripts/build/build.sh
 ```
 
-You can disable building the Rust code by passing `-DskipRust` as an argument to that script. This can also be passed in
+You can disable building the Rust code by passing `-Drust.skip` as an argument to that script. This can also be passed in
 any Maven build. This can speed up the build if you don't need the DataFusion data engine, or if you've already had a
 previous build that included Rust, skipping Rust will reuse the same binaries.
 
