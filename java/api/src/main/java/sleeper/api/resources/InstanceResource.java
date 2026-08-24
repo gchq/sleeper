@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -69,6 +70,7 @@ public class InstanceResource {
         return new InstanceResponse(
                 instanceProperties.get(ID),
                 instanceProperties.get(VERSION),
+                instanceProperties.get(REGION),
                 tables,
                 features(instanceProperties));
     }
@@ -80,6 +82,6 @@ public class InstanceResource {
         return features;
     }
 
-    public record InstanceResponse(String instanceId, String version, List<TableStatus> tables, Map<String, Boolean> features) {}
+    public record InstanceResponse(String instanceId, String version, String region, List<TableStatus> tables, Map<String, Boolean> features) {}
 
 }

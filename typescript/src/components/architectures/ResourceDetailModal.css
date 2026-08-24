@@ -1,0 +1,157 @@
+.resource-modal {
+	max-width: 560px;
+	gap: 1rem;
+}
+
+.resource-modal-head {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.resource-modal-icon {
+	display: inline-flex;
+	flex-shrink: 0;
+}
+
+.resource-modal-heading {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	flex: 1;
+	min-width: 0;
+}
+
+.resource-modal-type {
+	font-size: 0.72rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #6b7280;
+}
+
+.resource-modal-status {
+	flex-shrink: 0;
+	font-size: 0.72rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	padding: 0.2rem 0.55rem;
+	border-radius: 10px;
+}
+.resource-modal-status.ok {
+	background: #dcfce7;
+	color: #166534;
+}
+.resource-modal-status.warning {
+	background: #fef3c7;
+	color: #92400e;
+}
+.resource-modal-status.error {
+	background: #fee2e2;
+	color: #991b1b;
+}
+.resource-modal-status.unknown {
+	background: #f3f4f6;
+	color: #4b5563;
+}
+
+.resource-modal-detail {
+	margin: 0;
+	font-size: 0.88rem;
+	color: #374151;
+}
+
+.resource-modal-detail.warning,
+.resource-modal-detail.error {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.6rem 0.8rem;
+	border-radius: 6px;
+	border-left: 4px solid;
+	font-weight: 600;
+}
+
+.resource-modal-detail.warning::before,
+.resource-modal-detail.error::before {
+	font-size: 1rem;
+	line-height: 1;
+}
+
+.resource-modal-detail.warning {
+	background: #fffbeb;
+	border-left-color: #d97706;
+	color: #92400e;
+}
+
+.resource-modal-detail.warning::before {
+	content: '\26A0'; /* ⚠ */
+}
+
+.resource-modal-detail.error {
+	background: #fef2f2;
+	border-left-color: #dc2626;
+	color: #991b1b;
+}
+
+.resource-modal-detail.error::before {
+	content: '\26D4'; /* ⛔ */
+}
+
+.resource-modal-fields {
+	display: flex;
+	flex-direction: column;
+	gap: 0.7rem;
+}
+
+.resource-modal-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.resource-modal-field-label {
+	font-size: 0.72rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #6b7280;
+	font-weight: 600;
+}
+
+.resource-modal-field-row {
+	display: flex;
+	align-items: stretch;
+	gap: 0.4rem;
+}
+
+.resource-modal-field-value {
+	flex: 1;
+	min-width: 0;
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	font-size: 0.8rem;
+	color: #111827;
+	background: #f3f4f6;
+	padding: 0.4rem 0.55rem;
+	border-radius: 4px;
+	overflow-wrap: anywhere;
+	word-break: break-all;
+	display: flex;
+	align-items: center;
+}
+
+.resource-modal-copy {
+	flex-shrink: 0;
+	min-width: 4.2rem;
+}
+
+.resource-modal-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-left: auto;
+	justify-content: flex-end;
+}
+
+.resource-modal-link {
+	text-decoration: none;
+}

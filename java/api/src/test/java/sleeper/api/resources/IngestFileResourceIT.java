@@ -81,16 +81,10 @@ class IngestFileResourceIT {
 
     @BeforeEach
     void clearState() {
-        // The localstack container is shared across tests, so wipe DynamoDB tables, S3 buckets and SQS queues between them.
-        dynamoDbClient.listTables().tableNames()
-                .forEach(name -> dynamoDbClient.deleteTable(builder -> builder.tableName(name)));
-        s3Client.listBuckets().buckets().forEach(bucket -> {
-            String name = bucket.name();
-            s3Client.listObjectsV2Paginator(builder -> builder.bucket(name)).contents().forEach(obj -> s3Client
-                    .deleteObject(builder -> builder.bucket(name).key(obj.key())));
-            s3Client.deleteBucket(builder -> builder.bucket(name));
-        });
-        sqsClient.listQueues().queueUrls().forEach(url -> sqsClient.deleteQueue(builder -> builder.queueUrl(url)));
+        // The localstack container is shared across tests, so wipe its state between them.
+        LocalStackTestResources.deleteDynamoTables(dynamoDbClient);
+        LocalStackTestResources.deleteS3Buckets(s3Client);
+        LocalStackTestResources.deleteSqsQueues(sqsClient);
     }
 
     private InstanceProperties setUpInstance(boolean batcherEnabled) {

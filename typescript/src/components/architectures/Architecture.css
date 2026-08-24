@@ -1,0 +1,244 @@
+.arch {
+	margin: 1rem 0 1.5rem;
+	padding: 1rem 1.1rem;
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+}
+
+.arch.has-error {
+	border-color: #dc2626;
+	background: #fef2f2;
+}
+
+.arch-header {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	min-height: 2.15rem;
+	box-sizing: content-box;
+	margin: -1rem -1.1rem 0.85rem;
+	padding: 0.5rem 1.1rem;
+	border-radius: 8px 8px 0 0;
+	cursor: pointer;
+	user-select: none;
+	transition: background 0.15s ease;
+}
+
+.arch-header:hover {
+	background: #f3f4f6;
+}
+
+.arch.has-error .arch-header:hover {
+	background: #fee2e2;
+}
+
+.arch-header:focus-visible {
+	outline: 2px solid #1a56db;
+	outline-offset: -2px;
+}
+
+.arch.collapsed .arch-header {
+	margin-bottom: -1rem;
+	border-radius: 8px;
+}
+
+.arch-chevron {
+	display: block;
+	width: 1rem;
+	height: 1rem;
+	flex-shrink: 0;
+	color: #374151;
+	transition: transform 0.15s ease;
+	transform: rotate(90deg);
+}
+
+.arch-header:hover .arch-chevron {
+	color: #111827;
+}
+
+.arch.collapsed .arch-chevron {
+	transform: rotate(0deg);
+}
+
+.arch-title {
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	font-size: 0.78rem;
+	color: #374151;
+}
+
+.arch-badge {
+	font-size: 0.7rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	padding: 0.15rem 0.5rem;
+	border-radius: 10px;
+}
+
+.arch-badge.warning {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.arch-badge.error {
+	background: #fee2e2;
+	color: #991b1b;
+}
+
+.arch-spacer {
+	flex: 1;
+}
+
+.arch-graph {
+	position: relative;
+	display: grid;
+	grid-template-columns: repeat(4, max-content);
+	justify-content: start;
+	column-gap: 2.5rem;
+	row-gap: 1.5rem;
+	overflow-x: auto;
+	padding-bottom: 0.5rem;
+}
+
+.arch-edges {
+	position: absolute;
+	top: 0;
+	left: 0;
+	pointer-events: none;
+	overflow: visible;
+}
+
+.arch-edge {
+	stroke: #9ca3af;
+	stroke-width: 1.5;
+}
+
+.arch-edge.failure {
+	stroke: #dc2626;
+	stroke-dasharray: 4 3;
+}
+
+.arch-edge.dimmed {
+	opacity: 0.6;
+}
+
+.arch-cell {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.arch-node {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.15rem;
+	width: 5rem;
+}
+
+.arch-node.affected {
+	opacity: 0.4;
+	filter: grayscale(1);
+	transition: opacity 0.15s ease;
+}
+
+.arch-node.affected:hover,
+.arch-node.affected:focus-within {
+	opacity: 0.6;
+}
+
+.arch-node-card {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 3rem;
+	height: 3rem;
+	padding: 0;
+	background: #fff;
+	border: 1px solid #d1d5db;
+	border-bottom-width: 3px;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.arch-node-card:hover {
+	box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.2);
+	border-color: #9ca3af;
+}
+
+.arch-node.ok .arch-node-card {
+	border-bottom-color: #16a34a;
+}
+.arch-node.unknown .arch-node-card {
+	border-bottom-color: #9ca3af;
+}
+.arch-node.warning .arch-node-card {
+	border-color: #d97706;
+	animation: arch-pulse-warning 1.6s ease-in-out infinite;
+}
+.arch-node.error .arch-node-card {
+	border-color: #dc2626;
+	animation: arch-blink-error 1s step-start infinite;
+}
+
+.arch-node.warning .arch-node-card svg,
+.arch-node.error .arch-node-card svg {
+	opacity: 0.4;
+	filter: grayscale(1);
+	transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.arch-node.warning:hover .arch-node-card svg,
+.arch-node.warning:focus-within .arch-node-card svg,
+.arch-node.error:hover .arch-node-card svg,
+.arch-node.error:focus-within .arch-node-card svg {
+	opacity: 0.6;
+}
+
+@keyframes arch-pulse-warning {
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(217, 119, 6, 0);
+	}
+	50% {
+		box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.3);
+	}
+}
+
+@keyframes arch-blink-error {
+	0%, 49% {
+		border-color: #dc2626;
+		box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.35);
+	}
+	50%, 100% {
+		border-color: #fca5a5;
+		box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.arch-node.warning .arch-node-card,
+	.arch-node.error .arch-node-card {
+		animation: none;
+	}
+	.arch-node.error .arch-node-card {
+		box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.35);
+	}
+}
+
+.arch-node-name {
+	font-size: 0.68rem;
+	font-weight: 600;
+	color: #374151;
+	text-align: center;
+	line-height: 1.15;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}

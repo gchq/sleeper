@@ -8,6 +8,7 @@ export function InstanceProvider({ children }: { children: ReactNode }) {
 		() => ({
 			instanceId: null,
 			version: null,
+			region: null,
 			tables: null,
 			features: null,
 			...data,

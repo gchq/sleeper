@@ -38,9 +38,9 @@ export default function ReloadButton({ onReload, loading, label, nextReloadAt, c
 				<path d="M13.5 2v3h-3" />
 			</svg>
 			{label && <span className="reload-btn-label">{label}</span>}
-			{secondsLeft !== null && (
+			{!loading && secondsLeft !== null && (
 				<span className="reload-btn-countdown" aria-hidden="true">
-					{loading ? '…' : `${secondsLeft}s`}
+					{`${secondsLeft}s`}
 				</span>
 			)}
 		</button>

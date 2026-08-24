@@ -24,9 +24,14 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
-
+import software.amazon.awssdk.services.sqs.SqsClient;
+import sleeper.api.AWSArchitectureResources.Resource;
+import sleeper.api.AWSArchitectureResources.ResourcesResponse;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -38,15 +43,26 @@ import sleeper.core.properties.table.TablePropertyGroup;
 import sleeper.core.table.TableStatus;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
+import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.IngestBatcherStoreFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static sleeper.api.AWSArchitectureResources.*;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_FILES;
@@ -68,6 +84,10 @@ public class IngestBatcherResource {
 
     private final S3Client s3Client;
     private final DynamoDbClient dynamoDbClient;
+    private final SqsClient sqsClient;
+    private final CloudWatchClient cloudWatchClient;
+    private final EventBridgeClient eventBridgeClient;
+    private final LambdaClient lambdaClient;
     private final String instanceId;
     private final String accountName;
 
@@ -75,10 +95,18 @@ public class IngestBatcherResource {
     public IngestBatcherResource(
             S3Client s3Client,
             DynamoDbClient dynamoDbClient,
+            SqsClient sqsClient,
+            CloudWatchClient cloudWatchClient,
+            EventBridgeClient eventBridgeClient,
+            LambdaClient lambdaClient,
             @ConfigProperty(name = "sleeper.instance.id") String instanceId,
             @ConfigProperty(name = "sleeper.account.name") String accountName) {
         this.s3Client = s3Client;
         this.dynamoDbClient = dynamoDbClient;
+        this.sqsClient = sqsClient;
+        this.cloudWatchClient = cloudWatchClient;
+        this.eventBridgeClient = eventBridgeClient;
+        this.lambdaClient = lambdaClient;
         this.instanceId = instanceId;
         this.accountName = accountName;
     }
@@ -161,6 +189,35 @@ public class IngestBatcherResource {
                 tableProperties.get(INGEST_BATCHER_INGEST_QUEUE),
                 jobCreationPeriodMinutes,
                 defaultsOverridden);
+    }
+
+    @GET
+    @Path("/resources")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResourcesResponse getResources() {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDbClient);
+        getStoreOrThrow(instanceProperties, tablePropertiesProvider);
+
+        String submitQueueUrl = instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL);
+        String submitQueueArn = instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_ARN);
+        String dlqUrl = instanceProperties.get(INGEST_BATCHER_SUBMIT_DLQ_URL);
+        String dlqArn = instanceProperties.get(INGEST_BATCHER_SUBMIT_DLQ_ARN);
+        String submitterName = instanceProperties.get(INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION);
+        String tableName = DynamoDBIngestBatcherStore.ingestRequestsTableName(instanceProperties.get(ID));
+        String ruleName = instanceProperties.get(INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE);
+        String jobCreatorName = instanceProperties.get(INGEST_BATCHER_JOB_CREATION_FUNCTION);
+
+        Map<String, Resource> resources = new HashMap<>();
+        resources.put("submitQueue", sqsQueue(sqsClient, submitQueueUrl, submitQueueArn, false));
+        resources.put("submitDLQ", sqsQueue(sqsClient, dlqUrl, dlqArn, true));
+        resources.put("submitterLambda", lambdaFunction(lambdaClient, cloudWatchClient, submitterName));
+        resources.put("trackingTable", dynamoTable(dynamoDbClient, tableName));
+        resources.put("creationScheduler", eventBridgeRule(eventBridgeClient, ruleName));
+        resources.put("jobCreatorLambda", lambdaFunction(lambdaClient, cloudWatchClient, jobCreatorName));
+        resources.put("ingestTarget", new Resource("Sleeper::Ingest", "Ingest", null, null, null, "ok", null));
+
+        return new ResourcesResponse(resources);
     }
 
     private IngestBatcherStore getStoreOrThrow(

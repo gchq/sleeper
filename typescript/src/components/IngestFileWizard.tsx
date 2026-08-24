@@ -73,7 +73,7 @@ async function readError(resp: Response): Promise<string> {
 }
 
 export default function IngestFileWizard({ onClose, onSubmitted, defaultMethod = 'ingest_batcher', presetTableId }: Props) {
-	const { features } = useInstance()
+	const { region, features } = useInstance()
 
 	const [step, setStep] = useState(0)
 	const [pathsRaw, setPathsRaw] = useState('')
@@ -292,9 +292,9 @@ export default function IngestFileWizard({ onClose, onSubmitted, defaultMethod =
 				</ol>
 
 				<div className="ingest-file-body">
-					{step === 0 && <PathsStep value={pathsRaw} onChange={setPathsRaw} />}
+					{step === 0 && <PathsStep value={pathsRaw} onChange={setPathsRaw} region={region} />}
 					{step === 1 && expanded && (
-						<FilesStep expanded={expanded} included={included} onToggle={toggleFile} />
+						<FilesStep expanded={expanded} included={included} onToggle={toggleFile} region={region} />
 					)}
 					{step === 2 && inspect && (
 						<TablesStep
@@ -347,7 +347,7 @@ export default function IngestFileWizard({ onClose, onSubmitted, defaultMethod =
 	)
 }
 
-function PathsStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function PathsStep({ value, onChange, region }: { value: string; onChange: (v: string) => void, region: string | null}) {
 	return (
 		<div className="ingest-file-field-block">
 			<p className="modal-description">
@@ -357,15 +357,17 @@ function PathsStep({ value, onChange }: { value: string; onChange: (v: string) =
 			<label className="modal-field">
 				<div className="ingest-file-paths-label">
 					<span className="modal-field-label">S3 paths</span>
-					<a
-						className="btn ingest-file-explore"
-						href={s3ConsoleHomeUrl()}
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						<AmazonSimpleStorageService width={14} height={14} />
-						Explore S3 ↗
-					</a>
+					{region && (
+						<a
+							className="btn ingest-file-explore"
+							href={s3ConsoleHomeUrl(region)}
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							<AmazonSimpleStorageService width={14} height={14} />
+							Explore S3
+						</a>
+					)}
 				</div>
 				<textarea
 					className="modal-input ingest-file-paths"
@@ -381,10 +383,12 @@ function PathsStep({ value, onChange }: { value: string; onChange: (v: string) =
 }
 
 function FilesStep({
+	region,
 	expanded,
 	included,
 	onToggle,
 }: {
+	region: string | null
 	expanded: ExpandResponse
 	included: Record<string, boolean>
 	onToggle: (file: string) => void
@@ -400,7 +404,7 @@ function FilesStep({
 				Confirm which files to ingest. Prefixes have been expanded to the Parquet files found underneath.
 			</p>
 			{expanded.paths.map((p) => {
-				const consoleUrl = p.tooMany ? s3ConsoleUrl(p.requestedPath) : null
+				const consoleUrl = p.tooMany && region ? s3ConsoleUrl(p.requestedPath, region) : null
 				return (
 				<div key={p.requestedPath} className="ingest-file-path-group">
 					<div className="ingest-file-path-head">

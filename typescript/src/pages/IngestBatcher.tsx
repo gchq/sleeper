@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import Title from '../components/Title'
 import IngestFileWizard from '../components/IngestFileWizard'
 import ReloadButton from '../components/ReloadButton'
+import IngestBatcherArchitecture from '../components/architectures/IngestBatcherArchitecture'
 import { useApi } from '../hooks/useApi'
 import { useSelectedTable } from '../hooks/useSelectedTable'
 import { formatBytes } from '../lib/dataMetrics'
@@ -178,6 +179,8 @@ function IngestBatcherContent({ table }: { table?: TableStatus }) {
 			<Title>{heading}</Title>
 			<div className="page">
 				<h2>{heading}</h2>
+
+				<IngestBatcherArchitecture />
 
 				<div className="batcher-controls">
 					<div className="batcher-mode" role="group" aria-label="File view">

@@ -108,10 +108,20 @@
             <groupId>io.quarkiverse.amazonservices</groupId>
             <artifactId>quarkus-amazon-cloudwatch</artifactId>
         </dependency>
+        <!-- AWS EventBridge -->
+        <dependency>
+            <groupId>io.quarkiverse.amazonservices</groupId>
+            <artifactId>quarkus-amazon-eventbridge</artifactId>
+        </dependency>
         <!-- AWS SQS -->
         <dependency>
             <groupId>io.quarkiverse.amazonservices</groupId>
             <artifactId>quarkus-amazon-sqs</artifactId>
+        </dependency>
+        <!-- AWS Lambda SDK client -->
+        <dependency>
+            <groupId>io.quarkiverse.amazonservices</groupId>
+            <artifactId>quarkus-amazon-lambda</artifactId>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>

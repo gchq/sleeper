@@ -13,6 +13,7 @@ export interface InstanceFeatures {
 export interface InstanceInfo {
 	instanceId: string
 	version: string
+	region: string
 	tables: TableStatus[]
 	features: InstanceFeatures
 }
@@ -20,6 +21,7 @@ export interface InstanceInfo {
 export interface InstanceValue {
 	instanceId: string | null
 	version: string | null
+	region: string | null
 	tables: TableStatus[] | null
 	features: InstanceFeatures | null
 	loading: boolean

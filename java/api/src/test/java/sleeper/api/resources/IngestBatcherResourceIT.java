@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -44,12 +46,21 @@ import java.util.List;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
@@ -66,13 +77,14 @@ class IngestBatcherResourceIT {
     static final String INSTANCE_ID = "batcher-it";
     static final String ACCOUNT_NAME = "test-account";
 
-    // Fixed reference point so ordering is deterministic without hard-coding a calendar year.
     private static final Instant BASE_TIME = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
 
     @Inject
     S3Client s3Client;
     @Inject
     DynamoDbClient dynamoDbClient;
+    @Inject
+    SqsClient sqsClient;
 
     public static class Profile implements QuarkusTestProfile {
         @Override
@@ -85,15 +97,10 @@ class IngestBatcherResourceIT {
 
     @BeforeEach
     void clearState() {
-        // The localstack container is shared across tests, so wipe DynamoDB tables and S3 buckets between them.
-        dynamoDbClient.listTables().tableNames()
-                .forEach(name -> dynamoDbClient.deleteTable(builder -> builder.tableName(name)));
-        s3Client.listBuckets().buckets().forEach(bucket -> {
-            String name = bucket.name();
-            s3Client.listObjectsV2Paginator(builder -> builder.bucket(name)).contents().forEach(obj -> s3Client
-                    .deleteObject(builder -> builder.bucket(name).key(obj.key())));
-            s3Client.deleteBucket(builder -> builder.bucket(name));
-        });
+        // The localstack container is shared across tests, so wipe its state between them.
+        LocalStackTestResources.deleteDynamoTables(dynamoDbClient);
+        LocalStackTestResources.deleteS3Buckets(s3Client);
+        LocalStackTestResources.deleteSqsQueues(sqsClient);
     }
 
     private InstanceProperties setUpInstance(boolean batcherEnabled) {
@@ -257,6 +264,92 @@ class IngestBatcherResourceIT {
                 .statusCode(200)
                 .body("tableId", is(nullValue()))
                 .body("jobCreationPeriodMinutes", is("5"));
+    }
+
+    @Test
+    void shouldReturn404ForResourcesWhenBatcherNotEnabled() {
+        setUpInstance(false);
+
+        given()
+                .when().get("/api/ingest-batcher/resources")
+                .then()
+                .statusCode(404)
+                .body("error", is("ingest_batcher_not_enabled"));
+    }
+
+    @Test
+    void shouldListResourcesKeyedByComponent() {
+        InstanceProperties instanceProperties = setUpInstance(true);
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_QUEUE_URL, "https://sqs.test-region.amazonaws.com/123/submit-q");
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_QUEUE_ARN, "arn:aws:sqs:test-region:123:submit-q");
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, "https://sqs.test-region.amazonaws.com/123/submit-dlq");
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_ARN, "arn:aws:sqs:test-region:123:submit-dlq");
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION, "sleeper-batcher-it-ingest-batcher-submit-files");
+        instanceProperties.set(INGEST_BATCHER_JOB_CREATION_FUNCTION, "sleeper-batcher-it-ingest-batcher-create-jobs");
+        instanceProperties.set(INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, "sleeper-batcher-it-IngestBatcherJobCreationRule");
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+
+        given()
+                .when().get("/api/ingest-batcher/resources")
+                .then()
+                .statusCode(200)
+                .body("resources", allOf(
+                        hasKey("submitQueue"), hasKey("submitDLQ"), hasKey("submitterLambda"),
+                        hasKey("trackingTable"), hasKey("creationScheduler"), hasKey("jobCreatorLambda"),
+                        hasKey("ingestTarget")))
+                .body("resources.submitQueue.type", is("SQS::Queue"))
+                .body("resources.submitQueue.name", is("submit-q"))
+                .body("resources.submitQueue.url", is("https://sqs.test-region.amazonaws.com/123/submit-q"))
+                .body("resources.submitterLambda.type", is("Lambda::Function"))
+                .body("resources.submitterLambda.name", is("sleeper-batcher-it-ingest-batcher-submit-files"))
+                .body("resources.trackingTable.type", is("DynamoDB::Table"))
+                .body("resources.trackingTable.name", is("sleeper-batcher-it-ingest-batcher-store"))
+                .body("resources.creationScheduler.type", is("EventBridge::Rule"))
+                .body("resources.ingestTarget.type", is("Sleeper::Ingest"));
+    }
+
+    @Test
+    void shouldNormaliseVersionedFunctionArnToBareName() {
+        InstanceProperties instanceProperties = setUpInstance(true);
+        // Deployed instances may store a full, versioned function ARN; the resource endpoint should
+        // reduce it to the bare function name for the ARN, console link and log group.
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION,
+                "arn:aws:lambda:test-region:" + ACCOUNT_NAME + ":function:sleeper-batcher-it-ingest-batcher-submit-files:1");
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+
+        given()
+                .when().get("/api/ingest-batcher/resources")
+                .then()
+                .statusCode(200)
+                .body("resources.submitterLambda.name",
+                        is("sleeper-batcher-it-ingest-batcher-submit-files"));
+    }
+
+    @Test
+    void shouldReportErrorStatusWhenDeadLetterQueueHasMessages() {
+        InstanceProperties instanceProperties = setUpInstance(true);
+        String dlqUrl = sqsClient.createQueue(builder -> builder.queueName("batcher-it-dlq")).queueUrl();
+        String submitUrl = sqsClient.createQueue(builder -> builder.queueName("batcher-it-submit")).queueUrl();
+        sqsClient.sendMessage(builder -> builder.queueUrl(dlqUrl).messageBody("failed-submission"));
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_QUEUE_URL, submitUrl);
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_QUEUE_ARN, queueArn(submitUrl));
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, dlqUrl);
+        instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_ARN, queueArn(dlqUrl));
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+
+        given()
+                .when().get("/api/ingest-batcher/resources")
+                .then()
+                .statusCode(200)
+                .body("resources.submitDLQ.status", is("error"))
+                .body("resources.submitQueue.status", is("ok"));
+    }
+
+    private String queueArn(String queueUrl) {
+        return sqsClient.getQueueAttributes(builder -> builder
+                .queueUrl(queueUrl)
+                .attributeNames(QueueAttributeName.QUEUE_ARN))
+                .attributes().get(QueueAttributeName.QUEUE_ARN);
     }
 
 }

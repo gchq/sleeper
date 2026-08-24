@@ -64,6 +64,9 @@ export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: n
 	useEffect(() => {
 		setData(null)
 		setError(null)
+	}, [url])
+
+	useEffect(() => {
 		load()
 
 		if (refreshInterval === 0) return () => controllerRef.current?.abort()
