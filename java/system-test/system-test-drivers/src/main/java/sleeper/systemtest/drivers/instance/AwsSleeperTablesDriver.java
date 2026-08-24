@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.drivers.instance;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.http.ContentStreamProvider;
 import software.amazon.awssdk.http.SdkHttpMethod;
@@ -26,9 +28,11 @@ import software.amazon.awssdk.http.auth.spi.signer.SignedRequest;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.table.AddTableClient;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -49,8 +53,10 @@ import java.net.http.HttpResponse.BodyHandlers;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REST_API_URL;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
 public class AwsSleeperTablesDriver implements SleeperTablesDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsSleeperTablesDriver.class);
 
     private final S3Client s3;
     private final DynamoDbClient dynamoDB;
@@ -71,6 +77,17 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
 
     @Override
     public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
+        if (instanceProperties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
+                .anyMatch(stack -> stack == OptionalStack.RestApiStack)) {
+            LOGGER.info("Adding table via REST API");
+            addTableViaRest(instanceProperties, properties);
+        } else {
+            LOGGER.info("Adding table directly");
+            addTableDirectly(instanceProperties, properties);
+        }
+    }
+
+    protected void addTableViaRest(InstanceProperties instanceProperties, TableProperties properties) {
         String body = new AddTableRequestSerDe(instanceProperties).toJson(AddTableRequest.builder()
                 .properties(properties)
                 .build());
@@ -104,6 +121,17 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
+        }
+    }
+
+    protected void addTableDirectly(InstanceProperties instanceProperties, TableProperties properties) {
+        try {
+            new AddTableClient(properties,
+                    S3TableProperties.createStore(instanceProperties, s3, dynamoDB),
+                    StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB))
+                    .run();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
