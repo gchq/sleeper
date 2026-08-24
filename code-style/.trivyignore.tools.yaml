@@ -41,4 +41,4 @@ vulnerabilities:
   - id: CVE-2026-16729
   - id: CVE-2026-15157
   # tar
-  - id: cve-2026-73566
+  - id: CVE-2026-73566
