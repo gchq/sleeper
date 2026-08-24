@@ -39,11 +39,12 @@ fi
 
 # Allow setting of registry to pull docker images from
 REGISTRY_CONFIG_PATH="$HOME/.sleeper/registry"
+DEFAULT_REGISTRY="ghcr.io/gchq"
 get_registry() {
   if [ -f "$REGISTRY_CONFIG_PATH" ]; then
     cat "$REGISTRY_CONFIG_PATH"
   else
-    echo "ghcr.io/gchq"
+    echo "$DEFAULT_REGISTRY"
   fi
 }
 
@@ -51,6 +52,25 @@ set_registry() {
   mkdir -p "$HOME/.sleeper"
   echo "$1" > "$REGISTRY_CONFIG_PATH"
   echo "Registry set to: $1"
+}
+
+# Allow overriding the image version tag used when pulling images
+VERSION_TAG_CONFIG_PATH="$HOME/.sleeper/version-tag"
+get_version_tag() {
+  if [ -f "$VERSION_TAG_CONFIG_PATH" ]; then
+    cat "$VERSION_TAG_CONFIG_PATH"
+  elif [ -f "$HOME/.sleeper/local-repo" ] && [ "$(get_registry)" == "$DEFAULT_REGISTRY" ]; then
+    # Use the source version only when pulling from the default registry
+    cat "$(<"$HOME/.sleeper/local-repo")/templates/version.txt"
+  else
+    echo "latest"
+  fi
+}
+
+set_version_tag() {
+  mkdir -p "$HOME/.sleeper"
+  echo "$1" > "$VERSION_TAG_CONFIG_PATH"
+  echo "Version tag set to: $1"
 }
 
 run_in_docker() {
@@ -140,18 +160,17 @@ get_version() {
 pull_docker_images() {
 
   mkdir -p "$HOME_RUNNER_PATH"
-  VERSION="latest"
   if [ -f "$HOME/.sleeper/local-repo" ]; then
-    echo "CLI was previously installed from a local repo. Copying DockerFile and version from there."
+    echo "CLI was previously installed from a local repo. Copying Dockerfile from there."
     LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
     cp "$LOCAL_REPO/cli/runner/Dockerfile" $HOME_RUNNER_PATH
-    VERSION=$(<"$LOCAL_REPO/templates/version.txt")
   else
     echo "Downloading CLI runner Dockerfile"
     curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
   fi
 
-  echo "Pulling CLI Docker images"
+  VERSION=$(get_version_tag)
+  echo "Pulling CLI Docker images (version: $VERSION)"
   for IMAGE_NAME in "${ALL_IMAGES[@]}"; do
     echo "Pulling image: $IMAGE_NAME"
     REMOTE_IMAGE="$(get_registry)/$IMAGE_NAME:$VERSION"
@@ -290,6 +309,12 @@ elif [ "$COMMAND" == "cli" ]; then
       exit 1
     fi
     set_registry "$1"
+  elif [ "$SUBCOMMAND" == "set-version" ]; then
+    if [ "$#" -lt 1 ]; then
+      echo "Usage: sleeper cli set-version <version>"
+      exit 1
+    fi
+    set_version_tag "$1"
   else
     echo "Command not found: cli $SUBCOMMAND"
     show_usage

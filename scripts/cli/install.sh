@@ -17,9 +17,11 @@ set -e
 unset CDPATH
 
 REGISTRY=""
+VERSION_TAG=""
 while [[ "$#" -gt 0 ]]; do
   case $1 in
     --registry) REGISTRY="$2"; shift 2 ;;
+    --version) VERSION_TAG="$2"; shift 2 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -47,6 +49,10 @@ chmod a+x "$SCRIPT_PATH"
 # Set registry if provided, overriding the default
 if [ -n "$REGISTRY" ]; then
   "$SCRIPT_PATH" cli set-registry "$REGISTRY"
+fi
+# Set version tag if provided, overriding the default
+if [ -n "$VERSION_TAG" ]; then
+  "$SCRIPT_PATH" cli set-version "$VERSION_TAG"
 fi
 "$SCRIPT_PATH" cli pull-images
 echo "Downloaded Docker images"
