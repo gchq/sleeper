@@ -94,7 +94,7 @@ jobs:
       - name: Docker image tests
         working-directory: ./java
         if: ${{ inputs.testClassNames != '' }}
-        run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=${{ inputs.testClassNames }}" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn verify -PsystemTest -Drust.skip=true -pl clients "-DrunIT=${{ inputs.testClassNames }}" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
       - name: Run Trivy vulnerability scanner
         env:
           TRIVY_IGNOREFILE: ${{ inputs.trivyIgnore }}
