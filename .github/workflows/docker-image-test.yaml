@@ -14,6 +14,9 @@ on:
       dockerOptions:
         required: false
         type: string
+      mavenOptions:
+        required: false
+        type: string
       trivyIgnore:
         default: code-style/.trivyignore.yaml
         required: false
@@ -69,7 +72,7 @@ jobs:
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Build with Maven
-        run: mvn --batch-mode install -Pquick -T 1C -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn --batch-mode install -Pquick -T 1C -Dmaven.repo.local=${{ runner.temp }}/.m2/repository ${{ inputs.mavenOptions }}
         working-directory: ./java
       - name: Copy build output
         working-directory: ./scripts/build
@@ -77,7 +80,13 @@ jobs:
       - name: Build base image
         run: ./scripts/dev/buildDockerImage.sh base ${{ env.BASE_IMAGE }} ${{ inputs.dockerOptions }} --builder sleeper --push
       - name: Build Docker image ${{ inputs.imageName }}
-        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} --default-base-image ${{ env.BASE_IMAGE }} ${{ inputs.dockerOptions }} --builder sleeper --load
+        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test-no-rie --lambda=${{ inputs.isLambda }} --default-base-image ${{ env.BASE_IMAGE }} ${{ inputs.dockerOptions }} --builder sleeper --load
+      - name: Add RIE to Docker image
+        if: ${{ inputs.testClassNames != '' && inputs.isLambda }}
+        run:  docker build --build-arg BASE_IMAGE=${{ inputs.imageName }}:test-no-rie -t ${{ inputs.imageName }}:test ${{ inputs.dockerOptions }} ./java/common/docker-lambda/add-rie/
+      - name: Re-tag non-lambda Docker image
+        if: ${{ inputs.testClassNames != '' && !inputs.isLambda }}
+        run: docker tag ${{ inputs.imageName }}:test-no-rie ${{ inputs.imageName }}:test
       - name: Delete build output to free disk space
         run: |
           rm -rf ./scripts/docker
@@ -93,7 +102,7 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           version: v0.71.2
-          image-ref: '${{ inputs.imageName }}:test'
+          image-ref: '${{ inputs.imageName }}:test-no-rie'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
