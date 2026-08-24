@@ -13,7 +13,7 @@ jobs:
       - uses: marocchino/validate-dependabot@v3
         id: validate
       - uses: marocchino/sticky-pull-request-comment@v3
-        if: always()
+        if: ${{ always() && github.actor != 'dependabot[bot]' }}
         with:
           header: validate-dependabot
           message: ${{ steps.validate.outputs.markdown }}
