@@ -96,20 +96,17 @@
         <profile>
             <activation>
                 <property>
-                    <name>skipRust</name>
+                    <name>rust.x86.skip</name>
                     <value>!true</value>
                 </property>
             </activation>
-            <id>rust</id>
+            <id>rust-x86</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
-                            <!-- You need one execution per cross target you are building. Make sure
-                            you add
-                            the appropriate resources plugin execution below! -->
                             <execution>
                                 <id>Invoke Rust Cargo build (Linux x86_64)</id>
                                 <phase>generate-resources</phase>
@@ -126,6 +123,25 @@
                                     </arguments>
                                 </configuration>
                             </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <activation>
+                <property>
+                    <name>rust.aarch64.skip</name>
+                    <value>!true</value>
+                </property>
+            </activation>
+            <id>rust-aarch64</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
                             <execution>
                                 <id>Invoke Rust Cargo build (Linux Aarch64)</id>
                                 <phase>generate-resources</phase>
@@ -143,6 +159,46 @@
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <activation>
+                <property>
+                    <name>rust.skip</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <id>rust-skip-all</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <activation>
+                <property>
+                    <name>skipRust</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <id>rust-skip-all-alias</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
