@@ -37,10 +37,13 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.util.cli.CommandLineUsage;
+import sleeper.core.util.cli.CommandOption;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 
 import java.time.Clock;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -59,6 +62,33 @@ public class IngestJobStatusReport {
         REPORTERS.put(DEFAULT_REPORTER, new StandardIngestJobStatusReporter());
         REPORTERS.put("JSON", new JsonIngestJobStatusReporter());
     }
+
+    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
+            .positionalArguments(List.of("instance-id", "table-name"))
+            .options(List.of(CommandOption.longOption("report-type"),
+                    CommandOption.shortFlag('a', "all-jobs"),
+                    CommandOption.shortFlag('d', "detailed"),
+                    CommandOption.shortFlag('n', "rejected-jobs"),
+                    CommandOption.shortFlag('r', "range"),
+                    CommandOption.shortFlag('u', "unfinished-jobs"),
+                    CommandOption.longOption("query-params")))
+            .helpSummary("" +
+                    "Creates a report listing all the status of the ingest jobs within a Sleeper instance.\n" +
+                    "\n" +
+                    "--report-type <type>\n" +
+                    "Output format. One of STANDARD, JSON. Defaults to STANDARD.\n" +
+                    "\n" +
+                    "Adjust query types for the report are:\n" +
+                    "[If none set will default to all]\n" +
+                    "-a --all-jobs [Returns all jobs]\n" +
+                    "-d --detailed [Detailed, requires a jobId as an optional query parameter]\n" +
+                    "-n --rejected-jobs [Rejected jobs]\n" +
+                    "-r --range [Range, start and end points requires as optional query parameter in following format yyyyMMddhhmmss]\n" +
+                    "-u --unfinished-jobs [Unfinished jobs]\n" +
+                    "\n" +
+                    "--query-params <params>\n" +
+                    "Additional parameters required for several query types")
+            .build();
 
     private final IngestJobTracker tracker;
     private final IngestJobStatusReporter reporter;
