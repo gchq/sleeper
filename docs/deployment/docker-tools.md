@@ -47,6 +47,16 @@ the images to a private registry:
 
 The registry can also be updated later using `sleeper cli set-registry <registry>`.
 
+You can pin a specific Docker image version tag using `--version`:
+
+```bash
+./scripts/cli/install.sh --version 0.27.0
+```
+
+The version can also be updated later using `sleeper cli set-version <version>`. When installing from a local
+repository with the default registry, the version from `templates/version.txt` in that repository is used
+automatically. With a custom registry, the default is `latest`.
+
 ### Commands
 
 The CLI consists of a `sleeper` command with sub-commands. You can use `sleeper aws` or `sleeper cdk` to run `aws` or

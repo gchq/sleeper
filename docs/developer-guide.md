@@ -120,6 +120,15 @@ If you want to use a custom container registry with locally built images, pass t
 ./scripts/cli/install.sh --registry your.registry.example.com/sleeper
 ```
 
+You can also pin a specific Docker image version tag using `--version`:
+
+```bash
+./scripts/cli/install.sh --version 0.27.0
+```
+
+With the default registry and a local repository, the version from `templates/version.txt` is used automatically.
+With a custom registry, the default is `latest` unless overridden with `--version`.
+
 You can also use `./scripts/cli/runInDocker.sh` directly without installing, which will act the same as the `sleeper`
 command.
 
