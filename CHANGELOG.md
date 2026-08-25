@@ -48,9 +48,8 @@ Bugfixes:
 
 This release includes fixes to the alignment of build numbers caused by previously missed error in update script.
 
-General issues:
-- Change Rust builder to use Trixie over Bookworm.
-- New VPC interface endpoints for ECR for environment deployment.
+- Upgraded the Rust builder to Debian Trixie instead of Bookworm.
+- Added a VPC interface endpoint for AWS ECR in the environment deployment.
 
 
 ## Version 0.37.2
