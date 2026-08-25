@@ -39,6 +39,8 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.restapi.addTable.AddTableRequest;
 import sleeper.restapi.addTable.AddTableRequestSerDe;
+import sleeper.restapi.addTable.AddTableResponse;
+import sleeper.restapi.addTable.AddTableResponseSerDe;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
@@ -48,10 +50,12 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REST_API_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsSleeperTablesDriver.class);
@@ -108,11 +112,13 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
                     values.forEach(value -> request.header(header, value));
                 }
             });
-            var response = httpClient.send(request.build(), BodyHandlers.ofString());
-            if (response.statusCode() != 201) {
-                throw new RuntimeException("Failed to add table through REST API, status code: " + response.statusCode()
-                        + ", response: " + response.body());
+            HttpResponse<String> httpResponse = httpClient.send(request.build(), BodyHandlers.ofString());
+            if (httpResponse.statusCode() != 201) {
+                throw new RuntimeException("Failed to add table through REST API, status code: " + httpResponse.statusCode()
+                        + ", response: " + httpResponse.body());
             }
+            AddTableResponse response = new AddTableResponseSerDe().fromJson(httpResponse.body());
+            properties.set(TABLE_ID, response.getTableId());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } catch (InterruptedException e) {

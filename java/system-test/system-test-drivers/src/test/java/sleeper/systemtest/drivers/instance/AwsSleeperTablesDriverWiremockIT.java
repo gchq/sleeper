@@ -35,7 +35,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REST_API_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
@@ -45,24 +47,36 @@ class AwsSleeperTablesDriverWiremockIT {
 
     @Test
     void shouldAddOneTable(WireMockRuntimeInfo runtimeInfo) {
+        // Given
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(REST_API_URL, runtimeInfo.getHttpBaseUrl());
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "A");
+        tableProperties.set(TABLE_NAME, "test-table");
         tableProperties.setSchema(DEFAULT_SCHEMA);
         AwsSleeperTablesDriver driver = new AwsSleeperTablesDriver(SystemTestClients.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("access-key", "secret-key")))
                 .build());
         stubFor(post("/sleeper/tables")
-                .willReturn(aResponse().withStatus(201)));
+                .willReturn(aResponse()
+                        .withStatus(201)
+                        .withBody("""
+                                {
+                                    "tableId": "test-id",
+                                    "tableName": "test-table"
+                                }
+                                """)));
 
+        // When the driver is invoked
         driver.addTable(instanceProperties, tableProperties);
 
+        // Then the REST API is called
         verify(postRequestedFor(urlEqualTo("/sleeper/tables"))
                 .withHeader("Authorization", matching("AWS4-HMAC-SHA256 .*"))
                 .withHeader("Content-Type", equalTo("application/json"))
-                .withRequestBody(matchingJsonPath("$.properties['sleeper.table.name']", equalTo("A")))
+                .withRequestBody(matchingJsonPath("$.properties['sleeper.table.name']", equalTo("test-table")))
                 .withRequestBody(matchingJsonPath("$.schema.rowKeyFields[0].name", equalTo("key")))
                 .withRequestBody(matchingJsonPath("$.splitPoints", equalToJson("[]"))));
+        // And the table ID is recorded in the TableProperties object
+        assertThat(tableProperties.get(TABLE_ID)).isEqualTo("test-id");
     }
 }
