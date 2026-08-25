@@ -37,6 +37,7 @@ import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FINISHED
  */
 public class IngestJobStatus {
     private final String jobId;
+    private final String tableId;
     private final JobRuns jobRuns;
     private final transient List<IngestJobRun> runsLatestFirst;
     private final transient Set<IngestJobStatusType> runStatusTypes;
@@ -45,6 +46,7 @@ public class IngestJobStatus {
 
     private IngestJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        tableId = builder.tableId;
         jobRuns = Objects.requireNonNull(builder.jobRuns, "jobRuns must not be null");
         runsLatestFirst = jobRuns.getRunsLatestFirst().stream()
                 .map(IngestJobRun::new)
@@ -83,12 +85,17 @@ public class IngestJobStatus {
         return Optional.of(builder()
                 .jobRuns(runs)
                 .jobId(statusUpdates.getJobId())
+                .tableId(statusUpdates.getTableId())
                 .expiryDate(statusUpdates.getFirstRecord().getExpiryDate())
                 .build());
     }
 
     public String getJobId() {
         return jobId;
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
     public int getInputFileCount() {
@@ -192,6 +199,7 @@ public class IngestJobStatus {
      */
     public static final class Builder {
         private String jobId;
+        private String tableId;
         private JobRuns jobRuns;
         private Instant expiryDate;
 
@@ -206,6 +214,17 @@ public class IngestJobStatus {
          */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
+            return this;
+        }
+
+        /**
+         * Sets the ID of the Sleeper table the job is for. May be null if the table is not known.
+         *
+         * @param  tableId the table ID
+         * @return         the builder
+         */
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 

@@ -50,7 +50,7 @@ public class IngestJobStatusFromJobTestData {
      * @return      an ingest job status
      */
     public static IngestJobStatus ingestJobStatus(IngestJob job, JobRun... runs) {
-        return IngestJobStatusTestData.ingestJobStatus(job.getId(), runs);
+        return IngestJobStatusTestData.ingestJobStatus(job.getId(), job.getTableId(), runs);
     }
 
     /**
@@ -62,7 +62,7 @@ public class IngestJobStatusFromJobTestData {
      * @return           an ingest job status
      */
     public static IngestJobStatus startedIngestJob(IngestJob job, String taskId, Instant startTime) {
-        return IngestJobStatusTestData.ingestJobStatus(job.getId(), startedIngestRun(job, taskId, startTime));
+        return IngestJobStatusTestData.ingestJobStatus(job.getId(), job.getTableId(), startedIngestRun(job, taskId, startTime));
     }
 
     /**

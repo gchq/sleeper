@@ -39,6 +39,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 
 @Path("/api/instance")
 public class InstanceResource {
@@ -79,6 +80,7 @@ public class InstanceResource {
         List<OptionalStack> optionalStacks = instanceProperties.getEnumList(OPTIONAL_STACKS, OptionalStack.class);
         Map<String, Boolean> features = new LinkedHashMap<>();
         features.put("IngestBatcher", optionalStacks.contains(OptionalStack.IngestBatcherStack));
+        features.put("IngestTracking", instanceProperties.getBoolean(INGEST_TRACKER_ENABLED));
         return features;
     }
 

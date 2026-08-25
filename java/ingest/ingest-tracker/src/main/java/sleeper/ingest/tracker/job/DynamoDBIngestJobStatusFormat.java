@@ -189,11 +189,17 @@ class DynamoDBIngestJobStatusFormat {
     private static JobStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
         return JobStatusUpdateRecord.builder()
                 .jobId(getStringAttribute(item, JOB_ID))
+                .tableId(readTableId(item))
                 .statusUpdate(getStatusUpdate(item))
                 .jobRunId(getStringAttribute(item, JOB_RUN_ID))
                 .taskId(getStringAttribute(item, TASK_ID))
                 .expiryDate(getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond))
                 .build();
+    }
+
+    private static String readTableId(Map<String, AttributeValue> item) {
+        String tableId = getStringAttribute(item, TABLE_ID);
+        return TABLE_ID_UNKNOWN.equals(tableId) ? null : tableId;
     }
 
     private static JobStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {

@@ -24,6 +24,7 @@ import java.util.Objects;
 public class JobStatusUpdateRecord {
 
     private final String jobId;
+    private final String tableId;
     private final JobStatusUpdate statusUpdate;
     private final String jobRunId;
     private final String taskId;
@@ -31,6 +32,7 @@ public class JobStatusUpdateRecord {
 
     private JobStatusUpdateRecord(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        tableId = builder.tableId;
         statusUpdate = Objects.requireNonNull(builder.statusUpdate, "statusUpdate must not be null");
         jobRunId = builder.jobRunId;
         taskId = builder.taskId;
@@ -43,6 +45,10 @@ public class JobStatusUpdateRecord {
 
     public String getJobId() {
         return jobId;
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
     public JobStatusUpdate getStatusUpdate() {
@@ -79,6 +85,9 @@ public class JobStatusUpdateRecord {
         if (!jobId.equals(that.jobId)) {
             return false;
         }
+        if (!Objects.equals(tableId, that.tableId)) {
+            return false;
+        }
         if (!statusUpdate.equals(that.statusUpdate)) {
             return false;
         }
@@ -94,6 +103,7 @@ public class JobStatusUpdateRecord {
     @Override
     public int hashCode() {
         int result = jobId.hashCode();
+        result = 31 * result + (tableId != null ? tableId.hashCode() : 0);
         result = 31 * result + statusUpdate.hashCode();
         result = 31 * result + (jobRunId != null ? jobRunId.hashCode() : 0);
         result = 31 * result + (taskId != null ? taskId.hashCode() : 0);
@@ -105,6 +115,7 @@ public class JobStatusUpdateRecord {
     public String toString() {
         return "ProcessStatusUpdateRecord{" +
                 "jobId='" + jobId + '\'' +
+                ", tableId='" + tableId + '\'' +
                 ", statusUpdate=" + statusUpdate +
                 ", jobRunId='" + jobRunId + '\'' +
                 ", taskId='" + taskId + '\'' +
@@ -117,6 +128,7 @@ public class JobStatusUpdateRecord {
      */
     public static final class Builder {
         private String jobId;
+        private String tableId;
         private JobStatusUpdate statusUpdate;
         private String jobRunId;
         private String taskId;
@@ -133,6 +145,17 @@ public class JobStatusUpdateRecord {
          */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
+            return this;
+        }
+
+        /**
+         * Sets the ID of the Sleeper table the job is for. May be null if the table is not known.
+         *
+         * @param  tableId the table ID to set
+         * @return         the builder
+         */
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 

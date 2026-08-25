@@ -54,6 +54,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
         tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs()).jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(JobStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
+                        .tableId(event.getTableId())
                         .statusUpdate(toStatusUpdate(event, defaultUpdateTime(event.getValidationTime())))
                         .jobRunId(event.getJobRunId())
                         .build());
@@ -69,6 +70,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
                                 .startTime(event.getStartTime())
                                 .updateTime(defaultUpdateTime(event.getStartTime()))
                                 .build())
+                        .tableId(event.getTableId())
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
                         .build());
@@ -84,6 +86,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
                                 .updateTime(defaultUpdateTime(event.getWrittenTime()))
                                 .fileCount(event.getFileCount())
                                 .build())
+                        .tableId(event.getTableId())
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
                         .build());
@@ -101,6 +104,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
                                 .numFilesWrittenByJob(event.getNumFilesWrittenByJob())
                                 .committedBySeparateFileUpdates(event.isCommittedBySeparateFileUpdates())
                                 .build())
+                        .tableId(event.getTableId())
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
                         .build());
@@ -116,6 +120,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
                                 .failureTime(event.getFailureTime())
                                 .failureReasons(event.getFailureReasons())
                                 .build())
+                        .tableId(event.getTableId())
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
                         .build());

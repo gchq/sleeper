@@ -65,6 +65,22 @@ public class IngestJobStatusTestData {
     /**
      * Creates an ingest job status.
      *
+     * @param  jobId   the ingest job ID
+     * @param  tableId the ID of the Sleeper table the job is for
+     * @param  runs    the process runs
+     * @return         an {@link IngestJobStatus}
+     */
+    public static IngestJobStatus ingestJobStatus(String jobId, String tableId, JobRun... runs) {
+        return IngestJobStatus.builder()
+                .jobId(jobId)
+                .tableId(tableId)
+                .jobRuns(JobRuns.latestFirst(Arrays.asList(runs)))
+                .build();
+    }
+
+    /**
+     * Creates an ingest job status.
+     *
      * @param  job  an event for the job this status is for
      * @param  runs the process runs
      * @return      an {@link IngestJobStatus}

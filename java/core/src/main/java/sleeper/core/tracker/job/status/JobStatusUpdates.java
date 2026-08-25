@@ -71,6 +71,20 @@ public class JobStatusUpdates {
         return jobId;
     }
 
+    /**
+     * Gets the ID of the Sleeper table the job is for. Taken from the most recent record that has a table ID set, as
+     * the table may not be known for the earliest updates (e.g. a job rejected before its table could be determined).
+     *
+     * @return the table ID, or null if no record has a table ID set
+     */
+    public String getTableId() {
+        return recordsLatestFirst.stream()
+                .map(JobStatusUpdateRecord::getTableId)
+                .filter(tableId -> tableId != null)
+                .findFirst()
+                .orElse(null);
+    }
+
     public JobStatusUpdateRecord getFirstRecord() {
         return recordsLatestFirst.get(recordsLatestFirst.size() - 1);
     }
