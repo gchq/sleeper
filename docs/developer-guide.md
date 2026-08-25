@@ -107,12 +107,16 @@ To build the Sleeper Docker tools, you can run this script:
 There are also scripts to build individual tools, like `scripts/cli/environment/buildWithDependencies.sh`.
 
 To install the CLI from the local repository, run the install script directly. It will detect `runInDocker.sh`
-alongside it and use that instead of downloading from GitHub, and will record the local repository path so that
+alongside it and use that instead of downloading the script from GitHub. It will record the local repository path so that
 `sleeper cli upgrade` and `sleeper cli pull-images` continue to use the local version:
 
 ```bash
 ./scripts/cli/install.sh
 ```
+
+If the CLI is already installed, re-running this script will update the installed executable and re-pull the Docker
+images. This is useful after switching branches to ensure the installed CLI and images are in sync with the local
+repository.
 
 If you want to use a custom container registry pass the `--registry` flag:
 
