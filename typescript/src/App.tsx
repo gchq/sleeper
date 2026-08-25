@@ -9,6 +9,8 @@ import './App.css'
 
 const DataMetricGraph = lazy(() => import('./pages/DataMetricGraph'))
 const IngestBatcher = lazy(() => import('./pages/IngestBatcher'))
+const IngestJobs = lazy(() => import('./pages/IngestJobs'))
+const IngestJobDetail = lazy(() => import('./pages/IngestJobDetail'))
 
 const router = createBrowserRouter([
 	{
@@ -30,6 +32,38 @@ const router = createBrowserRouter([
 				element: (
 					<Suspense fallback={<div className="page"><p>Loading...</p></div>}>
 						<IngestBatcher />
+					</Suspense>
+				),
+			},
+			{
+				path: '/ingest-jobs',
+				element: (
+					<Suspense fallback={<div className="page"><p>Loading...</p></div>}>
+						<IngestJobs />
+					</Suspense>
+				),
+			},
+			{
+				path: '/tables/:tableId/ingest-jobs',
+				element: (
+					<Suspense fallback={<div className="page"><p>Loading...</p></div>}>
+						<IngestJobs />
+					</Suspense>
+				),
+			},
+			{
+				path: '/ingest-jobs/:jobId',
+				element: (
+					<Suspense fallback={<div className="page"><p>Loading...</p></div>}>
+						<IngestJobDetail />
+					</Suspense>
+				),
+			},
+			{
+				path: '/tables/:tableId/ingest-jobs/:jobId',
+				element: (
+					<Suspense fallback={<div className="page"><p>Loading...</p></div>}>
+						<IngestJobDetail />
 					</Suspense>
 				),
 			},

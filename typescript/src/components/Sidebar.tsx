@@ -15,6 +15,7 @@ interface TablePage {
 const TABLE_PAGES: TablePage[] = [
 	{ key: 'properties', label: 'Table Properties', shortLabel: 'TP' },
 	{ key: 'ingest-batcher', label: 'Ingest Batcher', shortLabel: 'IB', feature: 'IngestBatcher' },
+	{ key: 'ingest-jobs', label: 'Ingest Jobs', shortLabel: 'IJ', feature: 'IngestTracking' },
 ]
 
 const COLLAPSED_STORAGE_KEY = 'sleeper-sidebar-collapsed'
@@ -160,6 +161,17 @@ export default function Sidebar() {
 						>
 							<span className="sidebar-link-icon" aria-hidden="true">IB</span>
 							{!collapsed && <span className="sidebar-link-label">Ingest Batcher</span>}
+						</NavLink>
+					)}
+					{features?.IngestTracking && (
+						<NavLink
+							to="/ingest-jobs"
+							end
+							className={({ isActive }) => (isActive ? 'sidebar-link active' : 'sidebar-link')}
+							title="Ingest Jobs"
+						>
+							<span className="sidebar-link-icon" aria-hidden="true">IJ</span>
+							{!collapsed && <span className="sidebar-link-label">Ingest Jobs</span>}
 						</NavLink>
 					)}
 				</div>

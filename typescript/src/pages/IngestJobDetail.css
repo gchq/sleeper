@@ -1,0 +1,140 @@
+.job-detail-back {
+	display: inline-block;
+	margin: 0.25rem 0 0.75rem;
+	font-size: 0.85rem;
+	color: #1a56db;
+	text-decoration: none;
+}
+
+.job-detail-back:hover {
+	text-decoration: underline;
+}
+
+.job-detail-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.job-detail-loading,
+.job-detail-empty {
+	color: #6b7280;
+	margin: 1rem 0;
+}
+
+.job-detail-summary {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+	gap: 0.75rem 1.5rem;
+	margin: 1rem 0 1.5rem;
+	padding: 1rem 1.25rem;
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+}
+
+.job-detail-summary dt,
+.job-run-grid dt {
+	font-size: 0.72rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: #6b7280;
+	margin-bottom: 0.2rem;
+}
+
+.job-detail-summary dd,
+.job-run-grid dd {
+	margin: 0;
+	font-size: 0.9rem;
+	color: #111827;
+	font-variant-numeric: tabular-nums;
+}
+
+.job-detail-summary code {
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	font-size: 0.82rem;
+	word-break: break-all;
+}
+
+.job-detail-section-title {
+	margin: 1.5rem 0 0.75rem;
+	font-size: 1rem;
+}
+
+.job-detail-runs {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.job-run-card {
+	padding: 1rem 1.25rem;
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+}
+
+.job-run-head {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 0.85rem;
+	flex-wrap: wrap;
+}
+
+.job-run-task-id {
+	font-size: 0.8rem;
+	color: #6b7280;
+}
+
+.job-run-task-id code,
+.job-run-task-title + dl code {
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	font-size: 0.78rem;
+	word-break: break-all;
+}
+
+.job-run-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+	gap: 0.6rem 1.5rem;
+	margin: 0;
+}
+
+.job-run-failures {
+	margin-top: 0.85rem;
+	padding: 0.6rem 0.85rem;
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	border-radius: 6px;
+	color: #991b1b;
+	font-size: 0.85rem;
+}
+
+.job-run-failures-title,
+.job-run-task-title {
+	display: block;
+	font-size: 0.72rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	margin-bottom: 0.35rem;
+}
+
+.job-run-failures ul {
+	margin: 0;
+	padding-left: 1.1rem;
+}
+
+.job-run-task {
+	margin-top: 0.85rem;
+	padding-top: 0.85rem;
+	border-top: 1px dashed #e5e7eb;
+}
+
+.job-run-task-title {
+	color: #6b7280;
+}

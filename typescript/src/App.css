@@ -44,6 +44,11 @@ body {
 	font-size: 0.85rem;
 	color: #333;
 	cursor: pointer;
+	text-decoration: none;
+}
+
+a.btn:hover {
+	text-decoration: none;
 }
 
 .btn:hover:not(:disabled) {

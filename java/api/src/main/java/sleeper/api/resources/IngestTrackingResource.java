@@ -27,6 +27,8 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import sleeper.api.AWSArchitectureResources.Resource;
+import sleeper.api.AWSArchitectureResources.ResourcesResponse;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -39,12 +41,15 @@ import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.ingest.tracker.job.DynamoDBIngestJobTracker;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.task.DynamoDBIngestTaskTracker;
 import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -52,6 +57,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static sleeper.api.AWSArchitectureResources.dynamoTable;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 
@@ -315,6 +321,17 @@ public class IngestTrackingResource {
     }
 
     public record NotAvailable(String error, String message) {
+    }
+
+    @GET
+    @Path("/resources")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResourcesResponse getResources() {
+        Map<String, Resource> resources = new HashMap<>();
+        resources.put("jobLookupTable", dynamoTable(dynamoDbClient, DynamoDBIngestJobTracker.jobLookupTableName(instanceId)));
+        resources.put("jobUpdatesTable", dynamoTable(dynamoDbClient, DynamoDBIngestJobTracker.jobUpdatesTableName(instanceId)));
+        resources.put("taskUpdatesTable", dynamoTable(dynamoDbClient, DynamoDBIngestTaskTracker.taskStatusTableName(instanceId)));
+        return new ResourcesResponse(resources);
     }
 
 }

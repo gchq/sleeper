@@ -9,6 +9,7 @@ import { useApi } from '../hooks/useApi'
 import { useSelectedTable } from '../hooks/useSelectedTable'
 import { formatBytes } from '../lib/dataMetrics'
 import { formatDurationSeconds, formatTimestamp } from '../lib/time'
+import { clampLimit } from '../lib/pagination'
 import './IngestBatcher.css'
 import { TableStatus } from '../contexts/InstanceContext'
 
@@ -43,11 +44,6 @@ interface BatchConfig {
 	ingestQueue: string
 	jobCreationPeriodMinutes: string
 	defaultsOverridden: boolean
-}
-
-function clampLimit(value: number): number {
-	if (!Number.isFinite(value) || value < 1) return DEFAULT_LIMIT
-	return Math.min(value, MAX_LIMIT)
 }
 
 function ingestMethodLabel(queue: string): string {
@@ -119,7 +115,7 @@ function IngestBatcherContent({ table }: { table?: TableStatus }) {
 	const [searchParams, setSearchParams] = useSearchParams()
 	const mode: Mode = searchParams.get('mode') === 'all' ? 'all' : 'pending'
 	const pathFilter = searchParams.get('path') ?? ''
-	const limit = clampLimit(Number(searchParams.get('limit') ?? DEFAULT_LIMIT))
+	const limit = clampLimit(Number(searchParams.get('limit') ?? DEFAULT_LIMIT), DEFAULT_LIMIT, MAX_LIMIT)
 
 	const [pathInput, setPathInput] = useState(pathFilter)
 	const [ingestOpen, setIngestOpen] = useState(false)
@@ -136,7 +132,7 @@ function IngestBatcherContent({ table }: { table?: TableStatus }) {
 		setSearchParams(
 			(prev) => {
 				const next = new URLSearchParams(prev)
-				const current = clampLimit(Number(next.get('limit') ?? DEFAULT_LIMIT))
+				const current = clampLimit(Number(next.get('limit') ?? DEFAULT_LIMIT), DEFAULT_LIMIT, MAX_LIMIT)
 				next.set('limit', String(Math.min(current + DEFAULT_LIMIT, MAX_LIMIT)))
 				return next
 			},
@@ -288,7 +284,7 @@ function BatchInfoBanner({ table }: { table?: TableStatus }) {
 		<div className="batcher-info">
 			<div className="batcher-info-header">
 				<span className="batcher-info-title">Ingest batching configuration</span>
-				<Link className="btn" to={propertiesLink}>
+				<Link className="btn batcher-change" to={propertiesLink}>
 					Change
 				</Link>
 			</div>

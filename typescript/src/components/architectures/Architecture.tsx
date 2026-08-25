@@ -54,6 +54,7 @@ interface ArchitectureProps<ResourceKey extends string = string> {
 	nodes: Record<ResourceKey, NodeConfig>
 	edges: Edge<ResourceKey>[]
 	title?: string
+	initiallyCollapsed?: boolean
 }
 
 /**
@@ -63,11 +64,12 @@ export default function Architecture({
 	url,
 	nodes,
 	edges,
-	title = 'AWS Resources',
+	title = Object.keys(nodes).length + ' AWS Resources',
+	initiallyCollapsed = false,
 }: ArchitectureProps) {
 	const { region } = useInstance()
 	const [selectedKey, setSelectedKey] = useState<string | null>(null)
-	const [collapsed, setCollapsed] = useState(false)
+	const [collapsed, setCollapsed] = useState(initiallyCollapsed)
 
 	const { data, loading, error, reload, nextReloadAt } = useApi<ArchitectureResponse>(
 		url,

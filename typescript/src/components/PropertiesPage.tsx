@@ -106,6 +106,15 @@ function effectiveValue(
 	return effectiveWithoutBasket(prop, values)
 }
 
+function buildWildcardRegex(term: string): RegExp {
+	const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '[^\\n]*')
+	return new RegExp(escaped)
+}
+
+function matchesFilter(haystack: string, term: string, matcher: RegExp | null): boolean {
+	return matcher ? matcher.test(haystack) : haystack.includes(term)
+}
+
 function wrapAsComment(text: string, width = TEXT_LINE_WIDTH): string[] {
 	const lines: string[] = []
 	for (const paragraph of text.split(/\r?\n/)) {
@@ -666,6 +675,8 @@ export default function PropertiesPage({ adapter }: { adapter: PropertiesPageAda
 	const filtered = useMemo(() => {
 		if (!data) return null
 		const term = search.trim().toLowerCase()
+		// Wildcard terms (containing '*') are compiled once to a regex; plain terms use substring matching.
+		const termMatcher = term.includes('*') ? buildWildcardRegex(term) : null
 		const result: PropertiesResponse = {}
 		for (const [component, group] of Object.entries(data)) {
 			const matching = group.properties.filter((p) => {
@@ -675,7 +686,7 @@ export default function PropertiesPage({ adapter }: { adapter: PropertiesPageAda
 				if (term) {
 					const pending = basket[p.name]?.newValue ?? ''
 					const haystack = `${p.name ?? ''}\n${p.description ?? ''}\n${p.defaultValue ?? ''}\n${setValue ?? ''}\n${pending}`.toLowerCase()
-					if (!haystack.includes(term)) return false
+					if (!matchesFilter(haystack, term, termMatcher)) return false
 				}
 				if (onlyWithValue && !hasSet && !hasDefault && !basket[p.name]) return false
 				if (onlyNonDefault && (!hasSet || setValue === p.defaultValue) && !basket[p.name]) return false
