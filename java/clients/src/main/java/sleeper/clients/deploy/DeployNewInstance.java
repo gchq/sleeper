@@ -30,7 +30,6 @@ import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
-import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
@@ -44,7 +43,6 @@ import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -153,32 +151,26 @@ public class DeployNewInstance {
 
     public void deploy() throws IOException, InterruptedException {
         InstanceProperties instanceProperties = expectedInstanceConfiguration.getInstanceProperties();
-        List<TableProperties> tablePropertiesList = expectedInstanceConfiguration.getTableProperties();
-
-        List<TableProperties> storedTableProperties = new ArrayList<>();
-        for (TableProperties tableProperties : tablePropertiesList) {
-            TableProperties deployedTableProperties = new TableProperties(instanceProperties,
-                    PropertiesUtils.loadProperties(tableProperties.saveAsString()));
-            LOGGER.info("Adding table " + deployedTableProperties.getStatus());
-            new AddTableClient(deployedTableProperties,
-                    storeFactory.createTableStore(instanceProperties),
-                    storeFactory.createStateStore(instanceProperties))
-                    .run();
-            storedTableProperties.add(deployedTableProperties);
-        }
-
-        SleeperInstanceConfiguration configWithIds = storedTableProperties.isEmpty()
-                ? expectedInstanceConfiguration
-                : SleeperInstanceConfiguration.builder()
-                        .instanceProperties(instanceProperties)
-                        .tableProperties(storedTableProperties)
-                        .build();
 
         deployInstance.deploy(DeployInstanceRequest.builder()
-                .instanceConfig(configWithIds)
+                .instanceConfig(expectedInstanceConfiguration)
                 .cdkCommand(cdkCommand)
                 .cdkApp(cdkApp)
                 .build());
+
+        // CDK must complete before AddTableClient runs as it creates the DynamoDB tables
+        // (transaction log, table index) that AddTableClient writes to.
+        // Reload from S3 to get the CDK-defined properties (DynamoDB table names, etc.).
+        InstanceProperties deployedProperties = instancePropertiesLoader.load(instanceProperties.get(ID));
+        for (TableProperties tableProperties : expectedInstanceConfiguration.getTableProperties()) {
+            TableProperties deployedTableProperties = new TableProperties(deployedProperties, tableProperties.getProperties());
+            LOGGER.info("Adding table " + deployedTableProperties.getStatus());
+            new AddTableClient(deployedTableProperties,
+                    storeFactory.createTableStore(deployedProperties),
+                    storeFactory.createStateStore(deployedProperties))
+                    .run();
+        }
+
         LOGGER.info("Finished deployment of new instance");
     }
 

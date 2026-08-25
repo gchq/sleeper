@@ -48,7 +48,7 @@ import java.util.UUID;
  * cd rust
  * cargo build --release --target=x86_64-unknown-linux-gnu
  * cd ../java
- * mvn clean install -am -pl compaction/compaction-datafusion -Pquick -DskipRust
+ * mvn clean install -am -pl compaction/compaction-datafusion -Pquick -Drust.skip
  * </pre>
  */
 public class InvestigateDataFusionCompactionOOM {

@@ -14,11 +14,6 @@
 ARG BASE_IMAGE=sleeper-base:current
 FROM ${BASE_IMAGE}
 
-# Install Lambda Runtime Interface Emulator
-RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.35/aws-lambda-rie && \
-    mv ./aws-lambda-rie /usr/local/bin/ && \
-    chmod +x /usr/local/bin/aws-lambda-rie
-
 WORKDIR /function
 COPY lambda.jar ./
 COPY aws-lambda-java-runtime.jar ./

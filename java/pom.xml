@@ -94,7 +94,7 @@
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.3</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
-        <protobuf.version>4.35.1</protobuf.version>
+        <protobuf.version>4.36.0</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
         <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of LZ4 Java with vulnerabilities. -->
@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.39</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.53.2</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.54.2</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -194,12 +194,12 @@
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.13.0</jjwt.build.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
-        <guava.version>33.7.0-jre</guava.version>
+        <guava.version>33.7.1-jre</guava.version>
         <google.errorprone.version>2.50.0</google.errorprone.version>
         <google.http-client.version>2.2.0</google.http-client.version>
         <google.grpc.version>1.83.1</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.265.0</cdk.version>
+        <cdk.version>2.266.0</cdk.version>
         <constructs.version>10.8.1</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
         <jsii.version>1.139.0</jsii.version>
@@ -231,7 +231,7 @@
         <apfloat.version>1.16.0</apfloat.version>
         <joda-time.version>2.14.3</joda-time.version>
         <json-smart.version>2.6.0</json-smart.version>
-        <jnr.ffi.version>2.3.0</jnr.ffi.version>
+        <jnr.ffi.version>2.3.1</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <docker-java.version>3.7.1</docker-java.version>
         <jib.version>0.28.2</jib.version>
@@ -276,7 +276,7 @@
         <compiler.plugin.version>3.15.0</compiler.plugin.version>
         <enforcer.plugin.version>3.6.3</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
-        <spotbugs.version>4.10.3</spotbugs.version>
+        <spotbugs.version>4.10.4</spotbugs.version>
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
         <findbugs.version>3.0.2</findbugs.version>
         <dependency.plugin.version>3.11.0</dependency.plugin.version>
