@@ -627,6 +627,18 @@ export default function PropertiesPage({ adapter }: { adapter: PropertiesPageAda
 	const setShowDescriptions = useCallback((v: boolean) => setParam('descriptions', v ? null : '0'), [setParam])
 	const setView = useCallback((v: View) => setParam('view', v === 'text' ? 'text' : null), [setParam])
 
+	const [searchInput, setSearchInput] = useState(search)
+	useEffect(() => {
+		setSearchInput(search)
+	}, [search])
+	const onSearchChange = useCallback(
+		(v: string) => {
+			setSearchInput(v)
+			setSearch(v)
+		},
+		[setSearch],
+	)
+
 	const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
 	const [basket, setBasket] = useState<Basket>({})
 	const [editing, setEditing] = useState<{
@@ -854,8 +866,8 @@ export default function PropertiesPage({ adapter }: { adapter: PropertiesPageAda
 						className="search-input"
 						type="search"
 						placeholder="Search properties..."
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
+						value={searchInput}
+						onChange={(e) => onSearchChange(e.target.value)}
 						aria-label="Search properties"
 					/>
 					<button
