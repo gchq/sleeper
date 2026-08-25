@@ -59,8 +59,8 @@ VERSION_TAG_CONFIG_PATH="$HOME/.sleeper/version-tag"
 get_version_tag() {
   if [ -f "$VERSION_TAG_CONFIG_PATH" ]; then
     cat "$VERSION_TAG_CONFIG_PATH"
-  elif [ -f "$HOME/.sleeper/local-repo" ] && [ "$(get_registry)" == "$DEFAULT_REGISTRY" ]; then
-    # Use the source version only when pulling from the default registry
+  elif [ -f "$HOME/.sleeper/local-repo" ] && [ "$(get_registry)" != "$DEFAULT_REGISTRY" ]; then
+    # Use the source version only when pulling from a custom registry
     cat "$(<"$HOME/.sleeper/local-repo")/templates/version.txt"
   else
     echo "latest"

@@ -53,9 +53,8 @@ You can pin a specific Docker image version tag using `--version`:
 ./scripts/cli/install.sh --version 0.27.0
 ```
 
-The version can also be updated later using `sleeper cli set-version <version>`. When installing from a local
-repository with the default registry, the version from `templates/version.txt` in that repository is used
-automatically. With a custom registry, the default is `latest`.
+The version can also be updated later using `sleeper cli set-version <version>`. When using a custom registry with
+a local repository, the version is taken from `templates/version.txt`. Otherwise the default is `latest`.
 
 ### Commands
 
