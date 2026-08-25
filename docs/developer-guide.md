@@ -114,7 +114,7 @@ alongside it and use that instead of downloading from GitHub, and will record th
 ./scripts/cli/install.sh
 ```
 
-If you want to use a custom container registry with locally built images, pass the `--registry` flag:
+If you want to use a custom container registry pass the `--registry` flag:
 
 ```bash
 ./scripts/cli/install.sh --registry your.registry.example.com/sleeper
