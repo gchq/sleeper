@@ -49,8 +49,8 @@ Bugfixes:
 This release includes fixes to the alignment of build numbers caused by previously missed error in update script.
 
 General issues:
-    - Change Rust builder to use Trixie over Bookworm.
-    - New VPC interface endpoints for ECR for environment deployment.
+- Change Rust builder to use Trixie over Bookworm.
+- New VPC interface endpoints for ECR for environment deployment.
 
 
 ## Version 0.37.2
@@ -75,12 +75,9 @@ Configuration:
 Documentation:
 - Documented local build validation in Rust for developers.
 
-Python
-- Updated to the support multiple support version of python ahead of work on the API
-
 Bugfixes:
 - REST API now has the correct permissions to add a Sleeper table.
-- EKS state machine no longer fails when run in a region with a non-standard partition
+- EKS state machine no longer fails when run in a region with a non-standard partition.
 
 
 ## Version 0.37.1
