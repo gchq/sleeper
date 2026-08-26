@@ -6,15 +6,66 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.37.4
+
+### 26th August 2026
+
+This includes improvements to bulk import on EKS, and fixes to SQL query filtering, Athena and the Python client.
+
+Bulk import:
+- Bulk import on EKS is now limited to a certain number of bulk import jobs running in EKS at once, with `sleeper.bulk.import.eks.job.concurrency.level`.
+- Bulk import on EKS Auto Mode can now configure a node pool for EC2 instances to run in the cluster. This is currently experimental.
+  - Enable node pool configuration with `sleeper.bulk.import.eks.automode.nodepool.enabled`.
+  - Set the maximum number of CPUs with `sleeper.bulk.import.eks.automode.nodepool.cpu.limit`.
+  - Set EC2 instance types with `sleeper.bulk.import.eks.automode.nodepool.instance.types`.
+- Bulk import job definitions are now retained in S3 for a period configured with `sleeper.bulk.import.job.file.retention.days`.
+
+Athena:
+- Added support for map type fields.
+- Added an Athena connector using the DataFusion data engine, see `sleeper.athena.handler.classes`.
+- Removed the simple Athena connector as its purpose was unclear and there was no equivalent in the other query paths.
+
+Python:
+- SQL filters can be set on queries run via Python.
+- Added a Python API to create a Sleeper table.
+
+Scripts:
+- Organised scripts into new `table` and `report` directories.
+- Improved usability of command line options and added `--help`, for:
+  - `scripts/deploy/deployNew.sh`
+  - `scripts/report/filesStatusReport.sh`
+  - `scripts/report/listTables.sh`
+
+Deployment:
+- Docker images for lambdas in Sleeper no longer include the AWS Lambda Runtime Interface Emulator.
+  - Previously vulnerabilities were detected in our images that were only in the RIE.
+- You can now add tags to an environment deployment with `sleeper environment deploy -c tags=key1,value1,key2,value2`.
+
+Documentation:
+- Documented SQL query filtering.
+- Documented the REST API to add a Sleeper table.
+- New configuration example for a lighter instance with less data, at `example/light`.
+- Added Jupyter notebook examples at `python/examples`
+
+Bugfixes:
+- When you enter an SQL filter with `scripts/utility/query.sh`, the query no longer fails, and runs with a row retriever that supports SQL.
+- SQL query filtering now works for tables with a sort key.
+- Fixed queries in Athena.
+- Python client now reads region from `AWS_REGION` environment variable, and allows region to be set explicitly.
+- Deleting a Sleeper instance will no longer fail due to writing query results to S3 during the tear down.
+- Ingest batcher no longer discards files if the target job queue does not exist.
+- Queries run in a lambda no longer fail when `resultsPublisherConfig` is set to an empty JSON object.
+
+
 ## Version 0.37.3
 
 ### 29th July 2026
 
 This release includes fixes to the alignment of build numbers caused by previously missed error in update script.
 
-General issues:
-    - Change Rust builder to use Trixie over Bookworm
-    - New VPC interface endpoints for ECR for environment deployment
+- Upgraded the Rust builder to Debian Trixie instead of Bookworm.
+- Added a VPC interface endpoint for AWS ECR in the environment deployment.
+
 
 ## Version 0.37.2
 
@@ -38,12 +89,9 @@ Configuration:
 Documentation:
 - Documented local build validation in Rust for developers.
 
-Python
-- Updated to the support multiple support version of python ahead of work on the API
-
 Bugfixes:
 - REST API now has the correct permissions to add a Sleeper table.
-- EKS state machine no longer fails when run in a region with a non-standard partition
+- EKS state machine no longer fails when run in a region with a non-standard partition.
 
 
 ## Version 0.37.1
