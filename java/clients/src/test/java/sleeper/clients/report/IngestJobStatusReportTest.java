@@ -39,7 +39,7 @@ public class IngestJobStatusReportTest {
             assertThat(args.tableName()).isEqualTo("my-table");
             assertThat(args.reportType()).isEqualTo("STANDARD");
             assertThat(args.queryType()).isEqualTo(JobQuery.Type.ALL);
-            assertThat(args.queryParameters()).isNull();
+            assertThat(args.queryParameters()).isEqualTo("");
         }
 
         @Test
@@ -50,7 +50,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldReadQueryTypeDetailedFlag() {
-            Arguments args = readArguments("detailed-instance", "detailed-table", "-d", "--query-paramerters", "23");
+            Arguments args = readArguments("detailed-instance", "detailed-table", "-d", "--query-params", "23");
             assertThat(args.queryType()).isEqualTo(JobQuery.Type.DETAILED);
         }
 
@@ -62,7 +62,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shoudlReadQueryTypeRangeFlag() {
-            Arguments args = readArguments("range-instance", "range-table", "-r", "--query-parameters", "20200101120000,20220101120000");
+            Arguments args = readArguments("range-instance", "range-table", "-r", "--query-params", "20200101120000,20220101120000");
             assertThat(args.queryType()).isEqualTo(JobQuery.Type.RANGE);
         }
 
@@ -105,14 +105,14 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectRangeReportWithInvalidateDateFormat() {
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r", "--query-parameters", "asdad,wqas"))
+            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r", "--query-params", "asdad,wqas"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Range parameters don't match expected format: yyyyMMddHHmmss");
         }
 
         @Test
         void shouldRejectRangeReportWithEndDateBeforeStartDate() {
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r", "--query-parameters", "20200101120000,19700101120000"))
+            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r", "--query-params", "20200101120000,19700101120000"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Range end is before rage start. Range start: 20200101120000, range end: 19700101120000");
         }

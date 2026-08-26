@@ -184,7 +184,7 @@ public class IngestJobStatusReport {
                         .map(s -> s.toUpperCase(Locale.ROOT))
                         .orElse(DEFAULT_REPORTER),
                 determineQueryType(arguments),
-                arguments.getOptionalString("query-parameters").orElse(""));
+                arguments.getOptionalString("query-params").orElse(""));
     }
 
     /**
