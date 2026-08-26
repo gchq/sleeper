@@ -13,7 +13,7 @@ At time of writing the deployment process consists of:
 - A script to build the system at `scripts/build/build.sh`
 - Scripts to publish and retrieve published artefacts, see [publishing artefacts](./publishing.md)
 - Scripts to deploy an instance, see the [deployment guide](../deployment-guide.md)
-- The admin client to edit the instance configuration at `scripts/utility/instance/adminClient.sh`
+- The admin client to edit the instance configuration at `scripts/utility/adminClient.sh`
 
 We'll look at each of these one at a time, and see how they relate to the CDK app.
 
@@ -110,7 +110,7 @@ would be done by the CDK.
 There are now no extra operations, it just calls CloudFormation to delete the stacks, and waits for this to complete.
 You can achieve the same thing by using the CDK or CloudFormation directly.
 
-## Admin client (`scripts/utility/instance/adminClient.sh`)
+## Admin client (`scripts/utility/adminClient.sh`)
 
 This script invokes a CLI to perform various admin operations. The relevant parts here are to edit the configuration of
 a Sleeper instance and its tables. This opens a text editor for the instance properties or table properties, and then
