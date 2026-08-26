@@ -34,6 +34,11 @@
         }
       },
       "Outputs": {
+        "TestInstanceRestApiD3F3DFA3Ref": {
+          "Value": {
+            "Ref": "RestApi0C43BF4B"
+          }
+        },
         "RestApiUrl": {
           "Value": {
             "Fn::GetAtt": [

@@ -25,6 +25,7 @@ import software.amazon.awscdk.aws_apigatewayv2_integrations.HttpLambdaIntegratio
 import software.amazon.awscdk.services.apigatewayv2.AddRoutesOptions;
 import software.amazon.awscdk.services.apigatewayv2.HttpApi;
 import software.amazon.awscdk.services.apigatewayv2.HttpMethod;
+import software.amazon.awscdk.services.apigatewayv2.HttpRoute;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.constructs.Construct;
 
@@ -36,6 +37,7 @@ import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -68,12 +70,15 @@ public class RestApiStack extends NestedStack {
                 .build();
 
         HttpLambdaIntegration integration = HttpLambdaIntegration.Builder.create(instanceId, lambda).build();
-        restHttpApi.addRoutes(AddRoutesOptions.builder()
+        List<HttpRoute> allRoutes = new ArrayList<>();
+        allRoutes.addAll(restHttpApi.addRoutes(AddRoutesOptions.builder()
                 .path("/sleeper/tables")
                 .methods(List.of(HttpMethod.POST))
-                .integration(integration).build());
+                .integration(integration).build()));
 
         coreStacks.grantReadAndWriteTablesConfig(lambda);
+
+        allRoutes.forEach(route -> route.grantInvoke(coreStacks.getAdminPolicyForGrants()));
 
         new CfnOutput(this, "RestApiUrl", CfnOutputProps.builder()
                 .value(restHttpApi.getApiEndpoint())
