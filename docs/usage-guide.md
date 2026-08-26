@@ -57,7 +57,7 @@ look at. To adjust property values it will open a text editor for a temporary fi
 You can run this client with the following command:
 
 ```bash
-./scripts/utility/instance/adminClient.sh ${INSTANCE_ID}
+./scripts/utility/adminClient.sh ${INSTANCE_ID}
 ```
 
 ### Compact all files
@@ -67,7 +67,7 @@ partition, you can run the following script to force compactions to be created f
 skipped by the compaction strategy:
 
 ```bash
-./scripts/utility/files/compactAllFiles.sh ${INSTANCE_ID} <table-name-1> <table-name-2> ...
+./scripts/utility/compactAllFiles.sh ${INSTANCE_ID} <table-name-1> <table-name-2> ...
 ```
 
 ## Java API

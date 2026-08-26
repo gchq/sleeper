@@ -101,7 +101,7 @@ This has a key field called `key` which is of type string. The code that randoml
 which are random strings of length 10. To run a query, use:
 
 ```bash
-./scripts/utility/query/query.sh <instance-id>
+./scripts/utility/query.sh <instance-id>
 ```
 
 As the data that went into the table is randomly generated, you will need to query for a range of keys, rather than a
