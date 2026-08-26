@@ -202,7 +202,7 @@ public class IngestJobStatusReport {
                 throw new CommandArgumentsException("Report type not supported: " + reportType + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
             }
             if (requiresQueryParams.contains(queryType)) {
-                if (queryParameters.equals(null) || "".equals(queryParameters)) {
+                if (queryParameters == null || "".equals(queryParameters)) {
                     throw new CommandArgumentsException("Query parameters are required for the query type: " + queryType);
                 } else if (queryType.equals(JobQuery.Type.RANGE)) {
                     String[] params = queryParameters.split(",");
