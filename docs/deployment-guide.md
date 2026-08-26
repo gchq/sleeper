@@ -110,10 +110,10 @@ it is paused.
 
 ```bash
 # Pause the System
-./scripts/utility/instance/pauseSystem.sh ${INSTANCE_ID}
+./scripts/utility/pauseSystem.sh ${INSTANCE_ID}
 
 # Restart the System
-./scripts/utility/instance/restartSystem.sh ${INSTANCE_ID}
+./scripts/utility/restartSystem.sh ${INSTANCE_ID}
 ```
 
 ### Tear down
