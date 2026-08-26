@@ -32,6 +32,7 @@ import java.util.Objects;
 public class TrackedQuery {
     private final String queryId;
     private final String subQueryId;
+    private final String tableId;
     private final Long lastUpdateTime;
     private final Long expiryDate;
     private final QueryState lastKnownState;
@@ -41,6 +42,7 @@ public class TrackedQuery {
     private TrackedQuery(Builder builder) {
         queryId = builder.queryId;
         subQueryId = builder.subQueryId;
+        tableId = builder.tableId;
         lastUpdateTime = builder.lastUpdateTime;
         expiryDate = builder.expiryDate;
         lastKnownState = builder.lastKnownState;
@@ -53,13 +55,17 @@ public class TrackedQuery {
     }
 
     public Builder toBuilder() {
-        return builder().queryId(queryId).subQueryId(subQueryId)
+        return builder().queryId(queryId).subQueryId(subQueryId).tableId(tableId)
                 .lastUpdateTime(lastUpdateTime).expiryDate(expiryDate)
                 .lastKnownState(lastKnownState).rowCount(rowCount).errorMessage(errorMessage);
     }
 
     public String getQueryId() {
         return queryId;
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
     public QueryState getLastKnownState() {
@@ -97,6 +103,7 @@ public class TrackedQuery {
         TrackedQuery that = (TrackedQuery) o;
         return Objects.equals(queryId, that.queryId)
                 && Objects.equals(subQueryId, that.subQueryId)
+                && Objects.equals(tableId, that.tableId)
                 && Objects.equals(lastUpdateTime, that.lastUpdateTime)
                 && Objects.equals(expiryDate, that.expiryDate)
                 && lastKnownState == that.lastKnownState
@@ -106,7 +113,7 @@ public class TrackedQuery {
 
     @Override
     public int hashCode() {
-        return Objects.hash(queryId, subQueryId, lastUpdateTime, expiryDate, lastKnownState, rowCount, errorMessage);
+        return Objects.hash(queryId, subQueryId, tableId, lastUpdateTime, expiryDate, lastKnownState, rowCount, errorMessage);
     }
 
     @Override
@@ -114,6 +121,7 @@ public class TrackedQuery {
         return "TrackedQuery{" +
                 "queryId='" + queryId + '\'' +
                 ", subQueryId='" + subQueryId + '\'' +
+                ", tableId='" + tableId + '\'' +
                 ", lastUpdateTime=" + lastUpdateTime +
                 ", expiryDate=" + expiryDate +
                 ", lastKnownState=" + lastKnownState +
@@ -128,6 +136,7 @@ public class TrackedQuery {
     public static final class Builder {
         private String queryId;
         private String subQueryId = "-";
+        private String tableId;
         private Long lastUpdateTime;
         private Long expiryDate;
         private QueryState lastKnownState;
@@ -156,6 +165,17 @@ public class TrackedQuery {
          */
         public Builder subQueryId(String subQueryId) {
             this.subQueryId = subQueryId;
+            return this;
+        }
+
+        /**
+         * Provides the unique ID of the Sleeper table the query ran against.
+         *
+         * @param  tableId the table ID
+         * @return         the builder
+         */
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 

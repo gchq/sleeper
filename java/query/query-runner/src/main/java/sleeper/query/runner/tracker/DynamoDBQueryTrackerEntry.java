@@ -40,12 +40,14 @@ class DynamoDBQueryTrackerEntry {
     static final String LAST_KNOWN_STATE = "lastKnownState";
     static final String ROW_COUNT = "rowCount";
     static final String SUB_QUERY_ID = "subQueryId";
+    static final String TABLE_ID = "tableId";
     static final String ERROR_MESSAGE = "errors";
     static final String EXPIRY_DATE = "expiryDate";
     static final String NON_NESTED_QUERY_PLACEHOLDER = "-";
 
     private final String queryId;
     private final String subQueryId;
+    private final String tableId;
     private final QueryState state;
     private final long rowCount;
     private final String errorMessage;
@@ -53,19 +55,23 @@ class DynamoDBQueryTrackerEntry {
     private DynamoDBQueryTrackerEntry(Builder builder) {
         queryId = builder.queryId;
         subQueryId = builder.subQueryId;
+        tableId = builder.tableId;
         state = builder.state;
         rowCount = builder.rowCount;
         errorMessage = builder.errorMessage;
     }
 
     public static Builder withQuery(Query query) {
-        return builder().queryId(query.getQueryId());
+        return builder()
+                .queryId(query.getQueryId())
+                .tableId(query.getTableId());
     }
 
     public static Builder withLeafQuery(LeafPartitionQuery query) {
         return builder()
                 .queryId(query.getQueryId())
-                .subQueryId(query.getSubQueryId());
+                .subQueryId(query.getSubQueryId())
+                .tableId(query.getTableId());
     }
 
     public static Builder builder() {
@@ -99,6 +105,12 @@ class DynamoDBQueryTrackerEntry {
                 .value(AttributeValue.fromS(state.name()))
                 .action(AttributeAction.PUT)
                 .build());
+        if (Objects.nonNull(tableId)) {
+            valueUpdate.put(TABLE_ID, AttributeValueUpdate.builder()
+                    .value(AttributeValue.fromS(tableId))
+                    .action(AttributeAction.PUT)
+                    .build());
+        }
         if (Objects.nonNull(errorMessage)) {
             valueUpdate.put(ERROR_MESSAGE, AttributeValueUpdate.builder()
                     .value(AttributeValue.fromS(errorMessage))
@@ -115,6 +127,10 @@ class DynamoDBQueryTrackerEntry {
         Long rowCount = Long.valueOf(stringAttributeValueMap.get(ROW_COUNT).n());
         QueryState state = QueryState.valueOf(stringAttributeValueMap.get(LAST_KNOWN_STATE).s());
         String subQueryId = stringAttributeValueMap.get(SUB_QUERY_ID).s();
+        String tableId = null;
+        if (stringAttributeValueMap.containsKey(TABLE_ID)) {
+            tableId = stringAttributeValueMap.get(TABLE_ID).s();
+        }
         String errorMessage = null;
         if (stringAttributeValueMap.containsKey(ERROR_MESSAGE)) {
             errorMessage = stringAttributeValueMap.get(ERROR_MESSAGE).s();
@@ -122,6 +138,7 @@ class DynamoDBQueryTrackerEntry {
 
         return TrackedQuery.builder()
                 .queryId(id).subQueryId(subQueryId)
+                .tableId(tableId)
                 .lastUpdateTime(updateTime)
                 .expiryDate(expiryDate)
                 .lastKnownState(state)
@@ -146,6 +163,7 @@ class DynamoDBQueryTrackerEntry {
     public DynamoDBQueryTrackerEntry updateParent(QueryState state, long totalRowCount) {
         return builder()
                 .queryId(queryId)
+                .tableId(tableId)
                 .state(state)
                 .rowCount(totalRowCount)
                 .errorMessage(errorMessage)
@@ -155,6 +173,7 @@ class DynamoDBQueryTrackerEntry {
     static final class Builder {
         private String queryId;
         private String subQueryId = NON_NESTED_QUERY_PLACEHOLDER;
+        private String tableId;
         private QueryState state;
         private long rowCount;
         private String errorMessage;
@@ -169,6 +188,11 @@ class DynamoDBQueryTrackerEntry {
 
         public Builder subQueryId(String subQueryId) {
             this.subQueryId = subQueryId;
+            return this;
+        }
+
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 

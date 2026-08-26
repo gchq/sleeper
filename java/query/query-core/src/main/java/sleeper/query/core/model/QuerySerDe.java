@@ -26,6 +26,9 @@ import sleeper.core.table.TableNotFoundException;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+
 /**
  * Serialises a query to and from JSON.
  * <p>
@@ -55,8 +58,8 @@ public class QuerySerDe {
         this(new SchemaLoaderFromTableProvider(tablePropertiesProvider));
     }
 
-    public QuerySerDe(Schema schema) {
-        this(new FixedSchemaLoader(schema));
+    public QuerySerDe(String tableId, String tableName, Schema schema) {
+        this(new FixedSchemaLoader(tableId, tableName, schema));
     }
 
     /**
@@ -155,6 +158,22 @@ public class QuerySerDe {
          * @return         a Sleeper table schema
          */
         Optional<Schema> getSchemaByTableId(String tableId);
+
+        /**
+         * Resolves the unique ID of a Sleeper table from its name.
+         *
+         * @param  tableName the Sleeper table name
+         * @return           the unique ID of the table
+         */
+        String getTableIdForName(String tableName);
+
+        /**
+         * Resolves the name of a Sleeper table from its unique ID.
+         *
+         * @param  tableId the unique ID of the Sleeper table
+         * @return         the name of the table
+         */
+        String getTableNameForId(String tableId);
     }
 
     /**
@@ -181,6 +200,16 @@ public class QuerySerDe {
             return getSchema(() -> provider.getById(tableId));
         }
 
+        @Override
+        public String getTableIdForName(String tableName) {
+            return provider.getByName(tableName).get(TABLE_ID);
+        }
+
+        @Override
+        public String getTableNameForId(String tableId) {
+            return provider.getById(tableId).get(TABLE_NAME);
+        }
+
         private Optional<Schema> getSchema(Supplier<TableProperties> getProperties) {
             try {
                 return Optional.of(getProperties.get())
@@ -198,9 +227,13 @@ public class QuerySerDe {
      * required or desirable.
      */
     private static class FixedSchemaLoader implements SchemaLoader {
+        private final String tableId;
+        private final String tableName;
         private final Schema schema;
 
-        FixedSchemaLoader(Schema schema) {
+        FixedSchemaLoader(String tableId, String tableName, Schema schema) {
+            this.tableId = tableId;
+            this.tableName = tableName;
             this.schema = schema;
         }
 
@@ -212,6 +245,16 @@ public class QuerySerDe {
         @Override
         public Optional<Schema> getSchemaByTableId(String tableId) {
             return Optional.of(schema);
+        }
+
+        @Override
+        public String getTableIdForName(String tableName) {
+            return tableId;
+        }
+
+        @Override
+        public String getTableNameForId(String tableId) {
+            return tableName;
         }
     }
 }

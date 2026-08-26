@@ -1,5 +1,6 @@
 {
   "tableName": "my-table",
+  "tableId": "my-table-id",
   "queryId": "test-query",
   "type": "Query",
   "regions": [

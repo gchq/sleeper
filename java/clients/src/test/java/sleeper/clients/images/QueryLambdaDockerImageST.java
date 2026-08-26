@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryLambdaDockerImageST extends DockerImageTestBase {
@@ -86,7 +87,7 @@ public class QueryLambdaDockerImageST extends DockerImageTestBase {
     }
 
     private String buildInvocation(LeafPartitionQuery... queries) {
-        QuerySerDe querySerDe = new QuerySerDe(tableProperties.getSchema());
+        QuerySerDe querySerDe = new QuerySerDe(tableProperties.get(TABLE_ID), tableProperties.get(TABLE_NAME), tableProperties.getSchema());
         List<String> messageBodies = Stream.of(queries).map(querySerDe::toJson).toList();
         return FakeSqsLambdaInvocation.fromMessageBodies(messageBodies).toJson();
     }

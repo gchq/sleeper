@@ -90,6 +90,7 @@ public class QuerySerDeTest {
         Query query = Query.builder()
                 .queryId("test-query")
                 .tableName("my-table")
+                .tableId("my-table-id")
                 .regions(List.of(regionWithOneRange(factory -> factory
                         .createRange("key", 10, 20))))
                 .processingConfig(processingConfig)
@@ -156,7 +157,7 @@ public class QuerySerDeTest {
         }
 
         private static QuerySerDeConstructor serDeFromSchema() {
-            return properties -> new QuerySerDe(properties.getSchema());
+            return properties -> new QuerySerDe(properties.get(TABLE_ID), properties.get(TABLE_NAME), properties.getSchema());
         }
 
         private static QuerySerDeConstructor serDeFromPropertiesProvider() {
@@ -178,6 +179,7 @@ public class QuerySerDeTest {
             tableProperties.setSchema(createSchemaWithKey("key", new ByteArrayType()));
             Query query = Query.builder()
                     .tableName("my-table")
+                    .tableId("my-table-id")
                     .queryId("id")
                     .regions(List.of(
                             regionWithOneRange(factory -> factory
@@ -234,7 +236,7 @@ public class QuerySerDeTest {
     class Validation {
 
         @Test
-        public void shouldThrowExceptionWithNoTableName() {
+        public void shouldThrowExceptionWithNoTableNameOrId() {
             // Given
             String queryJson = "{" +
                     "  \"queryId\": \"id\"," +
@@ -246,7 +248,7 @@ public class QuerySerDeTest {
             QuerySerDe querySerDe = createSerDe();
             assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
                     .isInstanceOf(QueryValidationException.class)
-                    .hasMessage("Query validation failed for query \"id\": tableName field must be provided");
+                    .hasMessage("Query validation failed for query \"id\": tableName or tableId field must be provided");
         }
 
         @Test
@@ -303,6 +305,83 @@ public class QuerySerDeTest {
                     .isInstanceOf(QueryValidationException.class)
                     .hasMessage("Query validation failed for query \"id\": " +
                             "Unknown query type \"invalid-query-type\"");
+        }
+    }
+
+    @Nested
+    @DisplayName("Reconcile table name and id")
+    class ReconcileTableNameAndId {
+
+        @Test
+        void shouldResolveTableIdFromTableNameWhenOnlyNameProvided() {
+            // Given a query with only the table name set
+            String queryJson = "{" +
+                    "  \"queryId\": \"id\"," +
+                    "  \"type\": \"Query\"," +
+                    "  \"tableName\": \"my-table\"," +
+                    "  \"regions\": []" +
+                    "}";
+
+            // When
+            Query query = createSerDe().fromJsonOrLeafQuery(queryJson).asParentQuery();
+
+            // Then the id is resolved from the table index
+            assertThat(query.getTableName()).isEqualTo("my-table");
+            assertThat(query.getTableId()).isEqualTo("my-table-id");
+        }
+
+        @Test
+        void shouldResolveTableNameFromTableIdWhenOnlyIdProvided() {
+            // Given a query with only the table id set
+            String queryJson = "{" +
+                    "  \"queryId\": \"id\"," +
+                    "  \"type\": \"Query\"," +
+                    "  \"tableId\": \"my-table-id\"," +
+                    "  \"regions\": []" +
+                    "}";
+
+            // When
+            Query query = createSerDe().fromJsonOrLeafQuery(queryJson).asParentQuery();
+
+            // Then the name is resolved from the table index
+            assertThat(query.getTableName()).isEqualTo("my-table");
+            assertThat(query.getTableId()).isEqualTo("my-table-id");
+        }
+
+        @Test
+        void shouldAcceptMatchingTableNameAndId() {
+            // Given a query with a matching name and id
+            String queryJson = "{" +
+                    "  \"queryId\": \"id\"," +
+                    "  \"type\": \"Query\"," +
+                    "  \"tableName\": \"my-table\"," +
+                    "  \"tableId\": \"my-table-id\"," +
+                    "  \"regions\": []" +
+                    "}";
+
+            // When
+            Query query = createSerDe().fromJsonOrLeafQuery(queryJson).asParentQuery();
+
+            // Then
+            assertThat(query.getTableName()).isEqualTo("my-table");
+            assertThat(query.getTableId()).isEqualTo("my-table-id");
+        }
+
+        @Test
+        void shouldRejectMismatchedTableNameAndId() {
+            // Given a query where the id does not match the named table
+            String queryJson = "{" +
+                    "  \"queryId\": \"id\"," +
+                    "  \"type\": \"Query\"," +
+                    "  \"tableName\": \"my-table\"," +
+                    "  \"tableId\": \"wrong-id\"," +
+                    "  \"regions\": []" +
+                    "}";
+
+            // When / Then
+            assertThatThrownBy(() -> createSerDe().fromJsonOrLeafQuery(queryJson))
+                    .isInstanceOf(QueryValidationException.class)
+                    .hasMessageContaining("does not match");
         }
     }
 

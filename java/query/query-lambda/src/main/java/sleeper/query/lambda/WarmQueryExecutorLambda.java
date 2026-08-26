@@ -50,6 +50,7 @@ import java.util.UUID;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
@@ -109,11 +110,12 @@ public class WarmQueryExecutorLambda implements RequestHandler<ScheduledEvent, V
                 .forEach(tableProperties -> {
                     Schema schema = tableProperties.getSchema();
                     Region region = getRegion(schema);
-                    QuerySerDe querySerDe = new QuerySerDe(schema);
+                    QuerySerDe querySerDe = new QuerySerDe(tableProperties.get(TABLE_ID), tableProperties.get(TABLE_NAME), schema);
 
                     Query query = Query.builder()
                             .queryId(UUID.randomUUID().toString())
                             .tableName(tableProperties.get(TABLE_NAME))
+                            .tableId(tableProperties.get(TABLE_ID))
                             .regions(List.of(region))
                             .processingConfig(QueryProcessingConfig.builder()
                                     .resultsPublisherConfig(Collections.singletonMap(ResultsOutput.DESTINATION, NO_RESULTS_OUTPUT))

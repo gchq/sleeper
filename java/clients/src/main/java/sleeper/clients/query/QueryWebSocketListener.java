@@ -51,7 +51,7 @@ public class QueryWebSocketListener {
 
     public QueryWebSocketListener(Schema schema, Query query, QueryWebSocketHandler handler) {
         this.serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
-        this.querySerDe = new QuerySerDe(schema);
+        this.querySerDe = new QuerySerDe(query.getTableId(), query.getTableName(), schema);
         this.query = query;
         this.handler = handler;
     }

@@ -64,7 +64,7 @@ class SleeperClientTest {
     Schema schema = createSchemaWithKey("key", new StringType());
     InMemorySleeperInstance instance = new InMemorySleeperInstance(instanceProperties);
     SleeperClient sleeperClient = instance.sleeperClientBuilder().build();
-    QuerySerDe querySerDe = new QuerySerDe(schema);
+    QuerySerDe querySerDe = new QuerySerDe("test-table-id", "test-table", schema);
     QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
     Field rowKey = schema.getField("key").orElseThrow();
 

@@ -40,6 +40,7 @@ import sleeper.query.runner.websocket.QueryWebSocketMessageSerDe;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -53,7 +54,7 @@ public abstract class QueryWebSocketClientTestBase {
     protected final TableIndex tableIndex = new InMemoryTableIndex();
     protected final TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance(tableIndex);
     protected final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, tablePropertiesStore);
-    protected final QuerySerDe querySerDe = new QuerySerDe(schema);
+    protected final QuerySerDe querySerDe = new QuerySerDe(tableProperties.get(TABLE_ID), tableProperties.get(TABLE_NAME), schema);
     protected final FakeWebSocketConnection connection = new FakeWebSocketConnection();
     protected final QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
     protected final RowJsonSerDe rowSerDe = new RowJsonSerDe(schema);

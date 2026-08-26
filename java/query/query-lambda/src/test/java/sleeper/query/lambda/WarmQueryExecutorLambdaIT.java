@@ -47,6 +47,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -92,7 +93,7 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
 
     private List<Query> receiveQueries() {
         return receiveMessages(instanceProperties.get(QUERY_QUEUE_URL))
-                .map(new QuerySerDe(schema)::fromJson)
+                .map(new QuerySerDe(tableProperties.get(TABLE_ID), tableProperties.get(TABLE_NAME), schema)::fromJson)
                 .toList();
     }
 

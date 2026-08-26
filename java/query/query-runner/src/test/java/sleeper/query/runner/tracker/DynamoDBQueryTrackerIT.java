@@ -85,6 +85,33 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
     }
 
     @Test
+    public void shouldStoreTableIdAgainstParentQuery() throws QueryTrackerException {
+        // When
+        queryTracker().queryInProgress(createQueryWithIdAndTable("my-id", "my-table-id"));
+
+        // Then
+        assertThat(queryTracker().getStatus("my-id").getTableId()).isEqualTo("my-table-id");
+    }
+
+    @Test
+    public void shouldStoreTableIdAgainstSubQuery() throws QueryTrackerException {
+        // When
+        queryTracker().queryInProgress(createSubQueryWithId("parent", "sub-id"));
+
+        // Then
+        assertThat(queryTracker().getStatus("parent", "sub-id").getTableId()).isEqualTo("myTableId");
+    }
+
+    @Test
+    public void shouldReturnNullTableIdWhenNotStored() throws QueryTrackerException {
+        // When
+        queryTracker().queryInProgress(createQueryWithId("my-id"));
+
+        // Then
+        assertThat(queryTracker().getStatus("my-id").getTableId()).isNull();
+    }
+
+    @Test
     public void shouldSetAgeOffTimeAccordingToInstanceProperty() throws QueryTrackerException {
         // Given
         instanceProperties.setNumber(QUERY_TRACKER_ITEM_TTL_IN_DAYS, 3);
@@ -305,6 +332,20 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         Region region = new Region(range);
         return Query.builder()
                 .tableName("myTable")
+                .queryId(id)
+                .regions(List.of(region))
+                .build();
+    }
+
+    private Query createQueryWithIdAndTable(String id, String tableId) {
+        Field field = new Field("field1", new IntType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Range range = rangeFactory.createExactRange(field, 1);
+        Region region = new Region(range);
+        return Query.builder()
+                .tableName("myTable")
+                .tableId(tableId)
                 .queryId(id)
                 .regions(List.of(region))
                 .build();

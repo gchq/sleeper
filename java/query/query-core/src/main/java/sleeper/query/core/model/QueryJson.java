@@ -20,6 +20,7 @@ import com.google.gson.JsonElement;
 
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionSerDe;
+import sleeper.core.schema.Schema;
 
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,7 @@ class QueryJson {
         return builder()
                 .type("Query")
                 .tableName(query.getTableName())
+                .tableId(query.getTableId())
                 .queryId(query.getQueryId())
                 .regions(writeRegions(query.getRegions(), regionSerDe))
                 .processingConfig(query.getProcessingConfig())
@@ -102,7 +104,7 @@ class QueryJson {
         }
         switch (type) {
             case "Query":
-                return new QueryOrLeafPartitionQuery(toParentQuery(regionSerDeByName(schemaLoader)));
+                return new QueryOrLeafPartitionQuery(toParentQuery(schemaLoader));
             case "LeafPartitionQuery":
                 return new QueryOrLeafPartitionQuery(toLeafQuery(regionSerDeById(schemaLoader)));
             default:
@@ -111,19 +113,60 @@ class QueryJson {
     }
 
     Query toParentQuery(QuerySerDe.SchemaLoader schemaLoader) {
-        return toParentQuery(regionSerDeByName(schemaLoader));
-    }
-
-    private Query toParentQuery(RegionSerDe regionSerDe) {
         if (queryId == null) {
             throw new QueryValidationException(queryId, statusReportDestinations, "queryId field must be provided");
         }
+        ReconciledTable table = reconcileTable(schemaLoader);
+        RegionSerDe regionSerDe = new RegionSerDe(table.schema());
         return Query.builder()
-                .tableName(tableName)
+                .tableName(table.tableName())
+                .tableId(table.tableId())
                 .queryId(queryId)
                 .regions(readRegions(regions, regionSerDe))
                 .processingConfig(readQueryProcessingConfig())
                 .build();
+    }
+
+    /**
+     * Reconciles the table name and unique ID provided in the query. When only one is given, the other
+     * is resolved from the table index; when both are given, they must refer to the same table.
+     *
+     * @param  schemaLoader the loader used to resolve table names, IDs and schemas
+     * @return              the resolved table name, ID and schema
+     */
+    private ReconciledTable reconcileTable(QuerySerDe.SchemaLoader schemaLoader) {
+        if (tableName == null && tableId == null) {
+            throw new QueryValidationException(queryId, statusReportDestinations, "tableName or tableId field must be provided");
+        }
+        if (tableName != null) {
+            Schema schema = schemaLoader.getSchemaByTableName(tableName)
+                    .orElseThrow(() -> new QueryValidationException(queryId, statusReportDestinations,
+                            "Table could not be found with name: \"" + tableName + "\""));
+            String resolvedId = schemaLoader.getTableIdForName(tableName);
+            if (tableId != null && resolvedId != null && !tableId.equals(resolvedId)) {
+                throw new QueryValidationException(queryId, statusReportDestinations,
+                        "tableId \"" + tableId + "\" does not match the id \"" + resolvedId
+                                + "\" of the table named \"" + tableName + "\"");
+            }
+            return new ReconciledTable(tableName, resolvedId != null ? resolvedId : tableId, schema);
+        } else {
+            Schema schema = schemaLoader.getSchemaByTableId(tableId)
+                    .orElseThrow(() -> new QueryValidationException(queryId, statusReportDestinations,
+                            "Table could not be found with ID: \"" + tableId + "\""));
+            String resolvedName = schemaLoader.getTableNameForId(tableId);
+            return new ReconciledTable(resolvedName, tableId, schema);
+        }
+    }
+
+    /**
+     * The resolved identifiers and schema of the table a query runs against, after reconciling the
+     * table name and ID provided in the query.
+     *
+     * @param tableName the resolved table name
+     * @param tableId   the resolved table unique ID
+     * @param schema    the table schema
+     */
+    private record ReconciledTable(String tableName, String tableId, Schema schema) {
     }
 
     private QueryProcessingConfig readQueryProcessingConfig() {
@@ -153,13 +196,6 @@ class QueryJson {
 
     private static Builder builder() {
         return new Builder();
-    }
-
-    private RegionSerDe regionSerDeByName(QuerySerDe.SchemaLoader schemaLoader) {
-        if (tableName == null) {
-            throw new QueryValidationException(queryId, statusReportDestinations, "tableName field must be provided");
-        }
-        return regionSerDeByName(schemaLoader, queryId, statusReportDestinations, tableName);
     }
 
     private RegionSerDe regionSerDeById(QuerySerDe.SchemaLoader schemaLoader) {

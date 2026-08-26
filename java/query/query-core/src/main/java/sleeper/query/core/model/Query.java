@@ -29,6 +29,7 @@ import java.util.UUID;
  */
 public class Query {
     private final String tableName;
+    private final String tableId;
     private final String queryId;
     private final List<Region> regions;
     private final QueryProcessingConfig processingConfig;
@@ -37,6 +38,7 @@ public class Query {
         processingConfig = Objects.requireNonNull(builder.processingConfig, "processingConfig must not be null");
         queryId = Optional.ofNullable(builder.queryId).orElseGet(() -> UUID.randomUUID().toString());
         tableName = requireNonNull(builder.tableName, builder, "tableName field must be provided");
+        tableId = builder.tableId;
         regions = requireNonNull(builder.regions, builder, "regions field must be provided");
     }
 
@@ -53,6 +55,10 @@ public class Query {
 
     public String getTableName() {
         return tableName;
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
     public String getQueryId() {
@@ -126,6 +132,7 @@ public class Query {
     private Builder toBuilder() {
         return builder()
                 .tableName(tableName)
+                .tableId(tableId)
                 .queryId(queryId)
                 .regions(regions)
                 .processingConfig(processingConfig);
@@ -140,19 +147,21 @@ public class Query {
             return false;
         }
         Query query = (Query) object;
-        return Objects.equals(tableName, query.tableName) && Objects.equals(queryId, query.queryId) && Objects.equals(regions, query.regions)
+        return Objects.equals(tableName, query.tableName) && Objects.equals(tableId, query.tableId)
+                && Objects.equals(queryId, query.queryId) && Objects.equals(regions, query.regions)
                 && Objects.equals(processingConfig, query.processingConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableName, queryId, regions, processingConfig);
+        return Objects.hash(tableName, tableId, queryId, regions, processingConfig);
     }
 
     @Override
     public String toString() {
         return "Query{" +
                 "tableName='" + tableName + '\'' +
+                ", tableId='" + tableId + '\'' +
                 ", queryId='" + queryId + '\'' +
                 ", regions=" + regions +
                 ", processingConfig=" + processingConfig +
@@ -164,6 +173,7 @@ public class Query {
      */
     public static final class Builder {
         private String tableName;
+        private String tableId;
         private String queryId;
         private List<Region> regions;
         private QueryProcessingConfig processingConfig = QueryProcessingConfig.none();
@@ -179,6 +189,19 @@ public class Query {
          */
         public Builder tableName(String tableName) {
             this.tableName = tableName;
+            return this;
+        }
+
+        /**
+         * Provides the unique ID of the Sleeper table. This is optional when building a query — it is
+         * reconciled against the table name during deserialisation/validation, where the table index
+         * is available.
+         *
+         * @param  tableId the unique ID of the Sleeper table
+         * @return         the builder
+         */
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 
