@@ -22,7 +22,7 @@ class `sleeper.clients.query.QueryClient`. This class retrieves data directly fr
 
 ```bash
 INSTANCE_ID=myInstanceId
-./scripts/utility/query/query.sh ${INSTANCE_ID}
+./scripts/utility/query.sh ${INSTANCE_ID}
 ```
 
 This will give you the option of running either an "exact" query which allows you to type in either the exact key that
@@ -87,7 +87,7 @@ to SQS which could cost a lot of money.
 
 ```bash
 INSTANCE_ID=myInstanceId
-./scripts/utility/query/lambdaQuery.sh ${INSTANCE_ID}
+./scripts/utility/lambdaQuery.sh ${INSTANCE_ID}
 ```
 
 This will first ask you to choose whether you want the results to be sent to an S3 bucket or an SQS queue. If you
@@ -117,7 +117,7 @@ executed in a lambda and the results returned directly through the WebSocket. Th
 
 ```bash
 INSTANCE_ID=myInstanceId
-./scripts/utility/query/webSocketQuery.sh ${INSTANCE_ID}
+./scripts/utility/webSocketQuery.sh ${INSTANCE_ID}
 ```
 
 This will print the results to standard out.

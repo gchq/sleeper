@@ -44,7 +44,7 @@ your Sleeper instance id. Some of the reports also require a table name. Some of
 option.
 
 The available reports are as follows. They can be accessed through the admin client
-with `./scripts/utility/instance/adminClient.sh ${INSTANCE_ID}`, or with the commands below:
+with `./scripts/utility/adminClient.sh ${INSTANCE_ID}`, or with the commands below:
 
 | Report Name                   | Description                                       | Command                                                                                                                                                             | Defaults                                                           |
 |-------------------------------|---------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
