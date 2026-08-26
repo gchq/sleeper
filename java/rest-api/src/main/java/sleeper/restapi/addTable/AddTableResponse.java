@@ -45,6 +45,14 @@ public class AddTableResponse {
                 .build();
     }
 
+    public String getTableId() {
+        return tableId;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
     @Override
     public boolean equals(Object object) {
         if (this == object) {
