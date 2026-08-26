@@ -58,6 +58,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class DeployNewInstanceIT {
+
     InstanceProperties instanceProperties = new InstanceProperties();
     Schema schema = createSchemaWithKey("key");
     InMemoryTableIndex tableIndex = new InMemoryTableIndex();
