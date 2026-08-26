@@ -29,7 +29,7 @@ shift
 
 pushd "${PROJECT_ROOT}/java"
 
-mvn install -am -pl "$MODULE" -Pquick,skipShade -DskipRust
-mvn verify -Pstyle,skipShade -DskipRust -pl "$MODULES" "$@"
+mvn install -am -pl "$MODULE" -Pquick,skipShade -Drust.skip
+mvn verify -Pstyle,skipShade -Drust.skip -pl "$MODULES" "$@"
 
 popd

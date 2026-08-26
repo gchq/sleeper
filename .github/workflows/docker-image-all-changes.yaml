@@ -2,6 +2,7 @@ name: Docker Image Tests All
 on:
   pull_request:
     paths:
+      - 'java/**/Dockerfile'
       - '.github/workflows/docker-image-all.yaml'
       - '.github/workflows/docker-image-test.yaml'
       - 'code-style/.trivyignore.yaml'
