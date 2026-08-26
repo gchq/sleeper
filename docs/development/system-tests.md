@@ -57,7 +57,7 @@ Finally, when you are ready to tear down the instance, run:
 ```
 
 This will check the `scripts/generated` folder for the instance to tear down. That gets created during deployment, or
-with `scripts/utility/instance/downloadConfig.sh`. Alternatively, you can skip reading the generated folder by giving an instance
+with `scripts/utility/downloadConfig.sh`. Alternatively, you can skip reading the generated folder by giving an instance
 ID:
 
 ```bash
