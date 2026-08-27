@@ -21,15 +21,18 @@ PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
 pushd "${PROJECT_ROOT}/java"
 echo "Compiling..."
-mvn clean install -Pquick,skipShade -q -pl clients,system-test/system-test-suite -am -DskipRust
+mvn clean install -Pquick,skipShade -q -pl clients,system-test/system-test-suite -am -Drust.skip
+
 echo "Regenerating templates..."
 mvn exec:java -q -pl clients \
   -Dexec.mainClass="sleeper.clients.deploy.documentation.GeneratePropertiesTemplates" \
   -Dexec.args="$PROJECT_ROOT"
+
 echo "Regenerating deployment images..."
 mvn exec:java -e -q -pl clients \
   -Dexec.mainClass="sleeper.clients.deploy.documentation.GenerateDockerImageDocumentation" \
   -Dexec.args="$PROJECT_ROOT"
+
 echo "Regenerating system test suite documentation..."
 mvn exec:java -e -q -pl system-test/system-test-suite \
   -Dexec.classpathScope="test" \

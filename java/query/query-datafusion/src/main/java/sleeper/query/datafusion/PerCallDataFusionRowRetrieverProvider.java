@@ -84,6 +84,11 @@ public class PerCallDataFusionRowRetrieverProvider implements LeafPartitionRowRe
         public boolean supportsFiltersAndAggregations() {
             return true;
         }
+
+        @Override
+        public boolean supportsSqlFiltering() {
+            return true;
+        }
     }
 
     private static void closeQuietly(AutoCloseable closeable, String description) {

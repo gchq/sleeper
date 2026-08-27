@@ -43,22 +43,29 @@ public class BulkImportJobLoaderFromS3IT extends LocalStackTestBase {
     @Test
     void shouldLoadBulkImportJobFromS3() {
         // Given
-        String jobRunId = "load-run";
-        String jobId = "load-job-id";
+        String objectKey = "folder/test.json";
 
         BulkImportJob bulkImportJob = BulkImportJob.builder()
-                .id(jobId)
+                .id("load-job-id")
                 .tableId("test-table-id")
                 .files(List.of("/load-job.parquet"))
                 .build();
 
-        BulkImportJobWriterToS3 bulkImportJobWriterToS3 = new BulkImportJobWriterToS3(instanceProperties, s3Client);
-        bulkImportJobWriterToS3.writeJobToBulkImportBucket(bulkImportJob, jobRunId);
+        // When
+        writer().writeJobToBulkImportBucket(bulkImportJob, objectKey);
+        BulkImportJob foundJob = loadJob(objectKey);
 
-        // When / Then
-        assertThat(BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobId, jobRunId, s3Client))
-                .isEqualTo(bulkImportJob);
-        // And the file is deleted after it is loaded
-        assertThat(listObjectKeys(instanceProperties.get(BULK_IMPORT_BUCKET))).isEmpty();
+        // Then
+        assertThat(foundJob).isEqualTo(bulkImportJob);
+        // And the file is kept
+        assertThat(listObjectKeys(instanceProperties.get(BULK_IMPORT_BUCKET))).containsExactly(objectKey);
+    }
+
+    private BulkImportJobWriterToS3 writer() {
+        return new BulkImportJobWriterToS3(instanceProperties, s3Client);
+    }
+
+    private BulkImportJob loadJob(String objectKey) {
+        return BulkImportJobLoaderFromS3.loadJob(instanceProperties, objectKey, s3Client);
     }
 }

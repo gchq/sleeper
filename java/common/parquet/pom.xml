@@ -19,7 +19,7 @@
     <parent>
         <artifactId>common</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.37.3</version>
+        <version>0.37.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -41,6 +41,12 @@
                     <artifactId>hadoop-yarn-client</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!-- Included to allow for Hadoop to create S3Client, due to replacement of package within the aws-sdk -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>apache-client</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>

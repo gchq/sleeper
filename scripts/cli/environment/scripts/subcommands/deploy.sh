@@ -36,6 +36,61 @@ ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
 ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
 OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 
+# Find a tags parameter, if one was passed (e.g. -c tags=key,value,key,value)
+TAGS_VALUE=""
+TAGS_PRESENT=false
+for param in "${CDK_PARAMS[@]}"; do
+  case "$param" in
+    tags=*)
+      TAGS_PRESENT=true
+      TAGS_VALUE="${param#tags=}"
+      ;;
+  esac
+done
+
+# When run interactively with tags, show them for confirmation. Tags are key,value pairs, so an
+# odd number of entries or an empty key/value means a tag is missing its value; block and ask the
+# user to run the command again. Non-interactive runs (e.g. automation) skip this; the CDK app
+# validates the tags either way.
+if [ "$TAGS_PRESENT" = true ] && [ -t 0 ]; then
+  IFS=',' read -r -a TAG_ITEMS <<< "$TAGS_VALUE"
+  TAGS_VALID=true
+  echo ""
+  echo "Tags to apply to all environment resources:"
+  i=0
+  while [ "$i" -lt "${#TAG_ITEMS[@]}" ]; do
+    TAG_KEY="${TAG_ITEMS[$i]}"
+    if [ $((i + 1)) -lt "${#TAG_ITEMS[@]}" ]; then
+      TAG_VALUE="${TAG_ITEMS[$((i + 1))]}"
+    else
+      TAG_VALUE=""
+    fi
+    if [ -z "$TAG_KEY" ]; then
+      TAG_KEY="(no key)"
+      TAGS_VALID=false
+    fi
+    if [ -z "$TAG_VALUE" ]; then
+      TAG_VALUE="(no value)"
+      TAGS_VALID=false
+    fi
+    printf '  %s = %s\n' "$TAG_KEY" "$TAG_VALUE"
+    i=$((i + 2))
+  done
+  echo ""
+  if [ "$TAGS_VALID" != true ]; then
+    echo "Each tag needs both a key and a value. Please run the command again with a value for every tag."
+    exit 1
+  fi
+  read -r -p "Continue? [y/n] " TAGS_CONFIRM
+  case "$TAGS_CONFIRM" in
+    y | Y) ;;
+    *)
+      echo "Aborted."
+      exit 1
+      ;;
+  esac
+fi
+
 pushd "$CDK_ROOT_DIR" > /dev/null
 cdk deploy -c instanceId="$ENVIRONMENT_ID" --outputs-file "$OUTPUTS_FILE" --all "${CDK_PARAMS[@]}"
 popd > /dev/null

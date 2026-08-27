@@ -142,12 +142,11 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     }
 
     /**
-     * Retrieves a printer to output the property values in a human-readable string format.
+     * Creates a builder for a printer to output the property values in a human-readable string format.
      *
-     * @param  writer a writer to print to
-     * @return        the pretty printer
+     * @return the pretty printer builder
      */
-    protected abstract SleeperPropertiesPrettyPrinter<T> getPrettyPrinter(PrintWriter writer);
+    protected abstract SleeperPropertiesPrettyPrinter.Builder<T> prettyPrinterBuilder();
 
     /**
      * Writes the property values to the given writer in a human-readable string format.
@@ -155,7 +154,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * @param writer the writer
      */
     public void saveUsingPrettyPrinter(PrintWriter writer) {
-        this.getPrettyPrinter(writer).print(this);
+        this.prettyPrinterBuilder().writer(writer).build().print(this);
     }
 
     @Override
@@ -459,7 +458,9 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
     @Override
     public String toString() {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        getPrettyPrinter(new PrintWriter(stream, false, StandardCharsets.UTF_8)).print(this);
+        prettyPrinterBuilder().hideUnsetProperties(true)
+                .writer(new PrintWriter(stream, false, StandardCharsets.UTF_8))
+                .build().print(this);
         return stream.toString(StandardCharsets.UTF_8);
     }
 }

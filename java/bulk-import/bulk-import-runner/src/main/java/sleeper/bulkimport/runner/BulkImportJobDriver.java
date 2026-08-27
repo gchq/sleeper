@@ -113,9 +113,9 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
      * {@link org.apache.spark.SparkException}, which extends {@link Exception} but is thrown unchecked at runtime
      * because Spark is implemented in Scala, which does not enforce checked exceptions.
      *
-     * @param job      the bulk import job to run
-     * @param jobRunId the ID of this run of the job
-     * @param taskId   the ID of the task running the job
+     * @param  job       the bulk import job to run
+     * @param  jobRunId  the ID of this run of the job
+     * @param  taskId    the ID of the task running the job
      * @throws Exception if the job fails for any reason, including Spark failures
      */
     public void run(BulkImportJob job, String jobRunId, String taskId) throws Exception {
@@ -228,15 +228,16 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
     }
 
     private static void startOrThrow(String[] args, BulkImportJobRunner runner) throws Exception {
-        if (args.length != 5) {
-            throw new IllegalArgumentException("Expected 5 arguments:" +
-                    " <config bucket name> <bulk import job ID> <bulk import task ID> <bulk import job run ID> <bulk import mode>");
+        if (args.length != 6) {
+            throw new IllegalArgumentException("Expected 6 arguments:" +
+                    " <config bucket name> <bulk import job ID> <bulk import task ID> <bulk import job run ID> <S3 object key of job definition file> <bulk import mode>");
         }
         String configBucket = args[0];
         String jobId = args[1];
         String taskId = args[2];
         String jobRunId = args[3];
-        String bulkImportMode = args[4];
+        String jobFileObjectKey = args[4];
+        String bulkImportMode = args[5];
 
         LOGGER.info("Starting bulk import job driver");
         LOGGER.info("Config bucket: {}", configBucket);
@@ -261,7 +262,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
                 throw e;
             }
 
-            BulkImportJob bulkImportJob = BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobId, jobRunId, s3Client);
+            BulkImportJob bulkImportJob = BulkImportJobLoaderFromS3.loadJob(instanceProperties, jobFileObjectKey, s3Client);
 
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);

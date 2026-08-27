@@ -30,6 +30,7 @@ import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
+import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
@@ -67,6 +68,11 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
     @Override
     public SleeperInstanceDriver instance(SystemTestParameters parameters) {
         return new LocalStackSleeperInstanceDriver(parameters, clients);
+    }
+
+    @Override
+    public SleeperTablesDriver tables(SystemTestParameters parameters) {
+        return new LocalStackSleeperTablesDriver(clients);
     }
 
     @Override

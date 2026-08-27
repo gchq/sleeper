@@ -29,10 +29,10 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_JOB_FILE_RETENTION_DAYS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -168,17 +168,17 @@ public class SleeperPropertiesValidationTest {
         void shouldFailValidationWithTwoInvalidInstanceProperties() {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
-            instanceProperties.set(LOG_RETENTION_IN_DAYS, "abc");
+            instanceProperties.set(BULK_IMPORT_JOB_FILE_RETENTION_DAYS, "abc");
             instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "def");
 
             // When
             assertThatThrownBy(instanceProperties::validate)
                     .isInstanceOf(SleeperPropertiesInvalidException.class)
-                    .hasMessageContaining("Property sleeper.log.retention.days was invalid. It was \"abc\".")
+                    .hasMessageContaining("Property sleeper.fs.s3a.max-connections was invalid. It was \"def\".")
                     .hasMessageContaining("Failure 1 of 2.")
                     .extracting("invalidValues")
                     .isEqualTo(Map.of(
-                            LOG_RETENTION_IN_DAYS, "abc",
+                            BULK_IMPORT_JOB_FILE_RETENTION_DAYS, "abc",
                             MAXIMUM_CONNECTIONS_TO_S3, "def"));
         }
 

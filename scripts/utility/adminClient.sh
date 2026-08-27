@@ -21,7 +21,7 @@ if [[ -z $1 ]]; then
   exit 1
 fi
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 JAR_DIR=${SCRIPTS_DIR}/jars
 

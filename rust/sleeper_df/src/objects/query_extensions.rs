@@ -42,10 +42,8 @@ impl ExtensionFFIDetails for FFISQLExtension {
     fn validate(&self) -> Result<(), color_eyre::Report> {
         if self.sql.is_null() {
             bail!("SQL query string is NULL");
-        } else {
-            // Is string valid?
-            let _ = unpack_string(self.sql)?;
         }
+        let _ = unpack_string(self.sql)?;
         Ok(())
     }
 }

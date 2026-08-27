@@ -52,7 +52,7 @@ pub struct FFILeafPartitionQueryConfig {
     pub explain_plans: bool,
     /// Length of extension array
     pub extensions_len: usize,
-    /// Array of optional extensions
+    /// Array of optional extensions. Maybe NULL if and only if `extensions_len` is zero.
     pub extensions: *const FFIExtension,
 }
 

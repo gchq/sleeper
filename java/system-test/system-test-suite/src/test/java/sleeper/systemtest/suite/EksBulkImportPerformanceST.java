@@ -38,7 +38,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_P
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRowsIn;
 
 @SystemTest
-// Expensive because it takes a lot of very costly EKS instances to import this many rows.
+// Expensive because it takes a lot of very costly EC2 instances to import this many rows.
 @Expensive2
 public class EksBulkImportPerformanceST {
     @BeforeEach

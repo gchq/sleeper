@@ -50,6 +50,7 @@ public class DockerDeployment {
     public static final DockerDeployment EKS_BULK_IMPORT = builder()
             .deploymentName("bulk-import-runner")
             .optionalStack(OptionalStack.EksBulkImportStack)
+            .multiplatform(true)
             .useDefaultBaseImage(false)
             .add();
     public static final DockerDeployment COMPACTION = builder()

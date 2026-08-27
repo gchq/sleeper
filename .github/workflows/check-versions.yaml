@@ -1,0 +1,19 @@
+name: Check code versions
+on:
+  pull_request:
+    paths:
+     - '.github/workflows/check-versions.yaml'
+     - '.github/scripts/checkVersionNumber.sh'
+     - 'java/pom.xml'
+     - 'python/pyproject.toml'
+     - 'rust/Cargo.toml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check version numbers are set correctly
+        run: .github/scripts/checkVersionNumber.sh
+

@@ -79,6 +79,7 @@ public class EmrServerlessPlatformExecutorWiremockIT {
         BulkImportArguments arguments = BulkImportArguments.builder()
                 .instanceProperties(instanceProperties)
                 .bulkImportJob(job).jobRunId("run-id")
+                .jobFileObjectKey("folder/job.json")
                 .build();
         stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
 
@@ -110,6 +111,7 @@ public class EmrServerlessPlatformExecutorWiremockIT {
         BulkImportArguments arguments = BulkImportArguments.builder()
                 .instanceProperties(instanceProperties)
                 .bulkImportJob(job).jobRunId("run-id")
+                .jobFileObjectKey("folder/job.json")
                 .build();
         stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
 

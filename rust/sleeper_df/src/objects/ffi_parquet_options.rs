@@ -37,15 +37,25 @@ pub const DICT_ENCODE_VALUES: bool = false;
 #[repr(C)]
 #[derive(Debug)]
 pub struct FFIParquetOptions {
+    /// Whether to read page indexes from Parquet files.
     pub read_page_indexes: bool,
+    /// Maximum number of rows per Parquet row group.
     pub max_row_group_size: usize,
+    /// Maximum size in bytes for Parquet pages.
     pub max_page_size: usize,
+    /// Parquet compression codec name.
     pub compression: *const c_char,
+    /// Parquet writer version (e.g., "v2").
     pub writer_version: *const c_char,
+    /// Maximum length to truncate column names in statistics.
     pub column_truncate_length: usize,
+    /// Maximum length to truncate statistics values.
     pub stats_truncate_length: usize,
+    /// Whether to dictionary-encode row key fields.
     pub dict_enc_row_keys: bool,
+    /// Whether to dictionary-encode sort key fields.
     pub dict_enc_sort_keys: bool,
+    /// Whether to dictionary-encode value fields.
     pub dict_enc_values: bool,
 }
 

@@ -21,7 +21,9 @@ import sleeper.core.properties.model.EksClusterType;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.joining;
 import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 /**
@@ -59,6 +61,49 @@ public interface EKSProperty {
                     "Valid values are: " + describeEnumValuesInLowerCase(EksClusterType.class))
             .defaultValue(EksClusterType.FARGATE.toString())
             .validationPredicate(EksClusterType::isValid)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.enabled")
+            .description("(EKS mode only, automode cluster type only) Whether to configure the node pool for the " +
+                    "cluster. If this is enabled, related properties will be applied. Otherwise it will use the " +
+                    "default behaviour for EKS Auto Mode.\n" +
+                    "Node pool configuration is currently experimental.")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.instance.types")
+            .description("(EKS mode only, automode cluster type only) Comma-separated list of AWS EC2 instance types " +
+                    "that the Karpenter NodePool is allowed to launch for Spark pods.\n" +
+                    "Only applied if node pool configuration is enabled. Currently experimental.")
+            .defaultValue(Stream.of(
+                    "m8g.xlarge", "m8g.2xlarge", "m8g.4xlarge", "m8g.8xlarge", "m8g.12xlarge", "m8g.16xlarge",
+                    "m8gd.xlarge", "m8gd.2xlarge", "m8gd.4xlarge", "m8gd.8xlarge", "m8gd.12xlarge", "m8gd.16xlarge",
+                    "m8i.xlarge", "m8i.2xlarge", "m8i.4xlarge", "m8i.8xlarge", "m8i.12xlarge", "m8i.16xlarge",
+                    "m8id.xlarge", "m8id.2xlarge", "m8id.4xlarge", "m8id.8xlarge", "m8id.12xlarge", "m8id.16xlarge")
+                    .collect(joining(",")))
+            .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT = Index.propertyBuilder("sleeper.bulk.import.eks.automode.nodepool.cpu.limit")
+            .description("(EKS mode only, automode cluster type only) The maximum total number of CPU cores the " +
+                    "Karpenter NodePool is allowed to provision across all nodes. Must be an integer greater than 0.\n" +
+                    "The default value assumes 2 concurrent jobs, running on 29 executors and 1 driver, each with 4 " +
+                    "cores, plus one submitter per job and some slack.\n" +
+                    "Only applied if node pool configuration is enabled. Currently experimental.")
+            .defaultValue("256")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true)
+            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL = Index.propertyBuilder("sleeper.bulk.import.eks.job.concurrency.level")
+            .description("(EKS mode only) This controls the number of Kubernetes jobs that can run concurrently in the " +
+                    "bulk import namespace. Enforced by a ResourceQuota on count/jobs.batch.")
+            .defaultValue("2")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true)
             .build();
@@ -113,7 +158,7 @@ public interface EKSProperty {
             .description("(EKS mode only) The number of cores used by a Spark executor. Used to set spark.executor.cores. " +
                     "Should reflect the Fargate task shape rather than the EMR EC2 instance type.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("5")
+            .defaultValue("4")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_CORES = Index.propertyBuilder("sleeper.bulk.import.eks.spark.driver.cores")
             .description("(EKS mode only) The number of cores used by the Spark driver. Used to set spark.driver.cores. " +
@@ -144,7 +189,7 @@ public interface EKSProperty {
             .description("JVM options passed to the executors. Used to set spark.executor.extraJavaOptions.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue(
-                    "-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'")
+                    "-XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EKS_SPARK_DRIVER_EXTRA_JAVA_OPTIONS = Index.propertyBuilder("sleeper.bulk.import.eks.spark.driver.extra.java.options")
             .description("JVM options passed to the driver. Used to set spark.driver.extraJavaOptions.\n" +

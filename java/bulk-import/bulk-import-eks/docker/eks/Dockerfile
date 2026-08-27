@@ -17,6 +17,7 @@ FROM ${BASE_IMAGE}
 
 ENV PATH="$PATH:/opt/spark/bin"
 USER root
+
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 RUN rm /opt/spark/jars/*
 RUN mkdir /opt/spark/workdir

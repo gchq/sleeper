@@ -29,14 +29,17 @@ use std::{borrow::Borrow, collections::HashMap, slice};
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
-    // Length of all other arrays in struct.
+    /// Length of all other arrays in this struct.
     pub number_of_dimensions: usize,
-    // The mins array may NOT contain null pointers
+    /// Minimum boundary values. May not contain NULL pointers.
     pub mins: *const FFIRowKeyValue,
-    // The maxs array may contain null pointers!!
+    /// Maximum boundary values. May contain NULL pointers.
     pub maxs: *const FFIRowKeyValue,
+    /// Whether minimum boundaries are inclusive (true) or exclusive (false).
     pub mins_inclusive: *const bool,
+    /// Whether maximum boundaries are inclusive (true) or exclusive (false).
     pub maxs_inclusive: *const bool,
+    /// Array of dimension indexes in the row key.
     pub dimension_indexes: *const usize,
 }
 

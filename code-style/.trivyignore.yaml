@@ -3,54 +3,7 @@ vulnerabilities:
   # You can suppress known vulnerabilities here like this:
   # - id: CVE-2000-12345
 
-  # The AWS SDK is using a shaded version of Jackson which we're unable to manage or change.
-  # At time of writing we're unable to upgrade the AWS SDK because of the following issue:
-  # https://github.com/gchq/sleeper/issues/7459
-  # com.fasterxml.jackson.core:jackson-databind
-  - id: CVE-2026-54512
-  - id: CVE-2026-54513
-  - id: CVE-2026-54514
-  - id: CVE-2026-54515
-  - id: CVE-2026-54516
-  - id: CVE-2026-54517
-  - id: CVE-2026-54518
-  - id: CVE-2026-59888
-  - id: CVE-2026-59889
-  - id: GHSA-mhm7-754m-9p8w
-  # com.fasterxml.jackson.core:jackson-core
-  - id: GHSA-r7wm-3cxj-wff9
-
-  # AWS Lambda Runtime Interface Emulator (RIE) hasn't yet updated to the latest version of Go
-  # The following vulnerabilities are in the Go standard library. In Sleeper, the runtime
-  # interface emulator is only used for testing.
-  - id: CVE-2026-32280
-  - id: CVE-2026-32281
-  - id: CVE-2026-32282
-  - id: CVE-2026-32283
-  - id: CVE-2026-32288
-  - id: CVE-2026-32289
-  - id: CVE-2026-33811
-  - id: CVE-2026-33814
-  - id: CVE-2026-39820
-  - id: CVE-2026-39823
-  - id: CVE-2026-39825
-  - id: CVE-2026-39826
-  - id: CVE-2026-39836
-  - id: CVE-2026-42499
-  - id: CVE-2026-27145
-  - id: CVE-2026-42504
-  - id: CVE-2026-42507
-  - id: CVE-2026-39822
-  - id: CVE-2026-42505
-
-  # The RIE also has some vulnerabilities in its dependencies.
-  # github.com/go-chi/chi/v5
-  - id: CVE-2025-69725
-  # golang.org/x/sys
-  - id: CVE-2026-39824
-
   #  org.eclipse.jetty:jetty-security
   - id: CVE-2026-10050
   #  org.eclipse.jetty:jetty-server
   - id: CVE-2026-6790
-

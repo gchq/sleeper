@@ -714,3 +714,121 @@ async fn should_apply_sql_query_after_sleeper_aggregate() -> Result<(), Error> {
     assert_eq!(results, vec![[1, 12, 300], [1, 13, 400]]);
     Ok(())
 }
+
+#[tokio::test]
+async fn should_apply_sql_query_count_with_sort_column() -> Result<(), Error> {
+    // Given
+    let dir = tempdir()?;
+    let file_1 = file(&dir, "file1.parquet");
+    let file_2 = file(&dir, "file2.parquet");
+
+    let schema = Arc::new(Schema::new(vec![
+        Field::new("key", DataType::Int32, false),
+        Field::new("timestamp", DataType::Int32, false),
+        Field::new("value", DataType::Int32, false),
+    ]));
+
+    let data_1 = batch_of_int_fields(
+        schema.clone(),
+        [vec![1, 3, 5], vec![100, 110, 120], vec![10, 30, 50]],
+    )?;
+    let data_2 = batch_of_int_fields(schema.clone(), [vec![2, 4], vec![105, 115], vec![20, 40]])?;
+
+    write_file(&file_1, &data_1)?;
+    write_file(&file_2, &data_2)?;
+
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(true)
+        .row_key_cols(col_names(["key"]))
+        .sort_key_cols(col_names(["timestamp"]))
+        .region(SleeperRegion::new(HashMap::from([region_entry(
+            "key",
+            int_range(0, 10),
+        )])))
+        .output(OutputType::ArrowRecordBatch)
+        .build()?;
+
+    let query_config = LeafPartitionQueryConfig {
+        common: input,
+        explain_plans: false,
+        ranges: vec![SleeperRegion::new(HashMap::from([region_entry(
+            "key",
+            int_range(0, 10),
+        )]))],
+        requested_value_fields: None,
+        sql_query: Some("SELECT CAST(count(*) AS INT) as count FROM query_results;".to_string()),
+    };
+
+    // When
+    let result = run_query(&query_config, &SleeperContext::default()).await?;
+
+    // Then
+    let CompletedOutput::ArrowRecordBatch(stream) = result else {
+        bail!("Expected arrow record batch stream output");
+    };
+
+    let results = read_batches_of_int_fields(stream, ["count"]).await?;
+    assert_eq!(results, vec![[5]]);
+    Ok(())
+}
+
+#[tokio::test]
+async fn should_apply_sql_query_select_key_with_sort_column() -> Result<(), Error> {
+    // Given
+    let dir = tempdir()?;
+    let file_1 = file(&dir, "file1.parquet");
+    let file_2 = file(&dir, "file2.parquet");
+
+    let schema = Arc::new(Schema::new(vec![
+        Field::new("key", DataType::Int32, false),
+        Field::new("timestamp", DataType::Int32, false),
+        Field::new("value", DataType::Int32, false),
+    ]));
+
+    let data_1 = batch_of_int_fields(
+        schema.clone(),
+        [vec![1, 3, 5], vec![100, 110, 120], vec![10, 30, 50]],
+    )?;
+    let data_2 = batch_of_int_fields(schema.clone(), [vec![2, 4], vec![105, 115], vec![20, 40]])?;
+
+    write_file(&file_1, &data_1)?;
+    write_file(&file_2, &data_2)?;
+
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(true)
+        .row_key_cols(col_names(["key"]))
+        .sort_key_cols(col_names(["timestamp"]))
+        .region(SleeperRegion::new(HashMap::from([region_entry(
+            "key",
+            int_range(0, 10),
+        )])))
+        .output(OutputType::ArrowRecordBatch)
+        .build()?;
+
+    let query_config = LeafPartitionQueryConfig {
+        common: input,
+        explain_plans: false,
+        ranges: vec![SleeperRegion::new(HashMap::from([region_entry(
+            "key",
+            int_range(0, 10),
+        )]))],
+        requested_value_fields: None,
+        sql_query: Some("SELECT key FROM query_results;".to_string()),
+    };
+
+    // When
+    let result = run_query(&query_config, &SleeperContext::default()).await?;
+
+    // Then
+    let CompletedOutput::ArrowRecordBatch(stream) = result else {
+        bail!("Expected arrow record batch stream output");
+    };
+
+    assert_eq!(
+        read_batches_of_int_fields(stream, ["key"]).await?,
+        vec![[1], [2], [3], [4], [5]]
+    );
+    Ok(())
+}

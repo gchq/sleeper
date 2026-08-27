@@ -84,7 +84,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         @Test
         void shouldPushImagesForTwoStacks() throws Exception {
             // Given
-            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EksBulkImportStack));
+            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.BulkExportStack));
 
             // When
             uploadForDeployment(dockerDeploymentImageConfig());
@@ -92,7 +92,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             // Then
             String expectedBaseTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0";
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
-            String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.0.0";
+            String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-export:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
                     createBuildxBuilderInstanceCommand(),
@@ -100,7 +100,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     buildAndPushMultiplatformImageCommand(expectedBaseTag, "./docker/base"),
                     buildImageCommand(expectedTag1, "./docker/ingest", expectedBaseTag),
                     pushImageCommand(expectedTag1),
-                    buildImageCommand(expectedTag2, "./docker/bulk-import-runner"),
+                    buildImageCommand(expectedTag2, "./docker/bulk-export", expectedBaseTag),
                     pushImageCommand(expectedTag2));
         }
 
@@ -637,8 +637,9 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    buildImageCommand(expectedTag, "./docker/bulk-import-runner"),
-                    pushImageCommand(expectedTag));
+                    createBuildxBuilderInstanceCommand(),
+                    useBuildxBuilderInstanceCommand(),
+                    buildAndPushMultiplatformImageCommand(expectedTag, "./docker/bulk-import-runner"));
         }
 
         @Test
@@ -662,10 +663,8 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     buildAndPushMultiplatformImageCommand(expectedBaseTag1, "./docker/base"),
                     buildImageCommand(expectedTag1, "./docker/ingest", expectedBaseTag1),
                     pushImageCommand(expectedTag1),
-                    buildImageCommand(expectedBaseTag2, "./custom/base"),
-                    pushImageCommand(expectedBaseTag2),
-                    buildImageCommand(expectedTag2, "./docker/bulk-import-runner", expectedBaseTag2),
-                    pushImageCommand(expectedTag2));
+                    buildAndPushMultiplatformImageCommand(expectedBaseTag2, "./custom/base"),
+                    buildAndPushMultiplatformImageCommand(expectedTag2, "./docker/bulk-import-runner", expectedBaseTag2));
         }
     }
 

@@ -42,6 +42,9 @@ import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 
+/**
+ * Allows a user to enter a query from the command line and submit it via the WebSocket API.
+ */
 public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
     private final String apiUrl;
     private final QueryWebSocketClient queryWebSocketClient;

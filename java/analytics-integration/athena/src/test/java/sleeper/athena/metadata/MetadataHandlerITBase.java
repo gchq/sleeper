@@ -26,6 +26,8 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
+import sleeper.core.schema.type.StringType;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.io.IOException;
@@ -45,12 +47,14 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
     private static final String AWS_REGION_SYSTEM_PROPERTY = "aws.region";
     private static final String SECRET_KEY_SYSTEM_PROPERTY = "aws.secretAccessKey";
 
-    protected static final Schema TIME_SERIES_SCHEMA = Schema.builder()
+    protected static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
-                    new Field("year", new IntType()),
-                    new Field("month", new IntType()),
-                    new Field("day", new IntType()))
-            .valueFields(new Field("count", new LongType()))
+                    new Field("key1", new StringType()),
+                    new Field("key2", new IntType()),
+                    new Field("key3", new IntType()))
+            .valueFields(
+                    new Field("count", new LongType()),
+                    new Field("map", new MapType(new StringType(), new StringType())))
             .build();
 
     @BeforeEach
@@ -76,8 +80,8 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties) {
-        return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA,
-                s3Client, dynamoClient, 2018, 2019, 2020);
+        return TestUtils.createTable(instanceProperties, SCHEMA,
+                s3Client, dynamoClient, "F", "G", "U");
     }
 
     protected TableProperties createTable(InstanceProperties instanceProperties) throws IOException {

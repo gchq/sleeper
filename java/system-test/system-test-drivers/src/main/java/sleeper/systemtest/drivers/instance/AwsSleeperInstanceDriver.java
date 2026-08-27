@@ -27,9 +27,11 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.deploy.DeployNewInstance.StoreFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -38,6 +40,7 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
@@ -83,14 +86,22 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         deployConfig.getInstanceProperties().set(ID, instanceId);
         deployConfig.getInstanceProperties().set(VPC_ID, parameters.getVpcId());
         deployConfig.getInstanceProperties().set(SUBNETS, parameters.getSubnetIds());
+
+        Path configDir = parameters.getGeneratedDirectory();
+        try {
+            SaveLocalProperties.createDirectoryAndSaveProperties(configDir, deployConfig.getInstanceProperties(), deployConfig.getTableProperties().stream());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
         try {
             DeployNewInstance.builder()
                     .deployInstance(deployInstance)
-                    .accountName(parameters.getAccount())
-                    .s3Client(s3)
-                    .dynamoClient(dynamoDB)
-                    .deployInstanceConfiguration(deployConfig)
+                    .storeFactory(StoreFactory.withAwsClients(s3, dynamoDB))
+                    .instancePropertiesLoader(id -> S3InstanceProperties.loadGivenAccountAndInstanceId(s3, parameters.getAccount(), id))
+                    .expectedInstanceConfiguration(deployConfig)
                     .cdkApp(SleeperInternalCdkApp.STANDARD)
+                    .configDir(configDir)
                     .build().deploy();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -123,6 +134,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .deployInstance(deployInstance)
                     .properties(instanceProperties)
                     .tablePropertiesList(tableProperties)
+                    .configDir(parameters.getGeneratedDirectory())
                     .build().update();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

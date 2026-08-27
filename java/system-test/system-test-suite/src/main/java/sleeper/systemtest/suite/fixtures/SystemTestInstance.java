@@ -60,7 +60,9 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
@@ -103,7 +105,8 @@ public class SystemTestInstance {
             .disableSchedules(Set.of(COMPACTION_TASK_CREATION))
             .build();
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::createBulkImportPerformanceConfiguration);
-    public static final SystemTestInstanceConfiguration BULK_IMPORT_EKS = usingSystemTestDefaults("bi-eks", SystemTestInstance::createBulkImportOnEksConfiguration);
+    public static final SystemTestInstanceConfiguration BULK_IMPORT_EKS_FARGATE = usingSystemTestDefaults("bi-eks", SystemTestInstance::createBulkImportOnEksFargateConfiguration);
+    public static final SystemTestInstanceConfiguration BULK_IMPORT_EKS_AUTO = usingSystemTestDefaults("bi-eka", SystemTestInstance::createBulkImportOnEksAutoConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE_EKS = usingSystemTestDefaults("eksprf", SystemTestInstance::createBulkImportOnEksPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERSISTENT_EMR = usingSystemTestDefaults("emrpst", SystemTestInstance::createBulkImportOnPersistentEmrConfiguration);
     public static final SystemTestInstanceConfiguration PARALLEL_COMPACTIONS = usingSystemTestDefaults("cptpll", SystemTestInstance::createCompactionInParallelConfiguration);
@@ -219,6 +222,7 @@ public class SystemTestInstance {
     private static SleeperInstanceConfiguration createCompactionCreationConfiguration() {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
+        properties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 0);
         setSystemTestTags(properties, "compactionCreation", "Sleeper Maven system test compaction creation");
         return createInstanceConfiguration(properties);
     }
@@ -230,17 +234,28 @@ public class SystemTestInstance {
         return createInstanceConfiguration(properties);
     }
 
-    private static SleeperInstanceConfiguration createBulkImportOnEksConfiguration() {
+    private static SleeperInstanceConfiguration createBulkImportOnEksFargateConfiguration() {
         InstanceProperties properties = createInstanceProperties();
-        properties.setList(OPTIONAL_STACKS, List.of());
-        setSystemTestTags(properties, "bulkImportOnEks", "Sleeper Maven system test bulk import on EKS");
+        properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EksBulkImportStack));
+        properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.FARGATE.toString());
+        setSystemTestTags(properties, "bulkImportOnEksFargate", "Sleeper Maven system test bulk import on EKS w/Fargate");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static SleeperInstanceConfiguration createBulkImportOnEksAutoConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EksBulkImportStack));
+        properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE.toString());
+        setSystemTestTags(properties, "bulkImportOnEksAuto", "Sleeper Maven system test bulk import on EKS Auto Mode");
         return createInstanceConfiguration(properties);
     }
 
     private static SleeperInstanceConfiguration createBulkImportOnEksPerformanceConfiguration() {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
-        properties.setList(OPTIONAL_STACKS, List.of());
+        properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EksBulkImportStack));
         properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE.toString());
+        properties.setNumber(BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL, 5);
+        properties.setNumber(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT, 640); // 5 jobs x 4 cores x (29 executors + 1 driver), plus 1 submitter per job and slack
         setSystemTestTags(properties, "bulkImportPerformanceOnEks", "Sleeper Maven system test bulk import performance on EKS");
         return createInstanceConfiguration(properties);
     }

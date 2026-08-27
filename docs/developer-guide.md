@@ -90,7 +90,7 @@ work. Starting from the root of the Git repository:
 ./scripts/build/build.sh
 ```
 
-You can disable building the Rust code by passing `-DskipRust` as an argument to that script. This can also be passed in
+You can disable building the Rust code by passing `-Drust.skip` as an argument to that script. This can also be passed in
 any Maven build. This can speed up the build if you don't need the DataFusion data engine, or if you've already had a
 previous build that included Rust, skipping Rust will reuse the same binaries.
 
@@ -103,6 +103,8 @@ To build the Sleeper Docker tools, you can run this script:
 ```bash
 ./scripts/cli/buildAll.sh
 ```
+
+There are also scripts to build individual tools, like `scripts/cli/environment/buildWithDependencies.sh`.
 
 Use `./scripts/cli/runInDocker.sh` to run the built CLI. This will act the same as running the `sleeper`
 command after installing the CLI. You can manually install it if you copy that script somewhere, rename it to `sleeper`,
@@ -224,3 +226,14 @@ See [development scripts](development/dev-scripts.md) for scripts that can assis
 ## Building in a custom environment
 
 If your build environment needs to substitute the default container base image, route `cargo` or `rustup` traffic through internal mirrors, or trust a private certificate authority, see [building in a custom environment](development/custom-environment.md) for the available hooks and environment variables.
+
+## REST API development
+
+### Adding a new endpoint
+
+When you introduce a new endpoint:
+
+1. Add the route implementation under [java/rest-api](../../java/rest-api/src/main/java/sleeper/restapi) and register it in
+   `RestApiLambda#buildRoutes` so it is dispatched at runtime.
+2. Add a prose companion page under [docs/rest-api/](../usage/rest-api/) with a worked example, and
+   link it from the endpoints table in the [REST API overview](../usage/rest-api/rest-api-overview.md).
