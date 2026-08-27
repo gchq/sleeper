@@ -16,7 +16,7 @@
 set -e
 unset CDPATH
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 
 TEMPLATE_DIR=${SCRIPTS_DIR}/templates
 JAR_DIR=${SCRIPTS_DIR}/jars
