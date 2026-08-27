@@ -42,7 +42,7 @@ SUITE_PARAMS=("-Dsleeper.system.test.cluster.enabled=true" "-Drust.skip" "-Dslee
 # This configuration stops Java's built-in HttpClient from reusing connections that are
 # that old. At time of writing the system tests only use this in AwsSleeperTablesDriver.
 # This may be removed in https://github.com/gchq/sleeper/issues/7840.
-SUITE_PARAMS=(... "-DsystemTest.extraJvmArgs=-Djdk.httpclient.keepalive.timeout=300")
+export JDK_JAVA_OPTIONS="-Djdk.httpclient.keepalive.timeout=300"
 
 shift 4
 if [ "$MAIN_SUITE_NAME" == "performance" ] || [ "$MAIN_SUITE_NAME" == "functional" ]; then
