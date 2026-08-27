@@ -44,6 +44,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_FAILURE_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
@@ -79,6 +80,7 @@ public class SqsQueues {
             QUERY_QUEUE_URL,
             QUERY_RESULTS_QUEUE_URL,
             LEAF_PARTITION_QUERY_QUEUE_URL,
+            LEAF_PARTITION_QUERY_FAILURE_QUEUE_URL,
             COMPACTION_JOB_CREATION_QUEUE_URL,
             COMPACTION_JOB_QUEUE_URL,
             COMPACTION_PENDING_QUEUE_URL,

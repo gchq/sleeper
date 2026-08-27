@@ -119,6 +119,10 @@ public class LambdaHandler {
             .jar(LambdaJar.QUERY)
             .handler("sleeper.query.lambda.SqsLeafPartitionQueryLambda::handleRequest")
             .optionalStack(OptionalStack.QueryStack).add();
+    public static final LambdaHandler QUERY_LEAF_PARTITION_FAILURE = builder()
+            .jar(LambdaJar.QUERY)
+            .handler("sleeper.query.lambda.SqsQueryFailureLambda::handleRequest")
+            .optionalStack(OptionalStack.QueryStack).add();
     public static final LambdaHandler WEB_SOCKET_QUERY = builder()
             .jar(LambdaJar.QUERY)
             .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")

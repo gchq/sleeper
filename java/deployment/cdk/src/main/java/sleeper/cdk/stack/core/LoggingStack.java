@@ -118,6 +118,7 @@ public class LoggingStack extends NestedStack {
         GARBAGE_COLLECTOR("garbage-collector"),
         QUERY_EXECUTOR("query-executor"),
         QUERY_LEAF_PARTITION("query-leaf-partition"),
+        QUERY_LEAF_PARTITION_FAILURE("query-leaf-partition-failure"),
         QUERY_WEBSOCKET_HANDLER("query-websocket-handler"),
         QUERY_KEEP_WARM("query-keep-warm"),
         ITERATOR_APPLYING_ATHENA_HANDLER("IteratorApplying-athena-handler"),

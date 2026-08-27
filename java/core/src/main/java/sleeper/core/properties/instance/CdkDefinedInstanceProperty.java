@@ -329,6 +329,19 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the queue responsible for sending a leaf partition query to sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
+    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_FAILURE_QUEUE_URL = Index
+            .propertyBuilder("sleeper.query.leaf.partition.failure.queue.url")
+            .description("The URL of the queue that leaf partition queries are sent to when the processing lambda fails " +
+                    "(e.g. times out). A lambda marks the query as failed in the tracker before forwarding it to the " +
+                    "dead letter queue.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
+    CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_FAILURE_QUEUE_ARN = Index
+            .propertyBuilder("sleeper.query.leaf.partition.failure.queue.arn")
+            .description("The ARN of the queue that leaf partition queries are sent to when the processing lambda fails " +
+                    "(e.g. times out).")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
     CdkDefinedInstanceProperty LEAF_PARTITION_QUERY_QUEUE_DLQ_URL = Index
             .propertyBuilder("sleeper.query.leaf.partition.dlq.url")
             .description("The URL of the dead letter queue used when leaf partition querying sleeper.")

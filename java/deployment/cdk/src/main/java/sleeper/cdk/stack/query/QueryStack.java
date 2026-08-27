@@ -164,7 +164,8 @@ public class QueryStack extends NestedStack {
     private IFunction setupLeafPartitionQueryQueueAndLambda(
             SleeperCoreStacks coreStacks, InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode,
             IBucket jarsBucket, ITable queryTrackingTable) {
-        Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, coreStacks);
+        Queue leafPartitionQueryFailureQueue = setupLeafPartitionQueryFailureQueueAndLambda(coreStacks, instanceProperties, lambdaCode, jarsBucket, queryTrackingTable);
+        Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, leafPartitionQueryFailureQueue);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, lambdaCode);
         String leafQueryFunctionName = String.join("-", "sleeper",
@@ -196,6 +197,62 @@ public class QueryStack extends NestedStack {
     }
 
     /***
+     * Creates a dead letter queue and lambda function to process failed leaf partition queries. The lambda
+     * function ensures that queries are marked as failed in the query tracker, then forwards them to the
+     * dead letter queue. This is needed as queries that timeout might fail to be marked as failed by the
+     * query executor.
+     */
+    private Queue setupLeafPartitionQueryFailureQueueAndLambda(SleeperCoreStacks coreStacks, InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode, IBucket jarsBucket, ITable queryTrackingTable) {
+        String instanceId = instanceProperties.cleanInstanceId();
+
+        // Intermediate failure queue
+        String failureQueueName = String.join("-", "sleeper", instanceId, "LeafPartitionQueryFailureQueue");
+        Queue leafPartitionQueryFailureQueue = Queue.Builder
+                .create(this, "LeafPartitionQueryFailureQueue")
+                .queueName(failureQueueName)
+                .build();
+
+        // Final dead letter queue
+        String dlLeafPartitionQueueName = String.join("-", "sleeper", instanceId, "LeafPartitionQueryDLQ");
+        Queue leafPartitionQueryDlq = Queue.Builder
+                .create(this, "LeafPartitionQueryDeadLetterQueue")
+                .queueName(dlLeafPartitionQueueName)
+                .build();
+
+        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_FAILURE_QUEUE_URL, leafPartitionQueryFailureQueue.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_FAILURE_QUEUE_ARN, leafPartitionQueryFailureQueue.getQueueArn());
+        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_URL, leafPartitionQueryDlq.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_ARN, leafPartitionQueryDlq.getQueueArn());
+        coreStacks.alarmOnDeadLetters(this, "LeafPartitionQueryAlarm", "leaf partition queries", leafPartitionQueryDlq);
+
+        CfnOutputProps leafPartitionQueryDlqOutputProps = new CfnOutputProps.Builder()
+                .value(leafPartitionQueryDlq.getQueueUrl())
+                .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_DLQ_URL)
+                .build();
+        new CfnOutput(this, LEAF_PARTITION_QUERY_DLQ_URL, leafPartitionQueryDlqOutputProps);
+
+        // Failure processing lambda
+        String functionName = String.join("-", "sleeper", instanceId, "query-leaf-partition-failure");
+        IFunction lambda = lambdaCode.buildFunction(LambdaHandler.QUERY_LEAF_PARTITION_FAILURE, "QueryLeafPartitionFailureLambda", builder -> builder
+                .functionName(functionName)
+                .description("When a leaf partition query fails, this lambda ensures it is marked as failed in the tracker")
+                .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.QUERY_LEAF_PARTITION_FAILURE)));
+
+        coreStacks.grantReadInstanceConfig(lambda);
+        jarsBucket.grantRead(lambda);
+        queryTrackingTable.grantReadWriteData(lambda);
+        leafPartitionQueryDlq.grantSendMessages(lambda);
+
+        lambda.addEventSource(new SqsEventSource(leafPartitionQueryFailureQueue, SqsEventSourceProps.builder()
+                .batchSize(1)
+                .build()));
+
+        return leafPartitionQueryFailureQueue;
+    }
+
+    /***
      * Attach a policy to allow the lambda to put results in any S3 bucket or on any SQS queue.
      * These policies look too open, but it's the only way to allow clients to be able to write
      * to their buckets and queues.
@@ -218,17 +275,14 @@ public class QueryStack extends NestedStack {
         Objects.requireNonNull(lambda.getRole()).attachInlinePolicy(policy);
     }
 
-    private Queue setupLeafPartitionQueryQueue(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
+    private Queue setupLeafPartitionQueryQueue(InstanceProperties instanceProperties, Queue leafPartitionQueryFailureQueue) {
         String instanceId = instanceProperties.cleanInstanceId();
-        String dlLeafPartitionQueueName = String.join("-", "sleeper", instanceId, "LeafPartitionQueryDLQ");
-        Queue leafPartitionQueryDlq = Queue.Builder
-                .create(this, "LeafPartitionQueryDeadLetterQueue")
-                .queueName(dlLeafPartitionQueueName)
-                .build();
+
         DeadLetterQueue leafPartitionQueryDeadLetterQueue = DeadLetterQueue.builder()
                 .maxReceiveCount(1)
-                .queue(leafPartitionQueryDlq)
+                .queue(leafPartitionQueryFailureQueue)
                 .build();
+
         String leafPartitionQueueName = String.join("-", "sleeper", instanceId, "LeafPartitionQueryQueue");
         Queue leafPartitionQueryQueue = Queue.Builder
                 .create(this, "LeafPartitionQueryQueue")
@@ -238,9 +292,7 @@ public class QueryStack extends NestedStack {
                 .build();
         instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL, leafPartitionQueryQueue.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_ARN, leafPartitionQueryQueue.getQueueArn());
-        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_URL, leafPartitionQueryDlq.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_ARN, leafPartitionQueryDlq.getQueueArn());
-        coreStacks.alarmOnDeadLetters(this, "LeafPartitionQueryAlarm", "leaf partition queries", leafPartitionQueryDlq);
+
         CfnOutputProps leafPartitionQueryQueueOutputNameProps = new CfnOutputProps.Builder()
                 .value(leafPartitionQueryQueue.getQueueName())
                 .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_QUEUE_NAME)
@@ -252,12 +304,6 @@ public class QueryStack extends NestedStack {
                 .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_QUEUE_URL)
                 .build();
         new CfnOutput(this, LEAF_PARTITION_QUERY_QUEUE_URL, leafPartitionQueryQueueOutputProps);
-
-        CfnOutputProps leafPartitionQueryDlqOutputProps = new CfnOutputProps.Builder()
-                .value(leafPartitionQueryDlq.getQueueUrl())
-                .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_DLQ_URL)
-                .build();
-        new CfnOutput(this, LEAF_PARTITION_QUERY_DLQ_URL, leafPartitionQueryDlqOutputProps);
 
         return leafPartitionQueryQueue;
     }
@@ -332,7 +378,6 @@ public class QueryStack extends NestedStack {
         jarsBucket.grantRead(lambda);
         queue.grantSendMessages(lambda);
         queryTrackingTable.grantReadWriteData(lambda);
-
     }
 
     /***
