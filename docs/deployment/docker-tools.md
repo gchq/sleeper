@@ -47,15 +47,6 @@ the images to a private registry:
 
 The registry can also be updated later using `sleeper cli set-registry <registry>`.
 
-You can pin a specific Docker image version tag using `--version`:
-
-```bash
-./scripts/cli/install.sh --version 0.27.0
-```
-
-The version can also be updated later using `sleeper cli set-version <version>`. When using a custom registry with
-a local repository, the version is taken from `templates/version.txt`. Otherwise the default is `latest`.
-
 ### Commands
 
 The CLI consists of a `sleeper` command with sub-commands. You can use `sleeper aws` or `sleeper cdk` to run `aws` or
@@ -68,6 +59,15 @@ with Sleeper.
 
 You can upgrade to the latest version of the CLI using `sleeper cli upgrade`. This should be done regularly to keep the
 build and deployment tools up to date.
+
+You can pin a specific Docker image version tag using `--version`:
+
+```bash
+./scripts/cli/install.sh --version 0.27.0
+```
+
+The version can also be updated later using `sleeper cli set-version <version>`. When using a custom registry with
+a local repository, the version is taken from `templates/version.txt`. Otherwise the default is `latest`.
 
 There's a `sleeper environment` command that you can use to prepare your AWS account to deploy Sleeper into it. This is
 documented in [Sleeper environment tool](environment-tool.md).
