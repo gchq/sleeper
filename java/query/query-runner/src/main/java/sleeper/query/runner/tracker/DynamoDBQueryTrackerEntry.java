@@ -16,9 +16,7 @@
 
 package sleeper.query.runner.tracker;
 
-import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
 
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
@@ -28,7 +26,6 @@ import sleeper.query.core.tracker.TrackedQuery;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * A model for entries in the query tracker DynamoDB table. Will be mapped to {@link TrackedQuery} objects.
@@ -36,6 +33,7 @@ import java.util.Objects;
 class DynamoDBQueryTrackerEntry {
 
     static final String QUERY_ID = "queryId";
+    static final String FIRST_UPDATE_TIME = "firstUpdateTime";
     static final String LAST_UPDATE_TIME = "lastUpdateTime";
     static final String LAST_KNOWN_STATE = "lastKnownState";
     static final String ROW_COUNT = "rowCount";
@@ -85,43 +83,25 @@ class DynamoDBQueryTrackerEntry {
         return key;
     }
 
-    public Map<String, AttributeValueUpdate> getValueUpdate(long queryTrackerTTL) {
-        Map<String, AttributeValueUpdate> valueUpdate = new HashMap<>();
-        long now = System.currentTimeMillis() / 1000;
-        long expiryDate = now + (3600 * 24 * queryTrackerTTL);
-        valueUpdate.put(LAST_UPDATE_TIME, AttributeValueUpdate.builder()
-                .value(AttributeValue.fromN(String.valueOf(now)))
-                .action(AttributeAction.PUT)
-                .build());
-        valueUpdate.put(EXPIRY_DATE, AttributeValueUpdate.builder()
-                .value(AttributeValue.fromN(String.valueOf(expiryDate)))
-                .action(AttributeAction.PUT)
-                .build());
-        valueUpdate.put(ROW_COUNT, AttributeValueUpdate.builder()
-                .value(AttributeValue.fromN(String.valueOf(rowCount)))
-                .action(AttributeAction.PUT)
-                .build());
-        valueUpdate.put(LAST_KNOWN_STATE, AttributeValueUpdate.builder()
-                .value(AttributeValue.fromS(state.name()))
-                .action(AttributeAction.PUT)
-                .build());
-        if (Objects.nonNull(tableId)) {
-            valueUpdate.put(TABLE_ID, AttributeValueUpdate.builder()
-                    .value(AttributeValue.fromS(tableId))
-                    .action(AttributeAction.PUT)
-                    .build());
-        }
-        if (Objects.nonNull(errorMessage)) {
-            valueUpdate.put(ERROR_MESSAGE, AttributeValueUpdate.builder()
-                    .value(AttributeValue.fromS(errorMessage))
-                    .action(AttributeAction.PUT)
-                    .build());
-        }
-        return valueUpdate;
+    public QueryState getState() {
+        return state;
+    }
+
+    public long getRowCount() {
+        return rowCount;
+    }
+
+    public String getTableId() {
+        return tableId;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
     }
 
     public static TrackedQuery toTrackedQuery(Map<String, AttributeValue> stringAttributeValueMap) {
         String id = stringAttributeValueMap.get(QUERY_ID).s();
+        Long firstUpdateTime = Long.valueOf(stringAttributeValueMap.get(FIRST_UPDATE_TIME).n());
         Long updateTime = Long.valueOf(stringAttributeValueMap.get(LAST_UPDATE_TIME).n());
         Long expiryDate = Long.valueOf(stringAttributeValueMap.get(EXPIRY_DATE).n());
         Long rowCount = Long.valueOf(stringAttributeValueMap.get(ROW_COUNT).n());
@@ -139,6 +119,7 @@ class DynamoDBQueryTrackerEntry {
         return TrackedQuery.builder()
                 .queryId(id).subQueryId(subQueryId)
                 .tableId(tableId)
+                .firstUpdateTime(firstUpdateTime)
                 .lastUpdateTime(updateTime)
                 .expiryDate(expiryDate)
                 .lastKnownState(state)

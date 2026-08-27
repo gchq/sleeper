@@ -34,6 +34,7 @@ import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -194,10 +195,40 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     private void updateState(DynamoDBQueryTrackerEntry entry) {
+        long now = System.currentTimeMillis() / 1000;
+        long expiryDate = now + (60 * 60 * 24 * queryTrackerTTL);
+
+        StringBuilder expression = new StringBuilder("SET #LastUpdate = :now,"
+                + " #FirstUpdate = if_not_exists(#FirstUpdate, :now),"
+                + " #Expiry = :expiry, #RowCount = :rows, #State = :state");
+        Map<String, String> names = new HashMap<>(Map.of(
+                "#FirstUpdate", DynamoDBQueryTrackerEntry.FIRST_UPDATE_TIME,
+                "#LastUpdate", DynamoDBQueryTrackerEntry.LAST_UPDATE_TIME,
+                "#Expiry", DynamoDBQueryTrackerEntry.EXPIRY_DATE,
+                "#RowCount", DynamoDBQueryTrackerEntry.ROW_COUNT,
+                "#State", LAST_KNOWN_STATE));
+        Map<String, AttributeValue> values = new HashMap<>(Map.of(
+                ":now", AttributeValue.fromN(String.valueOf(now)),
+                ":expiry", AttributeValue.fromN(String.valueOf(expiryDate)),
+                ":rows", AttributeValue.fromN(String.valueOf(entry.getRowCount())),
+                ":state", AttributeValue.fromS(entry.getState().name())));
+        if (entry.getTableId() != null) {
+            expression.append(", #TableId = :tableId");
+            names.put("#TableId", DynamoDBQueryTrackerEntry.TABLE_ID);
+            values.put(":tableId", AttributeValue.fromS(entry.getTableId()));
+        }
+        if (entry.getErrorMessage() != null) {
+            expression.append(", #Errors = :errors");
+            names.put("#Errors", DynamoDBQueryTrackerEntry.ERROR_MESSAGE);
+            values.put(":errors", AttributeValue.fromS(entry.getErrorMessage()));
+        }
+
         dynamoClient.updateItem(request -> request
                 .tableName(trackerTableName)
                 .key(entry.getKey())
-                .attributeUpdates(entry.getValueUpdate(queryTrackerTTL)));
+                .updateExpression(expression.toString())
+                .expressionAttributeNames(names)
+                .expressionAttributeValues(values));
         if (entry.isUpdateParent()) {
             updateStateOfParent(entry);
         }

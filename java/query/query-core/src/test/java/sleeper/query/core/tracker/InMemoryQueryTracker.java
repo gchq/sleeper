@@ -204,6 +204,7 @@ public class InMemoryQueryTracker implements QueryStatusReportListener, QueryTra
         return TrackedQuery.builder()
                 .queryId(queryId)
                 .subQueryId(subQueryId)
+                .firstUpdateTime(now)
                 .lastUpdateTime(now)
                 .expiryDate(now.plus(queryTtl()))
                 .lastKnownState(state);

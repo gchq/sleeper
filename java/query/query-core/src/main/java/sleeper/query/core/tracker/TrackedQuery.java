@@ -33,6 +33,7 @@ public class TrackedQuery {
     private final String queryId;
     private final String subQueryId;
     private final String tableId;
+    private final Long firstUpdateTime;
     private final Long lastUpdateTime;
     private final Long expiryDate;
     private final QueryState lastKnownState;
@@ -43,6 +44,7 @@ public class TrackedQuery {
         queryId = builder.queryId;
         subQueryId = builder.subQueryId;
         tableId = builder.tableId;
+        firstUpdateTime = builder.firstUpdateTime;
         lastUpdateTime = builder.lastUpdateTime;
         expiryDate = builder.expiryDate;
         lastKnownState = builder.lastKnownState;
@@ -56,7 +58,7 @@ public class TrackedQuery {
 
     public Builder toBuilder() {
         return builder().queryId(queryId).subQueryId(subQueryId).tableId(tableId)
-                .lastUpdateTime(lastUpdateTime).expiryDate(expiryDate)
+                .firstUpdateTime(firstUpdateTime).lastUpdateTime(lastUpdateTime).expiryDate(expiryDate)
                 .lastKnownState(lastKnownState).rowCount(rowCount).errorMessage(errorMessage);
     }
 
@@ -70,6 +72,10 @@ public class TrackedQuery {
 
     public QueryState getLastKnownState() {
         return lastKnownState;
+    }
+
+    public Long getFirstUpdateTime() {
+        return firstUpdateTime;
     }
 
     public Long getLastUpdateTime() {
@@ -104,6 +110,7 @@ public class TrackedQuery {
         return Objects.equals(queryId, that.queryId)
                 && Objects.equals(subQueryId, that.subQueryId)
                 && Objects.equals(tableId, that.tableId)
+                && Objects.equals(firstUpdateTime, that.firstUpdateTime)
                 && Objects.equals(lastUpdateTime, that.lastUpdateTime)
                 && Objects.equals(expiryDate, that.expiryDate)
                 && lastKnownState == that.lastKnownState
@@ -113,7 +120,7 @@ public class TrackedQuery {
 
     @Override
     public int hashCode() {
-        return Objects.hash(queryId, subQueryId, tableId, lastUpdateTime, expiryDate, lastKnownState, rowCount, errorMessage);
+        return Objects.hash(queryId, subQueryId, tableId, firstUpdateTime, lastUpdateTime, expiryDate, lastKnownState, rowCount, errorMessage);
     }
 
     @Override
@@ -122,6 +129,7 @@ public class TrackedQuery {
                 "queryId='" + queryId + '\'' +
                 ", subQueryId='" + subQueryId + '\'' +
                 ", tableId='" + tableId + '\'' +
+                ", firstUpdateTime=" + firstUpdateTime +
                 ", lastUpdateTime=" + lastUpdateTime +
                 ", expiryDate=" + expiryDate +
                 ", lastKnownState=" + lastKnownState +
@@ -137,6 +145,7 @@ public class TrackedQuery {
         private String queryId;
         private String subQueryId = "-";
         private String tableId;
+        private Long firstUpdateTime;
         private Long lastUpdateTime;
         private Long expiryDate;
         private QueryState lastKnownState;
@@ -176,6 +185,28 @@ public class TrackedQuery {
          */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
+            return this;
+        }
+
+        /**
+         * Provides the time the query was first tracked. Together with the last update time this
+         * gives the wall-clock duration of the query.
+         *
+         * @param  firstUpdateTime the first update time
+         * @return                 the builder
+         */
+        public Builder firstUpdateTime(Instant firstUpdateTime) {
+            return firstUpdateTime(firstUpdateTime.toEpochMilli());
+        }
+
+        /**
+         * Provides the time the query was first tracked.
+         *
+         * @param  firstUpdateTime the first update time in milliseconds since the epoch
+         * @return                 the builder
+         */
+        public Builder firstUpdateTime(Long firstUpdateTime) {
+            this.firstUpdateTime = firstUpdateTime;
             return this;
         }
 

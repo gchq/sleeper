@@ -69,6 +69,7 @@ public class TrackedQueryTestHelper {
         return TrackedQuery.builder()
                 .queryId(queryId)
                 .lastKnownState(state)
+                .firstUpdateTime(lastUpdateTime)
                 .lastUpdateTime(lastUpdateTime);
     }
 }
