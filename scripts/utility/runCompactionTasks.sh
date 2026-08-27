@@ -21,7 +21,7 @@ if [ "$#" -ne 2 ]; then
   exit 1
 fi
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 
 TEMPLATE_DIR=${SCRIPTS_DIR}/templates
 JAR_DIR=${SCRIPTS_DIR}/jars
