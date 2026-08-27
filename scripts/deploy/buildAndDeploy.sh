@@ -38,6 +38,6 @@ echo "SUBNET:${SUBNET}"
 echo "INSTANCE_PROPERTIES: ${INSTANCE_PROPERTIES}"
 echo "DEPLOY_PAUSED: ${DEPLOY_PAUSED}"
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ".." && pwd)
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 "$SCRIPTS_DIR/build/build.sh"
 "$SCRIPTS_DIR/deploy/deployNew.sh" "$@"

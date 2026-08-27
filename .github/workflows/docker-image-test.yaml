@@ -56,7 +56,7 @@ jobs:
         with:
           driver-opts: network=host
           name: sleeper
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           java-version: '17'
           distribution: 'corretto'
@@ -83,7 +83,13 @@ jobs:
         run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test-no-rie --lambda=${{ inputs.isLambda }} --default-base-image ${{ env.BASE_IMAGE }} ${{ inputs.dockerOptions }} --builder sleeper --load
       - name: Add RIE to Docker image
         if: ${{ inputs.testClassNames != '' && inputs.isLambda }}
-        run:  docker build --build-arg BASE_IMAGE=${{ inputs.imageName }}:test-no-rie -t ${{ inputs.imageName }}:test ${{ inputs.dockerOptions }} ./java/common/docker-lambda/add-rie/
+        run: |
+          docker tag ${{ inputs.imageName }}:test-no-rie localhost:5000/${{ inputs.imageName }}:test-no-rie
+          docker push localhost:5000/${{ inputs.imageName }}:test-no-rie
+          docker buildx build --builder sleeper --load \
+            --build-arg BASE_IMAGE=localhost:5000/${{ inputs.imageName }}:test-no-rie \
+            -t ${{ inputs.imageName }}:test ${{ inputs.dockerOptions }} \
+            ./java/common/docker-lambda/add-rie/
       - name: Re-tag non-lambda Docker image
         if: ${{ inputs.testClassNames != '' && !inputs.isLambda }}
         run: docker tag ${{ inputs.imageName }}:test-no-rie ${{ inputs.imageName }}:test
