@@ -37,6 +37,13 @@ RESULTS_BUCKET=$4
 MAIN_SUITE_NAME=$5
 SUITE_PARAMS=("-Dsleeper.system.test.cluster.enabled=true" "-Drust.skip" "-Dsleeper.system.test.create.multi.platform.builder=false")
 
+# The nightly tests run in a private subnet behind a NAT gateway, which silently drops
+# idle connections at 350s.
+# This configuration stops Java's built-in HttpClient from reusing connections that are
+# that old. At time of writing the system tests only use this in AwsSleeperTablesDriver.
+# This may be removed in https://github.com/gchq/sleeper/issues/7840.
+export JDK_JAVA_OPTIONS="-Djdk.httpclient.keepalive.timeout=300"
+
 shift 4
 if [ "$MAIN_SUITE_NAME" == "performance" ] || [ "$MAIN_SUITE_NAME" == "functional" ]; then
   shift
