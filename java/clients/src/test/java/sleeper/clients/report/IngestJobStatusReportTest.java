@@ -37,45 +37,59 @@ public class IngestJobStatusReportTest {
 
             assertThat(args.instanceId()).isEqualTo("my-instance");
             assertThat(args.tableName()).isEqualTo("my-table");
-            assertThat(args.reportType()).isEqualTo("STANDARD");
+            assertThat(args.outputType()).isEqualTo("STANDARD");
             assertThat(args.queryType()).isEqualTo(JobQuery.Type.ALL);
-            assertThat(args.queryParameters()).isEqualTo("");
         }
 
         @Test
         void shouldReadQueryTypeAllFlag() {
-            Arguments args = readArguments("all-instance", "all-table", "-a");
-            assertThat(args.queryType()).isEqualTo(JobQuery.Type.ALL);
+            Arguments shortArgs = readArguments("all-instance", "all-table", "-a");
+            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.ALL);
+
+            Arguments longArgs = readArguments("all-instance", "all-table", "--all");
+            assertThat(longArgs.queryType()).isEqualTo(JobQuery.Type.ALL);
         }
 
         @Test
         void shouldReadQueryTypeDetailedFlag() {
-            Arguments args = readArguments("detailed-instance", "detailed-table", "-d", "--query-params", "23");
-            assertThat(args.queryType()).isEqualTo(JobQuery.Type.DETAILED);
+            Arguments shortArgs = readArguments("detailed-instance", "detailed-table", "-d", "23");
+            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.DETAILED);
+
+            Arguments longArgs = readArguments("detailed-instance", "detailed-table", "--detailed", "5871");
+            assertThat(longArgs.queryType()).isEqualTo(JobQuery.Type.DETAILED);
         }
 
         @Test
         void shouldReadQueryTypeRejectedFlag() {
-            Arguments args = readArguments("rejected-instance", "rejected-table", "-n");
-            assertThat(args.queryType()).isEqualTo(JobQuery.Type.REJECTED);
+            Arguments shortArgs = readArguments("rejected-instance", "rejected-table", "-n");
+            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.REJECTED);
+
+            Arguments longArgs = readArguments("rejected-instance", "rejected-table", "--rejected");
+            assertThat(longArgs.queryType()).isEqualTo(JobQuery.Type.REJECTED);
         }
 
         @Test
         void shoudlReadQueryTypeRangeFlag() {
-            Arguments args = readArguments("range-instance", "range-table", "-r", "--query-params", "20200101120000,20220101120000");
-            assertThat(args.queryType()).isEqualTo(JobQuery.Type.RANGE);
+            Arguments shortArgs = readArguments("range-instance", "range-table", "-r", "");
+            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.RANGE);
+
+            Arguments longArgs = readArguments("range-instance", "range-table", "--range", "20200101120000,20220101120000");
+            assertThat(longArgs.queryType()).isEqualTo(JobQuery.Type.RANGE);
         }
 
         @Test
         void shouldReadQueryTypeUnfinishedFlag() {
-            Arguments args = readArguments("unfinished-instance", "unfinished-table", "-u");
-            assertThat(args.queryType()).isEqualTo(JobQuery.Type.UNFINISHED);
+            Arguments shortArgs = readArguments("unfinished-instance", "unfinished-table", "-u");
+            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.UNFINISHED);
+
+            Arguments longArgs = readArguments("unfinished-instance", "unfinished-table", "--unfinished");
+            assertThat(longArgs.queryType()).isEqualTo(JobQuery.Type.UNFINISHED);
         }
 
         @Test
-        void shouldReadReportTypeJson() {
-            Arguments args = readArguments("json-instance", "json-table", "--report-type", "json");
-            assertThat(args.reportType()).isEqualTo("JSON");
+        void shouldReadOutputTypeJson() {
+            Arguments args = readArguments("json-instance", "json-table", "--output-type", "json");
+            assertThat(args.outputType()).isEqualTo("JSON");
         }
     }
 
@@ -84,37 +98,30 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectUnknownReportType() {
-            assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--report-type", "BAD-REPORT"))
+            assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--output-type", "BAD-REPORT"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Report type not supported: BAD-REPORT. Valid types: JSON, STANDARD");
+                    .hasMessage("Output type not supported: BAD-REPORT. Valid types: JSON, STANDARD");
         }
 
         @Test
         void shouldRejectDetailedReportWithoutInstanceId() {
             assertThatThrownBy(() -> readArguments("detail-fail-instance", "detail-fail-table", "-d"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Query parameters are required for the query type: DETAILED");
-        }
-
-        @Test
-        void shouldRejectRangeReportWithoutQueryParameters() {
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Query parameters are required for the query type: RANGE");
+                    .hasMessage("Expected an argument for option: detailed");
         }
 
         @Test
         void shouldRejectRangeReportWithInvalidateDateFormat() {
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r", "--query-params", "asdad,wqas"))
+            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r", "asdad,wqas"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Range parameters don't match expected format: yyyyMMddHHmmss");
         }
 
         @Test
         void shouldRejectRangeReportWithEndDateBeforeStartDate() {
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r", "--query-params", "20200101120000,19700101120000"))
+            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r", "20200101120000,19700101120000"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Range end is before rage start. Range start: 20200101120000, range end: 19700101120000");
+                    .hasMessage("Range end is before range start. Range start: 20200101120000, range end: 19700101120000");
         }
     }
 
