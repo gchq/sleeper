@@ -73,6 +73,15 @@ EOF
 RUN chmod 0755 /usr/local/bin/aarch64-linux-gnu-clang /usr/local/bin/x86_64-linux-gnu-clang \
     /usr/local/bin/aarch64-linux-gnu-clang++ /usr/local/bin/x86_64-linux-gnu-clang++
 
+# To compile C/C++ code for cross-compilation targets inside this container, invoke the appropriate
+# compiler wrapper based on the target architecture:
+#   - For aarch64-unknown-linux-gnu: use $(CC_aarch64_unknown_linux_gnu) for C or $(CXX_aarch64_unknown_linux_gnu) for C++
+#   - For x86_64-unknown-linux-gnu: use $(CC_x86_64_unknown_linux_gnu) for C or $(CXX_x86_64_unknown_linux_gnu) for C++
+# These wrappers automatically inject --target and --sysroot flags. Additionally, the -fuse-ld=lld
+# flag MUST be given to use the lld linker, which is required for proper cross-compilation linking.
+# Examples:
+#   $(CXX_aarch64_unknown_linux_gnu) -fuse-ld=lld -o output main.cpp other.cpp
+#   $(CC_x86_64_unknown_linux_gnu) -fuse-ld=lld -c source.c -o source.o
 ENV CC_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-clang \
     CC_x86_64_unknown_linux_gnu=/usr/local/bin/x86_64-linux-gnu-clang \
     CXX_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-clang++ \
