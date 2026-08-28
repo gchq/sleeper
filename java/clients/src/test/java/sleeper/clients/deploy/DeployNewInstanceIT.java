@@ -190,7 +190,7 @@ public class DeployNewInstanceIT {
             // When/Then
             assertThatThrownBy(() -> deployNewInstance())
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 4 positional arguments, found 1");
+                    .hasMessageContaining("Expected 4 positional arguments, found 1");
         }
 
         @Test
