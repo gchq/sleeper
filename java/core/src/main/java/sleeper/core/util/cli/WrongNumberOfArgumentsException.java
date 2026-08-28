@@ -18,10 +18,8 @@ package sleeper.core.util.cli;
 import java.util.List;
 
 /**
- * Thrown when too many or too few positional arguments are provided. Note that
- * the exception message will be displayed
- * to the user alongside a usage message that includes the list of expected
- * arguments, in the order they are expected.
+ * Thrown when too many or too few positional arguments are provided. Note that the exception message will be displayed
+ * to the user alongside a usage message that includes the list of expected arguments, in the order they are expected.
  *
  * @see CommandArguments#parseAndValidateOrExit
  */
