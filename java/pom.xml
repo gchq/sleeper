@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.37.4</version>
+    <version>0.37.5-SNAPSHOT</version>
 
     <modules>
         <module>analytics-integration</module>
