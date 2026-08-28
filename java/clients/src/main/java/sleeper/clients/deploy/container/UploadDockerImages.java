@@ -108,10 +108,9 @@ public class UploadDockerImages {
      * @throws IOException      if the deploy configuration could not be read
      */
     public static Builder builderWith(Path scriptsDirectory, EcrClient ecrClient) throws IOException {
-        DeployConfiguration deployConfig = DeployConfiguration.fromScriptsDirectory(scriptsDirectory);
         return builder()
                 .scriptsDirectory(scriptsDirectory)
-                .deployConfig(deployConfig)
+                .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
                 .copyImage(CopyContainerImage.withTransferManager(ecrClient))
                 .baseImageDestination(BaseImageDestination.managedRegistry(BASE_IMAGE_REGISTRY_PORT));
     }
