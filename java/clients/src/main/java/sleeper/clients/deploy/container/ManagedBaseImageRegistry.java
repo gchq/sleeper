@@ -61,11 +61,10 @@ class ManagedBaseImageRegistry extends FixedBaseImageRegistry {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof ManagedBaseImageRegistry registry) {
-            return registry.port == port;
-        } else {
+        if (obj == null || obj.getClass() != getClass()) {
             return false;
         }
+        return ((ManagedBaseImageRegistry) obj).port == port;
     }
 
     @Override

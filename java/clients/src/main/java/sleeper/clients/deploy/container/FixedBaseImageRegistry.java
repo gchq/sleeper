@@ -47,11 +47,10 @@ class FixedBaseImageRegistry implements BaseImageDestination {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof FixedBaseImageRegistry registry) {
-            return registry.baseImagePrefix == baseImagePrefix;
-        } else {
+        if (obj == null || obj.getClass() != getClass()) {
             return false;
         }
+        return Objects.equals(baseImagePrefix, ((FixedBaseImageRegistry) obj).baseImagePrefix);
     }
 
     @Override

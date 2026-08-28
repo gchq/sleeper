@@ -38,7 +38,7 @@ class DeploymentRegistry implements BaseImageDestination {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof DeploymentRegistry;
+        return obj != null && obj.getClass() == getClass();
     }
 
     @Override
