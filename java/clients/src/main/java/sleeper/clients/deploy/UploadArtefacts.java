@@ -86,11 +86,10 @@ public class UploadArtefacts {
                         "An artefacts deployment ID to upload to. All Docker images will be uploaded.\n" +
                         "\n" +
                         "--create-builder\n" +
-                        "By default, a Docker builder will be created suitable for multiplatform builds, with " +
-                        "\"docker buildx create --name sleeper-host-network --driver docker-container " +
-                        "--driver-opt network=host --use\". It is given host networking so that it can pull base " +
-                        "images from the base image registry Sleeper runs on this machine. If you set up a suitable " +
-                        "builder yourself instead, you can use --create-builder=false to turn off this behaviour.\n" +
+                        "By default, if you're uploading from a local build, a Docker builder will be created " +
+                        "suitable for multiplatform builds. This will not be used when retrieving images from a " +
+                        "remote repository. If you set up a suitable builder yourself instead, you can use " +
+                        "--create-builder=false to turn off this behaviour.\n" +
                         "\n" +
                         "--create-deployment\n" +
                         "By default, we assume you have deployed an artefacts deployment separately. If you set this " +
