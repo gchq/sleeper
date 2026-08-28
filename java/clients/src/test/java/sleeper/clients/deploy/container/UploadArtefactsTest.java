@@ -72,6 +72,33 @@ public class UploadArtefactsTest {
     }
 
     @Test
+    void shouldOnlyUploadJars() throws Exception {
+        // When
+        uploadArtefacts("--id", "test", "-u", "jars");
+
+        // Then
+        assertThat(artefactDeployments).isEmpty();
+        assertThat(jarUploads).containsExactly(SyncJarsRequest.builder()
+                .deploymentId("test")
+                .build());
+        assertThat(imageUploads).isEmpty();
+    }
+
+    @Test
+    void shouldOnlyUploadImages() throws Exception {
+        // When
+        uploadArtefacts("--id", "test", "-u", "images");
+
+        // Then
+        assertThat(artefactDeployments).isEmpty();
+        assertThat(jarUploads).isEmpty();
+        assertThat(imageUploads).containsExactly(UploadDockerImagesToEcrRequest.builder()
+                .ecrPrefix("test")
+                .images(List.of(StackDockerImage.fromDockerDeployment(DOCKER_DEPLOYMENT)))
+                .build());
+    }
+
+    @Test
     void shouldOverrideBaseImageRegistry() {
         // When
         var arguments = readArguments("--id", "test", "--base-image-registry", "my-registry");
