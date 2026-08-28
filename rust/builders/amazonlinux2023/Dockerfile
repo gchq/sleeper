@@ -2,9 +2,9 @@ FROM amazonlinux:2023
 # Find architecture of host, e.g. amd64 or arm64
 ARG BUILDARCH
 RUN mkdir -p /opt/sysroot/x86_64/var/cache /opt/sysroot/aarch64/var/cache
+
 # Avoid downloading hosts dnf metadata cache again by symlinking the cache from container into the sysroot
 # matching the host architecture
-
 RUN case "${BUILDARCH}" in \
     "amd64") ln -s /var/cache/dnf /opt/sysroot/x86_64/var/cache ;;\
     "arm64") ln -s /var/cache/dnf /opt/sysroot/aarch64/var/cache ;;\
