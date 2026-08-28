@@ -26,7 +26,6 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
-import sleeper.clients.deploy.container.UploadDockerImages.CopyContainerImage;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
@@ -88,8 +87,10 @@ public class UploadArtefacts {
                         "\n" +
                         "--create-builder\n" +
                         "By default, a Docker builder will be created suitable for multiplatform builds, with " +
-                        "\"docker buildx create --name sleeper --use\". If you set up a suitable builder yourself " +
-                        "instead, you can use --create-builder=false to turn off this behaviour.\n" +
+                        "\"docker buildx create --name sleeper-host-network --driver docker-container " +
+                        "--driver-opt network=host --use\". It is given host networking so that it can pull base " +
+                        "images from the base image registry Sleeper runs on this machine. If you set up a suitable " +
+                        "builder yourself instead, you can use --create-builder=false to turn off this behaviour.\n" +
                         "\n" +
                         "--create-deployment\n" +
                         "By default, we assume you have deployed an artefacts deployment separately. If you set this " +
@@ -151,10 +152,7 @@ public class UploadArtefacts {
             PartitionMetadata partitionMetadata = PartitionMetadata.of(region);
             SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, accountName, args.scriptsDir());
             UploadDockerImagesToEcr uploadImages = new UploadDockerImagesToEcr(
-                    UploadDockerImages.builder()
-                            .scriptsDirectory(args.scriptsDir())
-                            .deployConfig(DeployConfiguration.fromScriptsDirectory(args.scriptsDir()))
-                            .copyImage(CopyContainerImage.withTransferManager(ecrClient))
+                    UploadDockerImages.builderWith(args.scriptsDir(), ecrClient)
                             .createMultiplatformBuilder(args.createMultiplatformBuilder())
                             .build(),
                     accountName, region, partitionMetadata);
