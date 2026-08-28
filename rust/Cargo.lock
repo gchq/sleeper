@@ -19,7 +19,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "aggregator_udfs"
-version = "0.37.4"
+version = "0.37.5-SNAPSHOT"
 dependencies = [
  "datafusion",
  "mockall",
@@ -132,7 +132,7 @@ dependencies = [
 
 [[package]]
 name = "apps"
-version = "0.37.4"
+version = "0.37.5-SNAPSHOT"
 dependencies = [
  "assert_cmd",
  "chrono",
@@ -2290,7 +2290,7 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "filter_udfs"
-version = "0.37.4"
+version = "0.37.5-SNAPSHOT"
 dependencies = [
  "datafusion",
 ]
@@ -3383,7 +3383,7 @@ dependencies = [
 
 [[package]]
 name = "objectstore_ext"
-version = "0.37.4"
+version = "0.37.5-SNAPSHOT"
 dependencies = [
  "async-trait",
  "aws-config",
@@ -3652,7 +3652,7 @@ dependencies = [
 
 [[package]]
 name = "query_sql"
-version = "0.37.4"
+version = "0.37.5-SNAPSHOT"
 dependencies = [
  "datafusion",
  "tokio",
@@ -3922,7 +3922,7 @@ dependencies = [
 
 [[package]]
 name = "rust_sketch"
-version = "0.37.4"
+version = "0.37.5-SNAPSHOT"
 dependencies = [
  "cargo_metadata",
  "cxx",
@@ -4243,7 +4243,7 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "sleeper_core"
-version = "0.37.4"
+version = "0.37.5-SNAPSHOT"
 dependencies = [
  "aggregator_udfs",
  "arrow",
@@ -4278,7 +4278,7 @@ dependencies = [
 
 [[package]]
 name = "sleeper_df"
-version = "0.37.4"
+version = "0.37.5-SNAPSHOT"
 dependencies = [
  "aws-types",
  "cbindgen",
@@ -4486,7 +4486,7 @@ dependencies = [
 
 [[package]]
 name = "test_util"
-version = "0.37.4"
+version = "0.37.5-SNAPSHOT"
 dependencies = [
  "bytes",
  "color-eyre",
