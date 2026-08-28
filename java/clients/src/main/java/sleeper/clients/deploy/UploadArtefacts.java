@@ -45,6 +45,7 @@ import sleeper.core.util.cli.CommandOption;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Function;
 
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
@@ -113,12 +114,12 @@ public class UploadArtefacts {
                     "Valid values: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())
             .build();
 
-    public static Arguments readArguments(CommandArguments arguments) {
+    public static Arguments readArguments(CommandArguments arguments, Function<Path, InstanceProperties> loadInstanceProperties) {
         return new Arguments(
                 Path.of(arguments.getString("scripts directory")),
                 arguments.getOptionalString("properties")
                         .map(Path::of)
-                        .map(LoadLocalProperties::loadInstancePropertiesNoValidation)
+                        .map(loadInstanceProperties)
                         .orElse(null),
                 arguments.getOptionalString("id")
                         .orElse(null),
@@ -137,7 +138,7 @@ public class UploadArtefacts {
     }
 
     public static void main(String[] rawArgs) throws IOException, InterruptedException {
-        Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, arguments -> readArguments(arguments));
+        Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, arguments -> readArguments(arguments, LoadLocalProperties::loadInstancePropertiesNoValidation));
 
         try (S3Client s3Client = S3Client.create();
                 EcrClient ecrClient = EcrClient.create();
