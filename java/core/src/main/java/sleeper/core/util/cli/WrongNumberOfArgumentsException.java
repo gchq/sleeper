@@ -18,19 +18,18 @@ package sleeper.core.util.cli;
 import java.util.List;
 
 /**
- * Thrown when too many or too few positional arguments are provided. Note that the exception message will be displayed
- * to the user alongside a usage message that includes the list of expected arguments, in the order they are expected.
+ * Thrown when too many or too few positional arguments are provided. Note that
+ * the exception message will be displayed
+ * to the user alongside a usage message that includes the list of expected
+ * arguments, in the order they are expected.
  *
  * @see CommandArguments#parseAndValidateOrExit
  */
 public class WrongNumberOfArgumentsException extends CommandArgumentsException {
 
-    public WrongNumberOfArgumentsException(int actualNumber, int expectedNumber) {
-        super("Expected " + expectedNumber + " positional argument" + (expectedNumber == 1 ? "" : "s") + ", found " + actualNumber);
-    }
-
     public WrongNumberOfArgumentsException(List<String> positionalArguments, int expectedNumber) {
-        super("Expected " + expectedNumber + " positional argument" + (expectedNumber == 1 ? "" : "s") + ", found " + positionalArguments.size() + ": " + positionalArguments);
+        super("Expected " + expectedNumber + " positional argument" + (expectedNumber == 1 ? "" : "s") + ", found "
+                + positionalArguments.size() + ": " + positionalArguments);
     }
 
 }
