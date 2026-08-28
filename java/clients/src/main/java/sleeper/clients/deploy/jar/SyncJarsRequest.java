@@ -73,10 +73,12 @@ public class SyncJarsRequest {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!(obj instanceof SyncJarsRequest))
+        }
+        if (!(obj instanceof SyncJarsRequest)) {
             return false;
+        }
         SyncJarsRequest other = (SyncJarsRequest) obj;
         return Objects.equals(bucketName, other.bucketName) && Objects.equals(deploymentId, other.deploymentId) && Objects.equals(uploadFilter, other.uploadFilter)
                 && deleteOldJars == other.deleteOldJars;

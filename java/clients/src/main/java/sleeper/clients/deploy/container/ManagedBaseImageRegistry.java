@@ -22,6 +22,7 @@ import sleeper.clients.util.command.CommandPipeline;
 import sleeper.clients.util.command.CommandPipelineRunner;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
@@ -65,6 +66,11 @@ class ManagedBaseImageRegistry extends FixedBaseImageRegistry {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(port);
     }
 
     private static CommandPipeline startContainer() {

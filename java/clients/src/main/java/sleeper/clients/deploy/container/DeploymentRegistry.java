@@ -32,12 +32,17 @@ class DeploymentRegistry implements BaseImageDestination {
     }
 
     @Override
+    public String toString() {
+        return "deployment repository";
+    }
+
+    @Override
     public boolean equals(Object obj) {
         return obj instanceof DeploymentRegistry;
     }
 
     @Override
-    public String toString() {
-        return "deployment repository";
+    public int hashCode() {
+        return 0;
     }
 }

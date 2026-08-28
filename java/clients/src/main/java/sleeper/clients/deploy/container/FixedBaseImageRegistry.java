@@ -18,6 +18,7 @@ package sleeper.clients.deploy.container;
 import sleeper.clients.util.command.CommandPipelineRunner;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * A base image destination that fixes the repository prefix where base images are held.
@@ -51,6 +52,11 @@ class FixedBaseImageRegistry implements BaseImageDestination {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(baseImagePrefix);
     }
 
 }
