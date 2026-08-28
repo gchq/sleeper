@@ -17,27 +17,40 @@ package sleeper.clients.deploy.container;
 
 import sleeper.clients.util.command.CommandPipelineRunner;
 
+import java.io.IOException;
+
 /**
- * A base image destination that pushes to the same registry as other, non-base images.
+ * A base image destination that fixes the repository prefix where base images are held.
  */
-class DeploymentRegistry implements BaseImageDestination {
+class FixedBaseImageRegistry implements BaseImageDestination {
+
+    private final String baseImagePrefix;
+
+    FixedBaseImageRegistry(String baseImagePrefix) {
+        this.baseImagePrefix = baseImagePrefix;
+    }
 
     @Override
-    public void createIfMissing(CommandPipelineRunner commandRunner) {
+    public void createIfMissing(CommandPipelineRunner commandRunner) throws IOException, InterruptedException {
     }
 
     @Override
     public String repositoryPrefix(String deploymentRepositoryPrefix) {
-        return deploymentRepositoryPrefix;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof DeploymentRegistry;
+        return baseImagePrefix;
     }
 
     @Override
     public String toString() {
-        return "deployment repository";
+        return "base image registry at " + baseImagePrefix;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof FixedBaseImageRegistry registry) {
+            return registry.baseImagePrefix == baseImagePrefix;
+        } else {
+            return false;
+        }
+    }
+
 }

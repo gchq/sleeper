@@ -101,13 +101,13 @@ class ArgumentTracker {
         // the positional arguments list. We need to exclude them from validation.
         if (usage.isPassThroughExtraArguments()) {
             if (positionalArguments.size() < usage.getNumPositionalArgs()) {
-                throw new WrongNumberOfArgumentsException(positionalArguments.size(), usage.getNumPositionalArgs());
+                throw new WrongNumberOfArgumentsException(positionalArguments, usage.getNumPositionalArgs());
             }
             if (firstPositionalArgumentWithNoOptionsAfter > usage.getNumPositionalArgs()) {
-                throw new WrongNumberOfArgumentsException(firstPositionalArgumentWithNoOptionsAfter, usage.getNumPositionalArgs());
+                throw new WrongNumberOfArgumentsException(positionalArguments.subList(0, firstPositionalArgumentWithNoOptionsAfter), usage.getNumPositionalArgs());
             }
         } else if (positionalArguments.size() != usage.getNumPositionalArgs()) {
-            throw new WrongNumberOfArgumentsException(positionalArguments.size(), usage.getNumPositionalArgs());
+            throw new WrongNumberOfArgumentsException(positionalArguments, usage.getNumPositionalArgs());
         }
     }
 

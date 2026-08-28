@@ -46,6 +46,16 @@ public interface BaseImageDestination {
     }
 
     /**
+     * Returns a destination that pushes base images to a pre-existing registry.
+     *
+     * @param  baseImagePrefix the prefix for base image names
+     * @return                 the destination
+     */
+    static BaseImageDestination fixedRegistry(String baseImagePrefix) {
+        return new FixedBaseImageRegistry(baseImagePrefix);
+    }
+
+    /**
      * Brings the destination into a state where base images can be pushed to it and pulled from it.
      *
      * @param  commandRunner        a runner to interact with the command line

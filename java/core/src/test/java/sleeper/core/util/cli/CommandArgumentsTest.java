@@ -55,7 +55,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "b"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 3 positional arguments, found 2");
+                    .hasMessageContaining("Expected 3 positional arguments, found 2");
         }
 
         @Test
@@ -66,7 +66,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "b", "c"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 2 positional arguments, found 3");
+                    .hasMessageContaining("Expected 2 positional arguments, found 3");
         }
 
         @Test
@@ -77,7 +77,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "b", "c"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 1 positional argument, found 3");
+                    .hasMessageContaining("Expected 1 positional argument, found 3");
         }
 
         @Test
@@ -85,7 +85,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 0 positional arguments, found 1");
+                    .hasMessageContaining("Expected 0 positional arguments, found 1");
         }
     }
 
@@ -693,7 +693,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "--some-option", "b"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 0 positional arguments, found 1");
+                    .hasMessageContaining("Expected 0 positional arguments, found 1");
         }
 
         @Test
@@ -704,7 +704,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "--yes"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 0 positional arguments, found 1");
+                    .hasMessageContaining("Expected 0 positional arguments, found 1");
         }
 
         @Test
@@ -715,7 +715,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "--yes", "b"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 0 positional arguments, found 1");
+                    .hasMessageContaining("Expected 0 positional arguments, found 1");
         }
 
         @Test
@@ -727,7 +727,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "--pass", "--yes"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 1 positional argument, found 2");
+                    .hasMessageContaining("Expected 1 positional argument, found 2");
         }
 
         @Test
@@ -738,7 +738,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "b"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 3 positional arguments, found 2");
+                    .hasMessageContaining("Expected 3 positional arguments, found 2");
         }
     }
 
