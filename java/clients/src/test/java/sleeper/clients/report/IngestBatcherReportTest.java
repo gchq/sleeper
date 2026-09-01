@@ -66,6 +66,13 @@ public class IngestBatcherReportTest {
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Report type not supported: error. Valid types: JSON, STANDARD");
         }
+
+        @Test
+        void shouldRejectMultipleQueryTypes() {
+            assertThatThrownBy(() -> readArguments("multiple-instance", "json", "-p", "-a"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Both query type mode flags are set, please only set 1.");
+        }
     }
 
     private static Arguments readArguments(String... args) {
