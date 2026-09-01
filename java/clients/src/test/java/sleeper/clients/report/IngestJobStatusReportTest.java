@@ -111,10 +111,19 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
-        void shouldRejectRangeReportWithInvalidateDateFormat() {
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r", "--start-time", "asdad", "--end-time", "wqas"))
+        void shouldRejectRangeReportWithInvalidateDateFormatStartTime() {
+            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
+                    "--start-time", "asdad", "--end-time", "20150411084545"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Range parameters don't match expected format: yyyyMMddHHmmss");
+                    .hasMessage("start-time parameter don't match expected format: yyyyMMddHHmmss");
+        }
+
+        @Test
+        void shouldRejectRangeReportWithInvalidateDateFormatEndTime() {
+            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
+                    "--start-time", "20170404152121", "--end-time", "gdsd"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("end-time parameter don't match expected format: yyyyMMddHHmmss");
         }
 
         @Test

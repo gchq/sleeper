@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 
@@ -189,9 +190,7 @@ public class IngestJobStatusReport {
         String endTime = null;
 
         if (jobType.equals(JobQuery.Type.DETAILED)) {
-            if (arguments.getOptionalString("d").isPresent()) {
-                jobId = arguments.getString("d");
-            } else if (arguments.getOptionalString("detailed").isPresent()) {
+            if (arguments.getOptionalString("detailed").isPresent()) {
                 jobId = arguments.getString("detailed");
             } else {
                 throw new CommandArgumentsException("Additional paramter of Job ID is required for the detailed query type.");
@@ -199,30 +198,21 @@ public class IngestJobStatusReport {
         }
 
         if (jobType.equals(JobQuery.Type.RANGE)) {
-            if (arguments.getOptionalString("start-time").isPresent()) {
-                startTime = arguments.getString("start-time");
-            }
-            if (arguments.getOptionalString("end-time").isPresent()) {
-                endTime = arguments.getString("end-time");
-            }
+            Optional<String> optionalStart = arguments.getOptionalString("start-time");
+            Optional<String> optionalEnd = arguments.getOptionalString("end-time");
 
-            if (startTime == null && endTime != null) {
+            if (optionalStart.isPresent() && optionalEnd.isPresent()) {
+                startTime = optionalStart.get();
+                endTime = optionalEnd.get();
+            } else if (optionalStart.isEmpty() && optionalEnd.isPresent()) {
                 throw new CommandArgumentsException("Missing paramter of start-time which is required for the ranged query type.");
-            }
-            if (endTime == null && startTime != null) {
+            } else if (optionalStart.isPresent() && optionalEnd.isEmpty()) {
                 throw new CommandArgumentsException("Missing paramter of end-time which is required for the ranged query type.");
             }
         }
 
-        return new Arguments(arguments.getString("instance-id"),
-                arguments.getString("table-name"),
-                arguments.getOptionalString("output-type")
-                        .map(s -> s.toUpperCase(Locale.ROOT))
-                        .orElse(DEFAULT_REPORTER),
-                jobType,
-                jobId,
-                startTime,
-                endTime);
+        return new Arguments(arguments.getString("instance-id"), arguments.getString("table-name"),
+                arguments.getOptionalString("output-type").map(s -> s.toUpperCase(Locale.ROOT)).orElse(DEFAULT_REPORTER), jobType, jobId, startTime, endTime);
     }
 
     /**
@@ -245,25 +235,32 @@ public class IngestJobStatusReport {
             if (queryType.equals(JobQuery.Type.RANGE) && startTime != null && endTime != null) {
                 SimpleDateFormat dateInputFormat = new SimpleDateFormat(RangeJobsQuery.DATE_FORMAT);
                 dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+                Date start;
+                Date end;
                 try {
-                    Date start = dateInputFormat.parse(startTime);
-                    Date end = dateInputFormat.parse(endTime);
-                    if (end.before(start)) {
-                        throw new CommandArgumentsException("Range end is before range start. Range start: " + startTime + ", range end: " + endTime);
-                    }
+                    start = dateInputFormat.parse(startTime);
                 } catch (ParseException e) {
-                    throw new CommandArgumentsException("Range parameters don't match expected format: " + RangeJobsQuery.DATE_FORMAT);
+                    throw new CommandArgumentsException("start-time parameter don't match expected format: " + RangeJobsQuery.DATE_FORMAT);
                 }
+                try {
+                    end = dateInputFormat.parse(endTime);
+                } catch (ParseException e) {
+                    throw new CommandArgumentsException("end-time parameter don't match expected format: " + RangeJobsQuery.DATE_FORMAT);
+                }
+                if (end.before(start)) {
+                    throw new CommandArgumentsException("Range end is before range start. Range start: " + startTime + ", range end: " + endTime);
+                }
+
             }
         }
     }
 
     private static JobQuery.Type determineQueryType(CommandArguments args) {
-        Boolean allType = args.isFlagSet("a") || args.isFlagSet("all");
-        Boolean detailedType = args.getOptionalString("d").isPresent() || args.getOptionalString("detailed").isPresent();
-        Boolean rejectedType = args.isFlagSet("n") || args.isFlagSet("rejected");
-        Boolean rangeType = args.isFlagSet("r") || args.isFlagSet("range");
-        Boolean unfinishedType = args.isFlagSet("u") || args.isFlagSet("unfinished");
+        Boolean allType = args.isFlagSet("all");
+        Boolean detailedType = args.getOptionalString("detailed").isPresent();
+        Boolean rejectedType = args.isFlagSet("rejected");
+        Boolean rangeType = args.isFlagSet("range");
+        Boolean unfinishedType = args.isFlagSet("unfinished");
 
         if (Stream.of(allType, detailedType, rejectedType, rangeType, unfinishedType)
                 .filter(flag -> flag.equals(Boolean.TRUE)).count() > 1) {
@@ -271,9 +268,6 @@ public class IngestJobStatusReport {
             StringBuilder outStr = new StringBuilder();
             setFlags.forEach(flag -> outStr.append(flag.getClass().getName()));
             throw new CommandArgumentsException("Too many report mode flags are set, maximum  of 1. Flags set: " + outStr.toString());
-        }
-        if (allType) {
-            return JobQuery.Type.ALL;
         }
         if (detailedType) {
             return JobQuery.Type.DETAILED;
