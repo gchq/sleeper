@@ -64,6 +64,11 @@ class ManagedBaseImageRegistry implements BaseImageDestination {
     }
 
     @Override
+    public String toString() {
+        return "managed base image registry at localhost:" + port;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == null || obj.getClass() != getClass()) {
             return false;

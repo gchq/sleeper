@@ -43,7 +43,7 @@ class FixedBaseImageRegistry implements BaseImageDestination {
 
     @Override
     public String toString() {
-        return "base image registry at " + baseImagePrefix;
+        return "fixed base image registry at " + baseImagePrefix;
     }
 
     @Override
