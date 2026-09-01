@@ -24,6 +24,7 @@ vulnerabilities:
   - id: CVE-2026-11721
   - id: CVE-2026-12617
   - id: CVE-2026-13321
+  - id: CVE-2026-13204
 
   # Java dependencies in Spark
 
