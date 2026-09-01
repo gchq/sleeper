@@ -159,20 +159,20 @@ public class IngestJobStatusReport {
                     "Output format. One of STANDARD, JSON. Defaults to STANDARD.\n" +
                     "\n" +
                     "Available query types for the report are (Choose 1):\n " +
-                    "-a --all\n" +
+                    "-a, --all\n" +
                     "Returns all jobs.\n" +
                     "\n" +
-                    "-d --detailed <jobId>\n" +
+                    "-d, --detailed <jobId>\n" +
                     "Returns a detailed report for the job ID provided.\n" +
                     "\n" +
-                    "-n --rejected\n" +
+                    "-n, --rejected\n" +
                     "Returns all rejected jobs.\n" +
                     "\n" +
-                    "-r --range --start-time <startTime> --end-time <endTime>\n" +
+                    "-r, --range --start-time <startTime> --end-time <endTime>\n" +
                     "Returns all jobs within a given range. If not set, defaults to 4 hours.\n" +
-                    "Alternatively, can be declared with --start-time and --end-time in the following format yyyyMMddhhmmss.\n" +
+                    "The range can be declared with --start-time and --end-time. They must in the following format: yyyyMMddhhmmss.\n" +
                     "\n" +
-                    "-u --unfinished\n" +
+                    "-u, --unfinished\n" +
                     "Returns all unfinished jobs.")
             .build();
 
