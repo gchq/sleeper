@@ -32,8 +32,8 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildAndLoadMultiplatformImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildMultiplatformImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
 import static sleeper.clients.util.command.Command.command;
@@ -61,7 +61,7 @@ public class BuildDockerImageTest extends DockerImagesTestBase {
         assertThat(commandsThatRan).containsExactly(
                 createBuildxBuilderInstanceCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildAndLoadMultiplatformImageCommand("test", "./scripts/docker/compaction"));
+                buildMultiplatformImageCommand("test", "./scripts/docker/compaction"));
     }
 
     @Test
@@ -88,6 +88,28 @@ public class BuildDockerImageTest extends DockerImagesTestBase {
         assertThat(files).isEqualTo(Map.of(
                 "./scripts/jars/statestore.jar", "jar-content",
                 "./scripts/docker/lambda/lambda.jar", "jar-content"));
+    }
+
+    @Test
+    void shouldBuildBaseImage() {
+        // When
+        buildImage(dockerDeploymentImageConfig(), "base", "test");
+
+        // Then
+        assertThat(commandsThatRan).containsExactly(
+                buildImageCommand("test", "./scripts/docker/base"));
+    }
+
+    @Test
+    void shouldBuildBaseImageForMultiplePlatforms() {
+        // When
+        buildImage(dockerDeploymentImageConfig(), "base", "test", "--multiplatform");
+
+        // Then
+        assertThat(commandsThatRan).containsExactly(
+                createBuildxBuilderInstanceCommand(),
+                useBuildxBuilderInstanceCommand(),
+                buildMultiplatformImageCommand("test", "./scripts/docker/base"));
     }
 
     @Test

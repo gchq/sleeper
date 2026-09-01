@@ -100,7 +100,7 @@ public class BuildDockerImage {
         if (args.isMultiplatform() && !image.getPlatforms().isEmpty()) {
             UploadDockerImages.useBuildXBuilder(commandRunner);
             String platformList = ContainerPlatform.buildPlatformListArgument(image.getPlatforms());
-            dockerOptions.addAll(List.of("--platform", platformList, "--load"));
+            dockerOptions.addAll(List.of("--platform", platformList));
             dockerCommand.addAll(List.of("docker", "buildx", "build"));
         } else {
             dockerCommand.addAll(List.of("docker", "build"));
