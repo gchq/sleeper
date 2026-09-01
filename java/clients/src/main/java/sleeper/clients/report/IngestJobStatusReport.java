@@ -51,7 +51,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 
@@ -134,7 +133,9 @@ public class IngestJobStatusReport {
             TableStatus table = tableIndex.getTableByName(reportArgs.tableName())
                     .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + reportArgs.tableName()));
             IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-            JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, reportArgs.queryType(), reportArgs.additionalValues(), Clock.systemUTC(), ConsoleInput.stdIn());
+            JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, reportArgs.queryType(),
+                    reportArgs.startTime() + "," + reportArgs.endTime(),
+                    Clock.systemUTC(), ConsoleInput.stdIn());
             new IngestJobStatusReport(tracker, query, REPORTERS.get(reportArgs.outputType()),
                     QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
                     PersistentEmrStepCount.byStatus(instanceProperties, emrClient)).run();
@@ -147,31 +148,32 @@ public class IngestJobStatusReport {
                     CommandOption.shortFlag('a', "all"),
                     CommandOption.shortOption('d', "detailed"),
                     CommandOption.shortFlag('n', "rejected"),
-                    CommandOption.shortOption('r', "range"),
+                    CommandOption.shortFlag('r', "range"),
+                    CommandOption.longOption("start-time"),
+                    CommandOption.longOption("end-time"),
                     CommandOption.shortFlag('u', "unfinished")))
             .helpSummary("" +
-                    "Creates a report listing all the status of the ingest jobs within a Sleeper instance.\n" +
+                    "A report on ingest jobs within a Sleeper instance.\n" +
                     "\n" +
                     "--output-type <type>\n" +
                     "Output format. One of STANDARD, JSON. Defaults to STANDARD.\n" +
                     "\n" +
-                    "Available query types for the report are:\n" +
-                    "[If none, set will default to all, only one can be used at any one time]\n" +
+                    "Available query types for the report are (Choose 1):\n " +
                     "-a --all\n" +
-                    "Returns all jobs \n" +
+                    "Returns all jobs.\n" +
                     "\n" +
                     "-d --detailed <jobId>\n" +
-                    "Returns a detailed report for the jobId provided.\n" +
+                    "Returns a detailed report for the job ID provided.\n" +
                     "\n" +
                     "-n --rejected\n" +
-                    "Returns all ejected jobs.\n" +
+                    "Returns all rejected jobs.\n" +
                     "\n" +
-                    "-r --range <reportRange>\n" +
+                    "-r --range --start-time <startTime> --end-time <endTime>\n" +
                     "Returns all jobs within a given range. If not set, defaults to 4 hours.\n" +
-                    "Can also declare both start and end points as reportRange in following format yyyyMMddhhmmss, comma seperated.\n" +
+                    "Alternatively, can be declared with --start-time and --end-time in the following format yyyyMMddhhmmss.\n" +
                     "\n" +
                     "-u --unfinished\n" +
-                    "Returns all unfinished jobs")
+                    "Returns all unfinished jobs.")
             .build();
 
     /**
@@ -182,58 +184,72 @@ public class IngestJobStatusReport {
      */
     public static Arguments readArguments(CommandArguments arguments) {
         JobQuery.Type jobType = determineQueryType(arguments);
-        String additionalJobValues = null;
+        String jobId = null;
+        String startTime = null;
+        String endTime = null;
 
-        // Explicitly declare the types needing possible additional values, done as range value is optional and not
-        // triggered as part of isParameterRequired
-        if (jobType.equals(JobQuery.Type.DETAILED) || jobType.equals(JobQuery.Type.RANGE)) {
-            List<Optional<String>> possiblesValues = List.of(
-                    arguments.getOptionalString("d"),
-                    arguments.getOptionalString("detailed"),
-                    arguments.getOptionalString("r"),
-                    arguments.getOptionalString("range"));
-
-            additionalJobValues = possiblesValues.stream().filter(Optional::isPresent).findFirst().get().get();
+        if (jobType.equals(JobQuery.Type.DETAILED)) {
+            if (arguments.getOptionalString("d").isPresent()) {
+                jobId = arguments.getString("d");
+            } else if (arguments.getOptionalString("detailed").isPresent()) {
+                jobId = arguments.getString("detailed");
+            } else {
+                throw new CommandArgumentsException("Additional paramter of Job ID is required for the detailed query type.");
+            }
         }
 
-        return new Arguments(
-                arguments.getString("instance-id"),
+        if (jobType.equals(JobQuery.Type.RANGE)) {
+            if (arguments.getOptionalString("start-time").isPresent()) {
+                startTime = arguments.getString("start-time");
+            }
+            if (arguments.getOptionalString("end-time").isPresent()) {
+                endTime = arguments.getString("end-time");
+            }
+
+            if (startTime == null && endTime != null) {
+                throw new CommandArgumentsException("Missing paramter of start-time which is required for the ranged query type.");
+            }
+            if (endTime == null && startTime != null) {
+                throw new CommandArgumentsException("Missing paramter of end-time which is required for the ranged query type.");
+            }
+        }
+
+        return new Arguments(arguments.getString("instance-id"),
                 arguments.getString("table-name"),
                 arguments.getOptionalString("output-type")
                         .map(s -> s.toUpperCase(Locale.ROOT))
                         .orElse(DEFAULT_REPORTER),
                 jobType,
-                additionalJobValues);
+                jobId,
+                startTime,
+                endTime);
     }
 
     /**
      * Holds the arguments for the ingest job status report command.
      *
-     * @param instanceId       the Sleeper instance ID
-     * @param tableName        the table name
-     * @param outputType       the output format, either STANDARD or JSON
-     * @param queryType        the type of query to execute for the ingest report
-     * @param additionalValues option parameters for several of the report types
+     * @param instanceId the Sleeper instance ID
+     * @param tableName  the table name
+     * @param outputType the output format, either STANDARD or JSON
+     * @param queryType  the type of query to execute for the ingest report
+     * @param jobId      optional jobID for the detailed query
+     * @param startTime  optional start time for range query
+     * @param endTime    optional end time for range query
      */
-    public record Arguments(String instanceId, String tableName, String outputType, JobQuery.Type queryType, String additionalValues) {
+    public record Arguments(String instanceId, String tableName, String outputType, JobQuery.Type queryType,
+            String jobId, String startTime, String endTime) {
         public Arguments {
             if (!REPORTERS.containsKey(outputType)) {
                 throw new CommandArgumentsException("Output type not supported: " + outputType + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
             }
-            if (queryType.isParametersRequired()) {
-                if (additionalValues == null || "".equals(additionalValues)) {
-                    throw new CommandArgumentsException("Additional parameters are required for the query type: " + queryType);
-                }
-            }
-            if (queryType.equals(JobQuery.Type.RANGE) && !"".equals(additionalValues)) {
-                String[] params = additionalValues.split(",");
+            if (queryType.equals(JobQuery.Type.RANGE) && startTime != null && endTime != null) {
                 SimpleDateFormat dateInputFormat = new SimpleDateFormat(RangeJobsQuery.DATE_FORMAT);
                 dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
                 try {
-                    Date start = dateInputFormat.parse(params[0]);
-                    Date end = dateInputFormat.parse(params[1]);
+                    Date start = dateInputFormat.parse(startTime);
+                    Date end = dateInputFormat.parse(endTime);
                     if (end.before(start)) {
-                        throw new CommandArgumentsException("Range end is before range start. Range start: " + params[0] + ", range end: " + params[1]);
+                        throw new CommandArgumentsException("Range end is before range start. Range start: " + startTime + ", range end: " + endTime);
                     }
                 } catch (ParseException e) {
                     throw new CommandArgumentsException("Range parameters don't match expected format: " + RangeJobsQuery.DATE_FORMAT);
@@ -246,7 +262,7 @@ public class IngestJobStatusReport {
         Boolean allType = args.isFlagSet("a") || args.isFlagSet("all");
         Boolean detailedType = args.getOptionalString("d").isPresent() || args.getOptionalString("detailed").isPresent();
         Boolean rejectedType = args.isFlagSet("n") || args.isFlagSet("rejected");
-        Boolean rangeType = args.getOptionalString("r").isPresent() || args.getOptionalString("range").isPresent();
+        Boolean rangeType = args.isFlagSet("r") || args.isFlagSet("range");
         Boolean unfinishedType = args.isFlagSet("u") || args.isFlagSet("unfinished");
 
         if (Stream.of(allType, detailedType, rejectedType, rangeType, unfinishedType)

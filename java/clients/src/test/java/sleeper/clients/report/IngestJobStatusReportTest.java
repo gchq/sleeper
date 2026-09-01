@@ -70,10 +70,10 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shoudlReadQueryTypeRangeFlag() {
-            Arguments shortArgs = readArguments("range-instance", "range-table", "-r", "");
+            Arguments shortArgs = readArguments("range-instance", "range-table", "-r");
             assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.RANGE);
 
-            Arguments longArgs = readArguments("range-instance", "range-table", "--range", "20200101120000,20220101120000");
+            Arguments longArgs = readArguments("range-instance", "range-table", "--range");
             assertThat(longArgs.queryType()).isEqualTo(JobQuery.Type.RANGE);
         }
 
@@ -112,16 +112,33 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectRangeReportWithInvalidateDateFormat() {
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r", "asdad,wqas"))
+            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r", "--start-time", "asdad", "--end-time", "wqas"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Range parameters don't match expected format: yyyyMMddHHmmss");
         }
 
         @Test
-        void shouldRejectRangeReportWithEndDateBeforeStartDate() {
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r", "20200101120000,19700101120000"))
+        void shouldRejectRangeReportWithEndTimeBeforeStartTime() {
+            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
+                    "--start-time", "20200101120000", "--end-time", "19700101120000"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Range end is before range start. Range start: 20200101120000, range end: 19700101120000");
+        }
+
+        @Test
+        void shouldRejectRangeReportWithStartTimeButNoEndTime() {
+            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
+                    "--start-time", "20221101085959"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Missing paramter of end-time which is required for the ranged query type.");
+        }
+
+        @Test
+        void shouldRejectRangeReportWithEndTimeButStartTime() {
+            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
+                    "--end-time", "20240912093000"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Missing paramter of start-time which is required for the ranged query type.");
         }
     }
 
