@@ -83,7 +83,7 @@ public class DockerImageConfiguration {
                         .map(StackDockerImage::fromDockerDeployment),
                 lambdaHandlers.stream()
                         .map(LambdaHandler::getJar).distinct()
-                        .map(StackDockerImage::lambdaImage))
+                        .map(StackDockerImage::fromLambdaImage))
                 .collect(toUnmodifiableList());
     }
 
@@ -102,7 +102,7 @@ public class DockerImageConfiguration {
         return lambdaHandlers.stream()
                 .filter(lambda -> lambda.isDeployed(lambdaDeployType, stacks))
                 .map(LambdaHandler::getJar).distinct()
-                .map(StackDockerImage::lambdaImage);
+                .map(StackDockerImage::fromLambdaImage);
     }
 
     public Optional<LambdaJar> getLambdaJarByImageName(String imageName) {

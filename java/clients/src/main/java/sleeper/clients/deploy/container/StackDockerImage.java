@@ -75,7 +75,7 @@ public class StackDockerImage {
      * @param  lambdaJar the definition of the jar
      * @return           the Docker image
      */
-    public static StackDockerImage lambdaImage(LambdaJar lambdaJar) {
+    public static StackDockerImage fromLambdaImage(LambdaJar lambdaJar) {
         return builder()
                 .imageName(lambdaJar.getImageName())
                 .directoryName("lambda")
