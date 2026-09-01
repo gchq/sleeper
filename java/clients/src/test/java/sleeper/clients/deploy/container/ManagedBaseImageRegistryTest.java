@@ -70,12 +70,13 @@ public class ManagedBaseImageRegistryTest {
         CommandPipelineRunner runner = returnExitCodeForCommand(1, startBaseImageRegistryCommand());
 
         // When
-        createIfMissingWithPort(5001, runner);
+        String repositoryPrefix = createIfMissingWithPort(5001, runner);
 
         // Then
         assertThat(commandsThatRan).containsExactly(
                 startBaseImageRegistryCommand(),
                 createBaseImageRegistryCommand(5001));
+        assertThat(repositoryPrefix).isEqualTo("localhost:5001");
     }
 
     @Test
@@ -118,8 +119,9 @@ public class ManagedBaseImageRegistryTest {
         };
     }
 
-    private void createIfMissingWithPort(int port, CommandPipelineRunner runner) throws Exception {
-        BaseImageDestination.managedRegistry(port)
-                .createIfMissing(recordCommandsRun(commandsThatRan, runner));
+    private String createIfMissingWithPort(int port, CommandPipelineRunner runner) throws Exception {
+        BaseImageDestination destination = BaseImageDestination.managedRegistry(port);
+        destination.createIfMissing(recordCommandsRun(commandsThatRan, runner));
+        return destination.repositoryPrefix("deployment-prefix");
     }
 }

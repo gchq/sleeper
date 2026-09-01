@@ -33,6 +33,7 @@ class FixedBaseImageRegistry implements BaseImageDestination {
 
     @Override
     public void createIfMissing(CommandPipelineRunner commandRunner) throws IOException, InterruptedException {
+        // There's nothing to create as we're pointing to a registry that already exists.
     }
 
     @Override

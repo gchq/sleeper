@@ -30,7 +30,7 @@ import static sleeper.clients.util.command.CommandPipeline.pipeline;
 /**
  * A base image destination that manages a local registry as a long-lived Docker container.
  */
-class ManagedBaseImageRegistry extends FixedBaseImageRegistry {
+class ManagedBaseImageRegistry implements BaseImageDestination {
     private static final Logger LOGGER = LoggerFactory.getLogger(ManagedBaseImageRegistry.class);
 
     private static final String CONTAINER_NAME = "sleeper-base-image-registry";
@@ -41,7 +41,6 @@ class ManagedBaseImageRegistry extends FixedBaseImageRegistry {
     private final int port;
 
     ManagedBaseImageRegistry(int port) {
-        super("localhost:" + port);
         this.port = port;
     }
 
@@ -57,6 +56,11 @@ class ManagedBaseImageRegistry extends FixedBaseImageRegistry {
         if (exitCode != 0) {
             commandRunner.runOrThrow(startContainer());
         }
+    }
+
+    @Override
+    public String repositoryPrefix(String deploymentRepositoryPrefix) {
+        return "localhost:" + port;
     }
 
     @Override
