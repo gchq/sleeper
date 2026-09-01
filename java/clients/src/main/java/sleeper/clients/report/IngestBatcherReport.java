@@ -39,6 +39,7 @@ import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
@@ -153,7 +154,7 @@ public class IngestBatcherReport {
      */
     public record Arguments(String instanceId, String reportType, BatcherQuery.Type queryType) {
         public Arguments {
-            if (!REPORTERS.containsKey(reportType.toUpperCase())) {
+            if (!REPORTERS.containsKey(reportType.toUpperCase(Locale.ROOT))) {
                 throw new CommandArgumentsException("Report type not supported: " + reportType + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
             }
         }
