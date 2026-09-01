@@ -70,14 +70,14 @@ public class DockerImageConfiguration {
      * @param  cdkApp     the CDK app being deployed
      * @return            the list of Docker images that need to be uploaded
      */
-    public List<StackDockerImage> getNonBaseImagesToUpload(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
+    public List<StackDockerImage> getImagesToUpload(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
         return Stream.concat(
                 dockerDeploymentImages(properties, cdkApp),
                 lambdaImages(properties))
                 .collect(toUnmodifiableList());
     }
 
-    public List<StackDockerImage> getAllNonBaseImagesToUpload() {
+    public List<StackDockerImage> getAllImagesToUpload() {
         return Stream.concat(
                 dockerDeployments.stream()
                         .map(StackDockerImage::fromDockerDeployment),
@@ -85,23 +85,6 @@ public class DockerImageConfiguration {
                         .map(LambdaHandler::getJar).distinct()
                         .map(StackDockerImage::fromLambdaImage))
                 .collect(toUnmodifiableList());
-    }
-
-    private Stream<StackDockerImage> dockerDeploymentImages(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
-        StateStoreCommitterPlatform committerPlatform = properties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class);
-        Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
-        return dockerDeployments.stream()
-                .filter(deployment -> deployment.isDeployed(cdkApp, committerPlatform, stacks))
-                .map(StackDockerImage::fromDockerDeployment);
-    }
-
-    private Stream<StackDockerImage> lambdaImages(SleeperPropertyValues<InstanceProperty> properties) {
-        LambdaDeployType lambdaDeployType = properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
-        Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
-        return lambdaHandlers.stream()
-                .filter(lambda -> lambda.isDeployed(lambdaDeployType, stacks))
-                .map(LambdaHandler::getJar).distinct()
-                .map(StackDockerImage::fromLambdaImage);
     }
 
     public Optional<StackDockerImage> getDockerImageByName(String name) {
@@ -120,6 +103,23 @@ public class DockerImageConfiguration {
         } else {
             return Optional.empty();
         }
+    }
+
+    private Stream<StackDockerImage> dockerDeploymentImages(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
+        StateStoreCommitterPlatform committerPlatform = properties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class);
+        Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
+        return dockerDeployments.stream()
+                .filter(deployment -> deployment.isDeployed(cdkApp, committerPlatform, stacks))
+                .map(StackDockerImage::fromDockerDeployment);
+    }
+
+    private Stream<StackDockerImage> lambdaImages(SleeperPropertyValues<InstanceProperty> properties) {
+        LambdaDeployType lambdaDeployType = properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
+        Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
+        return lambdaHandlers.stream()
+                .filter(lambda -> lambda.isDeployed(lambdaDeployType, stacks))
+                .map(LambdaHandler::getJar).distinct()
+                .map(StackDockerImage::fromLambdaImage);
     }
 
     private Optional<LambdaJar> getLambdaJarByImageName(String imageName) {
