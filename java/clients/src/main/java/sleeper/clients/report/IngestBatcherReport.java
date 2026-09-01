@@ -104,18 +104,18 @@ public class IngestBatcherReport {
             .options(List.of(
                     CommandOption.shortFlag('a', "all"),
                     CommandOption.shortFlag('p', "pending")))
-            .helpSummary("Creates a report detailing all the batches produces for the ingest process.\n" +
+            .helpSummary("Creates a report about all the ingest batches.\n" +
                     "\n" +
                     "--report-type <type>\n" +
                     "Format of the report. One of STANDARD or JSON. Defaults to STANDARD.\n" +
                     "\n" +
                     "Available query types for the report are:\n" +
-                    "[Defaults to all if none set]" +
+                    "[Defaults to ALL, if neither is set]\n" +
                     "\n" +
-                    "-a --all \n" +
+                    "-a, --all\n" +
                     "Returns all the batches for the report.\n" +
                     "\n" +
-                    "-p --pending\n" +
+                    "-p, --pending\n" +
                     "Returns only the pending batches as part of the report.")
             .build();
 
