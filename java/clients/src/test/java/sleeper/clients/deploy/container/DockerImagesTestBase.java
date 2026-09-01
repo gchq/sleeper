@@ -113,11 +113,11 @@ public class DockerImagesTestBase {
     }
 
     protected DockerImageConfiguration dockerDeploymentImageConfig() {
-        return new DockerImageConfiguration(DOCKER_DEPLOYMENTS, List.of());
+        return new DockerImageConfiguration(StackDockerImage.DEFAULT_BASE, DOCKER_DEPLOYMENTS, List.of());
     }
 
     protected DockerImageConfiguration lambdaImageConfig() {
-        return new DockerImageConfiguration(List.of(BASE), LAMBDA_HANDLERS);
+        return new DockerImageConfiguration(StackDockerImage.DEFAULT_BASE, List.of(BASE), LAMBDA_HANDLERS);
     }
 
     protected StackDockerImage baseImage() {
@@ -125,7 +125,7 @@ public class DockerImagesTestBase {
     }
 
     protected DockerImageConfiguration optionalLambdasImageConfig() {
-        return new DockerImageConfiguration(List.of(BASE),
+        return new DockerImageConfiguration(StackDockerImage.DEFAULT_BASE, List.of(BASE),
                 LAMBDA_HANDLERS.stream().filter(lambda -> !lambda.getOptionalStacks().isEmpty()).toList());
     }
 

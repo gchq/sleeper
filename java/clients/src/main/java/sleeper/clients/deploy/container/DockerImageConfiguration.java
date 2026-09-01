@@ -47,8 +47,9 @@ import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COM
  */
 public class DockerImageConfiguration {
 
-    private static final DockerImageConfiguration DEFAULT = new DockerImageConfiguration(DockerDeployment.all(), LambdaHandler.all());
+    private static final DockerImageConfiguration DEFAULT = new DockerImageConfiguration(StackDockerImage.DEFAULT_BASE, DockerDeployment.all(), LambdaHandler.all());
 
+    private final StackDockerImage baseImage;
     private final List<DockerDeployment> dockerDeployments;
     private final List<LambdaHandler> lambdaHandlers;
 
@@ -56,7 +57,8 @@ public class DockerImageConfiguration {
         return DEFAULT;
     }
 
-    public DockerImageConfiguration(List<DockerDeployment> dockerDeployments, List<LambdaHandler> lambdaHandlers) {
+    public DockerImageConfiguration(StackDockerImage baseImage, List<DockerDeployment> dockerDeployments, List<LambdaHandler> lambdaHandlers) {
+        this.baseImage = baseImage;
         this.dockerDeployments = dockerDeployments;
         this.lambdaHandlers = lambdaHandlers;
     }
@@ -117,7 +119,7 @@ public class DockerImageConfiguration {
             return deploymentImage;
         }
         if (Objects.equals("base", name)) {
-            return Optional.of(StackDockerImage.DEFAULT_BASE);
+            return Optional.of(baseImage);
         } else {
             return Optional.empty();
         }

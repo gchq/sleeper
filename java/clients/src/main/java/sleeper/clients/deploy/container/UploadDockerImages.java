@@ -30,7 +30,6 @@ import sleeper.container.images.ContainerRegistryCredentials;
 import sleeper.container.images.EcrCredentialRetriever;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.ContainerPlatform;
-import sleeper.core.deploy.DockerDeployment;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -250,7 +249,7 @@ public class UploadDockerImages {
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private CopyContainerImage copyImage;
-        private StackDockerImage baseImage = StackDockerImage.fromDockerDeployment(DockerDeployment.BASE);
+        private StackDockerImage baseImage = StackDockerImage.DEFAULT_BASE;
         private BaseImageDestination baseImageDestination;
         private String version = SleeperVersion.getVersion();
         private boolean createMultiplatformBuilder = true;
