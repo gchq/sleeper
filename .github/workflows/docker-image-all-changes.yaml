@@ -6,7 +6,6 @@ on:
       - '.github/workflows/docker-image-all.yaml'
       - '.github/workflows/docker-image-test.yaml'
       - 'code-style/.trivyignore.yaml'
-      - 'code-style/.trivyignore.eks.yaml'
 
 jobs:
   build:
