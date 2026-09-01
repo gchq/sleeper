@@ -40,11 +40,6 @@ public class DockerDeployment {
     public static List<ContainerPlatform> PLATFORMS = List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64);
 
     private static final List<DockerDeployment> ALL = new ArrayList<>();
-    public static final DockerDeployment BASE = builder()
-            .deploymentName("base")
-            .multiplatform(true)
-            .isDefaultBaseImage(true)
-            .add();
     public static final DockerDeployment INGEST = builder()
             .deploymentName("ingest")
             .optionalStack(OptionalStack.IngestStack)

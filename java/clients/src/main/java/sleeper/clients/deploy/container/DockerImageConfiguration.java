@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
@@ -81,7 +80,6 @@ public class DockerImageConfiguration {
     public List<StackDockerImage> getAllNonBaseImagesToUpload() {
         return Stream.concat(
                 dockerDeployments.stream()
-                        .filter(not(DockerDeployment::isDefaultBaseImage))
                         .map(StackDockerImage::fromDockerDeployment),
                 lambdaHandlers.stream()
                         .map(LambdaHandler::getJar).distinct()
@@ -93,7 +91,6 @@ public class DockerImageConfiguration {
         StateStoreCommitterPlatform committerPlatform = properties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class);
         Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
         return dockerDeployments.stream()
-                .filter(not(DockerDeployment::isDefaultBaseImage))
                 .filter(deployment -> deployment.isDeployed(cdkApp, committerPlatform, stacks))
                 .map(StackDockerImage::fromDockerDeployment);
     }
