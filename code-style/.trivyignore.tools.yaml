@@ -21,6 +21,8 @@ vulnerabilities:
   - id: CVE-2026-56865
   # golang.org/x/net
   - id: CVE-2026-46600
+   # golang.org/x/crypto
+  - id: CVE-2026-56854
   # github.com/cilium/ebpf
   - id: CVE-2026-10722
   # github.com/moby/go-archive
