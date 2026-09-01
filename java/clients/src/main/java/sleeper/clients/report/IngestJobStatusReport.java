@@ -189,26 +189,30 @@ public class IngestJobStatusReport {
         String startTime = null;
         String endTime = null;
 
-        if (jobType.equals(JobQuery.Type.DETAILED)) {
-            if (arguments.getOptionalString("detailed").isPresent()) {
-                jobId = arguments.getString("detailed");
-            } else {
-                throw new CommandArgumentsException("Additional paramter of Job ID is required for the detailed query type.");
-            }
-        }
+        switch (jobType) {
+            case DETAILED:
+                Optional<String> optionalDetailed = arguments.getOptionalString("detailed");
+                if (optionalDetailed.isPresent()) {
+                    jobId = optionalDetailed.get();
+                } else {
+                    throw new CommandArgumentsException("Additional paramter of Job ID is required for the detailed query type.");
+                }
+                break;
+            case RANGE:
+                Optional<String> optionalStart = arguments.getOptionalString("start-time");
+                Optional<String> optionalEnd = arguments.getOptionalString("end-time");
 
-        if (jobType.equals(JobQuery.Type.RANGE)) {
-            Optional<String> optionalStart = arguments.getOptionalString("start-time");
-            Optional<String> optionalEnd = arguments.getOptionalString("end-time");
-
-            if (optionalStart.isPresent() && optionalEnd.isPresent()) {
-                startTime = optionalStart.get();
-                endTime = optionalEnd.get();
-            } else if (optionalStart.isEmpty() && optionalEnd.isPresent()) {
-                throw new CommandArgumentsException("Missing paramter of start-time which is required for the ranged query type.");
-            } else if (optionalStart.isPresent() && optionalEnd.isEmpty()) {
-                throw new CommandArgumentsException("Missing paramter of end-time which is required for the ranged query type.");
-            }
+                if (optionalStart.isPresent() && optionalEnd.isPresent()) {
+                    startTime = optionalStart.get();
+                    endTime = optionalEnd.get();
+                } else if (optionalStart.isEmpty() && optionalEnd.isPresent()) {
+                    throw new CommandArgumentsException("Missing paramter of start-time which is required for the ranged query type.");
+                } else if (optionalStart.isPresent() && optionalEnd.isEmpty()) {
+                    throw new CommandArgumentsException("Missing paramter of end-time which is required for the ranged query type.");
+                }
+                break;
+            default:
+                break;
         }
 
         return new Arguments(arguments.getString("instance-id"), arguments.getString("table-name"),
