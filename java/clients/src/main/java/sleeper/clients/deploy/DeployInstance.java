@@ -21,7 +21,6 @@ import software.amazon.awssdk.regions.PartitionMetadata;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
@@ -79,15 +78,7 @@ public class DeployInstance implements InstanceDeployer {
         if (!instanceProperties.isSet(ARTEFACTS_DEPLOYMENT_ID)) {
             invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID)));
         }
-        try {
-            syncJars.sync(SyncJarsRequest.from(instanceProperties));
-        } catch (NoSuchBucketException e) {
-            if (instanceProperties.isSet(ARTEFACTS_DEPLOYMENT_ID)) {
-                throw new IllegalArgumentException("Artefacts deployment does not exist: " +
-                        instanceProperties.get(ARTEFACTS_DEPLOYMENT_ID), e);
-            }
-            throw e;
-        }
+        syncJars.sync(SyncJarsRequest.from(instanceProperties));
         dockerImageUploader.upload(
                 UploadDockerImagesToEcrRequest.forDeployment(instanceProperties, request.getCdkApp(), DockerImageConfiguration.getDefault()));
         LOGGER.info("-------------------------------------------------------");
