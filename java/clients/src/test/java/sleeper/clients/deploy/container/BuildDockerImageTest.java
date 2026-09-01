@@ -80,7 +80,7 @@ public class BuildDockerImageTest extends DockerImagesTestBase {
         writeFile("./scripts/jars/statestore.jar", "jar-content");
 
         // When
-        buildImage(lambdaImageConfig(), "statestore-lambda", "test", "--lambda");
+        buildImage(lambdaImageConfig(), "statestore-lambda", "test");
 
         // Then
         assertThat(commandsThatRan).containsExactly(

@@ -105,14 +105,32 @@ public class DockerImageConfiguration {
                 .map(StackDockerImage::fromLambdaImage);
     }
 
-    public Optional<LambdaJar> getLambdaJarByImageName(String imageName) {
+    public Optional<StackDockerImage> getDockerImageByName(String name) {
+        var lambdaImage = getLambdaJarByImageName(name)
+                .map(StackDockerImage::fromLambdaImage);
+        if (lambdaImage.isPresent()) {
+            return lambdaImage;
+        }
+        var deploymentImage = getDockerDeploymentByName(name)
+                .map(StackDockerImage::fromDockerDeployment);
+        if (deploymentImage.isPresent()) {
+            return deploymentImage;
+        }
+        if (Objects.equals("base", name)) {
+            return Optional.of(StackDockerImage.DEFAULT_BASE);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<LambdaJar> getLambdaJarByImageName(String imageName) {
         return lambdaHandlers.stream()
                 .map(LambdaHandler::getJar)
                 .filter(jar -> Objects.equals(jar.getImageName(), imageName))
                 .findFirst();
     }
 
-    public Optional<DockerDeployment> getDockerDeploymentByName(String name) {
+    private Optional<DockerDeployment> getDockerDeploymentByName(String name) {
         return dockerDeployments.stream()
                 .filter(deployment -> Objects.equals(deployment.getDeploymentName(), name))
                 .findFirst();
