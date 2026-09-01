@@ -132,8 +132,8 @@ public class IngestBatcherReport {
     }
 
     private static BatcherQuery.Type determineQueryType(CommandArguments args) {
-        Boolean allFlag = args.isFlagSet("a") || args.isFlagSet("all");
-        Boolean pendingFlag = args.isFlagSet("p") || args.isFlagSet("pending");
+        Boolean allFlag = args.isFlagSet("all");
+        Boolean pendingFlag = args.isFlagSet("pending");
         if (allFlag && pendingFlag) {
             throw new CommandArgumentsException("Both query type mode flags are set, please only set 1.");
         } else {
