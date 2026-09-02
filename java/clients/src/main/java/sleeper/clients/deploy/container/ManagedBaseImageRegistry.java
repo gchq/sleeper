@@ -54,6 +54,7 @@ class ManagedBaseImageRegistry implements BaseImageDestination {
         // Creating it can clash with a deploy running alongside this one that found it absent at the same moment, so
         // starting it once more distinguishes losing that race from the registry being genuinely unavailable.
         if (exitCode != 0) {
+            LOGGER.info("Creation failed. Attempting to start existing container again in case another process created it at the same time.");
             commandRunner.runOrThrow(startContainer());
         }
     }
