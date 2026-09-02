@@ -209,6 +209,23 @@ public class IngestJobStatusReport {
                 } else if (optionalStart.isPresent() && optionalEnd.isEmpty()) {
                     throw new CommandArgumentsException("Missing paramter of end-time which is required for the ranged query type.");
                 }
+                SimpleDateFormat dateInputFormat = new SimpleDateFormat(RangeJobsQuery.DATE_FORMAT);
+                dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+                Date startDate, endDate;
+                try {
+                    startDate = dateInputFormat.parse(startTime);
+                } catch (ParseException e) {
+                    throw new CommandArgumentsException("start-time parameter don't match expected format: " + RangeJobsQuery.DATE_FORMAT);
+                }
+                try {
+                    endDate = dateInputFormat.parse(endTime);
+                } catch (ParseException e) {
+                    throw new CommandArgumentsException("end-time parameter don't match expected format: " + RangeJobsQuery.DATE_FORMAT);
+                }
+                if (endDate.before(startDate)) {
+                    throw new CommandArgumentsException("Range end is before range start. Range start: " + startTime + ", range end: " + endTime);
+                }
                 break;
             default:
                 break;
@@ -234,26 +251,6 @@ public class IngestJobStatusReport {
         public Arguments {
             if (!REPORTERS.containsKey(outputType)) {
                 throw new CommandArgumentsException("Output type not supported: " + outputType + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
-            }
-            if (queryType.equals(JobQuery.Type.RANGE) && startTime != null && endTime != null) {
-                SimpleDateFormat dateInputFormat = new SimpleDateFormat(RangeJobsQuery.DATE_FORMAT);
-                dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-                Date start;
-                Date end;
-                try {
-                    start = dateInputFormat.parse(startTime);
-                } catch (ParseException e) {
-                    throw new CommandArgumentsException("start-time parameter don't match expected format: " + RangeJobsQuery.DATE_FORMAT);
-                }
-                try {
-                    end = dateInputFormat.parse(endTime);
-                } catch (ParseException e) {
-                    throw new CommandArgumentsException("end-time parameter don't match expected format: " + RangeJobsQuery.DATE_FORMAT);
-                }
-                if (end.before(start)) {
-                    throw new CommandArgumentsException("Range end is before range start. Range start: " + startTime + ", range end: " + endTime);
-                }
-
             }
         }
     }
