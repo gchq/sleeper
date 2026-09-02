@@ -49,6 +49,14 @@ import static sleeper.clients.util.command.CommandPipeline.pipeline;
 public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
 
+    private static final String MULTIPLATFORM_BUILDER_NAME = "sleeper-multiplatform";
+
+    /**
+     * The port used by the managed base image registry if one is not configured. This is only used when images are
+     * built locally, and is run in a local container.
+     */
+    public static final int BASE_IMAGE_REGISTRY_PORT = 5000;
+
     private final Path baseDockerDirectory;
     private final Path jarsDirectory;
     private final DeployConfiguration deployConfig;
@@ -56,6 +64,7 @@ public class UploadDockerImages {
     private final CopyFile copyFile;
     private final CopyContainerImage copyImage;
     private final StackDockerImage baseImage;
+    private final BaseImageDestination baseImageDestination;
     private final String version;
     private final boolean createMultiplatformBuilder;
 
@@ -67,6 +76,7 @@ public class UploadDockerImages {
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
         copyImage = Optional.ofNullable(builder.copyImage).orElseGet(() -> CopyContainerImage.localBuildOnly());
         baseImage = requireNonNull(builder.baseImage, "baseImage must not be null");
+        baseImageDestination = requireNonNull(builder.baseImageDestination, "baseImageDestination must not be null");
         version = requireNonNull(builder.version, "version must not be null");
         createMultiplatformBuilder = builder.createMultiplatformBuilder;
     }
@@ -75,12 +85,34 @@ public class UploadDockerImages {
         return new Builder();
     }
 
+    /**
+     * Creates an uploader with configuration loaded from the scripts directory. The ECR client is used to retrieve
+     * credentials to upload to ECR.
+     *
+     * @param  scriptsDirectory the scripts directory
+     * @param  ecrClient        the client to authenticate with ECR when copying images to a repository
+     * @return                  the uploader
+     * @throws IOException      if the deploy configuration could not be read
+     */
     public static UploadDockerImages fromScriptsDirectory(Path scriptsDirectory, EcrClient ecrClient) throws IOException {
+        return builderWith(scriptsDirectory, ecrClient).build();
+    }
+
+    /**
+     * Creates a builder with configuration loaded from the scripts directory. The ECR client is used to retrieve
+     * credentials to upload to ECR.
+     *
+     * @param  scriptsDirectory the scripts directory
+     * @param  ecrClient        the client to authenticate with ECR when copying images to a repository
+     * @return                  the builder
+     * @throws IOException      if the deploy configuration could not be read
+     */
+    public static Builder builderWith(Path scriptsDirectory, EcrClient ecrClient) throws IOException {
         return builder()
                 .scriptsDirectory(scriptsDirectory)
                 .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
                 .copyImage(CopyContainerImage.withTransferManager(ecrClient))
-                .build();
+                .baseImageDestination(BaseImageDestination.managedRegistry(BASE_IMAGE_REGISTRY_PORT));
     }
 
     public boolean isDockerCli() {
@@ -88,9 +120,18 @@ public class UploadDockerImages {
         return deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD;
     }
 
+    /**
+     * Activates the builder used for multiplatform builds. If it doesn't exist, a new builder is created.
+     *
+     * @param  commandRunner        the command runner
+     * @throws IOException          if a command could not be run
+     * @throws InterruptedException if the thread was interrupted while running a command
+     */
     public static void useBuildXBuilder(CommandPipelineRunner commandRunner) throws IOException, InterruptedException {
-        commandRunner.run("docker", "buildx", "create", "--name", "sleeper");
-        commandRunner.runOrThrow("docker", "buildx", "use", "sleeper");
+        // If the builder already exists, creation fails and the existing builder will be used
+        commandRunner.run("docker", "buildx", "create", "--name", MULTIPLATFORM_BUILDER_NAME,
+                "--driver", "docker-container", "--driver-opt", "network=host");
+        commandRunner.runOrThrow("docker", "buildx", "use", MULTIPLATFORM_BUILDER_NAME);
     }
 
     public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload) throws IOException, InterruptedException {
@@ -101,18 +142,19 @@ public class UploadDockerImages {
         LOGGER.info("Building and uploading images: {}", imagesToUpload);
         boolean anyUseBaseImage = imagesToUpload.stream().anyMatch(StackDockerImage::isUseDefaultBaseImage);
 
-        if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD
-                && createMultiplatformBuilder) {
-            useBuildXBuilder(commandRunner);
-        }
-
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
-            String baseTag = buildTag(repositoryPrefix, baseImage);
+            baseImageDestination.createIfMissing(commandRunner);
+            if (createMultiplatformBuilder) {
+                useBuildXBuilder(commandRunner);
+            }
+
+            String baseImagePrefix = baseImageDestination.repositoryPrefix(repositoryPrefix);
+            String baseTag = buildTag(baseImagePrefix, baseImage);
             if (anyUseBaseImage) {
                 buildAndPushImage(baseTag, baseImage, Map.of());
             }
             for (StackDockerImage image : imagesToUpload) {
-                Map<String, String> buildArgs = createBuildArgs(repositoryPrefix, image, baseTag);
+                Map<String, String> buildArgs = createBuildArgs(baseImagePrefix, image, baseTag);
                 buildAndPushImage(buildTag(repositoryPrefix, image), image, buildArgs);
             }
         } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
@@ -154,10 +196,10 @@ public class UploadDockerImages {
         }
     }
 
-    private Map<String, String> createBuildArgs(String repositoryPrefix, StackDockerImage image, String baseTag) throws IOException, InterruptedException {
+    private Map<String, String> createBuildArgs(String baseImagePrefix, StackDockerImage image, String baseTag) throws IOException, InterruptedException {
         StackDockerImage overrideBaseImage = image.createOverrideBaseImage(deployConfig).orElse(null);
         if (overrideBaseImage != null) {
-            String overrideBaseTag = buildTag(repositoryPrefix, overrideBaseImage);
+            String overrideBaseTag = buildTag(baseImagePrefix, overrideBaseImage);
             buildAndPushImage(overrideBaseTag, overrideBaseImage, Map.of());
             return Map.of("BASE_IMAGE", overrideBaseTag);
         } else if (image.isUseDefaultBaseImage()) {
@@ -209,6 +251,7 @@ public class UploadDockerImages {
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private CopyContainerImage copyImage;
         private StackDockerImage baseImage = StackDockerImage.fromDockerDeployment(DockerDeployment.BASE);
+        private BaseImageDestination baseImageDestination;
         private String version = SleeperVersion.getVersion();
         private boolean createMultiplatformBuilder = true;
 
@@ -252,6 +295,11 @@ public class UploadDockerImages {
 
         public Builder baseImage(StackDockerImage baseImage) {
             this.baseImage = baseImage;
+            return this;
+        }
+
+        public Builder baseImageDestination(BaseImageDestination baseImageDestination) {
+            this.baseImageDestination = baseImageDestination;
             return this;
         }
 

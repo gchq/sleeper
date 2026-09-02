@@ -46,6 +46,7 @@ public class UploadDockerImagesToRepository {
         UploadDockerImages uploader = UploadDockerImages.builder()
                 .scriptsDirectory(scriptsDirectory)
                 .deployConfig(deployConfig)
+                .baseImageDestination(BaseImageDestination.deploymentRegistry())
                 .createMultiplatformBuilder(createMultiplatformBuilder)
                 .build();
         uploadAllImages(DockerImageConfiguration.getDefault(), uploader, repositoryPrefix);

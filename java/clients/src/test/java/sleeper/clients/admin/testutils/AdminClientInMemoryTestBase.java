@@ -22,6 +22,7 @@ import sleeper.clients.admin.AdminClient;
 import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.DeployConfiguration;
+import sleeper.clients.deploy.container.BaseImageDestination;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
@@ -127,6 +128,7 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
                         .deployConfig(DeployConfiguration.fromLocalBuild())
                         .commandRunner(recordCommandsRun(commandsThatRan, recordCommandsRun(dockerCommandsThatRan)))
                         .copyFile((source, target) -> files.put(target, files.get(source)))
+                        .baseImageDestination(BaseImageDestination.managedRegistry(5000))
                         .scriptsDirectory(scriptsDirectory)
                         .version(version)
                         .build(),
