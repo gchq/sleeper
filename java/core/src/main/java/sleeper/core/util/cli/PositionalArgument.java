@@ -45,10 +45,20 @@ public record PositionalArgument(String name, boolean systemArgument) {
         return new PositionalArgument(name, true);
     }
 
+    /**
+     * Whether or not this argument should be included in a usage message shown to the user.
+     *
+     * @return true if it should be included
+     */
     public boolean showUsage() {
         return !systemArgument;
     }
 
+    /**
+     * Whether or not this argument is set by the user.
+     *
+     * @return true if it is set by the user
+     */
     public boolean setByUser() {
         return !systemArgument;
     }
