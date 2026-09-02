@@ -23,6 +23,7 @@ import sleeper.clients.admin.AdminClient;
 import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.DeployConfiguration;
+import sleeper.clients.deploy.container.BaseImageDestination;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
@@ -83,6 +84,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
                         .commandRunner(recordCommandsRun(dockerCommandsThatRan))
                         .copyFile((source, target) -> {
                         })
+                        .baseImageDestination(BaseImageDestination.managedRegistry(5000))
                         .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                         .version(version)
                         .build(),

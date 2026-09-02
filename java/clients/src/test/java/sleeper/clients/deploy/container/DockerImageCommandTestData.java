@@ -35,13 +35,15 @@ public class DockerImageCommandTestData {
     }
 
     private static final String DEFAULT_ECR_HOSTNAME = "123.dkr.ecr.test-region.amazonaws.com";
+    private static final String BASE_IMAGE_REGISTRY_PREFIX = "localhost:5000";
 
     public static List<CommandPipeline> commandsToLoginDockerAndPushImages(InstanceProperties instanceProperties, String... images) {
         List<CommandPipeline> commands = new ArrayList<>();
         commands.add(dockerLoginToEcrCommand(ecrHostname(instanceProperties)));
+        commands.add(startBaseImageRegistryCommand());
         commands.add(createBuildxBuilderInstanceCommand());
         commands.add(useBuildxBuilderInstanceCommand());
-        String baseTag = tag(instanceProperties, "base");
+        String baseTag = baseImageRegistryTag(instanceProperties, "base");
         commands.add(buildAndPushMultiplatformImageCommand(baseTag, "./docker/base"));
         for (String image : images) {
             String tag = tag(instanceProperties, image);
@@ -49,6 +51,10 @@ public class DockerImageCommandTestData {
             commands.add(pushImageCommand(tag));
         }
         return commands;
+    }
+
+    private static String baseImageRegistryTag(InstanceProperties instanceProperties, String image) {
+        return BASE_IMAGE_REGISTRY_PREFIX + "/" + image + ":" + instanceProperties.get(VERSION);
     }
 
     private static String tag(InstanceProperties instanceProperties, String image) {
@@ -92,16 +98,25 @@ public class DockerImageCommandTestData {
         return pipeline(command("docker", "push", tag));
     }
 
-    public static CommandPipeline removeOldBuildxBuilderInstanceCommand() {
-        return pipeline(command("docker", "buildx", "rm", "sleeper"));
-    }
-
     public static CommandPipeline createBuildxBuilderInstanceCommand() {
-        return pipeline(command("docker", "buildx", "create", "--name", "sleeper"));
+        return pipeline(command("docker", "buildx", "create", "--name", "sleeper-multiplatform",
+                "--driver", "docker-container", "--driver-opt", "network=host"));
     }
 
     public static CommandPipeline useBuildxBuilderInstanceCommand() {
-        return pipeline(command("docker", "buildx", "use", "sleeper"));
+        return pipeline(command("docker", "buildx", "use", "sleeper-multiplatform"));
+    }
+
+    public static CommandPipeline startBaseImageRegistryCommand() {
+        return pipeline(command("docker", "start", "sleeper-base-image-registry"));
+    }
+
+    public static CommandPipeline createBaseImageRegistryCommand(int port) {
+        return pipeline(command("docker", "run", "-d",
+                "--name", "sleeper-base-image-registry",
+                "-p", "127.0.0.1:" + port + ":5000",
+                "-v", "sleeper-base-image-registry:/var/lib/registry",
+                "registry:2"));
     }
 
     public static CommandPipeline buildAndPushMultiplatformImageCommand(String tag, String dockerDirectory, String baseTag) {

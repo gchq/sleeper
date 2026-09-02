@@ -39,6 +39,7 @@ import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildL
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.dockerLoginToEcrCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.pushImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.startBaseImageRegistryCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -70,11 +71,12 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
         uploadForDeployment(lambdaImageConfig());
 
         // Then
-        String expectedBaseTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/base:1.0.0";
+        String expectedBaseTag = "localhost:5000/base:1.0.0";
         String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0";
         String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest-task-creator-lambda:1.0.0";
         assertThat(commandsThatRan).containsExactly(
                 dockerLoginToEcrCommand(),
+                startBaseImageRegistryCommand(),
                 createBuildxBuilderInstanceCommand(),
                 useBuildxBuilderInstanceCommand(),
                 buildAndPushMultiplatformImageCommand(expectedBaseTag, dockerDir.toString() + "/base"),
@@ -95,6 +97,7 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
                 UploadDockerImages.builder()
                         .commandRunner(commandRunner)
                         .deployConfig(DeployConfiguration.fromLocalBuild())
+                        .baseImageDestination(BaseImageDestination.managedRegistry(5000))
                         .baseDockerDirectory(dockerDir).jarsDirectory(jarsDir)
                         .version("1.0.0")
                         .build(),
