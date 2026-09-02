@@ -53,7 +53,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
-import java.util.stream.Stream;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
@@ -184,7 +183,7 @@ public class IngestJobStatusReport {
      * @return           the arguments
      */
     public static Arguments readArguments(CommandArguments arguments) {
-        JobQuery.Type jobType = determineQueryType(arguments);
+        JobQuery.Type jobType = JobQuery.determineQueryType(arguments);
         String jobId = null;
         String startTime = null;
         String endTime = null;
@@ -257,35 +256,5 @@ public class IngestJobStatusReport {
 
             }
         }
-    }
-
-    private static JobQuery.Type determineQueryType(CommandArguments args) {
-        Boolean allType = args.isFlagSet("all");
-        Boolean detailedType = args.getOptionalString("detailed").isPresent();
-        Boolean rejectedType = args.isFlagSet("rejected");
-        Boolean rangeType = args.isFlagSet("range");
-        Boolean unfinishedType = args.isFlagSet("unfinished");
-
-        if (Stream.of(allType, detailedType, rejectedType, rangeType, unfinishedType)
-                .filter(flag -> flag.equals(Boolean.TRUE)).count() > 1) {
-            Stream<Boolean> setFlags = Stream.of(allType, detailedType, rejectedType, rangeType, unfinishedType).filter(b -> Boolean.TRUE);
-            StringBuilder outStr = new StringBuilder();
-            setFlags.forEach(flag -> outStr.append(flag.getClass().getName()));
-            throw new CommandArgumentsException("Too many report mode flags are set, maximum  of 1. Flags set: " + outStr.toString());
-        }
-        if (detailedType) {
-            return JobQuery.Type.DETAILED;
-        }
-        if (rejectedType) {
-            return JobQuery.Type.REJECTED;
-        }
-        if (rangeType) {
-            return JobQuery.Type.RANGE;
-        }
-        if (unfinishedType) {
-            return JobQuery.Type.UNFINISHED;
-        }
-        //Default to return all
-        return JobQuery.Type.ALL;
     }
 }

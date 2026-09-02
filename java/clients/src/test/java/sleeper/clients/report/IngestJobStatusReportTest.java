@@ -104,6 +104,13 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
+        void shouldRejectMultipleFlagsSet() {
+            assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "--all", "--unfinished"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Too many query type flags are set, maximum of 1. Flags set: ALL, UNFINISHED");
+        }
+
+        @Test
         void shouldRejectDetailedReportWithoutInstanceId() {
             assertThatThrownBy(() -> readArguments("detail-fail-instance", "detail-fail-table", "-d"))
                     .isInstanceOf(CommandArgumentsException.class)
