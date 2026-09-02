@@ -129,9 +129,11 @@ registry-pulled images.
 If the CLI is already installed, re-running this script will update the installed executable and re-pull the Docker
 images from the registry.
 
-If you want to use a custom container registry pass the `--registry` flag:
+If you want to use a custom container registry pass the `--registry` flag. You must first log in to that registry
+with Docker, otherwise the image pull will fail:
 
 ```bash
+docker login your.registry.example.com
 ./scripts/cli/install.sh --registry your.registry.example.com/sleeper
 ```
 
