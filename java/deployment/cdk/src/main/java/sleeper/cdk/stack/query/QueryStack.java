@@ -240,7 +240,7 @@ public class QueryStack extends NestedStack {
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.QUERY_LEAF_PARTITION_FAILURE)));
 
-        coreStacks.grantReadInstanceConfig(lambda);
+        coreStacks.grantReadTablesConfig(lambda);
         jarsBucket.grantRead(lambda);
         queryTrackingTable.grantReadWriteData(lambda);
         leafPartitionQueryDlq.grantSendMessages(lambda);
