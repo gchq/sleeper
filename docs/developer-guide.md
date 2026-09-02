@@ -143,8 +143,8 @@ You can also pin a specific Docker image version tag using `--version`:
 
 By default, images are pulled with the tag `latest`. This is always the case for the default GitHub Container
 Registry, which only ever publishes a `latest` tag. If you're using a custom registry that does publish version tags,
-and you installed from a local repository, the version tag will instead default to the version in that repository's
-`templates/version.txt` which is useful after switching branches, so the pulled images match the version you're working with.
+and you installed from a local repository, the version tag will instead default to the version of Sleeper in that
+repository. This is useful after switching branches, so the pulled images match the version you're working with.
 Either way, `--version` overrides this default.
 
 You can also use `./scripts/cli/runInDocker.sh` directly without installing, which will act the same as the `sleeper`

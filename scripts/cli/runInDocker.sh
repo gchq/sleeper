@@ -61,7 +61,8 @@ get_version_tag() {
     cat "$VERSION_TAG_CONFIG_PATH"
   elif [ -f "$HOME/.sleeper/local-repo" ] && [ "$(get_registry)" != "$DEFAULT_REGISTRY" ]; then
     # Use the source version only when pulling from a custom registry
-    cat "$(<"$HOME/.sleeper/local-repo")/templates/version.txt"
+    LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
+    (cd "$LOCAL_REPO/../java" && mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
   else
     echo "latest"
   fi
