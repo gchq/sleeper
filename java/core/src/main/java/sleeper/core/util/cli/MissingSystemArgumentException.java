@@ -15,6 +15,10 @@
  */
 package sleeper.core.util.cli;
 
+/**
+ * Thrown when a system argument was not provided. There are limited cases where we can distinguish this from the user
+ * supplying too few arguments.
+ */
 public class MissingSystemArgumentException extends CommandArgumentsException {
 
     public MissingSystemArgumentException() {
