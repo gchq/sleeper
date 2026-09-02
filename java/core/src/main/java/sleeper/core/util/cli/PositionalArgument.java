@@ -18,10 +18,9 @@ package sleeper.core.util.cli;
 /**
  * A positional argument that must be set on the command line. Used with {@link CommandArguments}.
  *
- * @param name      the name of the argument, used to retrieve it after parsing, and for use in a usage message,
- *                  e.g. if it's "arg" the message might be "Usage: command &lt;arg&gt;"
- * @param showUsage whether or not to include this argument in the usage message (usually only excluded if it is
- *                  to be passed by the system instead of the user)
+ * @param name           the name of the argument, used to retrieve it after parsing, and for use in a usage message,
+ *                       e.g. if it's "arg" the message might be "Usage: command &lt;arg&gt;"
+ * @param systemArgument whether or not this argument is passed by the system rather than the user
  */
 public record PositionalArgument(String name, boolean systemArgument) {
 
