@@ -62,6 +62,10 @@ public class SyncJarsRequest {
         return uploadFilter;
     }
 
+    public String getDeploymentId() {
+        return deploymentId;
+    }
+
     public boolean isDeleteOldJars() {
         return deleteOldJars;
     }
