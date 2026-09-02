@@ -220,6 +220,8 @@ public class IngestJobStatusReport {
                     if (endDate.before(startDate)) {
                         throw new CommandArgumentsException("Range end is before range start. Range start: " + optionalStart.get() + ", range end: " + optionalEnd.get());
                     }
+                    startTime = optionalStart.get();
+                    endTime = optionalEnd.get();
                 } else if (optionalStart.isEmpty() && optionalEnd.isPresent()) {
                     throw new CommandArgumentsException("Missing paramter of start-time which is required for the ranged query type.");
                 } else if (optionalStart.isPresent() && optionalEnd.isEmpty()) {
