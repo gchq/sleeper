@@ -179,7 +179,7 @@
         <jline.version>4.4.0</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-15</zstd-jni.version>
+        <zstd-jni.version>1.5.7-16</zstd-jni.version>
         <airlift.units.version>1.10</airlift.units.version>
         <airlift.slice.version>2.3</airlift.slice.version>
         <!-- Trino and its dependencies declare different versions of Airlift. -->
