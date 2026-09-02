@@ -106,17 +106,28 @@ To build the Sleeper Docker tools, you can run this script:
 
 There are also scripts to build individual tools, like `scripts/cli/environment/buildWithDependencies.sh`.
 
-To install the CLI from the local repository, run the install script directly. It will detect `runInDocker.sh`
-alongside it and use that instead of downloading the script from GitHub. It will record the local repository path so that
-`sleeper cli upgrade` and `sleeper cli pull-images` continue to use the local version:
+If you have the CLI installed already it will be replaced with the version that is built. If the `runInDocker.sh` script
+is different in the version you installed before, it will not be replaced. You can find it
+at `$HOME/.local/bin/sleeper`, and manually overwrite it with the contents of `./scripts/cli/runInDocker.sh`.
+
+To install the CLI from the local repository, run the install script directly:
 
 ```bash
 ./scripts/cli/install.sh
 ```
 
+It will detect `runInDocker.sh` alongside it and use that instead of downloading the script from GitHub, and it will
+record the local repository path in `~/.sleeper/local-repo`. This means a later `sleeper cli upgrade` will use the
+`runInDocker.sh` script from this repository instead of downloading the latest version from GitHub, and
+`sleeper cli pull-images` will use this repository's copy of the Docker runner Dockerfile instead of downloading it.
+
+Note that this script pulls the Docker images from a registry and re-tags them with the same local tags used by
+`buildAll.sh` above. If you've just built the tools locally, running this afterwards will overwrite those images with
+the ones from the registry, so don't run it as a follow-up to building unless you actually want to switch to
+registry-pulled images.
+
 If the CLI is already installed, re-running this script will update the installed executable and re-pull the Docker
-images. This is useful after switching branches to ensure the installed CLI and images are in sync with the local
-repository.
+images from the registry.
 
 If you want to use a custom container registry pass the `--registry` flag:
 
@@ -130,8 +141,11 @@ You can also pin a specific Docker image version tag using `--version`:
 ./scripts/cli/install.sh --version 0.27.0
 ```
 
-When using a custom registry with a local repository, the version is taken from `templates/version.txt`. Otherwise
-the default is `latest`. Either way, `--version` overrides the default.
+By default, images are pulled with the tag `latest`. This is always the case for the default GitHub Container
+Registry, which only ever publishes a `latest` tag. If you're using a custom registry that does publish version tags,
+and you installed from a local repository, the version tag will instead default to the version in that repository's
+`templates/version.txt` which is useful after switching branches, so the pulled images match the version you're working with.
+Either way, `--version` overrides this default.
 
 You can also use `./scripts/cli/runInDocker.sh` directly without installing, which will act the same as the `sleeper`
 command.
