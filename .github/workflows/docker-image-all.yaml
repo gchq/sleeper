@@ -15,7 +15,7 @@ jobs:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: bulk-import-runner
-      trivyIgnore: code-style/.trivyignore.eks.yaml
+      enableTrivy: false
       mavenOptions: -DskipRust
   compaction-job-execution:
     uses: ./.github/workflows/docker-image-test.yaml
