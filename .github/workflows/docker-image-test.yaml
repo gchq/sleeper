@@ -21,6 +21,9 @@ on:
         default: code-style/.trivyignore.yaml
         required: false
         type: string
+      enableTrivy:
+        default: true
+        type: boolean
 
 env:
   BASE_IMAGE: localhost:5000/base:test
@@ -102,6 +105,7 @@ jobs:
         if: ${{ inputs.testClassNames != '' }}
         run: mvn verify -PsystemTest -Drust.skip=true -pl clients "-DrunIT=${{ inputs.testClassNames }}" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
       - name: Run Trivy vulnerability scanner
+        if: ${{ inputs.enableTrivy }}
         env:
           TRIVY_IGNOREFILE: ${{ inputs.trivyIgnore }}
           TRIVY_SHOW_SUPPRESSED: true

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sleeper"
-version = "0.37.4.dev1"
+version = "0.37.5.dev1"
 description = "Python client for Sleeper"
 requires-python = ">=3.10"
 
@@ -31,7 +31,7 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
-    "ruff>=0.16.4,<0.17.0",
+    "ruff>=0.16.5,<0.17.0",
     "pytest>=9.1.1,<10.0.0",
     "pytest-mock>=3.15.1,<4.0.0",
     "pytest-asyncio>=1.4.0,<2.0.0",
