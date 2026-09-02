@@ -101,21 +101,16 @@ class ArgumentTracker {
         if (flagByName.getOrDefault("help", false)) {
             return;
         }
-
-        int expectedUserPositionals = usage.countPositionalArgsSetByUser();
-        List<String> foundUserPositionals = positionalArguments.stream()
-                .filter(PositionalArgumentValue::setByUser)
-                .map(PositionalArgumentValue::value)
-                .toList();
-
         if (usage.isPassThroughExtraArguments()) {
-            validatePositionalArgumentsWithPassThrough(usage, expectedUserPositionals, foundUserPositionals);
+            validatePositionalArgumentsWithPassThrough(usage);
         } else {
-            validatePositionalArgumentsWithNoPassThrough(usage, expectedUserPositionals, foundUserPositionals);
+            validatePositionalArgumentsWithNoPassThrough(usage);
         }
     }
 
-    private void validatePositionalArgumentsWithPassThrough(CommandLineUsage usage, int expectedUserPositionals, List<String> foundUserPositionals) {
+    private void validatePositionalArgumentsWithPassThrough(CommandLineUsage usage) {
+        int expectedUserPositionals = usage.countPositionalArgsSetByUser();
+        List<String> foundUserPositionals = getPositionalsSetByUser();
         if (foundUserPositionals.size() < expectedUserPositionals) {
             throw new WrongNumberOfArgumentsException(foundUserPositionals, expectedUserPositionals);
         }
@@ -124,16 +119,14 @@ class ArgumentTracker {
         }
         if (firstPositionalArgumentWithNoOptionsAfter > usage.getNumPositionalArgs()) {
             throw new WrongNumberOfArgumentsException(
-                    positionalArguments.stream()
-                            .limit(firstPositionalArgumentWithNoOptionsAfter)
-                            .filter(PositionalArgumentValue::setByUser)
-                            .map(PositionalArgumentValue::value)
-                            .toList(),
+                    getNonPassthroughPositionalsSetByUser(),
                     expectedUserPositionals);
         }
     }
 
-    private void validatePositionalArgumentsWithNoPassThrough(CommandLineUsage usage, int expectedUserPositionals, List<String> foundUserPositionals) {
+    private void validatePositionalArgumentsWithNoPassThrough(CommandLineUsage usage) {
+        int expectedUserPositionals = usage.countPositionalArgsSetByUser();
+        List<String> foundUserPositionals = getPositionalsSetByUser();
         if (foundUserPositionals.size() != expectedUserPositionals) {
             throw new WrongNumberOfArgumentsException(foundUserPositionals, expectedUserPositionals);
         }
@@ -142,15 +135,26 @@ class ArgumentTracker {
         }
     }
 
+    private List<String> getPositionalsSetByUser() {
+        return positionalArguments.stream()
+                .filter(PositionalArgumentValue::setByUser)
+                .map(PositionalArgumentValue::value)
+                .toList();
+    }
+
+    private List<String> getNonPassthroughPositionalsSetByUser() {
+        return positionalArguments.stream()
+                .limit(firstPositionalArgumentWithNoOptionsAfter)
+                .filter(PositionalArgumentValue::setByUser)
+                .map(PositionalArgumentValue::value)
+                .toList();
+    }
+
     private List<String> getPassThroughArguments(CommandLineUsage usage) {
-        if (positionalArguments.size() > usage.getNumPositionalArgs()) {
-            return positionalArguments.stream()
-                    .skip(usage.getNumPositionalArgs())
-                    .map(PositionalArgumentValue::value)
-                    .toList();
-        } else {
-            return List.of();
-        }
+        return positionalArguments.stream()
+                .skip(usage.getNumPositionalArgs())
+                .map(PositionalArgumentValue::value)
+                .toList();
     }
 
     /**
