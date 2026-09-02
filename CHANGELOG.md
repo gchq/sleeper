@@ -8,7 +8,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.37.4
 
-### 26th August 2026
+### 27th August 2026
 
 This includes improvements to bulk import on EKS, and fixes to SQL query filtering, Athena and the Python client.
 
