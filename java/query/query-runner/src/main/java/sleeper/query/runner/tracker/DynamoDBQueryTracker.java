@@ -222,6 +222,12 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
             names.put("#Errors", DynamoDBQueryTrackerEntry.ERROR_MESSAGE);
             values.put(":errors", AttributeValue.fromS(entry.getErrorMessage()));
         }
+        AttributeValue resultsLocations = entry.getResultsLocationsAttribute();
+        if (resultsLocations != null) {
+            expression.append(", #ResultsLocations = :resultsLocations");
+            names.put("#ResultsLocations", DynamoDBQueryTrackerEntry.RESULTS_LOCATIONS);
+            values.put(":resultsLocations", resultsLocations);
+        }
 
         dynamoClient.updateItem(request -> request
                 .tableName(trackerTableName)

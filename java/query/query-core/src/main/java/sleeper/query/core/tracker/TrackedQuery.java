@@ -16,8 +16,11 @@
 package sleeper.query.core.tracker;
 
 import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.output.ResultsOutputLocation;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -39,6 +42,7 @@ public class TrackedQuery {
     private final QueryState lastKnownState;
     private final Long rowCount;
     private final String errorMessage;
+    private final List<ResultsOutputLocation> resultsLocations;
 
     private TrackedQuery(Builder builder) {
         queryId = builder.queryId;
@@ -50,6 +54,7 @@ public class TrackedQuery {
         lastKnownState = builder.lastKnownState;
         rowCount = builder.rowCount;
         errorMessage = builder.errorMessage;
+        resultsLocations = builder.resultsLocations;
     }
 
     public static Builder builder() {
@@ -59,7 +64,8 @@ public class TrackedQuery {
     public Builder toBuilder() {
         return builder().queryId(queryId).subQueryId(subQueryId).tableId(tableId)
                 .firstUpdateTime(firstUpdateTime).lastUpdateTime(lastUpdateTime).expiryDate(expiryDate)
-                .lastKnownState(lastKnownState).rowCount(rowCount).errorMessage(errorMessage);
+                .lastKnownState(lastKnownState).rowCount(rowCount).errorMessage(errorMessage)
+                .resultsLocations(resultsLocations);
     }
 
     public String getQueryId() {
@@ -98,6 +104,10 @@ public class TrackedQuery {
         return errorMessage;
     }
 
+    public List<ResultsOutputLocation> getResultsLocations() {
+        return resultsLocations;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -115,12 +125,13 @@ public class TrackedQuery {
                 && Objects.equals(expiryDate, that.expiryDate)
                 && lastKnownState == that.lastKnownState
                 && Objects.equals(rowCount, that.rowCount)
-                && Objects.equals(errorMessage, that.errorMessage);
+                && Objects.equals(errorMessage, that.errorMessage)
+                && Objects.equals(resultsLocations, that.resultsLocations);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(queryId, subQueryId, tableId, firstUpdateTime, lastUpdateTime, expiryDate, lastKnownState, rowCount, errorMessage);
+        return Objects.hash(queryId, subQueryId, tableId, firstUpdateTime, lastUpdateTime, expiryDate, lastKnownState, rowCount, errorMessage, resultsLocations);
     }
 
     @Override
@@ -135,6 +146,7 @@ public class TrackedQuery {
                 ", lastKnownState=" + lastKnownState +
                 ", rowCount=" + rowCount +
                 ", errorMessage='" + errorMessage + '\'' +
+                ", resultsLocations=" + resultsLocations +
                 '}';
     }
 
@@ -151,6 +163,7 @@ public class TrackedQuery {
         private QueryState lastKnownState;
         private Long rowCount = 0L;
         private String errorMessage;
+        private List<ResultsOutputLocation> resultsLocations = new ArrayList<>();
 
         private Builder() {
         }
@@ -286,6 +299,17 @@ public class TrackedQuery {
         }
 
         /**
+         * Provides the locations where the query results were sent.
+         *
+         * @param  resultsLocations the results locations (null is treated as empty)
+         * @return                  the builder
+         */
+        public Builder resultsLocations(List<ResultsOutputLocation> resultsLocations) {
+            this.resultsLocations = resultsLocations == null ? new ArrayList<>() : new ArrayList<>(resultsLocations);
+            return this;
+        }
+
+        /**
          * Provides information on the results of the query.
          *
          * @param  outputInfo the information
@@ -293,7 +317,8 @@ public class TrackedQuery {
          */
         public Builder outputInfo(ResultsOutputInfo outputInfo) {
             return rowCount(outputInfo.getRowCount())
-                    .error(outputInfo.getError());
+                    .error(outputInfo.getError())
+                    .resultsLocations(outputInfo.getLocations());
         }
 
         /**

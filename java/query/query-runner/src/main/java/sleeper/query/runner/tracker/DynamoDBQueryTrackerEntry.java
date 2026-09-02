@@ -21,10 +21,13 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.output.ResultsOutputLocation;
 import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.TrackedQuery;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,6 +44,9 @@ class DynamoDBQueryTrackerEntry {
     static final String TABLE_ID = "tableId";
     static final String ERROR_MESSAGE = "errors";
     static final String EXPIRY_DATE = "expiryDate";
+    static final String RESULTS_LOCATIONS = "resultsLocations";
+    static final String LOCATION_TYPE = "type";
+    static final String LOCATION_VALUE = "location";
     static final String NON_NESTED_QUERY_PLACEHOLDER = "-";
 
     private final String queryId;
@@ -49,6 +55,7 @@ class DynamoDBQueryTrackerEntry {
     private final QueryState state;
     private final long rowCount;
     private final String errorMessage;
+    private final List<ResultsOutputLocation> resultsLocations;
 
     private DynamoDBQueryTrackerEntry(Builder builder) {
         queryId = builder.queryId;
@@ -57,6 +64,7 @@ class DynamoDBQueryTrackerEntry {
         state = builder.state;
         rowCount = builder.rowCount;
         errorMessage = builder.errorMessage;
+        resultsLocations = builder.resultsLocations;
     }
 
     public static Builder withQuery(Query query) {
@@ -99,6 +107,44 @@ class DynamoDBQueryTrackerEntry {
         return errorMessage;
     }
 
+    public List<ResultsOutputLocation> getResultsLocations() {
+        return resultsLocations;
+    }
+
+    /**
+     * Encodes the results locations as a DynamoDB list of maps, each holding the location's type and value.
+     *
+     * @return the attribute value, or null if there are no locations to store
+     */
+    public AttributeValue getResultsLocationsAttribute() {
+        if (resultsLocations == null || resultsLocations.isEmpty()) {
+            return null;
+        }
+        List<AttributeValue> encoded = resultsLocations.stream()
+                .map(location -> AttributeValue.fromM(Map.of(
+                        LOCATION_TYPE, AttributeValue.fromS(location.getType()),
+                        LOCATION_VALUE, AttributeValue.fromS(location.getLocation()))))
+                .toList();
+        return AttributeValue.fromL(encoded);
+    }
+
+    private static List<ResultsOutputLocation> readResultsLocations(Map<String, AttributeValue> item) {
+        AttributeValue attribute = item.get(RESULTS_LOCATIONS);
+        if (attribute == null || !attribute.hasL()) {
+            return new ArrayList<>();
+        }
+        List<ResultsOutputLocation> locations = new ArrayList<>();
+        for (AttributeValue element : attribute.l()) {
+            Map<String, AttributeValue> map = element.m();
+            AttributeValue type = map.get(LOCATION_TYPE);
+            AttributeValue value = map.get(LOCATION_VALUE);
+            if (type != null && value != null) {
+                locations.add(new ResultsOutputLocation(type.s(), value.s()));
+            }
+        }
+        return locations;
+    }
+
     public static TrackedQuery toTrackedQuery(Map<String, AttributeValue> stringAttributeValueMap) {
         String id = stringAttributeValueMap.get(QUERY_ID).s();
         Long firstUpdateTime = Long.valueOf(stringAttributeValueMap.get(FIRST_UPDATE_TIME).n());
@@ -125,6 +171,7 @@ class DynamoDBQueryTrackerEntry {
                 .lastKnownState(state)
                 .rowCount(rowCount)
                 .errorMessage(errorMessage)
+                .resultsLocations(readResultsLocations(stringAttributeValueMap))
                 .build();
     }
 
@@ -158,6 +205,7 @@ class DynamoDBQueryTrackerEntry {
         private QueryState state;
         private long rowCount;
         private String errorMessage;
+        private List<ResultsOutputLocation> resultsLocations = new ArrayList<>();
 
         private Builder() {
         }
@@ -192,7 +240,13 @@ class DynamoDBQueryTrackerEntry {
             return this;
         }
 
+        public Builder resultsLocations(List<ResultsOutputLocation> resultsLocations) {
+            this.resultsLocations = resultsLocations == null ? new ArrayList<>() : new ArrayList<>(resultsLocations);
+            return this;
+        }
+
         public Builder completed(ResultsOutputInfo outputInfo) {
+            resultsLocations(outputInfo.getLocations());
             if (outputInfo.getError() != null) {
                 if (outputInfo.getRowCount() > 0) {
                     return state(QueryState.PARTIALLY_FAILED)

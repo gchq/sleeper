@@ -31,6 +31,7 @@ import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.output.ResultsOutputLocation;
 import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.TrackedQuery;
 
@@ -202,6 +203,39 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(35));
         assertThat(queryTracker().getStatus("parent", "my-id").getRowCount()).isEqualTo(Long.valueOf(10));
         assertThat(queryTracker().getStatus("parent", "my-other-id").getRowCount()).isEqualTo(Long.valueOf(25));
+    }
+
+    @Test
+    void shouldStoreResultsLocationsWhenSubQueryCompleted() throws QueryTrackerException {
+        // When
+        queryTracker().queryInProgress(createQueryWithId("parent"));
+        queryTracker().queryCompleted(createSubQueryWithId("parent", "sub-id"), new ResultsOutputInfo(10, List.of(
+                new ResultsOutputLocation("s3", "s3a://results-bucket/query-parent/file.parquet"))));
+
+        // Then
+        assertThat(queryTracker().getStatus("parent", "sub-id").getResultsLocations())
+                .containsExactly(new ResultsOutputLocation("s3", "s3a://results-bucket/query-parent/file.parquet"));
+    }
+
+    @Test
+    void shouldStoreEphemeralResultsLocationWhenSubQueryCompleted() throws QueryTrackerException {
+        // When
+        queryTracker().queryInProgress(createQueryWithId("parent"));
+        queryTracker().queryCompleted(createSubQueryWithId("parent", "sub-id"), new ResultsOutputInfo(10, List.of(
+                new ResultsOutputLocation("sqs", "https://sqs.example/queue"))));
+
+        // Then
+        assertThat(queryTracker().getStatus("parent", "sub-id").getResultsLocations())
+                .containsExactly(new ResultsOutputLocation("sqs", "https://sqs.example/queue"));
+    }
+
+    @Test
+    void shouldReturnEmptyResultsLocationsWhenNoneStored() throws QueryTrackerException {
+        // When
+        queryTracker().queryCompleted(createQueryWithId("my-id"), new ResultsOutputInfo(10, Collections.emptyList()));
+
+        // Then
+        assertThat(queryTracker().getStatus("my-id").getResultsLocations()).isEmpty();
     }
 
     @Test
