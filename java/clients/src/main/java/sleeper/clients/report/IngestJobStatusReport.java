@@ -136,7 +136,7 @@ public class IngestJobStatusReport {
             JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, reportArgs.queryType(),
                     reportArgs.startTime() + "," + reportArgs.endTime(),
                     Clock.systemUTC(), ConsoleInput.stdIn());
-            new IngestJobStatusReport(tracker, query, REPORTERS.get(reportArgs.outputType()),
+            new IngestJobStatusReport(tracker, query, reportArgs.reporter(),
                     QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
                     PersistentEmrStepCount.byStatus(instanceProperties, emrClient)).run();
         }
@@ -218,10 +218,8 @@ public class IngestJobStatusReport {
                     }
 
                     if (endDate.before(startDate)) {
-                        throw new CommandArgumentsException("Range end is before range start. Range start: " + startTime + ", range end: " + endTime);
+                        throw new CommandArgumentsException("Range end is before range start. Range start: " + optionalStart.get() + ", range end: " + optionalEnd.get());
                     }
-                    startTime = optionalStart.get();
-                    endTime = optionalEnd.get();
                 } else if (optionalStart.isEmpty() && optionalEnd.isPresent()) {
                     throw new CommandArgumentsException("Missing paramter of start-time which is required for the ranged query type.");
                 } else if (optionalStart.isPresent() && optionalEnd.isEmpty()) {
@@ -232,8 +230,16 @@ public class IngestJobStatusReport {
                 break;
         }
 
-        return new Arguments(arguments.getString("instance-id"), arguments.getString("table-name"),
-                arguments.getOptionalString("output-type").map(s -> s.toUpperCase(Locale.ROOT)).orElse(DEFAULT_REPORTER), jobType, jobId, startTime, endTime);
+        String outputType = arguments.getOptionalString("output-type")
+                .map(s -> s.toUpperCase(Locale.ROOT))
+                .orElse(DEFAULT_REPORTER);
+        if (!REPORTERS.containsKey(outputType)) {
+            throw new CommandArgumentsException("Output type not supported: " + outputType + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
+        }
+        return new Arguments(arguments.getString("instance-id"),
+                arguments.getString("table-name"),
+                REPORTERS.get(outputType.toUpperCase(Locale.ROOT)),
+                jobType, jobId, startTime, endTime);
     }
 
     /**
@@ -241,18 +247,15 @@ public class IngestJobStatusReport {
      *
      * @param instanceId the Sleeper instance ID
      * @param tableName  the table name
-     * @param outputType the output format, either STANDARD or JSON
+     * @param reporter   the reporter format, either STANDARD or JSON
      * @param queryType  the type of query to execute for the ingest report
      * @param jobId      optional jobID for the detailed query
      * @param startTime  optional start time for range query
      * @param endTime    optional end time for range query
      */
-    public record Arguments(String instanceId, String tableName, String outputType, JobQuery.Type queryType,
+    public record Arguments(String instanceId, String tableName, IngestJobStatusReporter reporter, JobQuery.Type queryType,
             String jobId, String startTime, String endTime) {
         public Arguments {
-            if (!REPORTERS.containsKey(outputType)) {
-                throw new CommandArgumentsException("Output type not supported: " + outputType + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
-            }
         }
     }
 }

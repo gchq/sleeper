@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.report.IngestJobStatusReport.Arguments;
+import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
+import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
@@ -37,7 +39,7 @@ public class IngestJobStatusReportTest {
 
             assertThat(args.instanceId()).isEqualTo("my-instance");
             assertThat(args.tableName()).isEqualTo("my-table");
-            assertThat(args.outputType()).isEqualTo("STANDARD");
+            assertThat(args.reporter()).isInstanceOf(StandardIngestJobStatusReporter.class);
             assertThat(args.queryType()).isEqualTo(JobQuery.Type.ALL);
         }
 
@@ -89,7 +91,7 @@ public class IngestJobStatusReportTest {
         @Test
         void shouldReadOutputTypeJson() {
             Arguments args = readArguments("json-instance", "json-table", "--output-type", "json");
-            assertThat(args.outputType()).isEqualTo("JSON");
+            assertThat(args.reporter()).isInstanceOf(JsonIngestJobStatusReporter.class);
         }
     }
 
