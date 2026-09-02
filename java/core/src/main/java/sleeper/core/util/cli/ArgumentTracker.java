@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Tracks arguments, and the order they were declared. Used in {@link CommandArgumentReader#parse()} to build
@@ -26,7 +27,7 @@ import java.util.Map;
  * tracker in order, and then they are validated and combined into a {@link CommandArguments} object.
  */
 class ArgumentTracker {
-    private final List<String> positionalArguments = new ArrayList<>();
+    private final List<PositionalArgumentValue> positionalArguments = new ArrayList<>();
     private final Map<String, String> argByName = new LinkedHashMap<>();
     private final Map<String, Boolean> flagByName = new LinkedHashMap<>();
     private int firstPositionalArgumentWithNoOptionsAfter = 0;
@@ -35,10 +36,13 @@ class ArgumentTracker {
      * Adds a positional argument. If we allow passing through arguments that aren't in the usage for this command,
      * they will be included here as well.
      *
-     * @param argument the value
+     * @param usage the command line usage
+     * @param value the value
      */
-    void positionalArgument(String argument) {
-        positionalArguments.add(argument);
+    void positionalArgument(CommandLineUsage usage, String value) {
+        int index = positionalArguments.size();
+        PositionalArgument argument = usage.getPositionalArgument(index).orElse(null);
+        positionalArguments.add(new PositionalArgumentValue(value, index, argument));
     }
 
     /**
@@ -86,9 +90,9 @@ class ArgumentTracker {
     }
 
     private void addPositionalArgumentsToArgByName(CommandLineUsage usage) {
-        int foundPositionalArgs = Math.min(positionalArguments.size(), usage.getNumPositionalArgs());
-        for (int i = 0; i < foundPositionalArgs; i++) {
-            argByName.put(usage.getPositionalArgName(i), positionalArguments.get(i));
+        for (PositionalArgumentValue value : positionalArguments) {
+            value.nameIfRecognised()
+                    .ifPresent(name -> argByName.put(name, value.value()));
         }
     }
 
@@ -97,25 +101,62 @@ class ArgumentTracker {
         if (flagByName.getOrDefault("help", false)) {
             return;
         }
+
+        int expectedUserPositionals = usage.countPositionalArgsSetByUser();
+        List<String> foundUserPositionals = positionalArguments.stream()
+                .filter(PositionalArgumentValue::setByUser)
+                .map(PositionalArgumentValue::value)
+                .toList();
+
         // If we allow passing through arguments that aren't in the usage for this command, those will be included in
         // the positional arguments list. We need to exclude them from validation.
         if (usage.isPassThroughExtraArguments()) {
-            if (positionalArguments.size() < usage.getNumPositionalArgs()) {
-                throw new WrongNumberOfArgumentsException(positionalArguments, usage.getNumPositionalArgs());
+            if (foundUserPositionals.size() < expectedUserPositionals) {
+                throw new WrongNumberOfArgumentsException(foundUserPositionals, expectedUserPositionals);
             }
             if (firstPositionalArgumentWithNoOptionsAfter > usage.getNumPositionalArgs()) {
-                throw new WrongNumberOfArgumentsException(positionalArguments.subList(0, firstPositionalArgumentWithNoOptionsAfter), usage.getNumPositionalArgs());
+                throw new WrongNumberOfArgumentsException(
+                        positionalArguments.stream()
+                                .limit(firstPositionalArgumentWithNoOptionsAfter)
+                                .filter(PositionalArgumentValue::setByUser)
+                                .map(PositionalArgumentValue::value)
+                                .toList(),
+                        expectedUserPositionals);
             }
-        } else if (positionalArguments.size() != usage.getNumPositionalArgs()) {
-            throw new WrongNumberOfArgumentsException(positionalArguments, usage.getNumPositionalArgs());
+        } else if (foundUserPositionals.size() != expectedUserPositionals) {
+            throw new WrongNumberOfArgumentsException(foundUserPositionals, expectedUserPositionals);
         }
     }
 
     private List<String> getPassThroughArguments(CommandLineUsage usage) {
         if (positionalArguments.size() > usage.getNumPositionalArgs()) {
-            return positionalArguments.subList(usage.getNumPositionalArgs(), positionalArguments.size());
+            return positionalArguments.stream()
+                    .skip(usage.getNumPositionalArgs())
+                    .map(PositionalArgumentValue::value)
+                    .toList();
         } else {
             return List.of();
+        }
+    }
+
+    /**
+     * A value for a positional argument.
+     *
+     * @param value    the value
+     * @param index    the index the value was given at
+     * @param argument the argument, or null if there is no positional argument with this index
+     */
+    private record PositionalArgumentValue(String value, int index, PositionalArgument argument) {
+
+        Optional<String> nameIfRecognised() {
+            return Optional.ofNullable(argument)
+                    .map(PositionalArgument::name);
+        }
+
+        boolean setByUser() {
+            return Optional.ofNullable(argument)
+                    .map(PositionalArgument::setByUser)
+                    .orElse(true);
         }
     }
 

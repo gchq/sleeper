@@ -23,7 +23,7 @@ package sleeper.core.util.cli;
  * @param showUsage whether or not to include this argument in the usage message (usually only excluded if it is
  *                  to be passed by the system instead of the user)
  */
-public record PositionalArgument(String name, boolean showUsage) {
+public record PositionalArgument(String name, boolean systemArgument) {
 
     /**
      * Creates a positional argument where its name is the same as its description in the usage message.
@@ -32,7 +32,7 @@ public record PositionalArgument(String name, boolean showUsage) {
      * @return      the argument
      */
     public static PositionalArgument create(String name) {
-        return new PositionalArgument(name, true);
+        return new PositionalArgument(name, false);
     }
 
     /**
@@ -43,7 +43,15 @@ public record PositionalArgument(String name, boolean showUsage) {
      * @return      the argument
      */
     public static PositionalArgument systemArgument(String name) {
-        return new PositionalArgument(name, false);
+        return new PositionalArgument(name, true);
+    }
+
+    public boolean showUsage() {
+        return !systemArgument;
+    }
+
+    public boolean setByUser() {
+        return !systemArgument;
     }
 
 }

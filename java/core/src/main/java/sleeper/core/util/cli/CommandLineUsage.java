@@ -81,13 +81,26 @@ public class CommandLineUsage {
     }
 
     /**
-     * Retrieves the name of a positional argument.
+     * Counts the number of positional arguments set by the user. Excludes system arguments.
+     *
+     * @return the number
+     */
+    public int countPositionalArgsSetByUser() {
+        return (int) positionalArguments.stream().filter(PositionalArgument::setByUser).count();
+    }
+
+    /**
+     * Retrieves a positional argument at a given index.
      *
      * @param  index the index of the argument, starting from 0
-     * @return       the name of the argument
+     * @return       the argument, unless the index does not identity a positional argument
      */
-    public String getPositionalArgName(int index) {
-        return positionalArguments.get(index).name();
+    public Optional<PositionalArgument> getPositionalArgument(int index) {
+        if (index < positionalArguments.size()) {
+            return Optional.of(positionalArguments.get(index));
+        } else {
+            return Optional.empty();
+        }
     }
 
     /**
