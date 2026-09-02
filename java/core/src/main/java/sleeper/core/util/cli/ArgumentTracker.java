@@ -108,25 +108,32 @@ class ArgumentTracker {
                 .map(PositionalArgumentValue::value)
                 .toList();
 
-        // If we allow passing through arguments that aren't in the usage for this command, those will be included in
-        // the positional arguments list. We need to exclude them from validation.
         if (usage.isPassThroughExtraArguments()) {
-            if (foundUserPositionals.size() < expectedUserPositionals) {
-                throw new WrongNumberOfArgumentsException(foundUserPositionals, expectedUserPositionals);
-            }
-            if (positionalArguments.size() < usage.getNumPositionalArgs()) {
-                throw new MissingSystemArgumentException();
-            }
-            if (firstPositionalArgumentWithNoOptionsAfter > usage.getNumPositionalArgs()) {
-                throw new WrongNumberOfArgumentsException(
-                        positionalArguments.stream()
-                                .limit(firstPositionalArgumentWithNoOptionsAfter)
-                                .filter(PositionalArgumentValue::setByUser)
-                                .map(PositionalArgumentValue::value)
-                                .toList(),
-                        expectedUserPositionals);
-            }
+            validatePositionalArgumentsWithPassThrough(usage, expectedUserPositionals, foundUserPositionals);
+        } else {
+            validatePositionalArgumentsWithNoPassThrough(usage, expectedUserPositionals, foundUserPositionals);
         }
+    }
+
+    private void validatePositionalArgumentsWithPassThrough(CommandLineUsage usage, int expectedUserPositionals, List<String> foundUserPositionals) {
+        if (foundUserPositionals.size() < expectedUserPositionals) {
+            throw new WrongNumberOfArgumentsException(foundUserPositionals, expectedUserPositionals);
+        }
+        if (positionalArguments.size() < usage.getNumPositionalArgs()) {
+            throw new MissingSystemArgumentException();
+        }
+        if (firstPositionalArgumentWithNoOptionsAfter > usage.getNumPositionalArgs()) {
+            throw new WrongNumberOfArgumentsException(
+                    positionalArguments.stream()
+                            .limit(firstPositionalArgumentWithNoOptionsAfter)
+                            .filter(PositionalArgumentValue::setByUser)
+                            .map(PositionalArgumentValue::value)
+                            .toList(),
+                    expectedUserPositionals);
+        }
+    }
+
+    private void validatePositionalArgumentsWithNoPassThrough(CommandLineUsage usage, int expectedUserPositionals, List<String> foundUserPositionals) {
         if (foundUserPositionals.size() != expectedUserPositionals) {
             throw new WrongNumberOfArgumentsException(foundUserPositionals, expectedUserPositionals);
         }
