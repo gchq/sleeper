@@ -114,6 +114,9 @@ class ArgumentTracker {
             if (foundUserPositionals.size() < expectedUserPositionals) {
                 throw new WrongNumberOfArgumentsException(foundUserPositionals, expectedUserPositionals);
             }
+            if (positionalArguments.size() < usage.getNumPositionalArgs()) {
+                throw new MissingSystemArgumentException();
+            }
             if (firstPositionalArgumentWithNoOptionsAfter > usage.getNumPositionalArgs()) {
                 throw new WrongNumberOfArgumentsException(
                         positionalArguments.stream()
@@ -123,8 +126,12 @@ class ArgumentTracker {
                                 .toList(),
                         expectedUserPositionals);
             }
-        } else if (foundUserPositionals.size() != expectedUserPositionals) {
+        }
+        if (foundUserPositionals.size() != expectedUserPositionals) {
             throw new WrongNumberOfArgumentsException(foundUserPositionals, expectedUserPositionals);
+        }
+        if (positionalArguments.size() != usage.getNumPositionalArgs()) {
+            throw new MissingSystemArgumentException();
         }
     }
 

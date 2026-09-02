@@ -373,6 +373,17 @@ public class CommandArgumentsTest {
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected 0 positional arguments, found 1: [other-value]");
         }
+
+        @Test
+        void shouldFailWhenSystemArgumentIsNotGiven() {
+            // Given
+            setSystemArguments("system");
+
+            // When / Then
+            assertThatThrownBy(() -> parse())
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected argument was not supplied by the system");
+        }
     }
 
     @Nested
@@ -774,6 +785,17 @@ public class CommandArgumentsTest {
             assertThatThrownBy(() -> parse("system-value"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected 1 positional argument, found 0: []");
+        }
+
+        @Test
+        void shouldFailWhenSystemArgumentIsNotGiven() {
+            // Given
+            setSystemArguments("system");
+
+            // When / Then
+            assertThatThrownBy(() -> parse())
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected argument was not supplied by the system");
         }
     }
 
