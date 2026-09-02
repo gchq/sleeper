@@ -230,16 +230,25 @@ public class IngestJobStatusReport {
                 break;
         }
 
-        String outputType = arguments.getOptionalString("output-type")
-                .map(s -> s.toUpperCase(Locale.ROOT))
-                .orElse(DEFAULT_REPORTER);
-        if (!REPORTERS.containsKey(outputType)) {
-            throw new CommandArgumentsException("Output type not supported: " + outputType + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
+        IngestJobStatusReporter reporter;
+        Optional<String> optionalOutput = arguments.getOptionalString("output-type");
+        if (optionalOutput.isPresent()) {
+            String outputValue = optionalOutput.get().toUpperCase(Locale.ROOT);
+            if (!REPORTERS.containsKey(optionalOutput.get().toUpperCase(Locale.ROOT))) {
+                throw new CommandArgumentsException("Output type not supported: " + optionalOutput.get() + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
+            }
+            reporter = REPORTERS.get(outputValue);
+        } else {
+            reporter = REPORTERS.get(DEFAULT_REPORTER);
         }
+
         return new Arguments(arguments.getString("instance-id"),
                 arguments.getString("table-name"),
-                REPORTERS.get(outputType.toUpperCase(Locale.ROOT)),
-                jobType, jobId, startTime, endTime);
+                reporter,
+                jobType,
+                jobId,
+                startTime,
+                endTime);
     }
 
     /**
