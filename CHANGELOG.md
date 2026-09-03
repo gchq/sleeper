@@ -6,6 +6,17 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.37.5
+
+### 4th September 2026
+
+Deployment:
+- Improved error message when artefacts deployment does not exist.
+
+Bugfixes:
+- When you override the base for a single container image, we no longer attempt to upload that base image to a non-existent EMR repository.
+
+
 ## Version 0.37.4
 
 ### 27th August 2026
