@@ -29,6 +29,7 @@ import java.util.List;
 import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
 import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCode;
 import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCodeForCommand;
+import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCodeForCommands;
 
 public class DockerImagesTestBase {
     private static final DockerDeployment BASE = DockerDeployment.builder()
@@ -105,6 +106,10 @@ public class DockerImagesTestBase {
 
     protected void setReturnExitCodeForCommand(int exitCode, CommandPipeline command) {
         commandRunner = recordCommandsRun(commandsThatRan, returnExitCodeForCommand(exitCode, command));
+    }
+
+    protected void setReturnExitCodeForCommands(int exitCode, CommandPipeline... commands) {
+        commandRunner = recordCommandsRun(commandsThatRan, returnExitCodeForCommands(exitCode, commands));
     }
 
     protected DockerImageConfiguration dockerDeploymentImageConfig() {
