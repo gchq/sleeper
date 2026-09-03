@@ -37,8 +37,10 @@ if [ ! -f "$RUNNER_PATH/Dockerfile" ]; then
     RUNNER_PATH="$HOME_RUNNER_PATH"
 fi
 
+DOCKER_TOOLS_CONFIG_DIR="$HOME/.sleeper/docker-tools"
+
 # Allow setting of registry to pull docker images from
-REGISTRY_CONFIG_PATH="$HOME/.sleeper/registry"
+REGISTRY_CONFIG_PATH="$DOCKER_TOOLS_CONFIG_DIR/registry"
 DEFAULT_REGISTRY="ghcr.io/gchq"
 get_registry() {
   if [ -f "$REGISTRY_CONFIG_PATH" ]; then
@@ -49,13 +51,13 @@ get_registry() {
 }
 
 set_registry() {
-  mkdir -p "$HOME/.sleeper"
+  mkdir -p "$DOCKER_TOOLS_CONFIG_DIR"
   echo "$1" > "$REGISTRY_CONFIG_PATH"
   echo "Registry set to: $1"
 }
 
 # Allow using the version of Sleeper in a local repository checkout, instead of always pulling latest
-USE_LOCAL_VERSION_CONFIG_PATH="$HOME/.sleeper/use-local-version"
+USE_LOCAL_VERSION_CONFIG_PATH="$DOCKER_TOOLS_CONFIG_DIR/use-local-version"
 LOCAL_REPO_CONFIG_PATH="$HOME/.sleeper/local-repo"
 
 get_version_tag() {
@@ -72,7 +74,7 @@ get_version_tag() {
 }
 
 set_use_local_version() {
-  mkdir -p "$HOME/.sleeper"
+  mkdir -p "$DOCKER_TOOLS_CONFIG_DIR"
   echo "$1" > "$USE_LOCAL_VERSION_CONFIG_PATH"
   echo "Use local version set to: $1"
 }
