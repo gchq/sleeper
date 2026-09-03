@@ -214,7 +214,6 @@ public class SparkConfigurationUtils {
         sparkConf.put("spark.kubernetes.namespace", instanceProperties.get(BULK_IMPORT_EKS_NAMESPACE));
         sparkConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", "spark");
         sparkConf.put("spark.kubernetes.executor.podTemplateFile", "/tmp/executor-template.yaml");
-        sparkConf.put("spark.kubernetes.executor.podTemplateContainerName", "spark-kubernetes-executor");
 
         // Ensure pods aren't disrupted/evicted before they finish
         sparkConf.put("spark.kubernetes.driver.annotation.karpenter.sh/do-not-disrupt", "true");
