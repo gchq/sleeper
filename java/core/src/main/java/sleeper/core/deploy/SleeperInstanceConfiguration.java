@@ -66,42 +66,6 @@ public class SleeperInstanceConfiguration {
     }
 
     /**
-     * Creates a configuration for a new instance, setting tables from templates if not specified.
-     *
-     * @param  configurationPath the path to the local configuration instance properties file
-     * @param  fromTemplates     the settings to load the templates
-     * @return                   the instance configuration
-     */
-    public static SleeperInstanceConfiguration forNewInstanceDefaultingTables(
-            Path configurationPath, SleeperInstanceConfigurationFromTemplates fromTemplates) {
-        SleeperInstanceConfiguration configuration = fromLocalConfigurationDirectory(configurationPath);
-        if (configuration.getTableProperties().isEmpty()) {
-            configuration = configuration.withTableProperties(instanceProperties -> List.of(
-                    fromTemplates.loadTableProperties(instanceProperties)));
-        }
-        return configuration;
-    }
-
-    /**
-     * Creates a configuration for a new instance, setting instance properties from templates if not
-     * specified.
-     *
-     * @param  configurationPath the path to the local configuration instance properties file, or null if not
-     *                           present
-     * @param  templatesDir      the directory to load the templates from
-     * @return                   the instance configuration
-     */
-    public static SleeperInstanceConfiguration forNewInstanceDefaultingInstance(
-            Path configurationPath, Path templatesDir) {
-        if (configurationPath != null) {
-            return fromLocalConfigurationDirectory(configurationPath);
-        } else {
-            return new SleeperInstanceConfiguration(SleeperInstanceConfigurationFromTemplates.loadInstanceProperties(templatesDir),
-                    List.of());
-        }
-    }
-
-    /**
      * Creates an instance configuration from a local instance.properties file. Only that file and an adjacent
      * tags.properties are read - table properties are not loaded. To load the full configuration from a directory
      * structure (instance.properties, tags.properties, table.properties, schema.json, splits.txt, and any tables
