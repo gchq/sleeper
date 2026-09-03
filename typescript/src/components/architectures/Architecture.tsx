@@ -168,7 +168,7 @@ function Graph({
 	const affectedResources = downstreamOfErrors(resources, edgesToDisplay)
 
 	const gridRef = useRef<HTMLDivElement>(null)
-	const nodeRefs = useRef(new Map<string, HTMLDivElement>())
+	const nodeRefs = useRef(new Map<string, HTMLElement>())
 	const [rects, setRects] = useState<Record<string, Rect>>({})
 	const [size, setSize] = useState({ width: 0, height: 0 })
 
@@ -181,8 +181,10 @@ function Graph({
 			const next: Record<string, Rect> = {}
 			let width = 0
 			let height = 0
+			const gridRect = grid.getBoundingClientRect()
 			nodeRefs.current.forEach((el, key) => {
-				const rect = { x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight }
+				const r = el.getBoundingClientRect()
+				const rect = { x: r.left - gridRect.left, y: r.top - gridRect.top, w: r.width, h: r.height }
 				next[key] = rect
 				width = Math.max(width, rect.x + rect.w)
 				height = Math.max(height, rect.y + rect.h)
@@ -198,7 +200,7 @@ function Graph({
 		return () => observer.disconnect()
 	}, [resources])
 
-	const setNodeRef = (key: string) => (el: HTMLDivElement | null) => {
+	const setNodeRef = (key: string) => (el: HTMLElement | null) => {
 		if (el) nodeRefs.current.set(key, el)
 		else nodeRefs.current.delete(key)
 	}
@@ -243,11 +245,16 @@ function Graph({
 				return (
 					<div
 						key={key}
-						ref={setNodeRef(key)}
 						className="arch-cell"
 						style={{ gridColumn: node.col, gridRow: node.row }}
 					>
-						<Node resource={resource} node={node} affected={affectedResources.has(key)} onSelect={() => onSelect(key)} />
+						<Node
+							resource={resource}
+							node={node}
+							affected={affectedResources.has(key)}
+							onSelect={() => onSelect(key)}
+							cardRef={setNodeRef(key)}
+						/>
 					</div>
 				)
 			})}
@@ -285,14 +292,16 @@ function center(rect: Rect) {
 }
 
 // Point on a rect's border in the direction of the target point — used to anchor connector lines.
-function perimeterPoint(rect: Rect, target: { x: number; y: number }) {
+// `gap` pushes the point outward along the direction so lines don't touch the icon border.
+function perimeterPoint(rect: Rect, target: { x: number; y: number }, gap = 6) {
 	const cx = rect.x + rect.w / 2
 	const cy = rect.y + rect.h / 2
 	const dx = target.x - cx
 	const dy = target.y - cy
 	if (dx === 0 && dy === 0) return { x: cx, y: cy }
 	const scale = 1 / Math.max(Math.abs(dx) / (rect.w / 2), Math.abs(dy) / (rect.h / 2))
-	return { x: cx + dx * scale, y: cy + dy * scale }
+	const len = Math.hypot(dx, dy)
+	return { x: cx + dx * scale + (dx / len) * gap, y: cy + dy * scale + (dy / len) * gap }
 }
 
 function Node({
@@ -300,11 +309,13 @@ function Node({
 	node,
 	affected,
 	onSelect,
+	cardRef,
 }: {
 	resource: ArchitectureResource
 	node: NodeConfig
 	affected: boolean
 	onSelect: () => void
+	cardRef: (el: HTMLElement | null) => void
 }) {
 	const title = affected ? `${statusTitle(resource)} (affected by an upstream error)` : statusTitle(resource)
 
@@ -312,6 +323,7 @@ function Node({
 		<div className={`arch-node ${resource.status}${affected ? ' affected' : ''}`}>
 			<button
 				type="button"
+				ref={cardRef}
 				className="arch-node-card"
 				title={title}
 				aria-label={title}
