@@ -8,6 +8,7 @@ import {
 	eventBridgeRuleConsoleUrl,
 	lambdaMonitoringUrl,
 	parseArn,
+	s3ConsoleUrl,
 	sqsQueueConsoleUrl,
 	type ConsoleLink,
 } from '../../lib/aws'
@@ -61,6 +62,11 @@ function consoleLinks(resource: ArchitectureResource, region: string | null): Co
 			const rule = arn?.resource?.replace(/^rule\//, '')
 			if (rule) links.push({ label: 'View Rule', url: eventBridgeRuleConsoleUrl(rule, region) })
 			break
+
+		case 's3::bucket':
+			const url = s3ConsoleUrl(resource.name, region)
+			if (url) links.push({ label: 'View Bucket', url })
+			break;
 	}
 	return links
 }
