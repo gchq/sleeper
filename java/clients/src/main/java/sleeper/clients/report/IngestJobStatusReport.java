@@ -134,7 +134,7 @@ public class IngestJobStatusReport {
                     .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + reportArgs.tableName()));
             IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
             JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, reportArgs.queryType(),
-                    reportArgs.startTime() + "," + reportArgs.endTime(),
+                    determineQueryParams(reportArgs),
                     Clock.systemUTC(), ConsoleInput.stdIn());
             new IngestJobStatusReport(tracker, query, reportArgs.reporter(),
                     QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
@@ -251,6 +251,17 @@ public class IngestJobStatusReport {
                 jobId,
                 startTime,
                 endTime);
+    }
+
+    public static String determineQueryParams(Arguments args) {
+        switch (args.queryType()) {
+            case DETAILED:
+                return args.jobId();
+            case RANGE:
+                return args.startTime() + "," + args.endTime();
+            default:
+                return null;
+        }
     }
 
     /**
