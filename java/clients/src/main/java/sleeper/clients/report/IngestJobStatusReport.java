@@ -253,6 +253,12 @@ public class IngestJobStatusReport {
                 endTime);
     }
 
+    /**
+     * Method for generating paramterts to add to the job query.
+     *
+     * @param  args arguments pass into the report
+     * @return      details presented as a string for latter use
+     */
     public static String determineQueryParams(Arguments args) {
         switch (args.queryType()) {
             case DETAILED:
