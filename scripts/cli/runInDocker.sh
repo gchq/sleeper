@@ -67,7 +67,7 @@ get_version_tag() {
       exit 1
     fi
     LOCAL_REPO=$(<"$LOCAL_REPO_CONFIG_PATH")
-    (cd "$LOCAL_REPO/../java" && mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+    (cd "$LOCAL_REPO/java" && mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
   else
     echo "latest"
   fi
@@ -169,7 +169,7 @@ pull_docker_images() {
   if [ -f "$HOME/.sleeper/local-repo" ]; then
     echo "CLI was previously installed from a local repo. Copying Dockerfile from there."
     LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
-    cp "$LOCAL_REPO/cli/runner/Dockerfile" $HOME_RUNNER_PATH
+    cp "$LOCAL_REPO/scripts/cli/runner/Dockerfile" $HOME_RUNNER_PATH
   else
     echo "Downloading CLI runner Dockerfile"
     curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
@@ -258,7 +258,7 @@ upgrade_cli() {
   if [ -f "$HOME/.sleeper/local-repo" ]; then
     echo "Local Sleeper CLI found, using that"
     LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
-    SCRIPT_PATH="$LOCAL_REPO/cli/runInDocker.sh"
+    SCRIPT_PATH="$LOCAL_REPO/scripts/cli/runInDocker.sh"
   else
     echo "Downloading Sleeper CLI"
     curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
