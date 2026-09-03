@@ -20,9 +20,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -30,17 +28,17 @@ import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
+
 import sleeper.api.AWSArchitectureResources.Resource;
 import sleeper.api.AWSArchitectureResources.ResourcesResponse;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.properties.table.TablePropertyGroup;
-import sleeper.core.table.TableStatus;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
@@ -53,7 +51,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static sleeper.api.AWSArchitectureResources.*;
+import static sleeper.api.AWSArchitectureResources.dynamoTable;
+import static sleeper.api.AWSArchitectureResources.eventBridgeRule;
+import static sleeper.api.AWSArchitectureResources.lambdaFunction;
+import static sleeper.api.AWSArchitectureResources.sqsQueue;
+import static sleeper.api.ResourceUtils.loadPropertiesAndCheckStackEnabled;
+import static sleeper.api.ResourceUtils.notAvailable;
+import static sleeper.api.ResourceUtils.tableNamesById;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
@@ -119,7 +123,7 @@ public class IngestBatcherResource {
             @QueryParam("tableId") String tableId,
             @QueryParam("path") String path,
             @QueryParam("limit") Integer limitParam) {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
+        InstanceProperties instanceProperties = loadPropertiesAndCheckStackEnabled(s3Client, accountName, instanceId, OptionalStack.IngestBatcherStack);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDbClient);
         IngestBatcherStore store = getStoreOrThrow(instanceProperties, tablePropertiesProvider);
 
@@ -136,7 +140,7 @@ public class IngestBatcherResource {
                         || file.getFile().toLowerCase(Locale.ROOT).contains(pathFilter))
                 .collect(Collectors.toList());
 
-        Map<String, String> tableNamesById = tableNamesById(instanceProperties);
+        Map<String, String> tableNamesById = tableNamesById(dynamoDbClient, instanceProperties);
 
         int total = filtered.size();
         int to = Math.min(limit, total);
@@ -220,27 +224,13 @@ public class IngestBatcherResource {
         return new ResourcesResponse(resources);
     }
 
-    private IngestBatcherStore getStoreOrThrow(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
-        Optional<IngestBatcherStore> store = IngestBatcherStoreFactory.getStore(
-                dynamoDbClient, instanceProperties, tablePropertiesProvider);
-        return store.orElseThrow(() -> new WebApplicationException(
-                Response.status(Response.Status.NOT_FOUND)
-                        .entity(new NotAvailable("ingest_batcher_not_enabled",
-                                "The ingest batcher is not enabled for this instance."))
-                        .type(MediaType.APPLICATION_JSON)
-                        .build()));
-    }
-
-    private Map<String, String> tableNamesById(InstanceProperties instanceProperties) {
-        DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDbClient);
-        return tableIndex.streamAllTables().collect(Collectors.toMap(
-                TableStatus::getTableUniqueId, TableStatus::getTableName, (a, b) -> a));
+    private IngestBatcherStore getStoreOrThrow(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
+        Optional<IngestBatcherStore> store = IngestBatcherStoreFactory.getStore(dynamoDbClient, instanceProperties, tablePropertiesProvider);
+        return store.orElseThrow(() -> notAvailable("ingest_batcher_not_enabled", "The ingest batcher is not enabled for this instance."));
     }
 
     public record BatcherFile(String file, long fileSizeBytes, String tableId, String tableName, String receivedTime, String jobId) {}
     public record BatcherFilesResponse(List<BatcherFile> files, int limit, boolean hasMore) {}
     public record BatchConfig(String tableId, String minJobSize, String maxJobSize, String minJobFiles, String maxJobFiles, String maxFileAgeSeconds, String ingestQueue, String jobCreationPeriodMinutes, boolean defaultsOverridden) {}
-    public record NotAvailable(String error, String message) {}
 
 }

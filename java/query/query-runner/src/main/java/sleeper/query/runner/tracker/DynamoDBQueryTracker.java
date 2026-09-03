@@ -112,6 +112,22 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
+    public List<TrackedQuery> getQueriesWithId(String queryId) {
+        // The query ID is the partition key, so this reads only the items for this query rather than
+        // scanning the whole tracker table.
+        return dynamoClient.queryPaginator(request -> request
+                .tableName(trackerTableName)
+                .keyConditions(Map.of(
+                        QUERY_ID, Condition.builder()
+                                .attributeValueList(AttributeValue.fromS(queryId))
+                                .comparisonOperator(ComparisonOperator.EQ)
+                                .build())))
+                .items().stream()
+                .map(DynamoDBQueryTrackerEntry::toTrackedQuery)
+                .toList();
+    }
+
+    @Override
     public List<TrackedQuery> getQueriesWithState(QueryState state) {
         ScanResponse response = dynamoClient.scan(request -> request
                 .tableName(trackerTableName)

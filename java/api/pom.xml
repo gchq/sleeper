@@ -154,6 +154,16 @@
             <artifactId>parquet</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>query-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>query-runner</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
 
         <!-- Health check endpoint -->
         <dependency>

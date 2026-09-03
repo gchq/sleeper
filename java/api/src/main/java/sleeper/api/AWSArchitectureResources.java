@@ -113,6 +113,11 @@ public class AWSArchitectureResources {
         return new Resource("SQS::Queue", name, arn, url, null, status, detail);
     }
 
+    public static Resource s3Bucket(String bucketName) {
+        String arn = "arn:aws:s3:::" + bucketName;
+        return new Resource("S3::Bucket", bucketName, arn, null, null, "ok", null);
+    }
+
     private static long attributeLong(GetQueueAttributesResponse attrs, QueueAttributeName name) {
         String value = attrs.attributes().get(name);
         if (value == null) {

@@ -81,6 +81,7 @@ public class InstanceResource {
         Map<String, Boolean> features = new LinkedHashMap<>();
         features.put("IngestBatcher", optionalStacks.contains(OptionalStack.IngestBatcherStack));
         features.put("IngestTracking", instanceProperties.getBoolean(INGEST_TRACKER_ENABLED));
+        features.put("Query", optionalStacks.contains(OptionalStack.QueryStack));
         return features;
     }
 

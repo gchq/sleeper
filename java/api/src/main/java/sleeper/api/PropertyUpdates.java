@@ -17,6 +17,7 @@ package sleeper.api;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+
 import sleeper.api.resources.SleeperPropertiesResource.InvalidProperty;
 import sleeper.api.resources.SleeperPropertiesResource.UpdateFailure;
 import sleeper.core.properties.SleeperProperties;

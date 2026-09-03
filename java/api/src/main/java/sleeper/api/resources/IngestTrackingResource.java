@@ -21,12 +21,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+
 import sleeper.api.AWSArchitectureResources.Resource;
 import sleeper.api.AWSArchitectureResources.ResourcesResponse;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -55,9 +54,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static sleeper.api.AWSArchitectureResources.dynamoTable;
+import static sleeper.api.ResourceUtils.notAvailable;
+import static sleeper.api.ResourceUtils.tableNamesById;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 
@@ -96,7 +96,7 @@ public class IngestTrackingResource {
             @QueryParam("to") Long toEpochMillis) {
         InstanceProperties instanceProperties = loadPropertiesAndCheckEnabled();
         IngestJobTracker jobTracker = IngestJobTrackerFactory.getTracker(dynamoDbClient, instanceProperties);
-        Map<String, String> tableNamesById = tableNamesById(instanceProperties);
+        Map<String, String> tableNamesById = tableNamesById(dynamoDbClient, instanceProperties);
 
         int limit = limitParam == null ? DEFAULT_LIMIT : Math.min(Math.max(1, limitParam), MAX_LIMIT);
 
@@ -193,12 +193,7 @@ public class IngestTrackingResource {
         IngestTaskTracker taskTracker = IngestTaskTrackerFactory.getTracker(dynamoDbClient, instanceProperties);
 
         IngestJobStatus job = jobTracker.getJob(jobId)
-                .orElseThrow(() -> new WebApplicationException(
-                        Response.status(Response.Status.NOT_FOUND)
-                                .entity(new NotAvailable("job_not_found",
-                                        "No ingest job found with id " + jobId + "."))
-                                .type(MediaType.APPLICATION_JSON)
-                                .build()));
+                .orElseThrow(() -> notAvailable("job_not_found", "No ingest job found with id " + jobId + "."));
 
         Map<String, IngestTaskView> tasksById = new LinkedHashMap<>();
         List<IngestJobRunView> runs = new ArrayList<>();
@@ -229,20 +224,9 @@ public class IngestTrackingResource {
     private InstanceProperties loadPropertiesAndCheckEnabled() {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
         if (!instanceProperties.getBoolean(INGEST_TRACKER_ENABLED)) {
-            throw new WebApplicationException(
-                    Response.status(Response.Status.NOT_FOUND)
-                            .entity(new NotAvailable("ingest_tracking_not_enabled",
-                                    "Ingest tracking is not enabled for this instance."))
-                            .type(MediaType.APPLICATION_JSON)
-                            .build());
+            throw notAvailable("ingest_tracking_not_enabled", "Ingest tracking is not enabled for this instance.");
         }
         return instanceProperties;
-    }
-
-    private Map<String, String> tableNamesById(InstanceProperties instanceProperties) {
-        DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDbClient);
-        return tableIndex.streamAllTables().collect(Collectors.toMap(
-                TableStatus::getTableUniqueId, TableStatus::getTableName, (a, b) -> a, LinkedHashMap::new));
     }
 
     private static IngestJobSummary toSummary(IngestJobStatus job, Map<String, String> tableNamesById) {
@@ -318,9 +302,6 @@ public class IngestTrackingResource {
     public record IngestTaskView(
             String taskId, String startTime, String finishTime, Double durationSeconds, boolean finished,
             Long totalRowsRead, Long totalRowsWritten, Double timeSpentOnJobsSeconds) {
-    }
-
-    public record NotAvailable(String error, String message) {
     }
 
     @GET

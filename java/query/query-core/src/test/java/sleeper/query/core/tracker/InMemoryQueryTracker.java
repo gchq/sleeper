@@ -88,6 +88,11 @@ public class InMemoryQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
+    public List<TrackedQuery> getQueriesWithId(String queryId) {
+        return streamAllQueries().filter(query -> Objects.equals(queryId, query.getQueryId())).toList();
+    }
+
+    @Override
     public List<TrackedQuery> getQueriesWithState(QueryState state) {
         return streamAllQueries().filter(query -> Objects.equals(state, query.getLastKnownState())).toList();
     }

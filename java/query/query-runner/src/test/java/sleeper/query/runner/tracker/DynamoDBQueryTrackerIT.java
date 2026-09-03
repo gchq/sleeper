@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
@@ -74,6 +75,32 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         TrackedQuery status = queryTracker().getStatus("my-id");
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
         assertThat(status.getRowCount()).isEqualTo(Long.valueOf(10));
+    }
+
+    @Test
+    public void shouldReturnParentAndSubQueriesWithGivenQueryId() {
+        // Given
+        queryTracker().queryInProgress(createQueryWithId("my-id"));
+        queryTracker().queryInProgress(createSubQueryWithId("my-id", "sub-1"));
+        queryTracker().queryInProgress(createSubQueryWithId("my-id", "sub-2"));
+        queryTracker().queryInProgress(createQueryWithId("other-id"));
+
+        // When / Then
+        assertThat(queryTracker().getQueriesWithId("my-id"))
+                .extracting(TrackedQuery::getQueryId, TrackedQuery::getSubQueryId)
+                .containsExactlyInAnyOrder(
+                        tuple("my-id", DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER),
+                        tuple("my-id", "sub-1"),
+                        tuple("my-id", "sub-2"));
+    }
+
+    @Test
+    public void shouldReturnNoQueriesWhenQueryIdDoesNotExist() {
+        // Given
+        queryTracker().queryInProgress(createQueryWithId("my-id"));
+
+        // When / Then
+        assertThat(queryTracker().getQueriesWithId("non-existent")).isEmpty();
     }
 
     @Test

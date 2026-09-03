@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.api.ResourceUtils.notAvailable;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
@@ -213,11 +214,7 @@ public class IngestFileResource {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
 
         if (!ingestBatcherEnabled(instanceProperties)) {
-            throw new WebApplicationException(
-                    Response.status(Response.Status.NOT_FOUND)
-                            .entity(new NotAvailable("ingest_batcher_not_enabled", "The ingest batcher is not enabled for this instance."))
-                            .type(MediaType.APPLICATION_JSON)
-                            .build());
+            throw notAvailable("ingest_batcher_not_enabled", "The ingest batcher is not enabled for this instance.");
         }
 
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDbClient);
@@ -241,7 +238,6 @@ public class IngestFileResource {
     public record SubmitRequest(List<String> files, List<String> tableIds, String method) {}
     public record SubmittedTable(String tableName, int fileCount) {}
     public record SubmitResponse(List<SubmittedTable> submitted, String method) {}
-    public record NotAvailable(String error, String message) {}
 
     private static boolean ingestBatcherEnabled(InstanceProperties instanceProperties) {
         return instanceProperties.getEnumList(OPTIONAL_STACKS, OptionalStack.class)

@@ -308,6 +308,23 @@ public class TablesResource {
 
     public record SplitPointsResponse(List<String> splitPoints) {}
 
+    @GET
+    @Path("/{tableId}/schema")
+    @Produces(MediaType.APPLICATION_JSON)
+    public SchemaResponse getTableSchema(@PathParam("tableId") String tableId) {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
+        TableProperties tableProperties;
+        try {
+            tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDbClient).loadById(tableId);
+        } catch (TableNotFoundException e) {
+            throw new WebApplicationException(e.getMessage(), Response.Status.NOT_FOUND);
+        }
+        String schemaJson = new SchemaSerDe().toJson(tableProperties.getSchema());
+        return new SchemaResponse(tableProperties.get(TABLE_ID), tableProperties.get(TABLE_NAME), schemaJson);
+    }
+
+    public record SchemaResponse(String tableId, String tableName, String schema) {}
+
     @POST
     @Path("/{tableId}/properties")
     @Consumes(MediaType.APPLICATION_JSON)
