@@ -83,6 +83,8 @@ public class CompactionOnEc2Resources {
     private final InstanceProperties instanceProperties;
     private final Stack stack;
     private final SleeperCoreStacks coreStacks;
+    private AutoScalingGroup ec2ScalingGroup;
+    private AsgCapacityProvider ec2CapacityProvider;
 
     public CompactionOnEc2Resources(
             InstanceProperties instanceProperties, Stack stack, SleeperCoreStacks coreStacks) {
@@ -188,6 +190,23 @@ public class CompactionOnEc2Resources {
                         .build());
 
         instanceProperties.set(COMPACTION_AUTO_SCALING_GROUP, ec2scalingGroup.getAutoScalingGroupName());
+
+        ec2ScalingGroup = ec2scalingGroup;
+        ec2CapacityProvider = ec2Provider;
+    }
+
+    /**
+     * Ensures the EC2 Auto Scaling Group and its capacity provider are not deleted until after the given
+     * dependency. This should be used to make them wait until ECS tasks have been stopped, since the custom
+     * termination policy on the Auto Scaling Group only terminates instances that are not running any tasks. Without
+     * this, CloudFormation can attempt to scale down and delete the Auto Scaling Group before the tasks are stopped,
+     * which will never succeed.
+     *
+     * @param dependency the construct that must be deleted first
+     */
+    public void deleteAfter(IDependable dependency) {
+        ec2ScalingGroup.getNode().addDependency(dependency);
+        ec2CapacityProvider.getNode().addDependency(dependency);
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")

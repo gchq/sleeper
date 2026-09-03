@@ -18,6 +18,7 @@ package sleeper.cdk.stack.compaction;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
+import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.ecs.Cluster;
@@ -78,6 +79,7 @@ public class CompactionTaskResources {
     private final Stack stack;
     private final SleeperInstanceProps props;
     private final InstanceProperties instanceProperties;
+    private CompactionOnEc2Resources ec2Resources;
 
     public CompactionTaskResources(Stack stack,
             SleeperInstanceProps props,
@@ -93,7 +95,12 @@ public class CompactionTaskResources {
 
         Cluster cluster = ecsClusterForCompactionTasks(coreStacks, jarsBucket, ecsImages, lambdaCode, jobResources);
         IFunction taskCreator = lambdaToCreateCompactionTasks(coreStacks, lambdaCode, jobResources.getCompactionJobsQueue());
-        coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(stack, cluster, taskCreator);
+        CustomResource autoStopEcsClusterTasks = coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(stack, cluster, taskCreator);
+        if (ec2Resources != null) {
+            // Ensures the EC2 Auto Scaling Group is not scaled down/deleted until after ECS tasks have been stopped.
+            // Otherwise the custom termination policy (which only terminates empty instances) can block deletion.
+            ec2Resources.deleteAfter(autoStopEcsClusterTasks);
+        }
 
         // Allow running compaction tasks
         coreStacks.getInvokeCompactionPolicyForGrants().addStatements(runTasksPolicyStatement());
@@ -122,8 +129,8 @@ public class CompactionTaskResources {
             taskDefinition = new CompactionOnFargateResources(instanceProperties, stack, coreStacks)
                     .createTaskDefinition(containerImage, environmentVariables);
         } else {
-            taskDefinition = new CompactionOnEc2Resources(instanceProperties, stack, coreStacks)
-                    .createTaskDefinition(cluster, coreStacks.getVpc(), lambdaCode, containerImage, environmentVariables);
+            ec2Resources = new CompactionOnEc2Resources(instanceProperties, stack, coreStacks);
+            taskDefinition = ec2Resources.createTaskDefinition(cluster, coreStacks.getVpc(), lambdaCode, containerImage, environmentVariables);
         }
         coreStacks.grantRunCompactionJobs(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
