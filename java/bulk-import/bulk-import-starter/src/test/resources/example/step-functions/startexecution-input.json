@@ -60,6 +60,8 @@
     "--conf",
     "spark.kubernetes.executor.podNamePrefix=job-test-job",
     "--conf",
+    "spark.kubernetes.executor.podTemplateContainerName=spark-kubernetes-executor",
+    "--conf",
     "spark.kubernetes.executor.podTemplateFile=/tmp/executor-template.yaml",
     "--conf",
     "spark.kubernetes.namespace=eks-namespace",
