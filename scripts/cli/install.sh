@@ -17,11 +17,11 @@ set -e
 unset CDPATH
 
 REGISTRY=""
-VERSION_TAG=""
+USE_LOCAL_VERSION=false
 while [[ "$#" -gt 0 ]]; do
   case $1 in
     --registry) REGISTRY="$2"; shift 2 ;;
-    --version) VERSION_TAG="$2"; shift 2 ;;
+    --useLocalVersion) USE_LOCAL_VERSION=true; shift 1 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -50,10 +50,8 @@ chmod a+x "$SCRIPT_PATH"
 if [ -n "$REGISTRY" ]; then
   "$SCRIPT_PATH" cli set-registry "$REGISTRY"
 fi
-# Set version tag if provided, overriding the default
-if [ -n "$VERSION_TAG" ]; then
-  "$SCRIPT_PATH" cli set-version "$VERSION_TAG"
-fi
+# Always set explicitly, so re-running without the flag resets to pulling latest
+"$SCRIPT_PATH" cli set-use-local-version "$USE_LOCAL_VERSION"
 "$SCRIPT_PATH" cli pull-images
 echo "Downloaded Docker images"
 

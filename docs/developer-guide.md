@@ -137,17 +137,19 @@ docker login your.registry.example.com
 ./scripts/cli/install.sh --registry your.registry.example.com/sleeper
 ```
 
-You can also pin a specific Docker image version tag using `--version`:
+By default, images are pulled with the tag `latest`, regardless of which registry you're using. If you installed from
+a local repository checkout, you can instead pull the version of Sleeper currently checked out there, using
+`--useLocalVersion`:
 
 ```bash
-./scripts/cli/install.sh --version 0.27.0
+./scripts/cli/install.sh --useLocalVersion
 ```
 
-By default, images are pulled with the tag `latest`. This is always the case for the default GitHub Container
-Registry, which only ever publishes a `latest` tag. If you're using a custom registry that does publish version tags,
-and you installed from a local repository, the version tag will instead default to the version of Sleeper in that
-repository. This is useful after switching branches, so the pulled images match the version you're working with.
-Either way, `--version` overrides this default.
+This reads the version from the repository's `pom.xml` each time images are pulled, so switching branches locally
+will be picked up automatically. This is useful when working with a custom registry that does publish version tags,
+so the pulled images match the version you're working with. This can also be toggled later using
+`sleeper cli set-use-local-version <true|false>`, but requires the CLI to have been installed from a local repository
+checkout.
 
 You can also use `./scripts/cli/runInDocker.sh` directly without installing, which will act the same as the `sleeper`
 command.

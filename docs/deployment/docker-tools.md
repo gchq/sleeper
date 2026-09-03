@@ -60,14 +60,15 @@ with Sleeper.
 You can upgrade to the latest version of the CLI using `sleeper cli upgrade`. This should be done regularly to keep the
 build and deployment tools up to date.
 
-You can pin a specific Docker image version tag using `--version`:
+By default, images are pulled with the `latest` tag, regardless of registry. If you installed from a local repository
+checkout, you can instead pull the version of Sleeper currently checked out there, using `--useLocalVersion`:
 
 ```bash
-./scripts/cli/install.sh --version 0.27.0
+./scripts/cli/install.sh --useLocalVersion
 ```
 
-The version can also be updated later using `sleeper cli set-version <version>`. When using a custom registry with
-a local repository, the version is taken from `templates/version.txt`. Otherwise the default is `latest`.
+This reads the version from the repository's `pom.xml` each time images are pulled, so switching branches locally
+will be picked up automatically. This can also be toggled later using `sleeper cli set-use-local-version <true|false>`.
 
 There's a `sleeper environment` command that you can use to prepare your AWS account to deploy Sleeper into it. This is
 documented in [Sleeper environment tool](environment-tool.md).

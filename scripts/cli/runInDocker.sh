@@ -54,24 +54,27 @@ set_registry() {
   echo "Registry set to: $1"
 }
 
-# Allow overriding the image version tag used when pulling images
-VERSION_TAG_CONFIG_PATH="$HOME/.sleeper/version-tag"
+# Allow using the version of Sleeper in a local repository checkout, instead of always pulling latest
+USE_LOCAL_VERSION_CONFIG_PATH="$HOME/.sleeper/use-local-version"
+LOCAL_REPO_CONFIG_PATH="$HOME/.sleeper/local-repo"
+
 get_version_tag() {
-  if [ -f "$VERSION_TAG_CONFIG_PATH" ]; then
-    cat "$VERSION_TAG_CONFIG_PATH"
-  elif [ -f "$HOME/.sleeper/local-repo" ] && [ "$(get_registry)" != "$DEFAULT_REGISTRY" ]; then
-    # Use the source version only when pulling from a custom registry
-    LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
+  if [ -f "$USE_LOCAL_VERSION_CONFIG_PATH" ] && [ "$(cat "$USE_LOCAL_VERSION_CONFIG_PATH")" == "true" ]; then
+    if [ ! -f "$LOCAL_REPO_CONFIG_PATH" ]; then
+      echo "Error: --useLocalVersion requires the CLI to have been installed from a local repository checkout." >&2
+      exit 1
+    fi
+    LOCAL_REPO=$(<"$LOCAL_REPO_CONFIG_PATH")
     (cd "$LOCAL_REPO/../java" && mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
   else
     echo "latest"
   fi
 }
 
-set_version_tag() {
+set_use_local_version() {
   mkdir -p "$HOME/.sleeper"
-  echo "$1" > "$VERSION_TAG_CONFIG_PATH"
-  echo "Version tag set to: $1"
+  echo "$1" > "$USE_LOCAL_VERSION_CONFIG_PATH"
+  echo "Use local version set to: $1"
 }
 
 run_in_docker() {
@@ -310,12 +313,12 @@ elif [ "$COMMAND" == "cli" ]; then
       exit 1
     fi
     set_registry "$1"
-  elif [ "$SUBCOMMAND" == "set-version" ]; then
+  elif [ "$SUBCOMMAND" == "set-use-local-version" ]; then
     if [ "$#" -lt 1 ]; then
-      echo "Usage: sleeper cli set-version <version>"
+      echo "Usage: sleeper cli set-use-local-version <true|false>"
       exit 1
     fi
-    set_version_tag "$1"
+    set_use_local_version "$1"
   else
     echo "Command not found: cli $SUBCOMMAND"
     show_usage
