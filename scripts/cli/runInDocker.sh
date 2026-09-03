@@ -67,7 +67,7 @@ get_version_tag() {
       exit 1
     fi
     LOCAL_REPO=$(<"$LOCAL_REPO_CONFIG_PATH")
-    (cd "$LOCAL_REPO/java" && mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+    sed -n 's:.*<version>\(.*\)</version>.*:\1:p' "$LOCAL_REPO/java/pom.xml" | head -n1
   else
     echo "latest"
   fi
