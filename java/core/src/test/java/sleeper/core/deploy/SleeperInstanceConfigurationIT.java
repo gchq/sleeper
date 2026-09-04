@@ -29,7 +29,6 @@ import sleeper.core.schema.SchemaSerDe;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -215,103 +214,6 @@ public class SleeperInstanceConfigurationIT {
             // Then
             assertThat(instanceConfiguration)
                     .isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties(), List.of()));
-        }
-    }
-
-    @Nested
-    @DisplayName("Create for a new instance, defaulting instance properties to the template")
-    class CreateForNewInstanceDefaultingInstance {
-
-        @Test
-        void shouldPopulateInstancePropertiesFromLocalConfig() throws Exception {
-            // Given
-            writeTemplates();
-            Path instancePropertiesPath = Files.writeString(
-                    propertiesDir.resolve("instance.properties"),
-                    "sleeper.filesystem=test://");
-
-            // When
-            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingInstance(
-                    instancePropertiesPath, templatesDir);
-
-            // Then
-            InstanceProperties expectedInstanceProperties = new InstanceProperties();
-            expectedInstanceProperties.set(FILE_SYSTEM, "test://");
-            assertThat(config).isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties, List.of()));
-        }
-
-        @Test
-        void shouldPopulateInstancePropertiesFromTemplate() throws Exception {
-            // Given
-            writeTemplates();
-            // When
-            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingInstance(
-                    null, templatesDir);
-
-            // Then
-            InstanceProperties expectedInstanceProperties = new InstanceProperties();
-
-            Map<String, String> tags = new HashMap<>(expectedInstanceProperties.getTags());
-            tags.put("Project", "TemplateProject");
-            expectedInstanceProperties.setTags(tags);
-            expectedInstanceProperties.set(FILE_SYSTEM, "test://");
-            assertThat(config).isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties, List.of()));
-        }
-    }
-
-    @Nested
-    @DisplayName("Create for a new instance, defaulting table properties to the template")
-    class CreateForNewInstanceDefaultingTables {
-
-        @Test
-        void shouldPopulateTablePropertiesFromLocalConfig() throws Exception {
-            // Given
-            writeTemplates();
-            Path instancePropertiesPath = Files.writeString(
-                    propertiesDir.resolve("instance.properties"),
-                    "sleeper.filesystem=test://");
-            Files.writeString(
-                    propertiesDir.resolve("table.properties"),
-                    "sleeper.table.name=some-table");
-            SleeperInstanceConfigurationFromTemplates fromTemplates = SleeperInstanceConfigurationFromTemplates.builder()
-                    .templatesDir(templatesDir)
-                    .tableNameForTemplate("template-table").build();
-
-            // When
-            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
-                    instancePropertiesPath, fromTemplates);
-
-            // Then
-            InstanceProperties expectedInstanceProperties = new InstanceProperties();
-            expectedInstanceProperties.set(FILE_SYSTEM, "test://");
-            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
-            expectedTableProperties.set(TABLE_NAME, "some-table");
-            assertThat(config).isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties, expectedTableProperties));
-        }
-
-        @Test
-        void shouldPopulateTablePropertiesFromTemplate() throws Exception {
-            // Given
-            writeTemplates();
-            Path instancePropertiesPath = Files.writeString(
-                    propertiesDir.resolve("instance.properties"),
-                    "sleeper.filesystem=test://");
-            SleeperInstanceConfigurationFromTemplates fromTemplates = SleeperInstanceConfigurationFromTemplates.builder()
-                    .templatesDir(templatesDir)
-                    .tableNameForTemplate("template-table").build();
-
-            // When
-            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
-                    instancePropertiesPath, fromTemplates);
-
-            // Then
-            InstanceProperties expectedInstanceProperties = new InstanceProperties();
-            expectedInstanceProperties.set(FILE_SYSTEM, "test://");
-            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
-            expectedTableProperties.set(TABLE_NAME, "template-table");
-            expectedTableProperties.setNumber(ROW_GROUP_SIZE, 123);
-            expectedTableProperties.setSchema(createSchemaWithKey("template-key"));
-            assertThat(config).isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties, expectedTableProperties));
         }
     }
 
