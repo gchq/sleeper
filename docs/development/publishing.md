@@ -52,6 +52,33 @@ You can also configure options for the build with `scripts/deploy/setDeployConfi
 see [building in a custom environment](custom-environment.md). If it's set to deploy images from a remote repository,
 this publishing will fail.
 
+### Configuring the CLI to use a custom registry
+
+If you've published Docker images to your own registry, as described above, you can point the Sleeper CLI at it
+instead of the default Sleeper registry. Pass `--registry` when installing the CLI. You must first log in to that
+registry with Docker, otherwise the image pull will fail:
+
+```bash
+docker login your.registry.example.com
+./scripts/cli/install.sh --registry your.registry.example.com/sleeper
+```
+
+This can also be changed later, without reinstalling, using `sleeper cli set-registry <registry>`.
+
+By default, images are pulled with the tag `latest`, regardless of which registry you're using. If you installed from
+a local repository checkout, you can instead pull the version of Sleeper currently checked out there, using
+`--useLocalVersion`:
+
+```bash
+./scripts/cli/install.sh --useLocalVersion
+```
+
+This reads the version from the repository's `pom.xml` each time images are pulled, so switching branches locally
+will be picked up automatically. This is useful when working with a custom registry that does publish version tags,
+so the pulled images match the version you're working with. This can also be toggled later using
+`sleeper cli set-use-local-version <true|false>`, but requires the CLI to have been installed from a local repository
+checkout.
+
 ### Installing published artefacts
 
 We have scripts to install Sleeper from published artefacts. We have not yet published Sleeper to Maven Central or

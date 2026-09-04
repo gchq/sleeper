@@ -37,6 +37,48 @@ if [ ! -f "$RUNNER_PATH/Dockerfile" ]; then
     RUNNER_PATH="$HOME_RUNNER_PATH"
 fi
 
+DOCKER_TOOLS_CONFIG_DIR="$HOME/.sleeper/docker-tools"
+
+# Allow setting of registry to pull docker images from
+REGISTRY_CONFIG_PATH="$DOCKER_TOOLS_CONFIG_DIR/registry"
+DEFAULT_REGISTRY="ghcr.io/gchq"
+get_registry() {
+  if [ -f "$REGISTRY_CONFIG_PATH" ]; then
+    cat "$REGISTRY_CONFIG_PATH"
+  else
+    echo "$DEFAULT_REGISTRY"
+  fi
+}
+
+set_registry() {
+  mkdir -p "$DOCKER_TOOLS_CONFIG_DIR"
+  echo "$1" > "$REGISTRY_CONFIG_PATH"
+  echo "Registry set to: $1"
+}
+
+# Allow using the version of Sleeper in a local repository checkout, instead of always pulling latest
+USE_LOCAL_VERSION_CONFIG_PATH="$DOCKER_TOOLS_CONFIG_DIR/use-local-version"
+LOCAL_REPO_CONFIG_PATH="$HOME/.sleeper/local-repo"
+
+get_version_tag() {
+  if [ -f "$USE_LOCAL_VERSION_CONFIG_PATH" ] && [ "$(cat "$USE_LOCAL_VERSION_CONFIG_PATH")" == "true" ]; then
+    if [ ! -f "$LOCAL_REPO_CONFIG_PATH" ]; then
+      echo "Error: --useLocalVersion requires the CLI to have been installed from a local repository checkout." >&2
+      exit 1
+    fi
+    LOCAL_REPO=$(<"$LOCAL_REPO_CONFIG_PATH")
+    sed -n 's:.*<version>\(.*\)</version>.*:\1:p' "$LOCAL_REPO/java/pom.xml" | head -n1
+  else
+    echo "latest"
+  fi
+}
+
+set_use_local_version() {
+  mkdir -p "$DOCKER_TOOLS_CONFIG_DIR"
+  echo "$1" > "$USE_LOCAL_VERSION_CONFIG_PATH"
+  echo "Use local version set to: $1"
+}
+
 run_in_docker() {
   local RUN_PARAMS
   RUN_PARAMS=()
@@ -122,14 +164,22 @@ get_version() {
 }
 
 pull_docker_images() {
-  echo "Downloading CLI runner Dockerfile"
-  mkdir -p "$HOME_RUNNER_PATH"
-  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
 
-  echo "Pulling CLI Docker images"
+  mkdir -p "$HOME_RUNNER_PATH"
+  if [ -f "$HOME/.sleeper/local-repo" ]; then
+    echo "CLI was previously installed from a local repo. Copying CLI runner Dockerfile from there."
+    LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
+    cp "$LOCAL_REPO/scripts/cli/runner/Dockerfile" $HOME_RUNNER_PATH
+  else
+    echo "Downloading CLI runner Dockerfile"
+    curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
+  fi
+
+  VERSION=$(get_version_tag)
+  echo "Pulling CLI Docker images (version: $VERSION)"
   for IMAGE_NAME in "${ALL_IMAGES[@]}"; do
     echo "Pulling image: $IMAGE_NAME"
-    REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:latest"
+    REMOTE_IMAGE="$(get_registry)/$IMAGE_NAME:$VERSION"
     LOCAL_IMAGE="$IMAGE_NAME:current"
 
     # Use docker build rather than docker pull + docker tag, so that BuildKit
@@ -204,12 +254,23 @@ upgrade_cli() {
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
   local TEMP_DIR=$(mktemp -d)
   TEMP_PATH="$TEMP_DIR/sleeper"
-  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
-  chmod a+x "$TEMP_PATH"
-  "$TEMP_PATH" cli pull-images
+
+  if [ -f "$HOME/.sleeper/local-repo" ]; then
+    echo "Sleeper Docker tools CLI was previously installed from a local repository, updating from there"
+    LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
+    SCRIPT_PATH="$LOCAL_REPO/scripts/cli/runInDocker.sh"
+  else
+    echo "Downloading Sleeper CLI"
+    curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+    SCRIPT_PATH="$TEMP_PATH"
+    echo "Downloaded command"
+  fi
+
+  chmod a+x "$SCRIPT_PATH"
+  "$SCRIPT_PATH" cli pull-images
   remove_old_images
-  mv "$TEMP_PATH" "$EXECUTABLE_PATH"
-  rmdir "$TEMP_DIR"
+  cp "$SCRIPT_PATH" "$EXECUTABLE_PATH"
+  rm -rf "$TEMP_DIR"
   echo "Updated"
 
   # If we didn't exit here, bash would carry on where it left off before the function call, but in the new version.
@@ -248,6 +309,18 @@ elif [ "$COMMAND" == "cli" ]; then
     upgrade_cli
   elif [ "$SUBCOMMAND" == "pull-images" ]; then
     pull_docker_images
+  elif [ "$SUBCOMMAND" == "set-registry" ]; then
+    if [ "$#" -lt 1 ]; then
+      echo "Usage: sleeper cli set-registry <registry>"
+      exit 1
+    fi
+    set_registry "$1"
+  elif [ "$SUBCOMMAND" == "set-use-local-version" ]; then
+    if [ "$#" -lt 1 ]; then
+      echo "Usage: sleeper cli set-use-local-version <true|false>"
+      exit 1
+    fi
+    set_use_local_version "$1"
   else
     echo "Command not found: cli $SUBCOMMAND"
     show_usage
