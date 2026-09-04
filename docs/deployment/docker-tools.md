@@ -32,7 +32,7 @@ version of the CLI, rather than the version of Sleeper you will deploy.
 ### Installing from a local repository
 
 If you have cloned the Sleeper repository locally, you can run the install script directly from the repository. It will
-automatically detect `runInDocker.sh` alongside it and use that instead of downloading it from GitHub:
+automatically detect the relevent files alongside it and use that instead of downloading them from GitHub:
 
 ```bash
 ./scripts/cli/install.sh
