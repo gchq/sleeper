@@ -27,8 +27,8 @@ import sleeper.clients.report.ingest.job.IngestQueueMessages;
 import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.PersistentEmrStepCount;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
-import sleeper.clients.report.ingest.job.query.IngestJobQueryArgument;
 import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.RangeJobsQuery;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.common.task.QueueMessageCount;
@@ -37,14 +37,23 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandArgumentsException;
+import sleeper.core.util.cli.CommandLineUsage;
+import sleeper.core.util.cli.CommandOption;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Clock;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.TimeZone;
 
-import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
@@ -111,57 +120,177 @@ public class IngestJobStatusReport {
     }
 
     public static void main(String[] args) {
-        try {
-            if (args.length < 2 || args.length > 5) {
-                throw new IllegalArgumentException("Wrong number of arguments");
-            }
-            String instanceId = args[0];
-            String tableName = args[1];
-            IngestJobStatusReporter reporter = getReporter(args, 2);
-            JobQuery.Type queryType = IngestJobQueryArgument.readTypeArgument(args, 3);
-            String queryParameters = optionalArgument(args, 4).orElse(null);
+        Arguments reportArgs = CommandArguments.parseAndValidateOrExit(USAGE, args, IngestJobStatusReport::readArguments);
 
-            try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                    DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                    SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
-                    EmrClient emrClient = buildAwsV2Client(EmrClient.builder());
-                    StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
-                String accountName = stsClient.getCallerIdentity().account();
-                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
-                DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-                TableStatus table = tableIndex.getTableByName(tableName)
-                        .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
-                IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-                JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
-                new IngestJobStatusReport(tracker, query, reporter,
-                        QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
-                        PersistentEmrStepCount.byStatus(instanceProperties, emrClient)).run();
-            }
-        } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
-            printUsage();
-            System.exit(1);
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                SqsClient sqsClient = buildAwsV2Client(SqsClient.builder());
+                EmrClient emrClient = buildAwsV2Client(EmrClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, reportArgs.instanceId());
+            DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
+            TableStatus table = tableIndex.getTableByName(reportArgs.tableName())
+                    .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + reportArgs.tableName()));
+            IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
+            JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, reportArgs.queryType(),
+                    determineQueryParams(reportArgs),
+                    Clock.systemUTC(), ConsoleInput.stdIn());
+            new IngestJobStatusReport(tracker, query, reportArgs.reporter(),
+                    QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
+                    PersistentEmrStepCount.byStatus(instanceProperties, emrClient)).run();
         }
     }
 
-    private static void printUsage() {
-        System.out.println("" +
-                "Usage: <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters> \n" +
-                "Query types are:\n" +
-                "-a (Return all jobs)\n" +
-                "-d (Detailed, provide a jobId)\n" +
-                "-n (Rejected jobs)\n" +
-                "-r (Provide startRange and endRange separated by commas in format yyyyMMddhhmmss)\n" +
-                "-u (Unfinished jobs)");
+    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
+            .positionalArguments(List.of("instance-id", "table-name"))
+            .options(List.of(CommandOption.longOption("output-type"),
+                    CommandOption.shortFlag('a', "all"),
+                    CommandOption.shortOption('d', "detailed"),
+                    CommandOption.shortFlag('n', "rejected"),
+                    CommandOption.shortFlag('r', "range"),
+                    CommandOption.longOption("start-time"),
+                    CommandOption.longOption("end-time"),
+                    CommandOption.shortFlag('u', "unfinished")))
+            .helpSummary("" +
+                    "A report on ingest jobs within a Sleeper instance.\n" +
+                    "\n" +
+                    "--output-type <type>\n" +
+                    "Output format. One of STANDARD, JSON. Defaults to STANDARD.\n" +
+                    "\n" +
+                    "Available query types for the report are (Choose 1):\n " +
+                    "-a, --all\n" +
+                    "Returns all jobs.\n" +
+                    "\n" +
+                    "-d, --detailed <jobId>\n" +
+                    "Returns a detailed report for the job ID provided.\n" +
+                    "\n" +
+                    "-n, --rejected\n" +
+                    "Returns all rejected jobs.\n" +
+                    "\n" +
+                    "-r, --range --start-time <startTime> --end-time <endTime>\n" +
+                    "Returns all jobs within a given range. If not set, defaults to 4 hours.\n" +
+                    "The range can be declared with --start-time and --end-time. They must in the following format: yyyyMMddhhmmss.\n" +
+                    "\n" +
+                    "-u, --unfinished\n" +
+                    "Returns all unfinished jobs.")
+            .build();
+
+    /**
+     * Reads the arguments from the command line.
+     *
+     * @param  arguments the parsed command line arguments
+     * @return           the arguments
+     */
+    public static Arguments readArguments(CommandArguments arguments) {
+        JobQuery.Type jobType = JobQuery.determineQueryType(arguments);
+        String jobId = null;
+        String startTime = null;
+        String endTime = null;
+
+        switch (jobType) {
+            case DETAILED:
+                Optional<String> optionalDetailed = arguments.getOptionalString("detailed");
+                if (optionalDetailed.isPresent()) {
+                    jobId = optionalDetailed.get();
+                } else {
+                    throw new CommandArgumentsException("Additional paramter of Job ID is required for the detailed query type.");
+                }
+                break;
+            case RANGE:
+                Optional<String> optionalStart = arguments.getOptionalString("start-time");
+                Optional<String> optionalEnd = arguments.getOptionalString("end-time");
+
+                if (optionalStart.isPresent() && optionalEnd.isPresent()) {
+                    SimpleDateFormat dateInputFormat = new SimpleDateFormat(RangeJobsQuery.DATE_FORMAT);
+                    dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    Date startDate, endDate;
+
+                    try {
+                        startDate = dateInputFormat.parse(optionalStart.get());
+                    } catch (ParseException e) {
+                        throw new CommandArgumentsException("start-time parameter don't match expected format: " + RangeJobsQuery.DATE_FORMAT);
+                    }
+                    try {
+                        endDate = dateInputFormat.parse(optionalEnd.get());
+                    } catch (ParseException e) {
+                        throw new CommandArgumentsException("end-time parameter don't match expected format: " + RangeJobsQuery.DATE_FORMAT);
+                    }
+
+                    if (endDate.before(startDate)) {
+                        throw new CommandArgumentsException("Range end is before range start. Range start: " + optionalStart.get() + ", range end: " + optionalEnd.get());
+                    }
+                    startTime = optionalStart.get();
+                    endTime = optionalEnd.get();
+                } else if (optionalStart.isEmpty() && optionalEnd.isPresent()) {
+                    throw new CommandArgumentsException("Missing paramter of start-time which is required for the ranged query type.");
+                } else if (optionalStart.isPresent() && optionalEnd.isEmpty()) {
+                    throw new CommandArgumentsException("Missing paramter of end-time which is required for the ranged query type.");
+                }
+                break;
+            default:
+                break;
+        }
+
+        // Below error message to be removed as part of work for ticket number: https://github.com/gchq/sleeper/issues/8061
+        if (!jobType.equals(JobQuery.Type.RANGE) &&
+                (arguments.getOptionalString("start-time").isPresent() ||
+                        arguments.getOptionalString("end-time").isPresent())) {
+            throw new CommandArgumentsException("Range time flags, start-time and end-time are not valid for following query type: " + jobType);
+        }
+
+        IngestJobStatusReporter reporter;
+        Optional<String> optionalOutput = arguments.getOptionalString("output-type");
+        if (optionalOutput.isPresent()) {
+            String outputValue = optionalOutput.get().toUpperCase(Locale.ROOT);
+            if (!REPORTERS.containsKey(optionalOutput.get().toUpperCase(Locale.ROOT))) {
+                throw new CommandArgumentsException("Output type not supported: " + optionalOutput.get() + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
+            }
+            reporter = REPORTERS.get(outputValue);
+        } else {
+            reporter = REPORTERS.get(DEFAULT_REPORTER);
+        }
+
+        return new Arguments(arguments.getString("instance-id"),
+                arguments.getString("table-name"),
+                reporter,
+                jobType,
+                jobId,
+                startTime,
+                endTime);
     }
 
-    private static IngestJobStatusReporter getReporter(String[] args, int index) {
-        String reporterType = optionalArgument(args, index)
-                .map(str -> str.toUpperCase(Locale.ROOT))
-                .orElse(DEFAULT_REPORTER);
-        if (!REPORTERS.containsKey(reporterType)) {
-            throw new IllegalArgumentException("Output type not supported: " + reporterType);
+    /**
+     * Method for generating paramterts to add to the job query.
+     *
+     * @param  args arguments pass into the report
+     * @return      details presented as a string for latter use
+     */
+    public static String determineQueryParams(Arguments args) {
+        switch (args.queryType()) {
+            case DETAILED:
+                return args.jobId();
+            case RANGE:
+                return args.startTime() + "," + args.endTime();
+            default:
+                return null;
         }
-        return REPORTERS.get(reporterType);
+    }
+
+    /**
+     * Holds the arguments for the ingest job status report command.
+     *
+     * @param instanceId the Sleeper instance ID
+     * @param tableName  the table name
+     * @param reporter   the reporter format, either STANDARD or JSON
+     * @param queryType  the type of query to execute for the ingest report
+     * @param jobId      optional jobID for the detailed query
+     * @param startTime  optional start time for range query
+     * @param endTime    optional end time for range query
+     */
+    public record Arguments(String instanceId, String tableName, IngestJobStatusReporter reporter, JobQuery.Type queryType,
+            String jobId, String startTime, String endTime) {
+        public Arguments {
+        }
     }
 }
