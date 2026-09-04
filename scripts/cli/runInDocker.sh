@@ -167,7 +167,7 @@ pull_docker_images() {
 
   mkdir -p "$HOME_RUNNER_PATH"
   if [ -f "$HOME/.sleeper/local-repo" ]; then
-    echo "CLI was previously installed from a local repo. Copying Dockerfile from there."
+    echo "CLI was previously installed from a local repo. Copying CLI runner Dockerfile from there."
     LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
     cp "$LOCAL_REPO/scripts/cli/runner/Dockerfile" $HOME_RUNNER_PATH
   else
@@ -256,7 +256,7 @@ upgrade_cli() {
   TEMP_PATH="$TEMP_DIR/sleeper"
 
   if [ -f "$HOME/.sleeper/local-repo" ]; then
-    echo "Local Sleeper CLI found, using that"
+    echo "Sleeper Docker tools CLI was previously installed from a local repository, updating from there"
     LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
     SCRIPT_PATH="$LOCAL_REPO/scripts/cli/runInDocker.sh"
   else
