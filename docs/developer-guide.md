@@ -106,34 +106,19 @@ To build the Sleeper Docker tools, you can run this script:
 
 There are also scripts to build individual tools, like `scripts/cli/environment/buildWithDependencies.sh`.
 
-The `sleeper` command installed by the CLI is just a copy of the `runInDocker.sh` script, which runs the Docker tools
-images to carry out CLI commands. Building the images with the scripts above will replace the images used by an
-already-installed CLI, since they share the same local tags, but it will not update the installed copy of
-`runInDocker.sh` itself. If that script has changed since you installed the CLI, you'll need to update it manually.
-You can find your installed copy at `$HOME/.local/bin/sleeper`, and overwrite it with the contents of
-`./scripts/cli/runInDocker.sh`.
-
-To install the CLI from the local repository, run the install script directly:
-
-```bash
-./scripts/cli/install.sh
-```
-
-It will detect `runInDocker.sh` alongside it and use that instead of downloading the script from GitHub, and it will
-record the local repository path in `~/.sleeper/local-repo`. This means a later `sleeper cli upgrade` will use the
-`runInDocker.sh` script from this repository instead of downloading the latest version from GitHub, and
-`sleeper cli pull-images` will use this repository's copy of the Docker runner Dockerfile instead of downloading it.
-
-Note that this script pulls the Docker images from a registry and re-tags them with the same local tags used by
-`buildAll.sh` above. If you've just built the tools locally, running this afterwards will overwrite those images with
-the ones from the registry, so don't run it as a follow-up to building unless you actually want to switch to
-registry-pulled images.
-
-If the CLI is already installed, re-running this script will update the installed executable and re-pull the Docker
-images from the registry.
-
 You can also use `./scripts/cli/runInDocker.sh` directly without installing, which will act the same as the `sleeper`
 command.
+
+#### Installing the CLI
+
+Installing is a separate step from building - see [Sleeper Docker tools](deployment/docker-tools.md) for how to
+install the CLI from this repository. Installing pulls the Docker images from a registry and re-tags them with the
+same local tags used by `buildAll.sh` above, so **if you've just built the tools locally, running the install script
+afterwards will overwrite those images with the ones from the registry**.
+
+The `sleeper` command itself is just a copy of the `runInDocker.sh` script. Building the images above replaces the
+images an already-installed CLI uses, but does not update the installed copy of `runInDocker.sh`. If that script has
+changed since you installed, overwrite `$HOME/.local/bin/sleeper` with the contents of `./scripts/cli/runInDocker.sh`.
 
 ### Publishing artefacts
 
