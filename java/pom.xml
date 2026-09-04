@@ -94,7 +94,7 @@
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.3</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
-        <protobuf.version>4.36.0</protobuf.version>
+        <protobuf.version>4.36.1</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
         <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of LZ4 Java with vulnerabilities. -->
@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.54.7</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.54.9</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -158,7 +158,7 @@
         <aws-crt.version>0.48.4</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
-        <aws-lambda-java-runtime-interface-client.version>2.10.1</aws-lambda-java-runtime-interface-client.version>
+        <aws-lambda-java-runtime-interface-client.version>2.12.0</aws-lambda-java-runtime-interface-client.version>
         <aws-lambda-powertools.version>2.10.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-codec.version>1.22.1</commons-codec.version>
@@ -176,7 +176,7 @@
         <httpclient5.version>5.6.4</httpclient5.version>
         <httpcore5.version>5.4.3</httpcore5.version>
         <jaxb.version>2.3.1</jaxb.version>
-        <jline.version>4.4.0</jline.version>
+        <jline.version>4.4.1</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
         <zstd-jni.version>1.5.7-16</zstd-jni.version>
@@ -267,7 +267,7 @@
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <release.plugin.version>3.3.1</release.plugin.version>
         <surefire.plugin.version>3.6.0</surefire.plugin.version>
-        <failsafe.plugin.version>3.5.6</failsafe.plugin.version>
+        <failsafe.plugin.version>3.6.0</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.2</shade.plugin.version>
