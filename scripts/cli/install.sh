@@ -39,6 +39,12 @@ if [ -f "$LOCAL_SCRIPT" ]; then
   mkdir -p "$HOME/.sleeper"
   echo $(cd "$THIS_DIR" && cd ../.. && pwd) > ~/.sleeper/local-repo
 else
+  if [ -f "$HOME/.sleeper/local-repo" ] || [ -d "$HOME/.sleeper/docker-tools" ]; then
+    echo "Clearing local repo path and registry/version config from any previous installation"
+    rm -f "$HOME/.sleeper/local-repo"
+    rm -rf "$HOME/.sleeper/docker-tools"
+  fi
+
   echo "Downloading Sleeper CLI"
   curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   SCRIPT_PATH="$TEMP_PATH"
