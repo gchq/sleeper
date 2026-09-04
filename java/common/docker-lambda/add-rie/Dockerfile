@@ -15,6 +15,8 @@ ARG BASE_IMAGE=sleeper-base:current
 FROM ${BASE_IMAGE}
 
 # Install Lambda Runtime Interface Emulator
+# Root is required here to write into /usr/local/bin/, which is owned by root.
+USER root
 RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.35/aws-lambda-rie && \
     mv ./aws-lambda-rie /usr/local/bin/ && \
     chmod +x /usr/local/bin/aws-lambda-rie
