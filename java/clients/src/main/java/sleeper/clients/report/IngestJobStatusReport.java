@@ -232,6 +232,13 @@ public class IngestJobStatusReport {
                 break;
         }
 
+        // Below error message to be removed as part of work for ticket number: https://github.com/gchq/sleeper/issues/8061
+        if (!jobType.equals(JobQuery.Type.RANGE) &&
+                (arguments.getOptionalString("start-time").isPresent() ||
+                        arguments.getOptionalString("end-time").isPresent())) {
+            throw new CommandArgumentsException("Range time flags, start-time and end-time are not valid for following query type: " + jobType);
+        }
+
         IngestJobStatusReporter reporter;
         Optional<String> optionalOutput = arguments.getOptionalString("output-type");
         if (optionalOutput.isPresent()) {

@@ -84,6 +84,14 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
+        void shouldReadQueryTypeRangeWhenOnlyStartTimeEndTimeFlagsGiven() {
+            Arguments args = readArguments("start-end-instance", "start-end-table",
+                    "--start-time", "20201114120101",
+                    "--end-time", "20210407150000");
+            assertThat(args.queryType()).isEqualTo(JobQuery.Type.RANGE);
+        }
+
+        @Test
         void shouldReadQueryTypeUnfinishedFlag() {
             Arguments shortArgs = readArguments("unfinished-instance", "unfinished-table", "-u");
             assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.UNFINISHED);
@@ -114,6 +122,46 @@ public class IngestJobStatusReportTest {
             assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "--all", "--unfinished"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Too many query type flags are set, maximum of 1. Flags set: ALL, UNFINISHED");
+        }
+
+        // Will need be removed as part of work for https://github.com/gchq/sleeper/issues/8061
+        @Test
+        void shouldRejectAllQueryWithTimeFlagsSet() {
+            assertThatThrownBy(() -> readArguments("all-time-instance", "all-time-table", "--all",
+                    "--start-time", "20220417053218",
+                    "--end-time", "20241122120001"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Range time flags, start-time and end-time are not valid for following query type: ALL");
+        }
+
+        // Will need be removed as part of work for https://github.com/gchq/sleeper/issues/8061
+        @Test
+        void shouldRejectDetailedQueryWithTimeFlagsSet() {
+            assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--detailed", "84916",
+                    "--start-time", "20251112140000",
+                    "--end-time", "20260101152929"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Range time flags, start-time and end-time are not valid for following query type: DETAILED");
+        }
+
+        // Will need be removed as part of work for https://github.com/gchq/sleeper/issues/8061
+        @Test
+        void shouldRejectRejectedQueryWithTimeFlagsSet() {
+            assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--rejected",
+                    "--start-time", "20231225120000",
+                    "--end-time", "20231228120000"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Range time flags, start-time and end-time are not valid for following query type: REJECTED");
+        }
+
+        // Will need be removed as part of work for https://github.com/gchq/sleeper/issues/8061
+        @Test
+        void shouldRejectUnfinishedQueryWithTimeFlagsSet() {
+            assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--unfinished",
+                    "--start-time", "20260901180000",
+                    "--end-time", "20260902175959"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Range time flags, start-time and end-time are not valid for following query type: UNFINISHED");
         }
 
         @Test
