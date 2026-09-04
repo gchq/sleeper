@@ -37,12 +37,9 @@ import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PRE
  */
 public class DockerDeployment {
 
+    public static final List<ContainerPlatform> PLATFORMS = List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64);
+
     private static final List<DockerDeployment> ALL = new ArrayList<>();
-    public static final DockerDeployment BASE = builder()
-            .deploymentName("base")
-            .multiplatform(true)
-            .isDefaultBaseImage(true)
-            .add();
     public static final DockerDeployment INGEST = builder()
             .deploymentName("ingest")
             .optionalStack(OptionalStack.IngestStack)
@@ -86,7 +83,7 @@ public class DockerDeployment {
         optionalStack = builder.optionalStack;
         committerPlatform = builder.committerPlatform;
         cdkApps = builder.cdkApps;
-        platforms = builder.multiplatform ? List.of(ContainerPlatform.LINUX_AMD64, ContainerPlatform.LINUX_ARM64) : List.of();
+        platforms = builder.multiplatform ? PLATFORMS : List.of();
         createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
         isDefaultBaseImage = builder.isDefaultBaseImage;
         useDefaultBaseImage = builder.useDefaultBaseImage;

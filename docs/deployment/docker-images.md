@@ -23,7 +23,6 @@ are listed here.
 
 | Deployment Name            | Optional Stack     | Multiplatform |
 |----------------------------|--------------------|---------------|
-| base                       |                    | true          |
 | ingest                     | IngestStack        | false         |
 | bulk-import-runner         | EksBulkImportStack | true          |
 | compaction-job-execution   | CompactionStack    | true          |

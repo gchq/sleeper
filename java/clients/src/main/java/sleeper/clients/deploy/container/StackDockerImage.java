@@ -30,6 +30,15 @@ import java.util.Optional;
  * Details of a Docker image that is needed to deploy a component of a Sleeper instance.
  */
 public class StackDockerImage {
+
+    public static final StackDockerImage DEFAULT_BASE = StackDockerImage.builder()
+            .imageName("base")
+            .directoryName("base")
+            .platforms(DockerDeployment.PLATFORMS)
+            .isDefaultBaseImage(true)
+            .useDefaultBaseImage(false)
+            .build();
+
     private final String imageName;
     private final String directoryName;
     private final Path overrideDirectory;
@@ -75,7 +84,7 @@ public class StackDockerImage {
      * @param  lambdaJar the definition of the jar
      * @return           the Docker image
      */
-    public static StackDockerImage lambdaImage(LambdaJar lambdaJar) {
+    public static StackDockerImage fromLambdaImage(LambdaJar lambdaJar) {
         return builder()
                 .imageName(lambdaJar.getImageName())
                 .directoryName("lambda")

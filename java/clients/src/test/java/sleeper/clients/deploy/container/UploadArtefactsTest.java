@@ -173,7 +173,7 @@ public class UploadArtefactsTest {
     private void uploadArtefacts(String... args) throws Exception {
         UploadArtefacts.upload(
                 readArguments(args),
-                new DockerImageConfiguration(List.of(DOCKER_DEPLOYMENT), List.of()),
+                new DockerImageConfiguration(StackDockerImage.DEFAULT_BASE, List.of(DOCKER_DEPLOYMENT), List.of()),
                 new FakeClient());
     }
 
