@@ -38,15 +38,6 @@ automatically detect the relevent files alongside it and use that instead of dow
 ./scripts/cli/install.sh
 ```
 
-You can also specify a custom container registry to pull Docker images from, for example if you have pre-published
-the images to a private registry:
-
-```bash
-./scripts/cli/install.sh --registry your.registry.example.com/sleeper
-```
-
-The registry can also be updated later using `sleeper cli set-registry <registry>`.
-
 ### Commands
 
 The CLI consists of a `sleeper` command with sub-commands. You can use `sleeper aws` or `sleeper cdk` to run `aws` or
@@ -60,15 +51,9 @@ with Sleeper.
 You can upgrade to the latest version of the CLI using `sleeper cli upgrade`. This should be done regularly to keep the
 build and deployment tools up to date.
 
-By default, images are pulled with the `latest` tag, regardless of registry. If you installed from a local repository
-checkout, you can instead pull the version of Sleeper currently checked out there, using `--useLocalVersion`:
-
-```bash
-./scripts/cli/install.sh --useLocalVersion
-```
-
-This reads the version from the repository's `pom.xml` each time images are pulled, so switching branches locally
-will be picked up automatically. This can also be toggled later using `sleeper cli set-use-local-version <true|false>`.
+If you're pulling images from your own container registry rather than the default Sleeper one, see
+[publishing artefacts](../development/publishing.md#configuring-the-cli-to-use-a-custom-registry) for how to point the
+CLI at it.
 
 There's a `sleeper environment` command that you can use to prepare your AWS account to deploy Sleeper into it. This is
 documented in [Sleeper environment tool](environment-tool.md).
