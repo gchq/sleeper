@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
@@ -47,8 +46,9 @@ import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COM
  */
 public class DockerImageConfiguration {
 
-    private static final DockerImageConfiguration DEFAULT = new DockerImageConfiguration(DockerDeployment.all(), LambdaHandler.all());
+    private static final DockerImageConfiguration DEFAULT = new DockerImageConfiguration(StackDockerImage.DEFAULT_BASE, DockerDeployment.all(), LambdaHandler.all());
 
+    private final StackDockerImage baseImage;
     private final List<DockerDeployment> dockerDeployments;
     private final List<LambdaHandler> lambdaHandlers;
 
@@ -56,7 +56,8 @@ public class DockerImageConfiguration {
         return DEFAULT;
     }
 
-    public DockerImageConfiguration(List<DockerDeployment> dockerDeployments, List<LambdaHandler> lambdaHandlers) {
+    public DockerImageConfiguration(StackDockerImage baseImage, List<DockerDeployment> dockerDeployments, List<LambdaHandler> lambdaHandlers) {
+        this.baseImage = baseImage;
         this.dockerDeployments = dockerDeployments;
         this.lambdaHandlers = lambdaHandlers;
     }
@@ -69,29 +70,45 @@ public class DockerImageConfiguration {
      * @param  cdkApp     the CDK app being deployed
      * @return            the list of Docker images that need to be uploaded
      */
-    public List<StackDockerImage> getNonBaseImagesToUpload(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
+    public List<StackDockerImage> getImagesToUpload(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
         return Stream.concat(
                 dockerDeploymentImages(properties, cdkApp),
                 lambdaImages(properties))
                 .collect(toUnmodifiableList());
     }
 
-    public List<StackDockerImage> getAllNonBaseImagesToUpload() {
+    public List<StackDockerImage> getAllImagesToUpload() {
         return Stream.concat(
                 dockerDeployments.stream()
-                        .filter(not(DockerDeployment::isDefaultBaseImage))
                         .map(StackDockerImage::fromDockerDeployment),
                 lambdaHandlers.stream()
                         .map(LambdaHandler::getJar).distinct()
-                        .map(StackDockerImage::lambdaImage))
+                        .map(StackDockerImage::fromLambdaImage))
                 .collect(toUnmodifiableList());
+    }
+
+    public Optional<StackDockerImage> getDockerImageByName(String name) {
+        var lambdaImage = getLambdaJarByImageName(name)
+                .map(StackDockerImage::fromLambdaImage);
+        if (lambdaImage.isPresent()) {
+            return lambdaImage;
+        }
+        var deploymentImage = getDockerDeploymentByName(name)
+                .map(StackDockerImage::fromDockerDeployment);
+        if (deploymentImage.isPresent()) {
+            return deploymentImage;
+        }
+        if (Objects.equals("base", name)) {
+            return Optional.of(baseImage);
+        } else {
+            return Optional.empty();
+        }
     }
 
     private Stream<StackDockerImage> dockerDeploymentImages(SleeperPropertyValues<InstanceProperty> properties, SleeperInternalCdkApp cdkApp) {
         StateStoreCommitterPlatform committerPlatform = properties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class);
         Set<OptionalStack> stacks = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class).collect(toUnmodifiableSet());
         return dockerDeployments.stream()
-                .filter(not(DockerDeployment::isDefaultBaseImage))
                 .filter(deployment -> deployment.isDeployed(cdkApp, committerPlatform, stacks))
                 .map(StackDockerImage::fromDockerDeployment);
     }
@@ -102,17 +119,17 @@ public class DockerImageConfiguration {
         return lambdaHandlers.stream()
                 .filter(lambda -> lambda.isDeployed(lambdaDeployType, stacks))
                 .map(LambdaHandler::getJar).distinct()
-                .map(StackDockerImage::lambdaImage);
+                .map(StackDockerImage::fromLambdaImage);
     }
 
-    public Optional<LambdaJar> getLambdaJarByImageName(String imageName) {
+    private Optional<LambdaJar> getLambdaJarByImageName(String imageName) {
         return lambdaHandlers.stream()
                 .map(LambdaHandler::getJar)
                 .filter(jar -> Objects.equals(jar.getImageName(), imageName))
                 .findFirst();
     }
 
-    public Optional<DockerDeployment> getDockerDeploymentByName(String name) {
+    private Optional<DockerDeployment> getDockerDeploymentByName(String name) {
         return dockerDeployments.stream()
                 .filter(deployment -> Objects.equals(deployment.getDeploymentName(), name))
                 .findFirst();
