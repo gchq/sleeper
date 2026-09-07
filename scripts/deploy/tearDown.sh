@@ -16,8 +16,8 @@
 set -e
 unset CDPATH
 
-if [ "$#" -gt 1 ]; then
-  echo "Usage: $0 <optional-instance-id>"
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+  echo "Usage: $0 <instance-id> [--force]"
   exit 1
 fi
 
