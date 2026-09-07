@@ -33,12 +33,14 @@ import sleeper.core.table.TableStatus;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 
 @Path("/api/instance")
@@ -77,11 +79,15 @@ public class InstanceResource {
     }
 
     private static Map<String, Boolean> features(InstanceProperties instanceProperties) {
-        List<OptionalStack> optionalStacks = instanceProperties.getEnumList(OPTIONAL_STACKS, OptionalStack.class);
         Map<String, Boolean> features = new LinkedHashMap<>();
-        features.put("IngestBatcher", optionalStacks.contains(OptionalStack.IngestBatcherStack));
+
+        Set<OptionalStack> deployedStacks = Set.copyOf(instanceProperties.getEnumList(OPTIONAL_STACKS, OptionalStack.class));
+        for (OptionalStack stack : OptionalStack.all()) {
+            features.put(stack.name(), deployedStacks.contains(stack));
+        }
+
         features.put("IngestTracking", instanceProperties.getBoolean(INGEST_TRACKER_ENABLED));
-        features.put("Query", optionalStacks.contains(OptionalStack.QueryStack));
+        features.put("CompactionTracking", instanceProperties.getBoolean(COMPACTION_TRACKER_ENABLED));
         return features;
     }
 
