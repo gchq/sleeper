@@ -63,7 +63,7 @@
         -->
         <spark.version>3.5.6</spark.version>
         <hadoop.version>3.4.1</hadoop.version>
-        <parquet.version>1.18.0</parquet.version>
+        <parquet.version>1.18.1</parquet.version>
         <joom.spark.platform.version>0.4.10</joom.spark.platform.version>
         <!-- The version of Arrow should match the version used by Spark, under spark-sql-api. -->
         <arrow.version>12.0.1</arrow.version>
@@ -124,7 +124,7 @@
         Spark declares an old version of RoaringBitmap with vulnerabilities. We have upgraded the version
         ahead of the Spark version to address detected vulnerabilities.
         -->
-        <roaringbitmap.version>1.6.20</roaringbitmap.version>
+        <roaringbitmap.version>1.6.21</roaringbitmap.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.6.3</logback.version>
@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.54.9</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.54.12</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -176,7 +176,7 @@
         <httpclient5.version>5.6.4</httpclient5.version>
         <httpcore5.version>5.4.3</httpcore5.version>
         <jaxb.version>2.3.1</jaxb.version>
-        <jline.version>4.4.1</jline.version>
+        <jline.version>4.4.2</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
         <zstd-jni.version>1.5.7-16</zstd-jni.version>
@@ -197,9 +197,9 @@
         <guava.version>33.7.1-jre</guava.version>
         <google.errorprone.version>2.50.0</google.errorprone.version>
         <google.http-client.version>2.2.0</google.http-client.version>
-        <google.grpc.version>1.83.1</google.grpc.version>
+        <google.grpc.version>1.84.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.267.0</cdk.version>
+        <cdk.version>2.268.0</cdk.version>
         <constructs.version>10.8.1</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
         <jsii.version>1.140.0</jsii.version>
