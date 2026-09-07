@@ -22,6 +22,7 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A query to generate a report on jobs in a job tracker that have not yet finished.
@@ -47,4 +48,21 @@ public class UnfinishedJobsQuery implements JobQuery {
     public Type getType() {
         return Type.UNFINISHED;
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableId);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        return Objects.equals(tableId, ((UnfinishedJobsQuery) o).tableId);
+    }
+
 }

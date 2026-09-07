@@ -19,15 +19,23 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.report.IngestJobStatusReport.Arguments;
+import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
+import sleeper.clients.report.job.query.AllJobsQuery;
+import sleeper.clients.report.job.query.DetailedJobsQuery;
 import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.RangeJobsQuery;
+import sleeper.clients.report.job.query.RejectedJobsQuery;
+import sleeper.clients.report.job.query.UnfinishedJobsQuery;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
 import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -39,7 +47,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldReadDefaultsWhenOnlyRequiredArgsGiven() {
-            Arguments args = readArguments("my-instance", "my-table");
+            Arguments args = readArguments("my-instance", "my-table", "--all");
 
             assertThat(args.instanceId()).isEqualTo("my-instance");
             assertThat(args.tableName()).isEqualTo("my-table");
@@ -104,6 +112,12 @@ public class IngestJobStatusReportTest {
         void shouldReadOutputTypeJson() {
             Arguments args = readArguments("json-instance", "json-table", "--output-type", "json");
             assertThat(args.reporter()).isInstanceOf(JsonIngestJobStatusReporter.class);
+        }
+
+        @Test
+        void shouldReturnPromptQueryTypeWhenNoFlagSet() {
+            Arguments args = readArguments("prompt-instance", "prompt-table");
+            assertThat(args.queryType()).isEqualTo(JobQuery.Type.PROMPT);
         }
     }
 
@@ -249,56 +263,99 @@ public class IngestJobStatusReportTest {
     @Nested
     class JobQueryCreation {
 
+        IngestJobStatusReporter reporter = new StandardIngestJobStatusReporter();
+
         @Test
         void shouldCreateValidAllJobsQuery() {
-            // Given / When
-            JobQuery allJob = createJobQueryFromArguments(
-                    readArguments("all-job-instance", "all-job-table", "--all"));
+            // Given
+            String tableName = "all-job-table";
+            AllJobsQuery allJobsQuery = new AllJobsQuery(createTableStatus(tableName));
+
+            // When
+            JobQuery jobFromArgs = createJobQueryFromArguments(
+                    new Arguments("all-job-instance",
+                            tableName,
+                            reporter,
+                            JobQuery.Type.ALL,
+                            null, null, null));
 
             // Then
-            assertThat(JobQuery.Type.ALL).isEqualTo(allJob.getType());
+            assertThat(jobFromArgs).isEqualTo(allJobsQuery);
         }
 
         @Test
         void shouldCreateValidDetailedJobsQuery() {
-            // Given / When
-            JobQuery detailedJob = createJobQueryFromArguments(
-                    readArguments("detailed-job-instance", "detailed-job-table", "--detailed", "6545"));
+            // Given
+            String jobId = "6545";
+            DetailedJobsQuery detailedJobsQuery = new DetailedJobsQuery(List.of(jobId));
+
+            // When
+            JobQuery jobFromArgs = createJobQueryFromArguments(
+                    new Arguments("detailed-job-instance",
+                            "detailed-job-table",
+                            reporter,
+                            JobQuery.Type.DETAILED,
+                            jobId,
+                            null, null));
 
             // Then
-            assertThat(JobQuery.Type.DETAILED).isEqualTo(detailedJob.getType());
+            assertThat(jobFromArgs).isEqualTo(detailedJobsQuery);
         }
 
         @Test
         void shouldCreateValidRangeJobsQuery() {
-            // Given / When
-            JobQuery rangeJob = createJobQueryFromArguments(
-                    readArguments("range-job-instance", "range-job-table", "--range",
-                            "--start-time", "20201010093000",
-                            "--end-time", "20211008150000"));
+            // Given
+            String tableName = "range-job-table";
+            Instant startTime = Instant.parse("2020-10-10T09:30:00Z");
+            Instant endTime = Instant.parse("2021-10-08T15:00:00Z");
+            RangeJobsQuery rangeJobsQuery = new RangeJobsQuery(createTableStatus(tableName), startTime, endTime);
+
+            // When
+            JobQuery jobFromArgs = createJobQueryFromArguments(
+                    new Arguments("range-job-instance",
+                            tableName,
+                            reporter,
+                            JobQuery.Type.RANGE,
+                            null,
+                            "20201010093000", "20211008150000"));
 
             // Then
-            assertThat(JobQuery.Type.RANGE).isEqualTo(rangeJob.getType());
+            assertThat(jobFromArgs).isEqualTo(rangeJobsQuery);
         }
 
         @Test
         void shouldCreateValidUnfinishedJobsQuery() {
-            // Given / When
-            JobQuery unfinishedJob = createJobQueryFromArguments(
-                    readArguments("unfinished-job-instance", "unfinished-job-table", "--unfinished"));
+            // Given
+            String tableName = "unfinished-job-table";
+            UnfinishedJobsQuery unfinishedJobsQuery = new UnfinishedJobsQuery(createTableStatus(tableName));
+
+            // When
+            JobQuery jobFromArgs = createJobQueryFromArguments(
+                    new Arguments("unfinished-job-instance",
+                            tableName,
+                            reporter,
+                            JobQuery.Type.UNFINISHED,
+                            null, null, null));
 
             // Then
-            assertThat(JobQuery.Type.UNFINISHED).isEqualTo(unfinishedJob.getType());
+            assertThat(jobFromArgs).isEqualTo(unfinishedJobsQuery);
         }
 
         @Test
         void shouldCreateValidRejectedJobsQuery() {
-            // Given / When
-            JobQuery unfinishedJob = createJobQueryFromArguments(
-                    readArguments("rejected-job-instance", "rejected-job-table", "--rejected"));
+            // Given
+            RejectedJobsQuery rejectedJobsQuery = new RejectedJobsQuery();
+
+            // When
+            JobQuery jobFromArgs = createJobQueryFromArguments(
+                    new Arguments("rejected-job-instance",
+                            "rejected-job-table",
+                            reporter,
+                            JobQuery.Type.REJECTED,
+                            null, null, null));
 
             // Then
-            assertThat(JobQuery.Type.REJECTED).isEqualTo(unfinishedJob.getType());
+            assertThat(jobFromArgs).isEqualTo(rejectedJobsQuery);
         }
 
         private JobQuery createJobQueryFromArguments(Arguments args) {

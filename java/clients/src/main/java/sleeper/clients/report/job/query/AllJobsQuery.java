@@ -22,6 +22,7 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A query to generate a report on all jobs held in a job tracker.
@@ -46,5 +47,21 @@ public class AllJobsQuery implements JobQuery {
     @Override
     public Type getType() {
         return Type.ALL;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableId);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        return Objects.equals(tableId, ((AllJobsQuery) o).tableId);
     }
 }

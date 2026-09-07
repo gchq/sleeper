@@ -155,7 +155,7 @@ public interface JobQuery {
             typeList.stream().forEach(type -> outStr.append(type.name() + ", "));
             throw new CommandArgumentsException("Too many query type flags are set, maximum of 1. Flags set: " + outStr.substring(0, outStr.length() - 2));
         } else if (typeList.size() == 0) {
-            return Type.ALL;
+            return Type.PROMPT;
         } else {
             return typeList.get(0);
         }
