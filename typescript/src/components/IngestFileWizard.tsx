@@ -186,7 +186,7 @@ export default function IngestFileWizard({ onClose, onSubmitted, defaultMethod =
 		}
 
 		if (step === 3) {
-			if (method === 'ingest_batcher' && !features?.IngestBatcher) {
+			if (method === 'ingest_batcher' && !features?.IngestBatcherStack) {
 				setStepError('The ingest batcher is not enabled for this instance.')
 				return
 			}
@@ -305,7 +305,7 @@ export default function IngestFileWizard({ onClose, onSubmitted, defaultMethod =
 						/>
 					)}
 					{step === 3 && (
-						<MethodStep method={method} onChange={setMethod} batcherEnabled={!!features?.IngestBatcher} />
+						<MethodStep method={method} onChange={setMethod} batcherEnabled={!!features?.IngestBatcherStack} />
 					)}
 					{step === 4 && (
 						<ReviewStep

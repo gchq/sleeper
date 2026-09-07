@@ -14,9 +14,9 @@ interface TablePage {
 
 const TABLE_PAGES: TablePage[] = [
 	{ key: 'properties', label: 'Table Properties', shortLabel: 'TP' },
-	{ key: 'ingest-batcher', label: 'Ingest Batcher', shortLabel: 'IB', feature: 'IngestBatcher' },
+	{ key: 'ingest-batcher', label: 'Ingest Batcher', shortLabel: 'IB', feature: 'IngestBatcherStack' },
 	{ key: 'ingest-jobs', label: 'Ingest Jobs', shortLabel: 'IJ', feature: 'IngestTracking' },
-	{ key: 'queries', label: 'Queries', shortLabel: 'Q', feature: 'Query' },
+	{ key: 'queries', label: 'Queries', shortLabel: 'Q', feature: 'QueryStack' },
 ]
 
 const COLLAPSED_STORAGE_KEY = 'sleeper-sidebar-collapsed'
@@ -153,7 +153,7 @@ export default function Sidebar() {
 						<span className="sidebar-link-icon" aria-hidden="true">T</span>
 						{!collapsed && <span className="sidebar-link-label">Tables</span>}
 					</NavLink>
-					{features?.IngestBatcher && (
+					{features?.IngestBatcherStack && (
 						<NavLink
 							to="/ingest-batcher"
 							end
@@ -175,7 +175,7 @@ export default function Sidebar() {
 							{!collapsed && <span className="sidebar-link-label">Ingest Jobs</span>}
 						</NavLink>
 					)}
-					{features?.Query && (
+					{features?.QueryStack && (
 						<NavLink
 							to="/queries"
 							end

@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import type { FeatureName } from '../lib/features'
 
 export interface TableStatus {
 	tableUniqueId: string
@@ -6,11 +7,7 @@ export interface TableStatus {
 	online: boolean
 }
 
-export interface InstanceFeatures {
-	IngestBatcher?: boolean
-	IngestTracking?: boolean
-	Query?: boolean
-}
+export type InstanceFeatures = Partial<Record<FeatureName, boolean>>
 
 export interface InstanceInfo {
 	instanceId: string

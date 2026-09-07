@@ -52,7 +52,7 @@ export default function Queries() {
 		)
 	}
 
-	if (!features?.Query) {
+	if (!features?.QueryStack) {
 		return (
 			<Frame>
 				<div className="queries-unavailable">

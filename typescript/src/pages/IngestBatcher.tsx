@@ -73,7 +73,7 @@ export default function IngestBatcher() {
 		)
 	}
 
-	if (!features?.IngestBatcher) {
+	if (!features?.IngestBatcherStack) {
 		return (
 			<Frame>
 				<div className="batcher-unavailable">

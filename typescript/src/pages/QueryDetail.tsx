@@ -34,7 +34,7 @@ export default function QueryDetail() {
 		)
 	}
 
-	if (!features?.Query) {
+	if (!features?.QueryStack) {
 		return (
 			<Frame>
 				<div className="queries-unavailable">
