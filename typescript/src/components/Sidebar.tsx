@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useMatch, useNavigate } from 'react-router-dom'
 import type { InstanceFeatures } from '../contexts/InstanceContext'
 import { useInstance } from '../contexts/InstanceContext'
+import { clearLastTable, readLastTable, writeLastTable } from '../lib/lastTable'
 import './Sidebar.css'
 
 interface TablePage {
@@ -20,21 +21,12 @@ const TABLE_PAGES: TablePage[] = [
 ]
 
 const COLLAPSED_STORAGE_KEY = 'sleeper-sidebar-collapsed'
-const LAST_TABLE_STORAGE_KEY = 'sleeper-sidebar-last-table'
 
 function readCollapsed(): boolean {
 	try {
 		return window.localStorage.getItem(COLLAPSED_STORAGE_KEY) === '1'
 	} catch {
 		return false
-	}
-}
-
-function readLastTable(): string | null {
-	try {
-		return window.localStorage.getItem(LAST_TABLE_STORAGE_KEY)
-	} catch {
-		return null
 	}
 }
 
@@ -60,22 +52,14 @@ export default function Sidebar() {
 	useEffect(() => {
 		if (!routeTableId || routeTableId === lastTableId) return
 		setLastTableId(routeTableId)
-		try {
-			window.localStorage.setItem(LAST_TABLE_STORAGE_KEY, routeTableId)
-		} catch {
-			// Ignore localStorage failures (e.g. private mode or quota exceeded).
-		}
+		writeLastTable(routeTableId)
 	}, [routeTableId, lastTableId])
 
 	useEffect(() => {
 		if (!tables || !lastTableId) return
 		if (tables.some((t) => t.tableUniqueId === lastTableId)) return
 		setLastTableId(null)
-		try {
-			window.localStorage.removeItem(LAST_TABLE_STORAGE_KEY)
-		} catch {
-			// Ignore localStorage failures (e.g. private mode or quota exceeded).
-		}
+		clearLastTable()
 	}, [tables, lastTableId])
 
 	function onTableChange(e: ChangeEvent<HTMLSelectElement>) {
@@ -86,11 +70,7 @@ export default function Sidebar() {
 		}
 
 		setLastTableId(id)
-		try {
-			window.localStorage.setItem(LAST_TABLE_STORAGE_KEY, id)
-		} catch {
-			// Ignore localStorage failures (e.g. private mode or quota exceeded).
-		}
+		writeLastTable(id)
 	}
 
 	function onDisabledLinkClick(e: MouseEvent<HTMLAnchorElement>) {
@@ -119,15 +99,30 @@ export default function Sidebar() {
 			</div>
 
 			{!collapsed && instanceId && (
-				<div className="sidebar-instance" title={instanceId}>
+				<NavLink
+					to="/"
+					end
+					className={({ isActive }) => (isActive ? 'sidebar-instance active' : 'sidebar-instance')}
+					title={instanceId + ' — Home'}
+				>
 					<span className="sidebar-instance-label">Instance</span>
 					<span className="sidebar-instance-id">{instanceId}</span>
-				</div>
+				</NavLink>
 			)}
 
 			<nav className="sidebar-nav" aria-label="Main navigation">
 				<div className="sidebar-section">
 					{!collapsed && <div className="sidebar-section-label">System</div>}
+					{collapsed && (
+						<NavLink
+							to="/"
+							end
+							className={({ isActive }) => (isActive ? 'sidebar-link active' : 'sidebar-link')}
+							title="Home"
+						>
+							<span className="sidebar-link-icon" aria-hidden="true">H</span>
+						</NavLink>
+					)}
 					<NavLink
 						to="/instance/properties"
 						className={({ isActive }) => (isActive ? 'sidebar-link active' : 'sidebar-link')}

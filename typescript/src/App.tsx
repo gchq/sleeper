@@ -1,7 +1,8 @@
 import { Suspense, lazy } from 'react'
-import { Navigate, RouterProvider, createBrowserRouter } from 'react-router-dom'
+import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import Layout from './components/Layout'
 import Data from './pages/Data'
+import Home from './pages/Home'
 import InstanceProperties from './pages/InstanceProperties'
 import TableProperties from './pages/TableProperties'
 import Tables from './pages/Tables'
@@ -19,7 +20,7 @@ const router = createBrowserRouter([
 	{
 		element: <Layout />,
 		children: [
-			{ path: '/', element: <Navigate to="/instance/properties" replace /> },
+			{ path: '/', element: <Home /> },
 			{ path: '/instance/properties', element: <InstanceProperties /> },
 			{ path: '/tables', element: <Tables /> },
 			{

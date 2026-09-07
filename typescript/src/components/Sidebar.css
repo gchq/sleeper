@@ -57,6 +57,22 @@
 	gap: 0.1rem;
 	padding: 0.5rem 1rem;
 	border-bottom: 1px solid #e0e0e0;
+	text-decoration: none;
+	color: inherit;
+	cursor: pointer;
+}
+
+.sidebar-instance:hover {
+	background: #f3f4f6;
+}
+
+.sidebar-instance.active {
+	background: #e8f0fe;
+}
+
+.sidebar-instance.active .sidebar-instance-label,
+.sidebar-instance.active .sidebar-instance-id {
+	color: #1a56db;
 }
 
 .sidebar-instance-label {
