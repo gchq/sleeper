@@ -1,0 +1,51 @@
+.tracked-query-summary {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+	gap: 1rem;
+	margin: 1rem 0;
+	padding: 1rem 1.25rem;
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+}
+
+.tracked-query-summary div {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.tracked-query-summary dt {
+	font-size: 0.72rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #6b7280;
+	font-weight: 600;
+}
+
+.tracked-query-summary dd {
+	margin: 0;
+	font-size: 0.9rem;
+	color: #111827;
+}
+
+.tracked-query-summary code {
+	font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+	font-size: 0.8rem;
+	color: #1a56db;
+	word-break: break-all;
+}
+
+.tracked-query-summary-value {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.tracked-query-summary-link {
+	text-decoration: none;
+}
+
+.tracked-query-summary-link:hover code {
+	text-decoration: underline;
+}

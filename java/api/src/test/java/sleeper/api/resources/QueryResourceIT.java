@@ -55,6 +55,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -124,6 +125,18 @@ class QueryResourceIT {
                 .tableName(table.get(TABLE_NAME))
                 .tableId(table.get(TABLE_ID))
                 .regions(List.of(region))
+                .build();
+    }
+
+    private LeafPartitionQuery subQueryFor(TableProperties table, Query query, String subQueryId) {
+        return LeafPartitionQuery.builder()
+                .parentQuery(query)
+                .tableId(table.get(TABLE_ID))
+                .subQueryId(subQueryId)
+                .regions(query.getRegions())
+                .leafPartitionId("leaf-1")
+                .partitionRegion(query.getRegions().get(0))
+                .files(List.of())
                 .build();
     }
 
@@ -246,6 +259,147 @@ class QueryResourceIT {
                 .then()
                 .statusCode(404)
                 .body("error", is("query_not_found"));
+    }
+
+    @Test
+    void shouldGetSubQueryDetail() {
+        InstanceProperties instanceProperties = setUpInstance(true);
+        TableProperties table = createTable(instanceProperties, "table-1");
+        DynamoDBQueryTracker tracker = new DynamoDBQueryTracker(instanceProperties, dynamoDbClient);
+        Query query = queryFor(table, "query-1");
+        tracker.queryInProgress(query);
+        LeafPartitionQuery subQuery = subQueryFor(table, query, "sub-1");
+        tracker.queryInProgress(subQuery);
+        tracker.queryCompleted(subQuery, new ResultsOutputInfo(5, List.of(
+                new ResultsOutputLocation("s3", "s3a://results-bucket/query-query-1/sub-1.parquet"))));
+
+        given()
+                .when().get("/api/query/query-1/sub-1")
+                .then()
+                .statusCode(200)
+                .body("queryId", is("query-1"))
+                .body("subQueryId", is("sub-1"))
+                .body("tableId", is(table.get(TABLE_ID)))
+                .body("tableName", is("table-1"))
+                .body("state", is("COMPLETED"))
+                .body("rowCount", is(5))
+                .body("firstUpdateTime", notNullValue())
+                .body("lastUpdateTime", notNullValue())
+                .body("resultsLocations", hasSize(1))
+                .body("resultsLocations[0].type", is("s3"))
+                .body("resultsLocations[0].location", is("s3a://results-bucket/query-query-1/sub-1.parquet"))
+                .body("maxResultRows", is(5000));
+    }
+
+    @Test
+    void shouldGetSubQueryDetailWhenParentQueryIsNotTracked() {
+        InstanceProperties instanceProperties = setUpInstance(true);
+        TableProperties table = createTable(instanceProperties, "table-1");
+        DynamoDBQueryTracker tracker = new DynamoDBQueryTracker(instanceProperties, dynamoDbClient);
+        Query query = queryFor(table, "query-1");
+        tracker.queryInProgress(subQueryFor(table, query, "sub-1"));
+
+        given()
+                .when().get("/api/query/query-1/sub-1")
+                .then()
+                .statusCode(200)
+                .body("subQueryId", is("sub-1"))
+                .body("state", is("IN_PROGRESS"))
+                .body("tableName", is("table-1"));
+
+        given()
+                .when().get("/api/query/query-1")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void shouldGetSubQueryDetailWithNoResultsLocations() {
+        InstanceProperties instanceProperties = setUpInstance(true);
+        TableProperties table = createTable(instanceProperties, "table-1");
+        DynamoDBQueryTracker tracker = new DynamoDBQueryTracker(instanceProperties, dynamoDbClient);
+        Query query = queryFor(table, "query-1");
+        tracker.queryInProgress(query);
+        tracker.queryInProgress(subQueryFor(table, query, "sub-1"));
+
+        given()
+                .when().get("/api/query/query-1/sub-1")
+                .then()
+                .statusCode(200)
+                .body("resultsLocations", hasSize(0))
+                .body("errorMessage", nullValue());
+    }
+
+    @Test
+    void shouldReportErrorMessageForFailedSubQuery() {
+        InstanceProperties instanceProperties = setUpInstance(true);
+        TableProperties table = createTable(instanceProperties, "table-1");
+        DynamoDBQueryTracker tracker = new DynamoDBQueryTracker(instanceProperties, dynamoDbClient);
+        Query query = queryFor(table, "query-1");
+        tracker.queryInProgress(query);
+        LeafPartitionQuery subQuery = subQueryFor(table, query, "sub-1");
+        tracker.queryInProgress(subQuery);
+        tracker.queryFailed(subQuery, new RuntimeException("boom"));
+
+        given()
+                .when().get("/api/query/query-1/sub-1")
+                .then()
+                .statusCode(200)
+                .body("state", is("FAILED"))
+                .body("errorMessage", notNullValue());
+    }
+
+    @Test
+    void shouldReturn404ForUnknownSubQueryOnKnownQuery() {
+        InstanceProperties instanceProperties = setUpInstance(true);
+        TableProperties table = createTable(instanceProperties, "table-1");
+        DynamoDBQueryTracker tracker = new DynamoDBQueryTracker(instanceProperties, dynamoDbClient);
+        Query query = queryFor(table, "query-1");
+        tracker.queryInProgress(query);
+        tracker.queryInProgress(subQueryFor(table, query, "sub-1"));
+
+        given()
+                .when().get("/api/query/query-1/does-not-exist")
+                .then()
+                .statusCode(404)
+                .body("error", is("query_not_found"));
+    }
+
+    @Test
+    void shouldReturn404ForSubQueryOfUnknownQuery() {
+        setUpInstance(true);
+
+        given()
+                .when().get("/api/query/does-not-exist/sub-1")
+                .then()
+                .statusCode(404)
+                .body("error", is("query_not_found"));
+    }
+
+    @Test
+    void shouldReturn404ForSubQueryWhenQueryStackNotEnabled() {
+        setUpInstance(false);
+
+        given()
+                .when().get("/api/query/query-1/sub-1")
+                .then()
+                .statusCode(404)
+                .body("error", is("query_not_enabled"));
+    }
+
+    @Test
+    void shouldStillRouteResultsRequestsToTheResultsEndpoint() {
+        InstanceProperties instanceProperties = setUpInstance(true);
+        TableProperties table = createTable(instanceProperties, "table-1");
+        DynamoDBQueryTracker tracker = new DynamoDBQueryTracker(instanceProperties, dynamoDbClient);
+        Query query = queryFor(table, "query-1");
+        tracker.queryInProgress(query);
+        tracker.queryInProgress(subQueryFor(table, query, "sub-1"));
+
+        given()
+                .when().get("/api/query/query-1/sub-1/results")
+                .then()
+                .statusCode(400);
     }
 
     @Test

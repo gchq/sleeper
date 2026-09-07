@@ -1,0 +1,24 @@
+.query-destination-icons {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.query-destination-icon {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.15rem;
+	border-radius: 4px;
+	line-height: 0;
+	opacity: 0.85;
+}
+
+.query-destination-icon:hover {
+	background: #eff6ff;
+	opacity: 1;
+}
+
+.query-destination-icon:focus-visible {
+	outline: 2px solid #1a56db;
+	outline-offset: 1px;
+}

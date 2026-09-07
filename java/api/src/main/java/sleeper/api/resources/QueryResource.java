@@ -38,6 +38,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import sleeper.api.AWSArchitectureResources.Resource;
 import sleeper.api.AWSArchitectureResources.ResourcesResponse;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
@@ -53,6 +54,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.table.TableStatus;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
@@ -165,7 +167,7 @@ public class QueryResource {
             if (!state.matches(query)) {
                 continue;
             }
-            Long updated = query.getLastUpdateTime() == null ? null : query.getLastUpdateTime() * 1000;
+            Long updated = toMillis(query.getLastUpdateTime());
             if (fromEpochMillis != null && (updated == null || updated < fromEpochMillis)) {
                 continue;
             }
@@ -253,9 +255,9 @@ public class QueryResource {
                 subQueries.add(new SubQueryView(
                         query.getSubQueryId(),
                         query.getLastKnownState().name(),
-                        query.getFirstUpdateTime() == null ? null : query.getFirstUpdateTime() * 1000,
-                        query.getLastUpdateTime() == null ? null : query.getLastUpdateTime() * 1000,
-                        query.getExpiryDate() == null ? null : query.getExpiryDate() * 1000,
+                        toMillis(query.getFirstUpdateTime()),
+                        toMillis(query.getLastUpdateTime()),
+                        toMillis(query.getExpiryDate()),
                         query.getRowCount(),
                         query.getErrorMessage(),
                         toLocationViews(query.getResultsLocations())));
@@ -272,12 +274,49 @@ public class QueryResource {
                 parent.getTableId(),
                 tableName,
                 parent.getLastKnownState().name(),
-                parent.getFirstUpdateTime() == null ? null : parent.getFirstUpdateTime() * 1000,
-                parent.getLastUpdateTime() == null ? null : parent.getLastUpdateTime() * 1000,
-                parent.getExpiryDate() == null ? null : parent.getExpiryDate() * 1000,
+                toMillis(parent.getFirstUpdateTime()),
+                toMillis(parent.getLastUpdateTime()),
+                toMillis(parent.getExpiryDate()),
                 parent.getRowCount(),
                 parent.getErrorMessage(),
                 subQueries);
+    }
+
+    @GET
+    @Path("/query/{queryId}/{subQueryId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public SubQueryDetail getSubQuery(
+            @PathParam("queryId") String queryId,
+            @PathParam("subQueryId") String subQueryId) {
+        InstanceProperties instanceProperties = loadPropertiesAndCheckEnabled();
+        DynamoDBQueryTracker tracker = new DynamoDBQueryTracker(instanceProperties, dynamoDbClient);
+
+        TrackedQuery tracked;
+        try {
+            tracked = tracker.getStatus(queryId, subQueryId);
+        } catch (Exception e) {
+            throw new WebApplicationException("Could not look up query: " + e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        if (tracked == null) {
+            throw notAvailable("query_not_found", "No query found with id " + queryId + " and sub-query id " + subQueryId + ".");
+        }
+
+        DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDbClient);
+        String tableName = tracked.getTableId() == null ? null : tableIndex.getTableByUniqueId(tracked.getTableId()).map(TableStatus::getTableName).orElse(null);
+
+        return new SubQueryDetail(
+                tracked.getQueryId(),
+                tracked.getSubQueryId(),
+                tracked.getTableId(),
+                tableName,
+                tracked.getLastKnownState().name(),
+                toMillis(tracked.getFirstUpdateTime()),
+                toMillis(tracked.getLastUpdateTime()),
+                toMillis(tracked.getExpiryDate()),
+                tracked.getRowCount(),
+                tracked.getErrorMessage(),
+                toLocationViews(tracked.getResultsLocations()),
+                MAX_RESULTS_LIMIT);
     }
 
     @GET
@@ -450,10 +489,14 @@ public class QueryResource {
                 query.getTableId(),
                 tableName,
                 query.getLastKnownState().name(),
-                query.getLastUpdateTime() == null ? null : query.getLastUpdateTime() * 1000,
-                query.getExpiryDate() == null ? null : query.getExpiryDate() * 1000,
+                toMillis(query.getLastUpdateTime()),
+                toMillis(query.getExpiryDate()),
                 query.getRowCount(),
                 query.getErrorMessage());
+    }
+
+    private static Long toMillis(Long epochSeconds) {
+        return epochSeconds == null ? null : epochSeconds * 1000;
     }
 
     private static List<ResultsLocationView> toLocationViews(List<ResultsOutputLocation> locations) {
@@ -513,6 +556,12 @@ public class QueryResource {
     public record QueryDetail(
             String queryId, String tableId, String tableName, String state, Long firstUpdateTime, Long lastUpdateTime,
             Long expiryDate, Long rowCount, String errorMessage, List<SubQueryView> subQueries) {
+    }
+
+    public record SubQueryDetail(
+            String queryId, String subQueryId, String tableId, String tableName, String state,
+            Long firstUpdateTime, Long lastUpdateTime, Long expiryDate, Long rowCount, String errorMessage,
+            List<ResultsLocationView> resultsLocations, int maxResultRows) {
     }
 
     public record QueryResults(List<String> columns, List<Map<String, Object>> rows, boolean truncated) {}

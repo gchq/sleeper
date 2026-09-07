@@ -16,6 +16,7 @@ const TABLE_PAGES: TablePage[] = [
 	{ key: 'properties', label: 'Table Properties', shortLabel: 'TP' },
 	{ key: 'ingest-batcher', label: 'Ingest Batcher', shortLabel: 'IB', feature: 'IngestBatcher' },
 	{ key: 'ingest-jobs', label: 'Ingest Jobs', shortLabel: 'IJ', feature: 'IngestTracking' },
+	{ key: 'queries', label: 'Queries', shortLabel: 'Q', feature: 'Query' },
 ]
 
 const COLLAPSED_STORAGE_KEY = 'sleeper-sidebar-collapsed'
@@ -172,6 +173,17 @@ export default function Sidebar() {
 						>
 							<span className="sidebar-link-icon" aria-hidden="true">IJ</span>
 							{!collapsed && <span className="sidebar-link-label">Ingest Jobs</span>}
+						</NavLink>
+					)}
+					{features?.Query && (
+						<NavLink
+							to="/queries"
+							end
+							className={({ isActive }) => (isActive ? 'sidebar-link active' : 'sidebar-link')}
+							title="Queries"
+						>
+							<span className="sidebar-link-icon" aria-hidden="true">Q</span>
+							{!collapsed && <span className="sidebar-link-label">Queries</span>}
 						</NavLink>
 					)}
 				</div>

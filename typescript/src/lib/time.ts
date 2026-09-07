@@ -5,6 +5,11 @@ export function formatTimestamp(iso: string): string {
 	return new Date(ms).toLocaleString()
 }
 
+export function formatEpochMillis(ms: number | null | undefined): string {
+	if (ms == null || !Number.isFinite(ms)) return '—'
+	return new Date(ms).toLocaleString()
+}
+
 export function formatDurationSeconds(seconds: number | string): string {
 	const value = typeof seconds === 'number' ? seconds : Number(seconds)
 	if (!Number.isFinite(value)) return String(seconds)
@@ -17,7 +22,23 @@ export function formatDurationSeconds(seconds: number | string): string {
 	return `${hours} hour${hours === 1 ? '' : 's'}`
 }
 
-// A TTL / retention period in seconds, rendered in whole days or hours where it divides evenly.
+export function formatDurationMillisSpan(ms: number | null | undefined): string {
+	if (ms == null || !Number.isFinite(ms) || ms < 0) return '—'
+	const totalSeconds = Math.floor(ms / 1000)
+	if (totalSeconds < 1) return '<1s'
+	if (totalSeconds < 60) return `${totalSeconds}s`
+	const minutes = Math.floor(totalSeconds / 60)
+	const seconds = totalSeconds % 60
+	if (minutes < 60) return `${minutes}m ${seconds}s`
+	const hours = Math.floor(minutes / 60)
+	return `${hours}h ${minutes % 60}m`
+}
+
+export function durationBetween(start: number | null | undefined, end: number | null | undefined): number | null {
+	if (start == null || end == null || !Number.isFinite(start) || !Number.isFinite(end)) return null
+	return end - start
+}
+
 export function formatTtl(seconds: number): string {
 	const days = seconds / 86400
 	if (days >= 1 && Number.isInteger(days)) return `${days} day${days === 1 ? '' : 's'}`

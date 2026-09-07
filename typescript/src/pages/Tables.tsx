@@ -157,9 +157,45 @@ export default function Tables() {
 									<td className="tables-actions">
 										<Link
 											to={`/tables/${encodeURIComponent(t.tableUniqueId)}/properties`}
-											className="btn-link"
+											className="btn-link icon-btn"
+											aria-label={`Properties for ${t.tableName}`}
+											title="Properties"
 										>
-											Properties
+											<svg
+												aria-hidden="true"
+												width="16"
+												height="16"
+												viewBox="0 0 16 16"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="1.5"
+												strokeLinecap="round"
+												strokeLinejoin="round"
+											>
+												<path d="M6 4h8M6 8h8M6 12h8" />
+												<path d="M2.5 4h.01M2.5 8h.01M2.5 12h.01" />
+											</svg>
+										</Link>
+										<Link
+											to={`/tables/${encodeURIComponent(t.tableUniqueId)}/queries`}
+											className="btn-link icon-btn"
+											aria-label={`Query ${t.tableName}`}
+											title="Query"
+										>
+											<svg
+												aria-hidden="true"
+												width="16"
+												height="16"
+												viewBox="0 0 16 16"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="1.5"
+												strokeLinecap="round"
+												strokeLinejoin="round"
+											>
+												<circle cx="7" cy="7" r="4.5" />
+												<path d="M10.5 10.5L14 14" />
+											</svg>
 										</Link>
 									</td>
 								</tr>

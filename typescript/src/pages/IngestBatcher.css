@@ -197,3 +197,9 @@
 	justify-content: center;
 	margin: 1rem 0;
 }
+
+.batcher-limit-reached {
+	margin: 0;
+	text-align: center;
+	color: #6b7280;
+}

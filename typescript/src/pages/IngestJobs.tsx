@@ -7,13 +7,12 @@ import { useApi } from '../hooks/useApi'
 import { useSelectedTable } from '../hooks/useSelectedTable'
 import { epochToLocalInput, formatTimestamp, formatTtl, localInputToEpoch } from '../lib/time'
 import { statusClass, statusLabel } from '../lib/ingestStatus'
-import { clampLimit } from '../lib/pagination'
+import { parseLimit } from '../lib/pagination'
 import { TableStatus } from '../contexts/InstanceContext'
 import './IngestJobs.css'
 import IngestTrackingArchitecture from '../components/architectures/IngestTrackingArchitecture'
 
 const DEFAULT_LIMIT = 100
-const MAX_LIMIT = 1000
 const JOB_ID_DEBOUNCE_MS = 400
 
 type StateFilter = 'all' | 'rejected' | 'failed' | 'running' | 'finished'
@@ -107,7 +106,7 @@ function Frame({ children }: { children: ReactNode }) {
 
 function IngestJobsContent({ table }: { table?: TableStatus }) {
 	const [searchParams, setSearchParams] = useSearchParams()
-	const limit = clampLimit(Number(searchParams.get('limit') ?? DEFAULT_LIMIT), DEFAULT_LIMIT, MAX_LIMIT)
+	const limit = parseLimit(Number(searchParams.get('limit') ?? DEFAULT_LIMIT), DEFAULT_LIMIT)
 	const jobIdFilter = searchParams.get('jobId') ?? ''
 	const state = parseState(searchParams.get('state'))
 	const fromMs = searchParams.has('from') ? Number(searchParams.get('from')) : null
@@ -125,6 +124,9 @@ function IngestJobsContent({ table }: { table?: TableStatus }) {
 	const { data, loading, error, reload, nextReloadAt } = useApi<IngestJobsResponse>('/ingest-tracking/jobs?' + query)
 	const jobs = data?.jobs ?? []
 	const hasMore = data?.hasMore ?? false
+	// The API caps the page size. When it hands back a smaller limit than we asked for, we've hit
+	// that cap and asking for more would return the same page again.
+	const atMaxLimit = data != null && data.limit < limit
 
 	const earliestRetainedMs = data?.jobStatusTtlSeconds ? Date.now() - data.jobStatusTtlSeconds * 1000 : null
 	const timeRangeBeyondTtl = earliestRetainedMs != null && ((fromMs != null && fromMs < earliestRetainedMs) || (toMs != null && toMs < earliestRetainedMs))
@@ -133,8 +135,8 @@ function IngestJobsContent({ table }: { table?: TableStatus }) {
 		setSearchParams(
 			(prev) => {
 				const next = new URLSearchParams(prev)
-				const current = clampLimit(Number(next.get('limit') ?? DEFAULT_LIMIT), DEFAULT_LIMIT, MAX_LIMIT)
-				next.set('limit', String(Math.min(current + DEFAULT_LIMIT, MAX_LIMIT)))
+				const current = parseLimit(Number(next.get('limit') ?? DEFAULT_LIMIT), DEFAULT_LIMIT)
+				next.set('limit', String(current + DEFAULT_LIMIT))
 				return next
 			},
 			{ replace: true },
@@ -326,9 +328,16 @@ function IngestJobsContent({ table }: { table?: TableStatus }) {
 
 				{hasMore && !loading && (
 					<div className="jobs-load-more">
-						<button type="button" className="btn" onClick={loadMore}>
-							Load more
-						</button>
+						{atMaxLimit ? (
+							<p className="jobs-limit-reached">
+								Showing the first {jobs.length.toLocaleString()} jobs, the most this page will load. Narrow the
+								filters to see the rest.
+							</p>
+						) : (
+							<button type="button" className="btn" onClick={loadMore}>
+								Load more
+							</button>
+						)}
 					</div>
 				)}
 			</div>

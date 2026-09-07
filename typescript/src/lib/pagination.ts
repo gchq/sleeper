@@ -1,5 +1,5 @@
 
-export function clampLimit(value: number, defaultLimit: number, maxLimit: number): number {
+export function parseLimit(value: number, defaultLimit: number): number {
 	if (!Number.isFinite(value) || value < 1) return defaultLimit
-	return Math.min(value, maxLimit)
+	return value
 }

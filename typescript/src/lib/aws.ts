@@ -31,6 +31,23 @@ export function s3ConsoleUrl(path: string, region: string): string | null {
 	return `${consoleHost(region)}/s3/buckets/${encodeURIComponent(parsed.bucket)}${query ? '?' + query : ''}`
 }
 
+/**
+ * Builds a link to the S3 web console that opens a single object's detail page (rather than a folder
+ * listing). The full object key is passed as the console `prefix` with slashes preserved, matching
+ * the console's own object-view URLs. Accepts s3://, s3a:// or bucket/key forms. Returns null if no
+ * bucket or key can be determined.
+ *
+ * @param path   the S3 path to a specific object (bucket/key)
+ * @param region AWS region, added as a query param
+ */
+export function s3ObjectConsoleUrl(path: string, region: string): string | null {
+	const parsed = parseS3Path(path)
+	if (!parsed || !parsed.key) return null
+	const prefix = parsed.key.split('/').map(encodeURIComponent).join('/')
+	const query = `region=${encodeURIComponent(region)}&prefix=${prefix}`
+	return `${consoleHost(region)}/s3/object/${encodeURIComponent(parsed.bucket)}?${query}`
+}
+
 export function s3ConsoleHomeUrl(region: string): string {
 	return `${consoleHost(region)}/s3`
 }

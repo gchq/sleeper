@@ -9,6 +9,7 @@ export interface TableStatus {
 export interface InstanceFeatures {
 	IngestBatcher?: boolean
 	IngestTracking?: boolean
+	Query?: boolean
 }
 
 export interface InstanceInfo {

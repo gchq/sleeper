@@ -11,6 +11,9 @@ const DataMetricGraph = lazy(() => import('./pages/DataMetricGraph'))
 const IngestBatcher = lazy(() => import('./pages/IngestBatcher'))
 const IngestJobs = lazy(() => import('./pages/IngestJobs'))
 const IngestJobDetail = lazy(() => import('./pages/IngestJobDetail'))
+const Queries = lazy(() => import('./pages/Queries'))
+const QueryDetail = lazy(() => import('./pages/QueryDetail'))
+const SubQueryDetail = lazy(() => import('./pages/SubQueryDetail'))
 
 const router = createBrowserRouter([
 	{
@@ -64,6 +67,38 @@ const router = createBrowserRouter([
 				element: (
 					<Suspense fallback={<div className="page"><p>Loading...</p></div>}>
 						<IngestJobDetail />
+					</Suspense>
+				),
+			},
+			{
+				path: '/queries',
+				element: (
+					<Suspense fallback={<div className="page"><p>Loading...</p></div>}>
+						<Queries />
+					</Suspense>
+				),
+			},
+			{
+				path: '/queries/:queryId',
+				element: (
+					<Suspense fallback={<div className="page"><p>Loading...</p></div>}>
+						<QueryDetail />
+					</Suspense>
+				),
+			},
+			{
+				path: '/queries/:queryId/:subQueryId',
+				element: (
+					<Suspense fallback={<div className="page"><p>Loading...</p></div>}>
+						<SubQueryDetail />
+					</Suspense>
+				),
+			},
+			{
+				path: '/tables/:tableId/queries',
+				element: (
+					<Suspense fallback={<div className="page"><p>Loading...</p></div>}>
+						<Queries />
 					</Suspense>
 				),
 			},

@@ -4,10 +4,17 @@ import { apiUrl } from '../lib/api'
 interface UseApiResult<T> {
 	data: T | null
 	loading: boolean
+	errorStatus: number | null
 	error: string | null
 	reload: () => void
 	refreshInterval: number
 	nextReloadAt: number | null
+}
+
+class HttpError extends Error {
+	constructor(readonly status: number) {
+		super(`HTTP error: ${status}`)
+	}
 }
 
 export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: number): UseApiResult<T> {
@@ -21,6 +28,7 @@ export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: n
 	const resolvedTimeout = timeout ?? (refreshInterval > 0 ? Math.max(1, Math.floor(refreshInterval * 2 / 3)) : 60)
 
 	const [data, setData] = useState<T | null>(null)
+	const [errorStatus, setErrorStatus] = useState<number | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [nextReloadAt, setNextReloadAt] = useState<number | null>(null)
@@ -42,19 +50,21 @@ export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: n
 		fetch(apiUrl(url), { signal })
 			.then((response) => {
 				if (!response.ok) {
-					throw new Error(`HTTP error: ${response.status}`)
+					throw new HttpError(response.status)
 				}
 				return response.json()
 			})
 			.then((json: T) => {
 				if (!controller.signal.aborted) {
 					setData(json)
+					setErrorStatus(null)
 					setError(null)
 					setLoading(false)
 				}
 			})
 			.catch((err: Error) => {
 				if (!controller.signal.aborted) {
+					setErrorStatus(err instanceof HttpError ? err.status : null)
 					setError(err.name === 'TimeoutError' ? `Request timed out after ${resolvedTimeout}s` : err.message)
 					setLoading(false)
 				}
@@ -63,6 +73,7 @@ export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: n
 
 	useEffect(() => {
 		setData(null)
+		setErrorStatus(null)
 		setError(null)
 	}, [url])
 
@@ -78,5 +89,5 @@ export function useApi<T>(url: string, refreshInterval: number = 60, timeout?: n
 		}
 	}, [load, refreshInterval])
 
-	return { data, loading, error, reload: load, refreshInterval, nextReloadAt }
+	return { data, loading, errorStatus, error, reload: load, refreshInterval, nextReloadAt }
 }

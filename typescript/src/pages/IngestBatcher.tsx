@@ -9,14 +9,13 @@ import { useApi } from '../hooks/useApi'
 import { useSelectedTable } from '../hooks/useSelectedTable'
 import { formatBytes } from '../lib/dataMetrics'
 import { formatDurationSeconds, formatTimestamp } from '../lib/time'
-import { clampLimit } from '../lib/pagination'
+import { parseLimit } from '../lib/pagination'
 import './IngestBatcher.css'
 import { TableStatus } from '../contexts/InstanceContext'
 
 type Mode = 'pending' | 'all'
 
 const DEFAULT_LIMIT = 100
-const MAX_LIMIT = 500
 const PATH_DEBOUNCE_MS = 400
 
 interface BatcherFile {
@@ -115,7 +114,7 @@ function IngestBatcherContent({ table }: { table?: TableStatus }) {
 	const [searchParams, setSearchParams] = useSearchParams()
 	const mode: Mode = searchParams.get('mode') === 'all' ? 'all' : 'pending'
 	const pathFilter = searchParams.get('path') ?? ''
-	const limit = clampLimit(Number(searchParams.get('limit') ?? DEFAULT_LIMIT), DEFAULT_LIMIT, MAX_LIMIT)
+	const limit = parseLimit(Number(searchParams.get('limit') ?? DEFAULT_LIMIT), DEFAULT_LIMIT)
 
 	const [pathInput, setPathInput] = useState(pathFilter)
 	const [ingestOpen, setIngestOpen] = useState(false)
@@ -127,13 +126,16 @@ function IngestBatcherContent({ table }: { table?: TableStatus }) {
 	const { data, loading, error, reload, nextReloadAt } = useApi<BatcherFilesResponse>('/ingest-batcher/files?' + query)
 	const files = data?.files ?? []
 	const hasMore = data?.hasMore ?? false
+	// The API caps the page size. When it hands back a smaller limit than we asked for, we've hit
+	// that cap and asking for more would return the same page again.
+	const atMaxLimit = data != null && data.limit < limit
 
 	const loadMore = useCallback(() => {
 		setSearchParams(
 			(prev) => {
 				const next = new URLSearchParams(prev)
-				const current = clampLimit(Number(next.get('limit') ?? DEFAULT_LIMIT), DEFAULT_LIMIT, MAX_LIMIT)
-				next.set('limit', String(Math.min(current + DEFAULT_LIMIT, MAX_LIMIT)))
+				const current = parseLimit(Number(next.get('limit') ?? DEFAULT_LIMIT), DEFAULT_LIMIT)
+				next.set('limit', String(current + DEFAULT_LIMIT))
 				return next
 			},
 			{ replace: true },
@@ -258,9 +260,16 @@ function IngestBatcherContent({ table }: { table?: TableStatus }) {
 
 				{hasMore && !loading && (
 					<div className="batcher-load-more">
-						<button type="button" className="btn" onClick={loadMore}>
-							Load more
-						</button>
+						{atMaxLimit ? (
+							<p className="batcher-limit-reached">
+								Showing the first {files.length.toLocaleString()} files, the most this page will load. Narrow the
+								filters to see the rest.
+							</p>
+						) : (
+							<button type="button" className="btn" onClick={loadMore}>
+								Load more
+							</button>
+						)}
 					</div>
 				)}
 			</div>
