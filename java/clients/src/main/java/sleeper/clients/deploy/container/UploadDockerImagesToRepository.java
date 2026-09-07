@@ -46,13 +46,14 @@ public class UploadDockerImagesToRepository {
         UploadDockerImages uploader = UploadDockerImages.builder()
                 .scriptsDirectory(scriptsDirectory)
                 .deployConfig(deployConfig)
+                .baseImageDestination(BaseImageDestination.deploymentRegistry())
                 .createMultiplatformBuilder(createMultiplatformBuilder)
                 .build();
         uploadAllImages(DockerImageConfiguration.getDefault(), uploader, repositoryPrefix);
     }
 
     public static void uploadAllImages(DockerImageConfiguration imageConfig, UploadDockerImages uploader, String repositoryPrefix) throws IOException, InterruptedException {
-        uploader.upload(repositoryPrefix, imageConfig.getAllNonBaseImagesToUpload());
+        uploader.upload(repositoryPrefix, imageConfig.getAllImagesToUpload());
     }
 
 }

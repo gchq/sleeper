@@ -34,6 +34,11 @@ public class RunCommandTestHelper {
         return foundCommand -> new CommandPipelineResult(foundCommand.equals(command) ? exitCode : 0);
     }
 
+    public static CommandPipelineRunner returnExitCodeForCommands(int exitCode, CommandPipeline... commands) {
+        List<CommandPipeline> matching = List.of(commands);
+        return foundCommand -> new CommandPipelineResult(matching.contains(foundCommand) ? exitCode : 0);
+    }
+
     public static CommandPipelineRunner recordCommandsRun(List<CommandPipeline> commandsRun, CommandPipelineRunner runner) {
         return pipeline -> {
             commandsRun.add(pipeline);

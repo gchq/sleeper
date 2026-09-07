@@ -91,8 +91,7 @@ public enum OptionalStack {
             QueryStack,
             WebSocketQueryStack,
             TableMetricsStack,
-            AthenaStack,
-            RestApiStack);
+            AthenaStack);
 
     public static final List<OptionalStack> LOCALSTACK_STACKS = List.of(
             IngestStack,
