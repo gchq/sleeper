@@ -23,6 +23,8 @@ vulnerabilities:
   - id: CVE-2026-46600
   # golang.org/x/crypto
   - id: CVE-2026-56854
+  - id: CVE-2026-56855
+  - id: CVE-2026-78662
   # google.golang.org/grpc
   - id: CVE-2026-84304
   # github.com/cilium/ebpf
