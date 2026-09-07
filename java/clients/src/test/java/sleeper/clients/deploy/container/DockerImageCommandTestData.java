@@ -129,9 +129,9 @@ public class DockerImageCommandTestData {
                 "--push", "-t", tag, dockerDirectory));
     }
 
-    public static CommandPipeline buildAndLoadMultiplatformImageCommand(String tag, String dockerDirectory) {
+    public static CommandPipeline buildMultiplatformImageCommand(String tag, String dockerDirectory) {
         return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
-                "--load", "-t", tag, dockerDirectory));
+                "-t", tag, dockerDirectory));
     }
 
 }
