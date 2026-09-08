@@ -54,6 +54,7 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
@@ -102,13 +103,17 @@ public class DeployNewTestInstanceIT {
         @Test
         void shouldLoadInstanceAndSystemTestTableFromDeployAllConfig() throws Exception {
             // When
-            SleeperInstanceConfiguration config = loadConfiguration();
+            deployAndCaptureRequest();
 
             // Then the instance and table come from the deployAll config files
             instanceProperties.set(ID, "test-instance");
             instanceProperties.set(VPC_ID, "test-vpc");
             instanceProperties.set(SUBNETS, "test-subnet");
-            assertThat(config).isEqualTo(new SleeperInstanceConfiguration(instanceProperties, tableProperties));
+            // And the table properties object gains the table ID after deployment when the table is added
+            tableProperties.set(TABLE_ID, tablePropertiesStore.loadByName("system-test").get(TABLE_ID));
+            assertThat(deployRequests).singleElement().satisfies(request -> {
+                assertThat(request.getInstanceConfig()).isEqualTo(new SleeperInstanceConfiguration(instanceProperties, tableProperties));
+            });
         }
 
         @Test
