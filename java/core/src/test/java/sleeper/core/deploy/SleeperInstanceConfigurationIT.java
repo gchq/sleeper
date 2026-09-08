@@ -33,74 +33,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class SleeperInstanceConfigurationIT {
     @TempDir
-    private Path templatesDir;
-    @TempDir
     private Path propertiesDir;
-
-    @Nested
-    @DisplayName("Load from template directory")
-    class LoadFromTemplateDirectory {
-
-        @Test
-        void shouldLoadTemplatesWithTableName() throws Exception {
-            // Given
-            writeTemplates();
-
-            // When
-            SleeperInstanceConfiguration instanceConfiguration = fromTemplatesDirWithTable("set-table");
-
-            // Then
-            InstanceProperties expectedInstanceProperties = new InstanceProperties();
-            expectedInstanceProperties.set(FILE_SYSTEM, "test://");
-            expectedInstanceProperties.setTags(Map.of("Project", "TemplateProject"));
-            TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
-            expectedTableProperties.set(TABLE_NAME, "set-table");
-            expectedTableProperties.setNumber(ROW_GROUP_SIZE, 123);
-            expectedTableProperties.setSchema(createSchemaWithKey("template-key"));
-            assertThat(instanceConfiguration)
-                    .isEqualTo(SleeperInstanceConfiguration.builder()
-                            .instanceProperties(expectedInstanceProperties)
-                            .tableProperties(List.of(expectedTableProperties))
-                            .build());
-        }
-
-        @Test
-        void shouldSetSplitPointsFileInTemplate() throws Exception {
-            // Given
-            writeTemplates();
-            Path splitPointsFile = Files.writeString(propertiesDir.resolve("splits.txt"), "abc\ndef");
-
-            // When
-            SleeperInstanceConfiguration instanceConfiguration = fromTemplatesDirWithTableAndSplits("test-table", splitPointsFile);
-
-            // Then
-            assertThat(instanceConfiguration.getTableProperties())
-                    .extracting(properties -> properties.get(SPLIT_POINTS_FILE))
-                    .containsExactly(splitPointsFile.toString());
-        }
-
-        @Test
-        void shouldFailIfSplitPointsFileDoesNotExist() throws Exception {
-            // Given
-            writeTemplates();
-            Path splitPointsFile = propertiesDir.resolve("splits.txt");
-
-            // When / Then
-            assertThatThrownBy(() -> fromTemplatesDirWithTableAndSplits("test-table", splitPointsFile))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageStartingWith("Split points file not found: ");
-        }
-    }
 
     @Nested
     @DisplayName("Load from instance properties")
@@ -239,26 +178,4 @@ public class SleeperInstanceConfigurationIT {
         return expected;
     }
 
-    private void writeTemplates() throws IOException {
-        Files.createDirectories(templatesDir);
-        Files.writeString(templatesDir.resolve("instanceproperties.template"), "sleeper.filesystem=test://");
-        Files.writeString(templatesDir.resolve("tags.template"), "Project=TemplateProject");
-        Files.writeString(templatesDir.resolve("tableproperties.template"), "sleeper.table.parquet.rowgroup.size=123");
-        Files.writeString(templatesDir.resolve("schema.template"), new SchemaSerDe().toJson(createSchemaWithKey("template-key")));
-    }
-
-    private SleeperInstanceConfiguration fromTemplatesDirWithTable(String tableName) {
-        return SleeperInstanceConfigurationFromTemplates.builder()
-                .templatesDir(templatesDir)
-                .tableNameForTemplate(tableName)
-                .build().load();
-    }
-
-    private SleeperInstanceConfiguration fromTemplatesDirWithTableAndSplits(String tableName, Path splitPointsFile) {
-        return SleeperInstanceConfigurationFromTemplates.builder()
-                .templatesDir(templatesDir)
-                .tableNameForTemplate(tableName)
-                .splitPointsFileForTemplate(splitPointsFile)
-                .build().load();
-    }
 }

@@ -73,12 +73,24 @@ public class DeployNewTestInstanceIT {
 
     @BeforeEach
     void setUp() throws IOException {
-        writeDemoConfigTemplates();
+        // Seed the demo config templates where the default branch expects them (scripts/test/deployAll).
+        Path deployAllDir = scriptsDir.resolve(DeployNewTestInstance.DEFAULT_CONFIG_DIRECTORY);
+        Files.createDirectories(deployAllDir);
+        // Instance config template - read for the default instance properties.
+        Files.writeString(deployAllDir.resolve(DeployNewTestInstance.INSTANCE_PROPERTIES_FILE + ".template"), "sleeper.filesystem=test://");
+        // Table config template - gives the demo's "system-test" table its name.
+        Files.writeString(deployAllDir.resolve("table.properties.template"), "sleeper.table.name=system-test");
+        // Schema template - loaded automatically from beside table.properties.
+        Files.writeString(deployAllDir.resolve("schema.json.template"), new SchemaSerDe().toJson(createSchemaWithKey("key")));
+        // Tags template - applied to the demo instance.
+        Files.writeString(deployAllDir.resolve("tags.properties.template"), "Project=TestProject");
     }
 
     @Nested
     @DisplayName("Default to the demo configuration when nothing is given")
     class Default {
+
+
 
         @Test
         void shouldLoadInstanceAndSystemTestTableFromDeployAllConfig() throws Exception {
@@ -114,6 +126,22 @@ public class DeployNewTestInstanceIT {
             assertThat(deployAllDir.resolve("table.properties")).exists();
             assertThat(deployAllDir.resolve("schema.json")).exists();
             assertThat(deployAllDir.resolve("tags.properties")).exists();
+        }
+
+        @Test
+        void shouldNotOverwriteAnExistingConfigFileOnSubsequentRuns() throws Exception {
+            // Given a real config file already exists, customised by the user
+            loadConfiguration();
+            Path tableProperties = scriptsDir.resolve(DeployNewTestInstance.DEFAULT_CONFIG_DIRECTORY).resolve("table.properties");
+            Files.writeString(tableProperties, "sleeper.table.name=custom-table");
+
+            // When
+            SleeperInstanceConfiguration config = loadConfiguration();
+
+            // Then the customisation survived, it was not reset from the template
+            assertThat(config.getTableProperties())
+                    .extracting(properties -> properties.get(TABLE_NAME))
+                    .containsExactly("custom-table");
         }
     }
 
@@ -211,17 +239,32 @@ public class DeployNewTestInstanceIT {
         @Test
         void shouldDeployDemoConfigurationAsDemonstrationInstance() throws Exception {
             // When
-            DeployInstanceRequest request = deployAndCaptureRequest();
+            deployAndCaptureRequest();
 
             // Then it deploys as the demonstration app, with the instance and system-test table it loaded
-            assertThat(request.getCdkApp()).isEqualTo(SleeperInternalCdkApp.DEMONSTRATION);
-            assertThat(request.getInstanceConfig().getInstanceProperties())
-                    .extracting(properties -> properties.get(ID), properties -> properties.get(VPC_ID),
-                            properties -> properties.get(SUBNETS), properties -> properties.get(FILE_SYSTEM))
-                    .containsExactly("test-instance", "test-vpc", "test-subnet", "test://");
-            assertThat(request.getInstanceConfig().getTableProperties())
-                    .extracting(properties -> properties.get(TABLE_NAME))
-                    .containsExactly("system-test");
+            assertThat(deployRequests).singleElement().satisfies(request -> {
+                assertThat(request.getCdkApp()).isEqualTo(SleeperInternalCdkApp.DEMONSTRATION);
+                assertThat(request.getInstanceConfig().getInstanceProperties())
+                        .extracting(properties -> properties.get(ID), properties -> properties.get(VPC_ID),
+                                properties -> properties.get(SUBNETS), properties -> properties.get(FILE_SYSTEM))
+                        .containsExactly("test-instance", "test-vpc", "test-subnet", "test://");
+                assertThat(request.getInstanceConfig().getTableProperties())
+                        .extracting(properties -> properties.get(TABLE_NAME))
+                        .containsExactly("system-test");
+            });
+        }
+
+        @Test
+        void shouldDeployUsingConfigDirNotPropertiesFileByDefault() throws Exception {
+            // When
+            deployAndCaptureRequest();
+
+            // Then the CDK sees the whole config directory, so it also sees the system-test table
+            Path deployAllDir = scriptsDir.resolve(DeployNewTestInstance.DEFAULT_CONFIG_DIRECTORY);
+            assertThat(deployRequests).singleElement().satisfies(request -> {
+                assertThat(request.getCdkCommand().arguments()).contains("configurationDir=" + deployAllDir);
+                assertThat(request.getCdkCommand().arguments()).noneMatch(argument -> argument.startsWith("propertiesFile="));
+            });
         }
 
         @Test
@@ -231,26 +274,28 @@ public class DeployNewTestInstanceIT {
             writeTableFiles(workDir, "my-table");
 
             // When
-            DeployInstanceRequest request = deployAndCaptureRequest("--config-dir", workDir.toString());
+            deployAndCaptureRequest("--config-dir", workDir.toString());
 
             // Then it forwards the tables defined in the directory
-            assertThat(request.getInstanceConfig().getTableProperties())
-                    .extracting(properties -> properties.get(TABLE_NAME))
-                    .containsExactly("my-table");
+            assertThat(deployRequests).singleElement().satisfies(request ->
+                    assertThat(request.getInstanceConfig().getTableProperties())
+                            .extracting(properties -> properties.get(TABLE_NAME))
+                            .containsExactly("my-table"));
         }
 
         @Test
         void shouldDeployPausedWhenFlagIsSet() throws Exception {
             // When
-            DeployInstanceRequest request = deployAndCaptureRequest("--paused");
+            deployAndCaptureRequest("--paused");
 
             // Then the --paused flag reaches the CDK command, not just the parsed arguments
-            assertThat(request.getCdkCommand().arguments()).contains("deployPaused=true");
+            assertThat(deployRequests).singleElement().satisfies(request ->
+                    assertThat(request.getCdkCommand().arguments()).contains("deployPaused=true"));
         }
     }
 
-    // Runs the real deploy() seam with in-memory fakes standing in for AWS, and returns what got captured.
-    private DeployInstanceRequest deployAndCaptureRequest(String... options) throws Exception {
+    // Runs the real deploy() seam with in-memory fakes standing in for AWS.
+    private void deployAndCaptureRequest(String... options) throws Exception {
         DeployNewTestInstance.deploy(readArguments(options),
                 request -> deployRequests.add(request),
                 new DeployNewInstance.StoreFactory() {
@@ -266,7 +311,6 @@ public class DeployNewTestInstanceIT {
                     deployedProperties.set(ID, instanceId);
                     return deployedProperties;
                 });
-        return deployRequests.get(0);
     }
 
     private SleeperInstanceConfiguration loadConfiguration(String... options) throws IOException {
@@ -280,20 +324,6 @@ public class DeployNewTestInstanceIT {
                         Stream.of(scriptsDir.toString(), "test-instance", "test-vpc", "test-subnet"),
                         Arrays.stream(options))
                         .toArray(String[]::new)));
-    }
-
-    // Seed the demo config templates where the default branch expects them (scripts/test/deployAll).
-    private void writeDemoConfigTemplates() throws IOException {
-        Path deployAllDir = scriptsDir.resolve(DeployNewTestInstance.DEFAULT_CONFIG_DIRECTORY);
-        Files.createDirectories(deployAllDir);
-        // Instance config template - read for the default instance properties.
-        Files.writeString(deployAllDir.resolve(DeployNewTestInstance.INSTANCE_PROPERTIES_FILE + ".template"), "sleeper.filesystem=test://");
-        // Table config template - gives the demo's "system-test" table its name.
-        Files.writeString(deployAllDir.resolve("table.properties.template"), "sleeper.table.name=system-test");
-        // Schema template - loaded automatically from beside table.properties.
-        Files.writeString(deployAllDir.resolve("schema.json.template"), new SchemaSerDe().toJson(createSchemaWithKey("key")));
-        // Tags template - applied to the demo instance.
-        Files.writeString(deployAllDir.resolve("tags.properties.template"), "Project=TestProject");
     }
 
     // Writes a table.properties + schema.json pair, as a --config-dir or a sidecar next to an instance.properties file.
