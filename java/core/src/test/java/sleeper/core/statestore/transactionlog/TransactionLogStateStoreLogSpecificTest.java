@@ -42,8 +42,11 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -111,6 +114,29 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             assertThat(store.getFileReferences())
                     .containsExactly(file1, file2, file3);
             assertThat(retryWaits).hasSize(1);
+        }
+
+        @Test
+        void shouldUseConfiguredRetryBackoff() {
+            // Given
+            List<Duration> configuredRetryWaits = new ArrayList<>();
+            ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(
+                    WaitRange.firstAndMaxWaitCeilingSecs(5, 5),
+                    () -> 1.0,
+                    waitMillis -> configuredRetryWaits.add(Duration.ofMillis(waitMillis)));
+            store = stateStore(stateStoreBuilder(schema).retryBackoff(retryBackoff));
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            FileReference otherProcessFile = fileFactory().rootFile("other-file.parquet", 100);
+            filesLogStore.atStartOfNextAddTransaction(() -> {
+                update(otherProcess()).addFile(otherProcessFile);
+            });
+
+            // When
+            update(store).addFile(file);
+
+            // Then
+            assertThat(configuredRetryWaits).containsExactly(Duration.ofSeconds(5));
+            assertThat(retryWaits).isEmpty();
         }
 
         @Test

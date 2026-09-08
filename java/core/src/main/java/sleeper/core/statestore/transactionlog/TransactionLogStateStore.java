@@ -55,7 +55,8 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                 .transactionBodyStore(builder.transactionBodyStore)
                 .updateLogBeforeAddTransaction(builder.updateLogBeforeAddTransaction)
                 .randomJitterFraction(builder.randomJitterFraction)
-                .retryWaiter(builder.retryWaiter));
+                .retryWaiter(builder.retryWaiter)
+                .retryBackoff(builder.retryBackoff));
     }
 
     private TransactionLogStateStore(Builder builder, TransactionLogHead.Builder<?> headBuilder) {
@@ -133,6 +134,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private Supplier<Instant> partitionsStateUpdateClock = Instant::now;
         private DoubleSupplier randomJitterFraction = Math::random;
         private ThreadSleep retryWaiter = Thread::sleep;
+        private ExponentialBackoffWithJitter retryBackoff;
 
         private Builder() {
         }
@@ -208,6 +210,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
          * @return              the builder
          */
         public Builder retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
+            this.retryBackoff = retryBackoff;
             return this;
         }
 
