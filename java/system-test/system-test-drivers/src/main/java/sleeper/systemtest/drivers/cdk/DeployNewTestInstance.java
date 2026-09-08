@@ -107,15 +107,12 @@ public class DeployNewTestInstance {
     public static SleeperInstanceConfiguration loadConfiguration(Arguments args) throws IOException {
         SleeperInstanceConfiguration config;
         if (args.propertiesFile() != null) {
-            // Read only the instance configuration. Any tables must be given explicitly with --config-dir.
             LOGGER.info("Properties file specified, reading instance configuration only");
             config = SleeperInstanceConfiguration.fromLocalConfiguration(args.propertiesFile());
         } else if (args.configDir() != null) {
-            // Load the instance and any tables defined in the directory.
             LOGGER.info("Configuration directory specified, reading its instance and tables");
             config = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(args.configDir());
         } else {
-            // Default to the system test configuration held in the deployment directory.
             Path instancePropertiesFile = defaultInstancePropertiesFile(args);
             LOGGER.info("No configuration specified, using the system test configuration in {}", instancePropertiesFile.getParent());
             config = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(instancePropertiesFile);
@@ -153,25 +150,27 @@ public class DeployNewTestInstance {
      * @param storeFactory   creates the table and state stores
      * @param loader         loads the deployed instance properties
      */
-    static void deploy(Arguments args, InstanceDeployer deployInstance, StoreFactory storeFactory, InstancePropertiesLoader loader)
-            throws IOException, InterruptedException {
+    static void deploy(Arguments args, InstanceDeployer deployInstance, StoreFactory storeFactory, InstancePropertiesLoader loader) throws IOException, InterruptedException {
         SleeperInstanceConfiguration config = loadConfiguration(args);
 
-        // Point the CDK at the config given on the command line, defaulting to the demo instance properties file.
-        // The tables are created after the CDK runs, so it only needs the instance configuration.
+        Path configDir = args.configDir();
+        if (args.propertiesFile() == null && configDir == null) {
+            // Otherwise the CDK sees no tables, so the demo table gets no widgets.
+            configDir = defaultConfigDir(args);
+        }
+
         DeployNewInstance.builder()
                 .deployInstance(deployInstance)
                 .storeFactory(storeFactory)
                 .instancePropertiesLoader(loader)
                 .expectedInstanceConfiguration(config)
                 .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
-                .propertiesFile(resolvePropertiesFile(args))
-                .configDir(args.configDir())
+                .propertiesFile(args.propertiesFile())
+                .configDir(configDir)
                 .deployPaused(args.deployPaused())
                 .build().deploy();
     }
 
-    // The default demo configuration directory, resolved relative to the scripts directory.
     private static Path defaultConfigDir(Arguments args) {
         return args.scriptsDirectory().resolve(DEFAULT_CONFIG_DIRECTORY);
     }
@@ -186,17 +185,7 @@ public class DeployNewTestInstance {
         }
     }
 
-    // Decides which properties file to hand to the CDK: whatever was given on the command line, or the demo's own
-    // instance properties file if neither --properties-file nor --config-dir was set.
-    private static Path resolvePropertiesFile(Arguments args) throws IOException {
-        if (args.propertiesFile() != null || args.configDir() != null) {
-            return args.propertiesFile();
-        }
-        return defaultInstancePropertiesFile(args);
-    }
-
-    // The demo's own instance properties file, seeding it from its template first if it doesn't exist yet. Shared by
-    // loadConfiguration and resolvePropertiesFile so the default can't drift between the two.
+    // The demo's own instance properties file, seeding it from its template first if it doesn't exist yet.
     private static Path defaultInstancePropertiesFile(Arguments args) throws IOException {
         Path configDir = defaultConfigDir(args);
         copyTemplatesIfMissing(configDir);
