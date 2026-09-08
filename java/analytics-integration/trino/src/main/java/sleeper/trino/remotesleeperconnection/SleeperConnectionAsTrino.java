@@ -327,7 +327,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
                     sleeperTransactionHandle.getTransactionStartInstant(),
                     sleeperQuery);
             return leafPartitionQueryList.stream()
-                    .map(leafPartitionQuery -> new SleeperSplit(sleeperSchema, leafPartitionQuery))
+                    .map(leafPartitionQuery -> new SleeperSplit(sleeperSchema, sleeperTableHandle.getSchemaTableName().getTableName(), leafPartitionQuery))
                     .collect(ImmutableList.toImmutableList());
         } catch (Exception e) {
             throw new RuntimeException(e);

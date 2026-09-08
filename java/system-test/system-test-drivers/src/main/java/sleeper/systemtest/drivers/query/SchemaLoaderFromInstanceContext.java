@@ -23,6 +23,9 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.Optional;
 
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+
 public class SchemaLoaderFromInstanceContext implements QuerySerDe.SchemaLoader {
 
     private final SystemTestInstanceContext instance;
@@ -40,5 +43,19 @@ public class SchemaLoaderFromInstanceContext implements QuerySerDe.SchemaLoader 
     @Override
     public Optional<Schema> getSchemaByTableId(String tableId) {
         throw new UnsupportedOperationException("Unexpected lookup by internal table ID in system test: " + tableId);
+    }
+
+    @Override
+    public String getTableIdForName(String tableName) {
+        return instance.getTablePropertiesByDeployedName(tableName)
+                .map(properties -> properties.get(TABLE_ID))
+                .orElse(null);
+    }
+
+    @Override
+    public String getTableNameForId(String tableId) {
+        return instance.getTablePropertiesByDeployedId(tableId)
+                .map(properties -> properties.get(TABLE_NAME))
+                .orElse(null);
     }
 }

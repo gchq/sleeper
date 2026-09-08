@@ -43,16 +43,19 @@ import java.util.Objects;
 public class SleeperSplit implements ConnectorSplit {
 
     private final Schema sleeperSchema;
+    private final String tableName;
     private final LeafPartitionQuery leafPartitionQuery;
 
     /**
      * Constructor to create a split directly from a subquery.
      *
      * @param sleeperSchema      the Sleeper table schema
+     * @param tableName          the Sleeper table name
      * @param leafPartitionQuery the query to use to construct this split
      */
-    public SleeperSplit(Schema sleeperSchema, LeafPartitionQuery leafPartitionQuery) {
+    public SleeperSplit(Schema sleeperSchema, String tableName, LeafPartitionQuery leafPartitionQuery) {
         this.sleeperSchema = sleeperSchema;
+        this.tableName = tableName;
         this.leafPartitionQuery = leafPartitionQuery;
     }
 
@@ -65,15 +68,18 @@ public class SleeperSplit implements ConnectorSplit {
      * supplied the values.
      *
      * @param sleeperSchemaAsString      the Sleeper table schema, serialised as a string
+     * @param tableName                  the Sleeper table name
      * @param leafPartitionQueryAsString the query to use to construct this split, serialised as a string
      */
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     @JsonCreator
     public SleeperSplit(@JsonProperty("sleeperSchemaAsString") String sleeperSchemaAsString,
+            @JsonProperty("tableName") String tableName,
             @JsonProperty("leafPartitionQueryAsString") String leafPartitionQueryAsString) {
         SchemaSerDe schemaSerDe = new SchemaSerDe();
         this.sleeperSchema = schemaSerDe.fromJson(sleeperSchemaAsString);
-        QuerySerDe querySerDe = new QuerySerDe(sleeperSchema);
+        this.tableName = tableName;
+        QuerySerDe querySerDe = new QuerySerDe(null, tableName, sleeperSchema);
         this.leafPartitionQuery = querySerDe.fromJsonOrLeafQuery(leafPartitionQueryAsString).asLeafQuery();
     }
 
@@ -87,13 +93,18 @@ public class SleeperSplit implements ConnectorSplit {
         return schemaSerDe.toJson(getSleeperSchema());
     }
 
+    @JsonProperty
+    public String getTableName() {
+        return tableName;
+    }
+
     public LeafPartitionQuery getLeafPartitionQuery() {
         return leafPartitionQuery;
     }
 
     @JsonProperty
     public String getLeafPartitionQueryAsString() {
-        QuerySerDe querySerDe = new QuerySerDe(getSleeperSchema());
+        QuerySerDe querySerDe = new QuerySerDe(getLeafPartitionQuery().getTableId(), getTableName(), getSleeperSchema());
         return querySerDe.toJson(getLeafPartitionQuery());
     }
 
@@ -133,18 +144,20 @@ public class SleeperSplit implements ConnectorSplit {
             return false;
         }
         SleeperSplit that = (SleeperSplit) o;
-        return sleeperSchema.equals(that.sleeperSchema) && leafPartitionQuery.equals(that.leafPartitionQuery);
+        return sleeperSchema.equals(that.sleeperSchema) && Objects.equals(tableName, that.tableName)
+                && leafPartitionQuery.equals(that.leafPartitionQuery);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sleeperSchema, leafPartitionQuery);
+        return Objects.hash(sleeperSchema, tableName, leafPartitionQuery);
     }
 
     @Override
     public String toString() {
         return "SleeperSplit{" +
                 "sleeperSchema=" + sleeperSchema +
+                ", tableName=" + tableName +
                 ", leafPartitionQuery=" + leafPartitionQuery +
                 '}';
     }
