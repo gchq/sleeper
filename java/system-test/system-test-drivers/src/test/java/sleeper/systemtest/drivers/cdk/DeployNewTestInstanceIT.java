@@ -25,7 +25,9 @@ import sleeper.clients.deploy.DeployInstanceRequest;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.schema.SchemaSerDe;
@@ -43,6 +45,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,10 +59,11 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class DeployNewTestInstanceIT {
     // In-memory fakes standing in for the AWS-backed stores DeployNewInstance would otherwise create.
-    InstanceProperties deployedProperties = new InstanceProperties();
+    InstanceProperties instanceProperties = new InstanceProperties();
+    TableProperties tableProperties = new TableProperties(instanceProperties);
     InMemoryTableIndex tableIndex = new InMemoryTableIndex();
     TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore(tableIndex);
-    StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(deployedProperties,
+    StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties,
             new InMemoryTransactionLogsPerTable());
     // Captures whatever gets deployed, instead of it going to real AWS/CDK.
     List<DeployInstanceRequest> deployRequests = new ArrayList<>();
@@ -72,25 +76,28 @@ public class DeployNewTestInstanceIT {
     private Path workDir;
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() throws Exception {
+        instanceProperties.set(FILE_SYSTEM, "test://");
+        instanceProperties.setTags(Map.of("Project", "TemplateProject"));
+        tableProperties.set(TABLE_NAME, "system-test");
+        tableProperties.setSchema(createSchemaWithKey("key"));
+        writeDefaultTemplates(instanceProperties, tableProperties);
+    }
+
+    private void writeDefaultTemplates(InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
         // Seed the demo config templates where the default branch expects them (scripts/test/deployAll).
+        // These will be the defaults when values are not populated by the user.
         Path deployAllDir = scriptsDir.resolve(DeployNewTestInstance.DEFAULT_CONFIG_DIRECTORY);
         Files.createDirectories(deployAllDir);
-        // Instance config template - read for the default instance properties.
-        Files.writeString(deployAllDir.resolve(DeployNewTestInstance.INSTANCE_PROPERTIES_FILE + ".template"), "sleeper.filesystem=test://");
-        // Table config template - gives the demo's "system-test" table its name.
-        Files.writeString(deployAllDir.resolve("table.properties.template"), "sleeper.table.name=system-test");
-        // Schema template - loaded automatically from beside table.properties.
-        Files.writeString(deployAllDir.resolve("schema.json.template"), new SchemaSerDe().toJson(createSchemaWithKey("key")));
-        // Tags template - applied to the demo instance.
-        Files.writeString(deployAllDir.resolve("tags.properties.template"), "Project=TestProject");
+        Files.writeString(deployAllDir.resolve(DeployNewTestInstance.INSTANCE_PROPERTIES_FILE + ".template"), instanceProperties.saveAsString());
+        Files.writeString(deployAllDir.resolve("table.properties.template"), tableProperties.saveAsString());
+        Files.writeString(deployAllDir.resolve("schema.json.template"), new SchemaSerDe().toJson(tableProperties.getSchema()));
+        Files.writeString(deployAllDir.resolve("tags.properties.template"), instanceProperties.getTagsPropertiesAsString());
     }
 
     @Nested
     @DisplayName("Default to the demo configuration when nothing is given")
     class Default {
-
-
 
         @Test
         void shouldLoadInstanceAndSystemTestTableFromDeployAllConfig() throws Exception {
@@ -98,10 +105,10 @@ public class DeployNewTestInstanceIT {
             SleeperInstanceConfiguration config = loadConfiguration();
 
             // Then the instance and table come from the deployAll config files
-            assertThat(config.getInstanceProperties().get(FILE_SYSTEM)).isEqualTo("test://");
-            assertThat(config.getTableProperties())
-                    .extracting(properties -> properties.get(TABLE_NAME))
-                    .containsExactly("system-test");
+            instanceProperties.set(ID, "test-instance");
+            instanceProperties.set(VPC_ID, "test-vpc");
+            instanceProperties.set(SUBNETS, "test-subnet");
+            assertThat(config).isEqualTo(new SleeperInstanceConfiguration(instanceProperties, tableProperties));
         }
 
         @Test
@@ -132,8 +139,9 @@ public class DeployNewTestInstanceIT {
         void shouldNotOverwriteAnExistingConfigFileOnSubsequentRuns() throws Exception {
             // Given a real config file already exists, customised by the user
             loadConfiguration();
-            Path tableProperties = scriptsDir.resolve(DeployNewTestInstance.DEFAULT_CONFIG_DIRECTORY).resolve("table.properties");
-            Files.writeString(tableProperties, "sleeper.table.name=custom-table");
+            tableProperties.set(TABLE_NAME, "custom-table");
+            Path tablePropertiesPath = scriptsDir.resolve(DeployNewTestInstance.DEFAULT_CONFIG_DIRECTORY).resolve("table.properties");
+            Files.writeString(tablePropertiesPath, tableProperties.saveAsString());
 
             // When
             SleeperInstanceConfiguration config = loadConfiguration();
@@ -270,17 +278,17 @@ public class DeployNewTestInstanceIT {
         @Test
         void shouldDeployTablesFromConfigurationDirectory() throws Exception {
             // Given
-            Files.writeString(workDir.resolve("instance.properties"), "sleeper.filesystem=from-dir://");
-            writeTableFiles(workDir, "my-table");
+            instanceProperties.set(FILE_SYSTEM, "from-dir://");
+            tableProperties.set(TABLE_NAME, "my-table");
+            writeToDirectory(workDir.resolve("instance.properties"), instanceProperties, tableProperties);
 
             // When
             deployAndCaptureRequest("--config-dir", workDir.toString());
 
             // Then it forwards the tables defined in the directory
-            assertThat(deployRequests).singleElement().satisfies(request ->
-                    assertThat(request.getInstanceConfig().getTableProperties())
-                            .extracting(properties -> properties.get(TABLE_NAME))
-                            .containsExactly("my-table"));
+            assertThat(deployRequests).singleElement().satisfies(request -> assertThat(request.getInstanceConfig().getTableProperties())
+                    .extracting(properties -> properties.get(TABLE_NAME))
+                    .containsExactly("my-table"));
         }
 
         @Test
@@ -289,8 +297,7 @@ public class DeployNewTestInstanceIT {
             deployAndCaptureRequest("--paused");
 
             // Then the --paused flag reaches the CDK command, not just the parsed arguments
-            assertThat(deployRequests).singleElement().satisfies(request ->
-                    assertThat(request.getCdkCommand().arguments()).contains("deployPaused=true"));
+            assertThat(deployRequests).singleElement().satisfies(request -> assertThat(request.getCdkCommand().arguments()).contains("deployPaused=true"));
         }
     }
 
@@ -308,8 +315,8 @@ public class DeployNewTestInstanceIT {
                     }
                 },
                 instanceId -> {
-                    deployedProperties.set(ID, instanceId);
-                    return deployedProperties;
+                    instanceProperties.set(ID, instanceId);
+                    return instanceProperties;
                 });
     }
 
@@ -324,6 +331,10 @@ public class DeployNewTestInstanceIT {
                         Stream.of(scriptsDir.toString(), "test-instance", "test-vpc", "test-subnet"),
                         Arrays.stream(options))
                         .toArray(String[]::new)));
+    }
+
+    private void writeToDirectory(Path directory, InstanceProperties instanceProperties, TableProperties... tableProperties) throws Exception {
+        SaveLocalProperties.saveToDirectory(directory, instanceProperties, Stream.of());
     }
 
     // Writes a table.properties + schema.json pair, as a --config-dir or a sidecar next to an instance.properties file.
