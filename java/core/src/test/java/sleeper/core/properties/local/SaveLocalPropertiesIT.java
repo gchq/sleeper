@@ -33,8 +33,11 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.local.LoadLocalProperties.loadInstanceProperties;
+import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromDirectory;
 import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
+import static sleeper.core.properties.local.SaveLocalProperties.createDirectoryAndSaveProperties;
 import static sleeper.core.properties.local.SaveLocalProperties.saveToDirectory;
+import static sleeper.core.properties.local.SaveLocalProperties.saveToFile;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -115,5 +118,37 @@ class SaveLocalPropertiesIT {
         // Then
         assertThat(Schema.load(tempDir.resolve("tables/test-table/schema.json")))
                 .isEqualTo(schema);
+    }
+
+    @Test
+    void shouldCreateDirectoryWhenMissing() throws Exception {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(properties, createSchemaWithKey("key"));
+
+        // When
+        createDirectoryAndSaveProperties(tempDir.resolve("directory"), properties, Stream.of(tableProperties));
+
+        // Then
+        assertThat(loadInstanceProperties(tempDir.resolve("directory/instance.properties")))
+                .isEqualTo(properties);
+        assertThat(loadTablesFromDirectory(properties, tempDir.resolve("directory")))
+                .containsExactly(tableProperties);
+    }
+
+    @Test
+    void shouldSaveToPropertiesFile() throws Exception {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(properties, createSchemaWithKey("key"));
+
+        // When
+        saveToFile(tempDir.resolve("test-instance.properties"), properties, Stream.of(tableProperties));
+
+        // Then
+        assertThat(loadInstanceProperties(tempDir.resolve("test-instance.properties")))
+                .isEqualTo(properties);
+        assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("test-instance.properties")))
+                .containsExactly(tableProperties);
     }
 }
