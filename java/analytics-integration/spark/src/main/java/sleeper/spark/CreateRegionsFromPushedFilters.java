@@ -54,7 +54,7 @@ public class CreateRegionsFromPushedFilters {
         // found so far, i.e. the result is the cross product of the regions of the individual filters.
         List<Region> regions = List.of(regionFromSingleRegionFilters);
         for (Filter filter : singleAndMultiRegionFilters.getMultiRegionFilters()) {
-            List<Region> regionsFromFilter = CreateRegionFromFilter.createRegionsFromFilter(filter, schema).get();
+            List<Region> regionsFromFilter = CreateRegionFromFilter.createRegionsFromFilter(filter, schema);
             List<Region> intersectedRegions = new ArrayList<>();
             for (Region regionSoFar : regions) {
                 for (Region regionFromFilter : regionsFromFilter) {

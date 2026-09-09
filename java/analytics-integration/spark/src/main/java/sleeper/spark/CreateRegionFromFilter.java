@@ -15,6 +15,7 @@
  */
 package sleeper.spark;
 
+import org.apache.spark.sql.sources.And;
 import org.apache.spark.sql.sources.EqualTo;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.sources.GreaterThan;
@@ -53,35 +54,49 @@ public class CreateRegionFromFilter {
     }
 
     /**
-     * Converts a filter into an optional list of regions corresponding to that filter.
+     * Converts a filter into a list of regions corresponding to that filter. An empty list means the filter
+     * matches nothing, e.g. an In filter with no values or an And filter whose branches contradict each other.
      *
      * @param  filter the filter
      * @param  schema the schema of the Sleeper table
-     * @return        an optional list of regions corresponding to the provided filter
+     * @return        a list of regions corresponding to the provided filter
      */
-    public static Optional<List<Region>> createRegionsFromFilter(Filter filter, Schema schema) {
+    public static List<Region> createRegionsFromFilter(Filter filter, Schema schema) {
         if (filter instanceof Or) {
             Or or = (Or) filter;
-            Region leftRegion = createRegionFromSimpleFilter(or.left(), schema);
-            Region rightRegion = createRegionFromSimpleFilter(or.right(), schema);
-            return Optional.of(List.of(leftRegion, rightRegion));
+            List<Region> regions = new ArrayList<>();
+            regions.addAll(createRegionsFromFilter(or.left(), schema));
+            regions.addAll(createRegionsFromFilter(or.right(), schema));
+            return regions;
+        } else if (filter instanceof And) {
+            // Take each branch of the AND and recursively identify the regions. Then take the pairwise intersections.
+            And and = (And) filter;
+            List<Region> leftRegions = createRegionsFromFilter(and.left(), schema);
+            List<Region> rightRegions = createRegionsFromFilter(and.right(), schema);
+            RangeFactory rangeFactory = new RangeFactory(schema);
+            List<Region> regions = new ArrayList<>();
+            for (Region leftRegion : leftRegions) {
+                for (Region rightRegion : rightRegions) {
+                    Optional<Region> intersectedRegion = RegionIntersector.intersectRegions(leftRegion, rightRegion, rangeFactory, schema);
+                    if (intersectedRegion.isPresent()) {
+                        regions.add(intersectedRegion.get());
+                    }
+                }
+            }
+            return regions;
         } else if (filter instanceof In) {
             In in = (In) filter;
             List<Region> regions = new ArrayList<>();
             Object[] values = in.values();
             for (Object value : values) {
                 Filter equalFilter = new EqualTo(in.attribute(), value);
-                Region optional = createRegionFromSimpleFilter(equalFilter, schema);
-                regions.add(optional);
+                Region region = createRegionFromSimpleFilter(equalFilter, schema);
+                regions.add(region);
             }
-            if (regions.isEmpty()) {
-                return Optional.empty();
-            } else {
-                return Optional.of(regions);
-            }
+            return regions;
         } else {
-            Region optionalRegion = createRegionFromSimpleFilter(filter, schema);
-            return Optional.of(List.of(optionalRegion));
+            Region region = createRegionFromSimpleFilter(filter, schema);
+            return List.of(region);
         }
     }
 

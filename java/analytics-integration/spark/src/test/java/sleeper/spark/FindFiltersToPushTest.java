@@ -15,10 +15,14 @@
  */
 package sleeper.spark;
 
+import org.apache.spark.sql.sources.And;
+import org.apache.spark.sql.sources.EqualTo;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.sources.GreaterThan;
 import org.apache.spark.sql.sources.In;
 import org.apache.spark.sql.sources.LessThan;
+import org.apache.spark.sql.sources.Not;
+import org.apache.spark.sql.sources.Or;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Field;
@@ -112,5 +116,90 @@ public class FindFiltersToPushTest {
         // Then
         assertThat(pushedAndNonPushedFilters.getPushedFilters()).containsExactly(in);
         assertThat(pushedAndNonPushedFilters.getNonPushedFilters()).containsExactly(greaterThan);
+    }
+
+    @Test
+    void shouldPushOrFilterWithNestedOrAndInBranchesOnKeyField() {
+        // Given
+        // (key IN {"A", "B"} OR key = "C") OR key = "D"
+        Or or = new Or(
+                new Or(new In(ROW_KEY_FIELD.getName(), new Object[]{"A", "B"}), new EqualTo(ROW_KEY_FIELD.getName(), "C")),
+                new EqualTo(ROW_KEY_FIELD.getName(), "D"));
+        Filter[] filters = new Filter[]{or};
+        FindFiltersToPush findFiltersToPush = new FindFiltersToPush(SCHEMA);
+
+        // When
+        PushedAndNonPushedFilters pushedAndNonPushedFilters = findFiltersToPush.splitFiltersIntoPushedAndNonPushed(filters);
+
+        // Then
+        assertThat(pushedAndNonPushedFilters.getPushedFilters()).containsExactly(or);
+        assertThat(pushedAndNonPushedFilters.getNonPushedFilters()).isEmpty();
+    }
+
+    @Test
+    void shouldPushOrFilterWithAndBranchOnKeyField() {
+        // Given
+        // "(key > "A" AND key < "E") OR key = G"
+        Or or = new Or(
+                new And(new GreaterThan(ROW_KEY_FIELD.getName(), "A"), new LessThan(ROW_KEY_FIELD.getName(), "E")),
+                new EqualTo(ROW_KEY_FIELD.getName(), "G"));
+        Filter[] filters = new Filter[]{or};
+        FindFiltersToPush findFiltersToPush = new FindFiltersToPush(SCHEMA);
+
+        // When
+        PushedAndNonPushedFilters pushedAndNonPushedFilters = findFiltersToPush.splitFiltersIntoPushedAndNonPushed(filters);
+
+        // Then
+        assertThat(pushedAndNonPushedFilters.getPushedFilters()).containsExactly(or);
+        assertThat(pushedAndNonPushedFilters.getNonPushedFilters()).isEmpty();
+    }
+
+    @Test
+    void shouldPushAndFilterOnKeyField() {
+        // Given
+        And and = new And(new GreaterThan(ROW_KEY_FIELD.getName(), "A"), new LessThan(ROW_KEY_FIELD.getName(), "E"));
+        Filter[] filters = new Filter[]{and};
+        FindFiltersToPush findFiltersToPush = new FindFiltersToPush(SCHEMA);
+
+        // When
+        PushedAndNonPushedFilters pushedAndNonPushedFilters = findFiltersToPush.splitFiltersIntoPushedAndNonPushed(filters);
+
+        // Then
+        assertThat(pushedAndNonPushedFilters.getPushedFilters()).containsExactly(and);
+        assertThat(pushedAndNonPushedFilters.getNonPushedFilters()).isEmpty();
+    }
+
+    @Test
+    void shouldNotPushAndFilterWhereOneBranchIsNotOnKeyField() {
+        // Given
+        // Due to the value field predicate, this is not applied
+        And and = new And(new EqualTo(ROW_KEY_FIELD.getName(), "A"), new EqualTo("value", "B"));
+        Or or = new Or(and, new EqualTo(ROW_KEY_FIELD.getName(), "C"));
+        Filter[] filters = new Filter[]{and, or};
+        FindFiltersToPush findFiltersToPush = new FindFiltersToPush(SCHEMA);
+
+        // When
+        PushedAndNonPushedFilters pushedAndNonPushedFilters = findFiltersToPush.splitFiltersIntoPushedAndNonPushed(filters);
+
+        // Then
+        assertThat(pushedAndNonPushedFilters.getPushedFilters()).isEmpty();
+        assertThat(pushedAndNonPushedFilters.getNonPushedFilters()).containsExactly(and, or);
+    }
+
+    @Test
+    void shouldNotPushNotFilterOrOrFilterWithNotBranch() {
+        // Given
+        // Not filters cannot be pushed down, including if they are in an or
+        Not not = new Not(new EqualTo(ROW_KEY_FIELD.getName(), "A"));
+        Or or = new Or(new Not(new EqualTo(ROW_KEY_FIELD.getName(), "B")), new EqualTo(ROW_KEY_FIELD.getName(), "C"));
+        Filter[] filters = new Filter[]{not, or};
+        FindFiltersToPush findFiltersToPush = new FindFiltersToPush(SCHEMA);
+
+        // When
+        PushedAndNonPushedFilters pushedAndNonPushedFilters = findFiltersToPush.splitFiltersIntoPushedAndNonPushed(filters);
+
+        // Then
+        assertThat(pushedAndNonPushedFilters.getPushedFilters()).isEmpty();
+        assertThat(pushedAndNonPushedFilters.getNonPushedFilters()).containsExactly(not, or);
     }
 }
