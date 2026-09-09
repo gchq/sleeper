@@ -15,6 +15,7 @@
  */
 package sleeper.spark;
 
+import org.apache.spark.sql.sources.And;
 import org.apache.spark.sql.sources.EqualTo;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.sources.GreaterThan;
@@ -240,6 +241,23 @@ public class CreateRegionsFromPushedFiltersTest {
 
         // Then
         assertThat(regions).isEmpty();
+    }
+
+    @Test
+    void shouldReturnCorrectRegionsWhenAndAndInFiltersArePushed() {
+        // Given
+        And and = new And(new GreaterThan(ROW_KEY_FIELD.getName(), "A"), new LessThan(ROW_KEY_FIELD.getName(), "E"));
+        In in = new In(ROW_KEY_FIELD.getName(), new Object[]{"B", "Z"});
+        Filter[] pushedFilters = new Filter[]{and, in};
+        CreateRegionsFromPushedFilters createRegionsFromPushedFilters = new CreateRegionsFromPushedFilters(SCHEMA);
+
+        // When
+        List<Region> regions = createRegionsFromPushedFilters.getMinimumRegionCoveringPushedFilters(pushedFilters);
+
+        // Then
+        Region expectedRegionB = RegionCanonicaliser.canonicaliseRegion(new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "B")));
+        assertThat(regions.stream().map(RegionCanonicaliser::canonicaliseRegion))
+                .containsExactly(expectedRegionB);
     }
 
     @Test
