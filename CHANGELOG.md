@@ -8,13 +8,19 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.37.5
 
-### 4th September 2026
+### 9th September 2026
+
+This includes a signficant performance improvement for bulk import on EKS.
+
+Bulk import:
+- We now use the AWS EMR on EKS container image to run bulk import on EKS, resulting in roughly a 2x performance improvement.
 
 Deployment:
-- Improved error message when artefacts deployment does not exist.
+- Improved error message when deploying an instance against an artefacts deployment that does not exist.
+- We no longer create ECR container repositories for the image we use as the base for other images.
 
 Bugfixes:
-- When you override the base for a single container image, we no longer attempt to upload that base image to a non-existent EMR repository.
+- When deploying from a local build rather than a pre-published version, if you override the base for a single container image, we no longer attempt to upload that base image to a non-existent EMR repository.
 
 
 ## Version 0.37.4
