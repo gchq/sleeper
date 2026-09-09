@@ -285,7 +285,7 @@ public class DeployNewTestInstanceIT {
             // Given
             instanceProperties.set(FILE_SYSTEM, "from-dir://");
             tableProperties.set(TABLE_NAME, "my-table");
-            writeToDirectory(workDir.resolve("instance.properties"), instanceProperties, tableProperties);
+            writeToFile(workDir.resolve("instance.properties"), instanceProperties, tableProperties);
 
             // When
             deployAndCaptureRequest("--config-dir", workDir.toString());
@@ -338,8 +338,8 @@ public class DeployNewTestInstanceIT {
                         .toArray(String[]::new)));
     }
 
-    private void writeToDirectory(Path directory, InstanceProperties instanceProperties, TableProperties... tableProperties) throws Exception {
-        SaveLocalProperties.saveToDirectory(directory, instanceProperties, Stream.of());
+    private void writeToFile(Path file, InstanceProperties instanceProperties, TableProperties... tableProperties) throws Exception {
+        SaveLocalProperties.saveToFile(file, instanceProperties, Stream.of(tableProperties));
     }
 
     // Writes a table.properties + schema.json pair, as a --config-dir or a sidecar next to an instance.properties file.
