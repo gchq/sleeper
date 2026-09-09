@@ -19,4 +19,4 @@ if [ -n "${EXECUTOR_POD_TEMPLATE:-}" ]; then
     printf '%s' "$EXECUTOR_POD_TEMPLATE" > /tmp/executor-template.yaml
 fi
 
-exec /opt/entrypoint.sh "$@"
+exec /usr/bin/entrypoint.sh "$@"
