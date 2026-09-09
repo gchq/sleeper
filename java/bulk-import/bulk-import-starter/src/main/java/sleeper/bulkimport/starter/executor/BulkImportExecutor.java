@@ -120,7 +120,15 @@ public class BulkImportExecutor {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + String.join("\n", failedChecks);
             LOGGER.warn(errorMessage);
-            if (id != null) {
+            // In production, IngestJobMessageHandler assigns a missing ID before this executor is reached.
+            // Keep this defensive validation safe for direct executor use while matching the handler's tracking semantics.
+            if (id == null) {
+                ingestJobTracker.jobValidated(bulkImportJob.toIngestJob().toBuilder()
+                        .id(UUID.randomUUID().toString())
+                        .tableId(bulkImportJob.getTableId())
+                        .build()
+                        .createRejectedEvent(validationTimeSupplier.get(), failedChecks));
+            } else {
                 ingestJobTracker.jobValidated(bulkImportJob.toIngestJob()
                         .createRejectedEvent(validationTimeSupplier.get(), failedChecks));
             }

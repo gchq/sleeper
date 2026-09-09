@@ -132,7 +132,12 @@ class BulkImportExecutorTest {
             // Then
             assertThat(objectKeyToJobFile).isEmpty();
             assertThat(runJobInvocations).isEmpty();
-            assertThat(tracker.getAllJobs(tableId)).isEmpty();
+            assertThat(tracker.getAllJobs(tableId)).singleElement().satisfies(status -> {
+                assertThat(status.getJobId()).isNotBlank();
+                assertThat(status.getRunsLatestFirst()).singleElement().satisfies(run -> {
+                    assertThat(run.getFailureReasons()).containsExactly("The job ID must be set to a non-null value.");
+                });
+            });
         }
 
         @Test
