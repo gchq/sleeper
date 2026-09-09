@@ -29,12 +29,16 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemoryTestInstance;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 
 @InMemoryDslTest
 @EnableKubernetesMockClient
 public class AwsEksBulkImportDriverK8sIT {
+
+    private static final String DRIVER_PODS_PATH = "/api/v1/namespaces/test-namespace/pods?labelSelector=spark-role%3Ddriver";
 
     InstanceProperties instanceProperties = InMemoryTestInstance.createDslInstanceProperties();
     SystemTestContext context;
@@ -49,10 +53,10 @@ public class AwsEksBulkImportDriverK8sIT {
     }
 
     @Test
-    void shouldGetNoPodsInNamespace() {
+    void shouldGetNoDriverPodsInNamespace() {
         // Given
         server.expect().get()
-                .withPath("/api/v1/namespaces/test-namespace/pods")
+                .withPath(DRIVER_PODS_PATH)
                 .andReturn(200, new PodListBuilder().build())
                 .always();
 
@@ -61,17 +65,23 @@ public class AwsEksBulkImportDriverK8sIT {
     }
 
     @Test
-    void shouldGetOnePodInNamespace() {
+    void shouldGetOneDriverPodInNamespace() {
         // Given
         server.expect().get()
-                .withPath("/api/v1/namespaces/test-namespace/pods")
+                .withPath(DRIVER_PODS_PATH)
                 .andReturn(200, new PodListBuilder()
                         .addNewItem()
+                        .withNewMetadata()
+                        .withName("test-driver")
+                        .withLabels(Map.of("spark-role", "driver"))
+                        .endMetadata()
                         .and().build())
                 .always();
 
         // When / Then
-        assertThat(driver().getPods()).hasSize(1);
+        assertThat(driver().getPods())
+                .singleElement()
+                .satisfies(pod -> assertThat(pod).contains("test-driver"));
     }
 
     @Test
