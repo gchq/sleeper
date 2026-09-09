@@ -59,7 +59,7 @@ public interface EKSProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EKS_CLUSTER_TYPE = Index.propertyBuilder("sleeper.bulk.import.eks.cluster.type")
             .description("(EKS mode only) The type of EKS cluster to deploy for bulk import.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(EksClusterType.class))
-            .defaultValue(EksClusterType.FARGATE.toString())
+            .defaultValue(EksClusterType.AUTOMODE.toString())
             .validationPredicate(EksClusterType::isValid)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true)
@@ -69,7 +69,7 @@ public interface EKSProperty {
                     "cluster. If this is enabled, related properties will be applied. Otherwise it will use the " +
                     "default behaviour for EKS Auto Mode.\n" +
                     "Node pool configuration is currently experimental.")
-            .defaultValue("false")
+            .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true)

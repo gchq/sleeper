@@ -81,6 +81,8 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -234,6 +236,16 @@ class InstancePropertiesTest {
         // When / Then
         assertThat(properties.getUnknownProperties())
                 .containsExactly(Map.entry("unknown.property", "123"));
+    }
+
+    @Test
+    void shouldUseAutoModeWithNodePoolConfigurationByDefault() {
+        // Given
+        InstanceProperties properties = new InstanceProperties();
+
+        // When / Then
+        assertThat(properties.get(BULK_IMPORT_EKS_CLUSTER_TYPE)).isEqualTo("AUTOMODE");
+        assertThat(properties.getBoolean(BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL)).isTrue();
     }
 
     @Test
