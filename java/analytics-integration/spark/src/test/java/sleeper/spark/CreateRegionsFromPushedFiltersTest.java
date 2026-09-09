@@ -213,6 +213,21 @@ public class CreateRegionsFromPushedFiltersTest {
     }
 
     @Test
+    void shouldReturnNoRegionsWhenSingleRegionFiltersDoNotOverlap() {
+        // Given
+        GreaterThan greaterThan = new GreaterThan(ROW_KEY_FIELD.getName(), "b");
+        LessThan lessThan = new LessThan(ROW_KEY_FIELD.getName(), "a");
+        Filter[] pushedFilters = new Filter[]{greaterThan, lessThan};
+        CreateRegionsFromPushedFilters createRegionsFromPushedFilters = new CreateRegionsFromPushedFilters(SCHEMA);
+
+        // When
+        List<Region> regions = createRegionsFromPushedFilters.getMinimumRegionCoveringPushedFilters(pushedFilters);
+
+        // Then
+        assertThat(regions).isEmpty();
+    }
+
+    @Test
     void shouldReturnNoRegionsWhenPushedFiltersContradict() {
         // Given
         EqualTo equalTo = new EqualTo(ROW_KEY_FIELD.getName(), "E");

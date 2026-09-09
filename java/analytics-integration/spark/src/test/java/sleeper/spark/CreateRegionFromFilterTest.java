@@ -288,6 +288,19 @@ public class CreateRegionFromFilterTest {
     }
 
     @Test
+    void shouldIgnoreNullValueInInFilter() {
+        // Given
+        In in = new In(ROW_KEY_FIELD.getName(), new Object[]{"A", null});
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(in, SCHEMA);
+
+        // Then
+        Region expectedRegionA = new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "A"));
+        assertThat(regions).containsExactly(expectedRegionA);
+    }
+
+    @Test
     void shouldCreateCorrectRegionFromEqualToFilterOn2ndRowKey() {
         // Given
         EqualTo equalTo = new EqualTo(ROW_KEY_FIELD2.getName(), "E");
