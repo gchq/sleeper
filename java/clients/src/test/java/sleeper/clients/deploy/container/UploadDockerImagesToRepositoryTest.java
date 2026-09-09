@@ -152,6 +152,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     void shouldBuildAndPushImageForDemonstrationCdkApp() throws Exception {
         // Given
         DockerImageConfiguration imageConfig = new DockerImageConfiguration(
+                StackDockerImage.DEFAULT_BASE,
                 List.of(DockerDeployment.builder()
                         .deploymentName("data-generation")
                         .cdkApps(List.of(SleeperInternalCdkApp.DEMONSTRATION))

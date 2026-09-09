@@ -173,12 +173,12 @@ public class UploadArtefacts {
             deploymentId = args.instanceProperties().get(ARTEFACTS_DEPLOYMENT_ID);
             jarsBucket = args.instanceProperties().get(JARS_BUCKET);
             ecrPrefix = args.instanceProperties().get(ECR_REPOSITORY_PREFIX);
-            images = dockerImageConfiguration.getNonBaseImagesToUpload(args.instanceProperties(), args.cdkApp());
+            images = dockerImageConfiguration.getImagesToUpload(args.instanceProperties(), args.cdkApp());
         } else {
             deploymentId = args.deploymentId();
             jarsBucket = null;
             ecrPrefix = SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(args.deploymentId());
-            images = dockerImageConfiguration.getAllNonBaseImagesToUpload();
+            images = dockerImageConfiguration.getAllImagesToUpload();
         }
         if (args.createDeployment()) {
             client.deployArtefactRepositories(deploymentId);

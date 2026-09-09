@@ -33,7 +33,13 @@
                     "name": "EXECUTOR_POD_TEMPLATE",
                     "value.$": "$.executorPodTemplate"
                   }
-                ]
+                ],
+                "resources": {
+                  "requests": {
+                    "cpu": "1",
+                    "memory": "1Gi"
+                  }
+                }
               }
             ],
             "restartPolicy": "Never"
