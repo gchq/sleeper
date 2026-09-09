@@ -23,6 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.deploy.DeployInstanceRequest;
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
@@ -111,9 +112,16 @@ public class DeployNewTestInstanceIT {
             instanceProperties.set(SUBNETS, "test-subnet");
             // And the table properties object gains the table ID after deployment when the table is added
             tableProperties.set(TABLE_ID, tablePropertiesStore.loadByName("system-test").get(TABLE_ID));
-            assertThat(deployRequests).singleElement().satisfies(request -> {
-                assertThat(request.getInstanceConfig()).isEqualTo(new SleeperInstanceConfiguration(instanceProperties, tableProperties));
-            });
+            Path deployAllDir = scriptsDir.resolve(DeployNewTestInstance.DEFAULT_CONFIG_DIRECTORY);
+            assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
+                    .instanceConfig(new SleeperInstanceConfiguration(instanceProperties, tableProperties))
+                    .cdkCommand(CdkCommand.deployNew().withConfigurationDirectory(deployAllDir).toBuilder()
+                            .instanceId("test-instance")
+                            .vpcId("test-vpc")
+                            .subnets("test-subnet")
+                            .build())
+                    .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
+                    .build());
         }
 
         @Test
@@ -248,37 +256,6 @@ public class DeployNewTestInstanceIT {
     @Nested
     @DisplayName("Deploy the loaded configuration")
     class Deploy {
-
-        @Test
-        void shouldDeployDemoConfigurationAsDemonstrationInstance() throws Exception {
-            // When
-            deployAndCaptureRequest();
-
-            // Then it deploys as the demonstration app, with the instance and system-test table it loaded
-            assertThat(deployRequests).singleElement().satisfies(request -> {
-                assertThat(request.getCdkApp()).isEqualTo(SleeperInternalCdkApp.DEMONSTRATION);
-                assertThat(request.getInstanceConfig().getInstanceProperties())
-                        .extracting(properties -> properties.get(ID), properties -> properties.get(VPC_ID),
-                                properties -> properties.get(SUBNETS), properties -> properties.get(FILE_SYSTEM))
-                        .containsExactly("test-instance", "test-vpc", "test-subnet", "test://");
-                assertThat(request.getInstanceConfig().getTableProperties())
-                        .extracting(properties -> properties.get(TABLE_NAME))
-                        .containsExactly("system-test");
-            });
-        }
-
-        @Test
-        void shouldDeployUsingConfigDirNotPropertiesFileByDefault() throws Exception {
-            // When
-            deployAndCaptureRequest();
-
-            // Then the CDK sees the whole config directory, so it also sees the system-test table
-            Path deployAllDir = scriptsDir.resolve(DeployNewTestInstance.DEFAULT_CONFIG_DIRECTORY);
-            assertThat(deployRequests).singleElement().satisfies(request -> {
-                assertThat(request.getCdkCommand().arguments()).contains("configurationDir=" + deployAllDir);
-                assertThat(request.getCdkCommand().arguments()).noneMatch(argument -> argument.startsWith("propertiesFile="));
-            });
-        }
 
         @Test
         void shouldDeployTablesFromConfigurationDirectory() throws Exception {
