@@ -61,7 +61,7 @@ public class AwsEksBulkImportDriverK8sIT {
                 .always();
 
         // When / Then
-        assertThat(driver().getPods()).isEmpty();
+        assertThat(driver().getDriverPods()).isEmpty();
     }
 
     @Test
@@ -79,7 +79,7 @@ public class AwsEksBulkImportDriverK8sIT {
                 .always();
 
         // When / Then
-        assertThat(driver().getPods())
+        assertThat(driver().getDriverPods())
                 .singleElement()
                 .satisfies(pod -> assertThat(pod).contains("test-driver"));
     }

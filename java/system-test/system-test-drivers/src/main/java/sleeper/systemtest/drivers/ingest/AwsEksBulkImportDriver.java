@@ -96,7 +96,7 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
     }
 
     @Override
-    public List<String> getPods() {
+    public List<String> getDriverPods() {
         InstanceProperties properties = instance.getInstanceProperties();
         logEndpointDiagnostics(properties);
         PodList list;
