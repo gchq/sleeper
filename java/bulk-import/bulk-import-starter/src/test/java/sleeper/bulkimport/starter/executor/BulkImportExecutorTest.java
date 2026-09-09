@@ -118,6 +118,24 @@ class BulkImportExecutorTest {
         }
 
         @Test
+        void shouldFailValidationIfJobIdIsNull() {
+            // Given
+            BulkImportJob importJob = jobForTable()
+                    .id(null)
+                    .files(List.of("file1.parquet"))
+                    .build();
+            Instant validationTime = Instant.parse("2023-06-02T15:41:00Z");
+
+            // When
+            executor(atTime(validationTime)).runJob(importJob);
+
+            // Then
+            assertThat(objectKeyToJobFile).isEmpty();
+            assertThat(runJobInvocations).isEmpty();
+            assertThat(tracker.getAllJobs(tableId)).isEmpty();
+        }
+
+        @Test
         void shouldFailValidationIfJobIdContainsMoreThan63Characters() {
             // Given
             String invalidId = UUID.randomUUID().toString() + UUID.randomUUID();
