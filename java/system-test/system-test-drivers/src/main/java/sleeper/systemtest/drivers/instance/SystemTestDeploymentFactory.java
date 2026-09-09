@@ -15,10 +15,8 @@
  */
 package sleeper.systemtest.drivers.instance;
 
-import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.deploy.DeployInstance;
 import sleeper.clients.deploy.container.UploadDockerImages;
-import sleeper.clients.deploy.container.UploadDockerImages.CopyContainerImage;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.util.cdk.InvokeCdk;
@@ -47,11 +45,8 @@ public class SystemTestDeploymentFactory {
     public static UploadDockerImagesToEcr createDockerUploader(SystemTestParameters parameters, SystemTestClients clients) {
         try {
             return new UploadDockerImagesToEcr(
-                    UploadDockerImages.builder()
-                            .scriptsDirectory(parameters.getScriptsDirectory())
-                            .deployConfig(DeployConfiguration.fromScriptsDirectory(parameters.getScriptsDirectory()))
+                    UploadDockerImages.builderWith(parameters.getScriptsDirectory(), clients.getEcr())
                             .commandRunner(clients.getCommandRunner())
-                            .copyImage(CopyContainerImage.withTransferManager(clients.getEcr()))
                             .build(),
                     parameters.getAccount(), parameters.getRegion(), parameters.getDnsSuffix());
         } catch (IOException e) {

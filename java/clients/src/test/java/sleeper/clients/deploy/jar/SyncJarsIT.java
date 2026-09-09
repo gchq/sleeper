@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import sleeper.clients.testutil.JarsBucketITBase;
 
@@ -31,9 +32,25 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 class SyncJarsIT extends JarsBucketITBase {
+
+    @Test
+    void shouldReportArtefactsDeploymentWhenJarsBucketDoesNotExist() {
+        // Given
+        instanceProperties.set(ARTEFACTS_DEPLOYMENT_ID, "missing-artefacts");
+        instanceProperties.set(JARS_BUCKET, "missing-jars-bucket");
+
+        // When / Then
+        assertThatThrownBy(this::uploadJarsToBucket)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Jars bucket does not exist: missing-jars-bucket. " +
+                        "The artefacts deployment may not exist: missing-artefacts")
+                .hasCauseInstanceOf(NoSuchBucketException.class);
+    }
 
     @Nested
     @DisplayName("Upload jars")

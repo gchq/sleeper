@@ -62,8 +62,35 @@ public class SyncJarsRequest {
         return uploadFilter;
     }
 
+    public String getDeploymentId() {
+        return deploymentId;
+    }
+
     public boolean isDeleteOldJars() {
         return deleteOldJars;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(bucketName, deploymentId, uploadFilter, Boolean.valueOf(deleteOldJars));
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof SyncJarsRequest)) {
+            return false;
+        }
+        SyncJarsRequest other = (SyncJarsRequest) obj;
+        return Objects.equals(bucketName, other.bucketName) && Objects.equals(deploymentId, other.deploymentId) && Objects.equals(uploadFilter, other.uploadFilter)
+                && deleteOldJars == other.deleteOldJars;
+    }
+
+    @Override
+    public String toString() {
+        return "SyncJarsRequest{bucketName=" + bucketName + ", deploymentId=" + deploymentId + ", uploadFilter=" + uploadFilter + ", deleteOldJars=" + deleteOldJars + "}";
     }
 
     public static class Builder {

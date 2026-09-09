@@ -55,7 +55,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "b"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 3 positional arguments, found 2");
+                    .hasMessage("Expected 3 positional arguments, found 2: [a, b]");
         }
 
         @Test
@@ -66,7 +66,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "b", "c"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 2 positional arguments, found 3");
+                    .hasMessage("Expected 2 positional arguments, found 3: [a, b, c]");
         }
 
         @Test
@@ -77,7 +77,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "b", "c"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 1 positional argument, found 3");
+                    .hasMessage("Expected 1 positional argument, found 3: [a, b, c]");
         }
 
         @Test
@@ -85,7 +85,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 0 positional arguments, found 1");
+                    .hasMessage("Expected 0 positional arguments, found 1: [a]");
         }
     }
 
@@ -361,6 +361,28 @@ public class CommandArgumentsTest {
             assertThatThrownBy(() -> usage())
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("System arguments should be included as positional arguments: [c]");
+        }
+
+        @Test
+        void shouldFailWhenUnexpectedPositionalArgumentIsGivenWithSystemArgument() {
+            // Given
+            setSystemArguments("system");
+
+            // When / Then
+            assertThatThrownBy(() -> parse("system-value", "other-value"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 0 positional arguments, found 1: [other-value]");
+        }
+
+        @Test
+        void shouldFailWhenSystemArgumentIsNotGiven() {
+            // Given
+            setSystemArguments("system");
+
+            // When / Then
+            assertThatThrownBy(() -> parse())
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected argument was not supplied by the system");
         }
     }
 
@@ -693,7 +715,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "--some-option", "b"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 0 positional arguments, found 1");
+                    .hasMessage("Expected 0 positional arguments, found 1: [a]");
         }
 
         @Test
@@ -704,7 +726,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "--yes"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 0 positional arguments, found 1");
+                    .hasMessage("Expected 0 positional arguments, found 1: [a]");
         }
 
         @Test
@@ -715,7 +737,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "--yes", "b"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 0 positional arguments, found 1");
+                    .hasMessage("Expected 0 positional arguments, found 1: [a]");
         }
 
         @Test
@@ -727,7 +749,7 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "--pass", "--yes"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 1 positional argument, found 2");
+                    .hasMessage("Expected 1 positional argument, found 2: [a, --pass]");
         }
 
         @Test
@@ -738,7 +760,42 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> parse("a", "b"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected 3 positional arguments, found 2");
+                    .hasMessage("Expected 3 positional arguments, found 2: [a, b]");
+        }
+
+        @Test
+        void shouldFailWhenUnexpectedPassThroughArgumentIsGivenWithSystemArgumentBeforeRecognisedFlag() {
+            // Given
+            setOptions(CommandOption.longFlag("yes"));
+            setSystemArguments("system");
+
+            // When / Then
+            assertThatThrownBy(() -> parse("system-value", "other-value", "--yes"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 0 positional arguments, found 1: [other-value]");
+        }
+
+        @Test
+        void shouldFailWhenNotEnoughArgumentsAreGivenWithSystemArgument() {
+            // Given
+            setPositionalArguments("system", "other");
+            setSystemArguments("system");
+
+            // When / Then
+            assertThatThrownBy(() -> parse("system-value"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 1 positional argument, found 0: []");
+        }
+
+        @Test
+        void shouldFailWhenSystemArgumentIsNotGiven() {
+            // Given
+            setSystemArguments("system");
+
+            // When / Then
+            assertThatThrownBy(() -> parse())
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected argument was not supplied by the system");
         }
     }
 
