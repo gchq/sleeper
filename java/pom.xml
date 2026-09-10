@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.37.5-SNAPSHOT</version>
+    <version>0.37.6-SNAPSHOT</version>
 
     <modules>
         <module>analytics-integration</module>
@@ -154,7 +154,7 @@
         To find the version below, we logged out the code location for the class in the Spark
         driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
         -->
-        <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
+        <aws-java-sdk-v2.bulk-import.version>2.54.13</aws-java-sdk-v2.bulk-import.version>
         <aws-crt.version>0.48.4</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>

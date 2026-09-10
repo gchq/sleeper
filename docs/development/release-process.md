@@ -104,7 +104,8 @@ Choose the same options as above, and results should be returned.
     and release preparation.
 
 17. Raise a pull request from the develop branch to the main branch. Once the build passes, merge the pull request into
-    main. Then checkout the main branch, set the tag to `v${VERSION}` and push the tag using `git push --tags`.
+    main. Then checkout the main branch, use a tag name like `v${VERSION}` and tag and push using `git tag v${VERSION}`,
+    `git push origin v${VERSION}`.
 
 18. Create a pull request to update the version number for the next release as a snapshot version. Set the version
     number using `scripts/dev/updateVersionNumber.sh <version>`. Merge it when everything passes.

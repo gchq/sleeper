@@ -16,6 +16,8 @@ vulnerabilities:
   # github.com/docker/docker
   - id: CVE-2026-34040
   - id: CVE-2026-33997
+  # github.com/containerd/containerd/v2
+  - id: CVE-2026-53495
   # golang.org/x/mod
   - id: CVE-2026-56864
   - id: CVE-2026-56865
