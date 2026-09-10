@@ -17,7 +17,7 @@ set -ex
 unset CDPATH
 
 PROJECT_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
-BUILD_IMAGE="ghcr.io/gchq/sleeper-rust-builder-al2023:latest"
+BUILD_IMAGE=${RUST_BUILD_IMAGE:-"ghcr.io/gchq/sleeper-rust-builder-al2023:latest"}
 
 PLATFORM=$1
 shift
