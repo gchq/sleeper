@@ -50,19 +50,23 @@ public class CreateRegionsFromPushedFilters {
         SplitPushedFiltersIntoSingleAndMultiRegionFilters split = new SplitPushedFiltersIntoSingleAndMultiRegionFilters();
         SingleAndMultiRegionFilters singleAndMultiRegionFilters = split.splitPushedFilters(pushedFilters);
         Region regionFromSingleRegionFilters = getRegionFromSingleRegionFilters(singleAndMultiRegionFilters.getSingleRegionFilters());
-        List<Region> regionsFromMultiRegionFilters = getRegionsFromMultiRegionFilters(singleAndMultiRegionFilters.getMultiRegionFilters());
-        if (!regionsFromMultiRegionFilters.isEmpty()) {
-            List<Region> regions = new ArrayList<>();
-            for (Region region : regionsFromMultiRegionFilters) {
-                Optional<Region> optionalIntersectedRegion = RegionIntersector.intersectRegions(region, regionFromSingleRegionFilters, rangeFactory, schema);
-                if (optionalIntersectedRegion.isPresent()) {
-                    regions.add(optionalIntersectedRegion.get());
+        // As the filters are combined with AND, each multi-region filter must be intersected with all the regions
+        // found so far, i.e. the result is the cross product of the regions of the individual filters.
+        List<Region> regions = List.of(regionFromSingleRegionFilters);
+        for (Filter filter : singleAndMultiRegionFilters.getMultiRegionFilters()) {
+            List<Region> regionsFromFilter = CreateRegionFromFilter.createRegionsFromFilter(filter, schema).get();
+            List<Region> intersectedRegions = new ArrayList<>();
+            for (Region regionSoFar : regions) {
+                for (Region regionFromFilter : regionsFromFilter) {
+                    Optional<Region> optionalIntersectedRegion = RegionIntersector.intersectRegions(regionSoFar, regionFromFilter, rangeFactory, schema);
+                    if (optionalIntersectedRegion.isPresent()) {
+                        intersectedRegions.add(optionalIntersectedRegion.get());
+                    }
                 }
             }
-            return regions;
-        } else {
-            return List.of(regionFromSingleRegionFilters);
+            regions = intersectedRegions;
         }
+        return regions;
     }
 
     private Region getRegionFromSingleRegionFilters(List<Filter> singleRegionFilters) {
@@ -75,13 +79,5 @@ public class CreateRegionsFromPushedFilters {
             intersectedRegion = RegionIntersector.intersectRegions(intersectedRegion, region, new RangeFactory(schema), schema).get();
         }
         return intersectedRegion;
-    }
-
-    private List<Region> getRegionsFromMultiRegionFilters(List<Filter> multiRegionFilters) {
-        List<Region> regions = new ArrayList<>();
-        for (Filter filter : multiRegionFilters) {
-            regions.addAll(CreateRegionFromFilter.createRegionsFromFilter(filter, schema).get());
-        }
-        return regions;
     }
 }

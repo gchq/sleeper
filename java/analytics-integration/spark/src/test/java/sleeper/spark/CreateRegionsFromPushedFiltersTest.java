@@ -152,6 +152,82 @@ public class CreateRegionsFromPushedFiltersTest {
     }
 
     @Test
+    void shouldReturnCorrectRegionsWhenInFiltersArePushedForTwoRowKeys() {
+        // Given
+        In inRowKey1 = new In(ROW_KEY_FIELD.getName(), new Object[]{"A", "B"});
+        In inRowKey2 = new In(ROW_KEY_FIELD2.getName(), new Object[]{"C", "D"});
+        Filter[] pushedFilters = new Filter[]{inRowKey1, inRowKey2};
+        CreateRegionsFromPushedFilters createRegionsFromPushedFilters = new CreateRegionsFromPushedFilters(SCHEMA2);
+
+        // When
+        List<Region> regions = createRegionsFromPushedFilters.getMinimumRegionCoveringPushedFilters(pushedFilters);
+
+        // Then
+        Region expectedRegionAC = RegionCanonicaliser.canonicaliseRegion(new Region(List.of(
+                RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD, "A"), RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD2, "C"))));
+        Region expectedRegionAD = RegionCanonicaliser.canonicaliseRegion(new Region(List.of(
+                RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD, "A"), RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD2, "D"))));
+        Region expectedRegionBC = RegionCanonicaliser.canonicaliseRegion(new Region(List.of(
+                RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD, "B"), RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD2, "C"))));
+        Region expectedRegionBD = RegionCanonicaliser.canonicaliseRegion(new Region(List.of(
+                RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD, "B"), RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD2, "D"))));
+        assertThat(regions.stream().map(RegionCanonicaliser::canonicaliseRegion))
+                .containsExactlyInAnyOrder(expectedRegionAC, expectedRegionAD, expectedRegionBC, expectedRegionBD);
+    }
+
+    @Test
+    void shouldReturnCorrectRegionsWhenInAndEqualToFiltersArePushedForTwoRowKeys() {
+        // Given
+        In inRowKey1 = new In(ROW_KEY_FIELD.getName(), new Object[]{"A", "B"});
+        EqualTo equalToRowKey2 = new EqualTo(ROW_KEY_FIELD2.getName(), "C");
+        Filter[] pushedFilters = new Filter[]{inRowKey1, equalToRowKey2};
+        CreateRegionsFromPushedFilters createRegionsFromPushedFilters = new CreateRegionsFromPushedFilters(SCHEMA2);
+
+        // When
+        List<Region> regions = createRegionsFromPushedFilters.getMinimumRegionCoveringPushedFilters(pushedFilters);
+
+        // Then
+        Region expectedRegionAC = RegionCanonicaliser.canonicaliseRegion(new Region(List.of(
+                RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD, "A"), RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD2, "C"))));
+        Region expectedRegionBC = RegionCanonicaliser.canonicaliseRegion(new Region(List.of(
+                RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD, "B"), RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD2, "C"))));
+        assertThat(regions.stream().map(RegionCanonicaliser::canonicaliseRegion))
+                .containsExactlyInAnyOrder(expectedRegionAC, expectedRegionBC);
+    }
+
+    @Test
+    void shouldReturnOverlapOnlyWhenTwoInFiltersArePushedForSameRowKey() {
+        // Given
+        In in1 = new In(ROW_KEY_FIELD.getName(), new Object[]{"A", "B"});
+        In in2 = new In(ROW_KEY_FIELD.getName(), new Object[]{"B", "C"});
+        Filter[] pushedFilters = new Filter[]{in1, in2};
+        CreateRegionsFromPushedFilters createRegionsFromPushedFilters = new CreateRegionsFromPushedFilters(SCHEMA);
+
+        // When
+        List<Region> regions = createRegionsFromPushedFilters.getMinimumRegionCoveringPushedFilters(pushedFilters);
+
+        // Then
+        Region expectedRegionB = RegionCanonicaliser.canonicaliseRegion(new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "B")));
+        assertThat(regions.stream().map(RegionCanonicaliser::canonicaliseRegion))
+                .containsExactly(expectedRegionB);
+    }
+
+    @Test
+    void shouldReturnNoRegionsWhenPushedFiltersContradict() {
+        // Given
+        EqualTo equalTo = new EqualTo(ROW_KEY_FIELD.getName(), "E");
+        In in = new In(ROW_KEY_FIELD.getName(), new Object[]{"A", "B"});
+        Filter[] pushedFilters = new Filter[]{equalTo, in};
+        CreateRegionsFromPushedFilters createRegionsFromPushedFilters = new CreateRegionsFromPushedFilters(SCHEMA);
+
+        // When
+        List<Region> regions = createRegionsFromPushedFilters.getMinimumRegionCoveringPushedFilters(pushedFilters);
+
+        // Then
+        assertThat(regions).isEmpty();
+    }
+
+    @Test
     void shouldReturnCorrectRegionWhenEqualToFilterPushedWith2DKey() {
         // Given
         EqualTo equalTo = new EqualTo(ROW_KEY_FIELD.getName(), "E");
