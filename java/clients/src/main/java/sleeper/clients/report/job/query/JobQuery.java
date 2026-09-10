@@ -73,9 +73,9 @@ public interface JobQuery {
         }
         switch (queryType) {
             case ALL:
-                return new AllJobsQuery(table);
+                return new AllJobsQuery();
             case UNFINISHED:
-                return new UnfinishedJobsQuery(table);
+                return new UnfinishedJobsQuery();
             case DETAILED:
                 return DetailedJobsQuery.fromParameters(queryParameters);
             case RANGE:

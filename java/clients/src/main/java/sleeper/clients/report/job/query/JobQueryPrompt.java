@@ -44,9 +44,9 @@ public class JobQueryPrompt {
         if ("".equals(type)) {
             return null;
         } else if ("a".equalsIgnoreCase(type)) {
-            return new AllJobsQuery(table);
+            return new AllJobsQuery();
         } else if ("u".equalsIgnoreCase(type)) {
-            return new UnfinishedJobsQuery(table);
+            return new UnfinishedJobsQuery();
         } else if ("d".equalsIgnoreCase(type)) {
             String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
             return DetailedJobsQuery.fromParameters(jobIds);

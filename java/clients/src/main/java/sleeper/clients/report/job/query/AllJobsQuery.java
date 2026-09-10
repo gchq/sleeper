@@ -15,7 +15,6 @@
  */
 package sleeper.clients.report.job.query;
 
-import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -27,9 +26,6 @@ import java.util.List;
  * A query to generate a report on all jobs held in a job tracker.
  */
 public class AllJobsQuery implements JobQuery {
-
-    public AllJobsQuery(TableStatus table) {
-    }
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {

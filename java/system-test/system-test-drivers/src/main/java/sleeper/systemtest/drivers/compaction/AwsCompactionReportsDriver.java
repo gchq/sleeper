@@ -38,6 +38,8 @@ import sleeper.systemtest.dsl.reporting.SystemTestReport;
 import java.time.Instant;
 import java.util.List;
 
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+
 public class AwsCompactionReportsDriver implements CompactionReportsDriver {
     private final SystemTestInstanceContext instance;
     private final DynamoDbClient dynamoClient;
@@ -56,14 +58,14 @@ public class AwsCompactionReportsDriver implements CompactionReportsDriver {
             new CompactionJobStatusReport(jobTracker(),
                     new StandardCompactionJobStatusReporter(out),
                     instance.getTableStatus(),
-                    new RangeJobsQuery(instance.getTableStatus(), startTime, Instant.MAX))
+                    new RangeJobsQuery(startTime, Instant.MAX))
                     .run();
         };
     }
 
     public List<CompactionJobStatus> jobs(ReportingContext reportingContext) {
-        return new RangeJobsQuery(instance.getTableStatus(), reportingContext.getRecordingStartTime(), Instant.MAX)
-                .run(jobTracker());
+        return new RangeJobsQuery(reportingContext.getRecordingStartTime(), Instant.MAX)
+                .run(jobTracker(), instance.getTableProperties().get(TABLE_ID));
     }
 
     @Override
