@@ -97,9 +97,9 @@ public class CompactionTaskResources {
         IFunction taskCreator = lambdaToCreateCompactionTasks(coreStacks, lambdaCode, jobResources.getCompactionJobsQueue());
         CustomResource autoStopEcsClusterTasks = coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(stack, cluster, taskCreator);
         if (ec2Resources != null) {
-            // Ensures the EC2 Auto Scaling Group is not scaled down/deleted until after ECS tasks have been stopped.
+            // Ensures ECS tasks are stopped before the EC2 Auto Scaling Group is scaled down and deleted.
             // Otherwise the custom termination policy (which only terminates empty instances) can block deletion.
-            ec2Resources.deleteAfter(autoStopEcsClusterTasks);
+            ec2Resources.stopTasksBeforeDeletingScalingGroup(autoStopEcsClusterTasks);
         }
 
         // Allow running compaction tasks
