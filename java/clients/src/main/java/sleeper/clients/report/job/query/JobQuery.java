@@ -116,7 +116,7 @@ public interface JobQuery {
             TableStatus table, Type queryType, String queryParameters, Clock clock,
             ConsoleInput input, Map<String, JobQuery> extraQueryTypes) {
         if (queryType == JobQuery.Type.PROMPT) {
-            return JobQueryPrompt.from(table, clock, input, extraQueryTypes);
+            return JobQueryPrompt.from(clock, input, extraQueryTypes);
         }
         return from(queryType, queryParameters, clock);
     }
