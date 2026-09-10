@@ -24,7 +24,6 @@ import sleeper.clients.report.compaction.job.CompactionJobStatusReporter;
 import sleeper.clients.report.compaction.job.JsonCompactionJobStatusReporter;
 import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.report.job.query.JobQuery;
-import sleeper.clients.report.job.query.JobQueryArgument;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -32,13 +31,17 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandArgumentsException;
+import sleeper.core.util.cli.CommandLineUsage;
+import sleeper.core.util.cli.CommandOption;
 
 import java.time.Clock;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
@@ -80,51 +83,92 @@ public class CompactionJobStatusReport {
     }
 
     public static void main(String[] args) {
-        try {
-            if (args.length < 2 || args.length > 5) {
-                throw new IllegalArgumentException("Wrong number of arguments");
-            }
-            String instanceId = args[0];
-            String tableName = args[1];
-            CompactionJobStatusReporter reporter = getReporter(args, 2);
-            JobQuery.Type queryType = JobQueryArgument.readTypeArgument(args, 3);
-            String queryParameters = optionalArgument(args, 4).orElse(null);
+        Arguments reportArgs = CommandArguments.parseAndValidateOrExit(USAGE, args, CompactionJobStatusReport::readArguments);
 
-            try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                    DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                    StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
-                String accountName = stsClient.getCallerIdentity().account();
-                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
-                DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-                TableStatus table = tableIndex.getTableByName(tableName)
-                        .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
-                CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-                JobQuery query = JobQuery.fromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
-                new CompactionJobStatusReport(tracker, reporter, query).run();
-            }
-        } catch (IllegalArgumentException e) {
-            System.err.println(e.getMessage());
-            printUsage();
-            System.exit(1);
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, reportArgs.instanceId());
+            DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
+            TableStatus table = tableIndex.getTableByName(reportArgs.tableName())
+                    .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + reportArgs.tableName()));
+            CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
+            JobQuery query = JobQuery.fromParametersOrPrompt(table, reportArgs.queryType(),
+                    reportArgs.startTime() + "," + reportArgs.endTime(),
+                    Clock.systemUTC(), ConsoleInput.stdIn());
+            new CompactionJobStatusReport(tracker, REPORTERS.get(reportArgs.reportType().toUpperCase(Locale.ROOT)), query).run();
         }
+
     }
 
-    private static void printUsage() {
-        System.err.println("Usage: <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters> \n" +
-                "Query types are:\n" +
-                "-a (Return all jobs)\n" +
-                "-d (Detailed, provide a jobId)\n" +
-                "-r (Provide startRange and endRange separated by commas in format yyyyMMddhhmmss)\n" +
-                "-u (Unfinished jobs)");
+    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
+            .positionalArguments(List.of("instance-id", "table-name", "report-type"))
+            .options(List.of(CommandOption.shortFlag('a', "all"),
+                    CommandOption.shortOption('d', "detailed"),
+                    CommandOption.shortFlag('r', "range"),
+                    CommandOption.shortFlag('u', "unfinished"),
+                    CommandOption.longOption("start-time"),
+                    CommandOption.longOption("end-time")))
+            .helpSummary("" +
+                    "A report on the status of the compaction jobs within a sleeper instance.\n" +
+                    "\n" +
+                    "--report-type\n" +
+                    "Format of the report. One of STANDARD or JSON. Defaults to STANDARD.\n" +
+                    "\n" +
+                    "Available query types for the report are:\n" +
+                    "[Defaults to all if none set]" +
+                    "\n" +
+                    "-a --all \n" +
+                    "Returns all the jobs for the report.\n" +
+                    "\n" +
+                    "-d --detailed <jobId>\n" +
+                    "Returns a detailed report for the job ID provided." +
+                    "\n" +
+                    "-r --range --start-time <startTime> --end-time <endTime>\n" +
+                    "Returns all jobs within a given range. If not set, defaults to 4 hours.\n" +
+                    "Alternatively, can be declared with --start-time and --end-time in the following format yyyyMMddhhmmss.\n" +
+                    "\n" +
+                    "-u --unfinished\n" +
+                    "Returns all unfinished jobs.")
+            .build();
+
+    /**
+     * Reads the arguments from the command line.
+     *
+     * @param  arguments the parsed command line arguments
+     * @return           the arguments
+     */
+    public static Arguments readArguments(CommandArguments arguments) {
+        JobQuery.Type queryType = null; //Need method
+        String jobId = null; // Need to set
+        String startTime = null; // Need to set
+        String endTime = null; // Need to set
+        return new Arguments(arguments.getString("instance-id"),
+                arguments.getString("table-name"),
+                arguments.getString("report-type"),
+                queryType,
+                jobId,
+                startTime,
+                endTime);
     }
 
-    private static CompactionJobStatusReporter getReporter(String[] args, int index) {
-        String reporterType = optionalArgument(args, index)
-                .map(str -> str.toUpperCase(Locale.ROOT))
-                .orElse(DEFAULT_REPORTER);
-        if (!REPORTERS.containsKey(reporterType)) {
-            throw new IllegalArgumentException("Output type not supported: " + reporterType);
+    /**
+     * Holds the arguments for the compaction job status report command.
+     *
+     * @param instanceId the Sleeper instance ID
+     * @param tableName  the table name
+     * @param reportType the report format, either STANDARD or JSON
+     * @param queryType  the type of query to execute for the compaction status report
+     * @param jobId      optional jobId for the detailed query
+     * @param startTime  optional start time for the range query
+     * @param endTime    optional end time for the range query
+     */
+    public record Arguments(String instanceId, String tableName, String reportType, JobQuery.Type queryType, String jobId, String startTime, String endTime) {
+        public Arguments {
+            if (!REPORTERS.containsKey(reportType.toUpperCase(Locale.ROOT))) {
+                throw new CommandArgumentsException("Report type not supported: " + reportType + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
+            }
         }
-        return REPORTERS.get(reporterType);
     }
 }
