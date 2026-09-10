@@ -27,6 +27,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.AddTableRequest;
+import sleeper.core.table.AddTableRequestSerDe;
 import sleeper.restapi.RestApiTestBase;
 
 import java.nio.charset.StandardCharsets;
