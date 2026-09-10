@@ -315,7 +315,7 @@ class SleeperClientTest {
         // When / Then
         assertThatThrownBy(() -> sleeperClient.bulkImportFromFiles(platform, job))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("lowercase alphanumerics and dashes");
+                .hasMessage("Job Ids must only contain lowercase alphanumerics and dashes.");
         assertThat(instance.bulkImportQueues()).isEmpty();
     }
 
@@ -332,7 +332,7 @@ class SleeperClientTest {
         // When / Then
         assertThatThrownBy(() -> sleeperClient.bulkImportFromFiles(platform, job))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("up to 63 characters");
+                .hasMessage("Job IDs are only allowed to be up to 63 characters long.");
         assertThat(instance.bulkImportQueues()).isEmpty();
     }
 
