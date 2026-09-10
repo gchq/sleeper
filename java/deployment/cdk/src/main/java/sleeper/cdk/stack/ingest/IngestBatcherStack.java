@@ -63,6 +63,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY;
 
 @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class IngestBatcherStack extends NestedStack {
@@ -117,7 +118,7 @@ public class IngestBatcherStack extends NestedStack {
                         .build())
                 .timeToLiveAttribute(DynamoDBIngestRequestFormat.EXPIRY_TIME)
                 .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
-                        .pointInTimeRecoveryEnabled(false)
+                        .pointInTimeRecoveryEnabled(instanceProperties.getBoolean(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY))
                         .build())
                 .build();
 

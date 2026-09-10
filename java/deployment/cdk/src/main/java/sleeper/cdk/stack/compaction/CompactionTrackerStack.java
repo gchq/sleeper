@@ -33,6 +33,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY;
 
 public class CompactionTrackerStack extends NestedStack implements CompactionTrackerResources {
     private final Table updatesTable;
@@ -61,7 +62,7 @@ public class CompactionTrackerStack extends NestedStack implements CompactionTra
                         .build())
                 .timeToLiveAttribute(DynamoDBCompactionJobTracker.EXPIRY_DATE)
                 .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
-                        .pointInTimeRecoveryEnabled(false)
+                        .pointInTimeRecoveryEnabled(instanceProperties.getBoolean(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY))
                         .build())
                 .build();
 
@@ -76,7 +77,7 @@ public class CompactionTrackerStack extends NestedStack implements CompactionTra
                         .build())
                 .timeToLiveAttribute(DynamoDBCompactionJobTracker.EXPIRY_DATE)
                 .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
-                        .pointInTimeRecoveryEnabled(false)
+                        .pointInTimeRecoveryEnabled(instanceProperties.getBoolean(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY))
                         .build())
                 .build();
 
@@ -95,7 +96,7 @@ public class CompactionTrackerStack extends NestedStack implements CompactionTra
                         .build())
                 .timeToLiveAttribute(DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE)
                 .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
-                        .pointInTimeRecoveryEnabled(false)
+                        .pointInTimeRecoveryEnabled(instanceProperties.getBoolean(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY))
                         .build())
                 .build();
 
