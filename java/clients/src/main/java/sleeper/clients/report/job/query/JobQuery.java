@@ -16,7 +16,6 @@
 package sleeper.clients.report.job.query;
 
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -89,7 +88,6 @@ public interface JobQuery {
     /**
      * Creates a query for jobs based on parameters. Takes input from the console for the PROMPT query type.
      *
-     * @param  table           the Sleeper table to generate a report for
      * @param  queryType       the type of query to run
      * @param  queryParameters the parameters for the query, if required
      * @param  clock           the clock to find the current time
@@ -97,14 +95,13 @@ public interface JobQuery {
      * @return                 the query
      */
     static JobQuery fromParametersOrPrompt(
-            TableStatus table, Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
-        return fromParametersOrPrompt(table, queryType, queryParameters, clock, input, Map.of());
+            Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
+        return fromParametersOrPrompt(queryType, queryParameters, clock, input, Map.of());
     }
 
     /**
      * Creates a query for jobs based on parameters. Takes input from the console for the PROMPT query type.
      *
-     * @param  table           the Sleeper table to generate a report for
      * @param  queryType       the type of query to run
      * @param  queryParameters the parameters for the query, if required
      * @param  clock           the clock to find the current time
@@ -113,8 +110,8 @@ public interface JobQuery {
      * @return                 the query
      */
     static JobQuery fromParametersOrPrompt(
-            TableStatus table, Type queryType, String queryParameters, Clock clock,
-            ConsoleInput input, Map<String, JobQuery> extraQueryTypes) {
+            Type queryType, String queryParameters, Clock clock, ConsoleInput input,
+            Map<String, JobQuery> extraQueryTypes) {
         if (queryType == JobQuery.Type.PROMPT) {
             return JobQueryPrompt.from(clock, input, extraQueryTypes);
         }

@@ -112,7 +112,7 @@ public class IngestStatusReportScreen {
 
     private void runIngestJobStatusReport(InstanceProperties properties, TableStatus table,
             JobQuery.Type queryType, String queryParameters) {
-        JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), in);
+        JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), in);
         new IngestJobStatusReport(trackers.loadIngestJobTracker(properties), table, query,
                 new StandardIngestJobStatusReporter(out.printStream()),
                 queueClient, properties, getStepCount.apply(properties)).run();

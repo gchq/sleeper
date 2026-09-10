@@ -84,7 +84,6 @@ public class IngestJobStatusReport {
     /**
      * Creates a query for ingest and bulk import jobs to include in a report.
      *
-     * @param  table           the Sleeper table to include jobs for
      * @param  queryType       the type of query
      * @param  queryParameters parameters for the query, as specified on the command line
      * @param  clock           a clock to get the current time, to read relative time ranges
@@ -92,9 +91,8 @@ public class IngestJobStatusReport {
      * @return                 the query
      */
     public static JobQuery queryfromParametersOrPrompt(
-            TableStatus table, JobQuery.Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
-        return JobQuery.fromParametersOrPrompt(table, queryType, queryParameters, clock, input,
-                Map.of("n", new RejectedJobsQuery()));
+            JobQuery.Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
+        return JobQuery.fromParametersOrPrompt(queryType, queryParameters, clock, input, Map.of("n", new RejectedJobsQuery()));
     }
 
     /**
@@ -132,7 +130,7 @@ public class IngestJobStatusReport {
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
                 IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-                JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
+                JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
                 new IngestJobStatusReport(tracker, table, query, reporter,
                         QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
                         PersistentEmrStepCount.byStatus(instanceProperties, emrClient)).run();

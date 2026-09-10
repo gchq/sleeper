@@ -100,7 +100,7 @@ public class CompactionJobStatusReport {
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
                 CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-                JobQuery query = JobQuery.fromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
+                JobQuery query = JobQuery.fromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
                 new CompactionJobStatusReport(tracker, reporter, table, query).run();
             }
         } catch (IllegalArgumentException e) {
