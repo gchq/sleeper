@@ -66,7 +66,7 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
     }
 
     public SystemTestReport jobsReport() {
-        return (out, startTime) -> new IngestJobStatusReport(jobTracker(),
+        return (out, startTime) -> new IngestJobStatusReport(jobTracker(), instance.getTableStatus(),
                 new RangeJobsQuery(instance.getTableStatus(), startTime, Instant.MAX),
                 new StandardIngestJobStatusReporter(out), queueMessages, instance.getInstanceProperties(),
                 PersistentEmrStepCount.byStatus(instance.getInstanceProperties(), emr))

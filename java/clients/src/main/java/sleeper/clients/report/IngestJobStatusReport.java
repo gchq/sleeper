@@ -64,17 +64,15 @@ public class IngestJobStatusReport {
     private final IngestJobStatusReporter reporter;
     private final QueueMessageCount.Client queueClient;
     private final InstanceProperties properties;
-    private final JobQuery.Type queryType;
     private final JobQuery query;
     private final Map<String, Integer> persistentEmrStepCount;
 
     public IngestJobStatusReport(
-            IngestJobTracker tracker, JobQuery query,
+            IngestJobTracker tracker, TableStatus tableStatus, JobQuery query,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
         this.tracker = tracker;
         this.query = query;
-        this.queryType = query.getType();
         this.reporter = reporter;
         this.queueClient = queueClient;
         this.properties = properties;
@@ -105,7 +103,7 @@ public class IngestJobStatusReport {
             return;
         }
         reporter.report(
-                query.run(tracker), queryType,
+                query.run(tracker), query.getType(),
                 IngestQueueMessages.from(properties, queueClient),
                 persistentEmrStepCount);
     }
@@ -133,7 +131,7 @@ public class IngestJobStatusReport {
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
                 IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
                 JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
-                new IngestJobStatusReport(tracker, query, reporter,
+                new IngestJobStatusReport(tracker, table, query, reporter,
                         QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
                         PersistentEmrStepCount.byStatus(instanceProperties, emrClient)).run();
             }
