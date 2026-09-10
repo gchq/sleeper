@@ -98,8 +98,8 @@ public class FilesStatusReport {
             .positionalArguments(List.of("instance-id", "table-name"))
             .options(List.of(
                     CommandOption.longOption("max-no-ref-files"),
-                    CommandOption.longFlag("verbose"),
-                    CommandOption.longOption("report-type")))
+                    CommandOption.longOption("report-type"),
+                    CommandOption.longFlag("verbose")))
             .helpSummary("" +
                     "Creates a report on the status of files in a Sleeper table.\n" +
                     "\n" +
