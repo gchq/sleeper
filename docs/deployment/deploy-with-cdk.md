@@ -25,6 +25,19 @@ our [publishing tools](../development/publishing.md) to prepare the artefacts.
 It's important to upload artefacts from within AWS to avoid lengthy uploads into AWS. Usually this is done from an EC2
 instance.
 
+#### Custom container images
+
+A custom `SleeperArtefacts` implementation can supply `SleeperContainerImages` through
+`SleeperInstanceArtefacts`. Implement `SleeperContainerImages.getDockerImageName(DockerDeployment)`
+to return the full image reference for a deployment, including its registry and tag or digest.
+`SleeperContainerImagesFromProperties` retains the standard repository and version-based naming.
+
+For EKS bulk import, the selected image is used for the Spark submission pod and recorded in the
+CDK-defined property `sleeper.bulk.import.eks.image`. The Spark driver and executor pods read the
+same image from that property. Instances deployed before this property was introduced continue
+using the standard repository and version-based name until they are redeployed. Custom image
+registries must be reachable and readable from the EKS cluster.
+
 #### `uploadArtefacts.sh`
 
 This script can upload artefacts to an existing CDK deployment. You can either pass in the deployment ID that you used
