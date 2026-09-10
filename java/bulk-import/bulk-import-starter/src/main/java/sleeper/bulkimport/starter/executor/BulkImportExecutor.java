@@ -101,11 +101,15 @@ public class BulkImportExecutor {
     private boolean validateJob(BulkImportJob bulkImportJob) {
         List<String> failedChecks = new ArrayList<>();
         String id = bulkImportJob.getId();
-        if (!LOWER_ALPHANUMERICS_AND_DASHES.test(id)) {
-            failedChecks.add("Job Ids must only contain lowercase alphanumerics and dashes.");
-        }
-        if (id.length() > 63) {
-            failedChecks.add("Job IDs are only allowed to be up to 63 characters long.");
+        if (null == id) {
+            failedChecks.add("The job ID must be set to a non-null value.");
+        } else {
+            if (!LOWER_ALPHANUMERICS_AND_DASHES.test(id)) {
+                failedChecks.add("Job Ids must only contain lowercase alphanumerics and dashes.");
+            }
+            if (id.length() > 63) {
+                failedChecks.add("Job IDs are only allowed to be up to 63 characters long.");
+            }
         }
 
         if (null == bulkImportJob.getFiles() || bulkImportJob.getFiles().isEmpty()) {
@@ -116,8 +120,18 @@ public class BulkImportExecutor {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + String.join("\n", failedChecks);
             LOGGER.warn(errorMessage);
-            ingestJobTracker.jobValidated(bulkImportJob.toIngestJob()
-                    .createRejectedEvent(validationTimeSupplier.get(), failedChecks));
+            // In production, IngestJobMessageHandler assigns a missing ID before this executor is reached.
+            // Keep this defensive validation safe for direct executor use while matching the handler's tracking semantics.
+            if (id == null) {
+                ingestJobTracker.jobValidated(bulkImportJob.toIngestJob().toBuilder()
+                        .id(UUID.randomUUID().toString())
+                        .tableId(bulkImportJob.getTableId())
+                        .build()
+                        .createRejectedEvent(validationTimeSupplier.get(), failedChecks));
+            } else {
+                ingestJobTracker.jobValidated(bulkImportJob.toIngestJob()
+                        .createRejectedEvent(validationTimeSupplier.get(), failedChecks));
+            }
             return false;
         } else {
             return true;

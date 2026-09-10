@@ -55,6 +55,10 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class AwsEksBulkImportDriver implements EksBulkImportDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsEksBulkImportDriver.class);
 
+    /** Label set by Spark's Kubernetes scheduler on the pods it creates, to distinguish drivers from executors. */
+    private static final String SPARK_ROLE_LABEL = "spark-role";
+    private static final String SPARK_ROLE_DRIVER = "driver";
+
     private final SystemTestInstanceContext instance;
     private final SentIngestJobsContext sentJobs;
     private final SfnClient sfnClient;
@@ -92,16 +96,17 @@ public class AwsEksBulkImportDriver implements EksBulkImportDriver {
     }
 
     @Override
-    public List<String> getPods() {
+    public List<String> getDriverPods() {
         InstanceProperties properties = instance.getInstanceProperties();
         logEndpointDiagnostics(properties);
         PodList list;
         try (KubernetesClient client = k8sFactory.getClient(properties)) {
             list = client.pods()
                     .inNamespace(properties.get(BULK_IMPORT_EKS_NAMESPACE))
+                    .withLabel(SPARK_ROLE_LABEL, SPARK_ROLE_DRIVER)
                     .list();
         }
-        LOGGER.info("Found pods in Spark namespace: {}", list);
+        LOGGER.info("Found driver pods in Spark namespace: {}", list);
         return list.getItems().stream().map(Pod::toString).toList();
     }
 
