@@ -27,20 +27,8 @@ import java.util.List;
  * A query to generate a report on all jobs held in a job tracker.
  */
 public class AllJobsQuery implements JobQuery {
-    private final String tableId;
 
     public AllJobsQuery(TableStatus table) {
-        this.tableId = table.getTableUniqueId();
-    }
-
-    @Override
-    public List<CompactionJobStatus> run(CompactionJobTracker tracker) {
-        return tracker.getAllJobs(tableId);
-    }
-
-    @Override
-    public List<IngestJobStatus> run(IngestJobTracker tracker) {
-        return tracker.getAllJobs(tableId);
     }
 
     @Override

@@ -38,7 +38,6 @@ public class RangeJobsQuery implements JobQuery {
 
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
 
-    private final String tableId;
     private final Instant start;
     private final Instant end;
 
@@ -46,19 +45,8 @@ public class RangeJobsQuery implements JobQuery {
         if (start.isAfter(end)) {
             throw new IllegalArgumentException("Start of range provided is after end");
         }
-        this.tableId = table.getTableUniqueId();
         this.start = start;
         this.end = end;
-    }
-
-    @Override
-    public List<CompactionJobStatus> run(CompactionJobTracker tracker) {
-        return tracker.getJobsInTimePeriod(tableId, start, end);
-    }
-
-    @Override
-    public List<IngestJobStatus> run(IngestJobTracker tracker) {
-        return tracker.getJobsInTimePeriod(tableId, start, end);
     }
 
     @Override

@@ -38,16 +38,6 @@ public class DetailedJobsQuery implements JobQuery {
     }
 
     @Override
-    public List<CompactionJobStatus> run(CompactionJobTracker tracker) {
-        return run(tracker::getJob);
-    }
-
-    @Override
-    public List<IngestJobStatus> run(IngestJobTracker tracker) {
-        return run(tracker::getJob);
-    }
-
-    @Override
     public List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {
         return run(tracker::getJob);
     }

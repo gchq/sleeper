@@ -27,20 +27,8 @@ import java.util.List;
  * A query to generate a report on jobs in a job tracker that have not yet finished.
  */
 public class UnfinishedJobsQuery implements JobQuery {
-    private final String tableId;
 
     public UnfinishedJobsQuery(TableStatus table) {
-        this.tableId = table.getTableUniqueId();
-    }
-
-    @Override
-    public List<CompactionJobStatus> run(CompactionJobTracker tracker) {
-        return tracker.getUnfinishedJobs(tableId);
-    }
-
-    @Override
-    public List<IngestJobStatus> run(IngestJobTracker tracker) {
-        return tracker.getUnfinishedJobs(tableId);
     }
 
     @Override
