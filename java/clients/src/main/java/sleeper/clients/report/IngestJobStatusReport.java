@@ -64,6 +64,7 @@ public class IngestJobStatusReport {
     private final IngestJobStatusReporter reporter;
     private final QueueMessageCount.Client queueClient;
     private final InstanceProperties properties;
+    private final TableStatus tableStatus;
     private final JobQuery query;
     private final Map<String, Integer> persistentEmrStepCount;
 
@@ -76,6 +77,7 @@ public class IngestJobStatusReport {
         this.reporter = reporter;
         this.queueClient = queueClient;
         this.properties = properties;
+        this.tableStatus = tableStatus;
         this.persistentEmrStepCount = persistentEmrStepCount;
     }
 
@@ -103,7 +105,7 @@ public class IngestJobStatusReport {
             return;
         }
         reporter.report(
-                query.run(tracker), query.getType(),
+                query.run(tracker, tableStatus.getTableUniqueId()), query.getType(),
                 IngestQueueMessages.from(properties, queueClient),
                 persistentEmrStepCount);
     }

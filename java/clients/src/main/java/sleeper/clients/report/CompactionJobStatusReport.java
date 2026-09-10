@@ -56,6 +56,7 @@ public class CompactionJobStatusReport {
 
     private final CompactionJobStatusReporter compactionJobStatusReporter;
     private final CompactionJobTracker compactionJobTracker;
+    private final TableStatus tableStatus;
     private final JobQuery query;
 
     public CompactionJobStatusReport(
@@ -65,6 +66,7 @@ public class CompactionJobStatusReport {
             JobQuery query) {
         this.compactionJobTracker = compactionJobTracker;
         this.compactionJobStatusReporter = reporter;
+        this.tableStatus = tableStatus;
         this.query = query;
     }
 
@@ -75,7 +77,7 @@ public class CompactionJobStatusReport {
         if (query == null) {
             return;
         }
-        compactionJobStatusReporter.report(query.run(compactionJobTracker), query.getType());
+        compactionJobStatusReporter.report(query.run(compactionJobTracker, tableStatus.getTableUniqueId()), query.getType());
     }
 
     public static void main(String[] args) {
