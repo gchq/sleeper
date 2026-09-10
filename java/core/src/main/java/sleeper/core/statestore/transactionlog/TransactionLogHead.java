@@ -71,7 +71,6 @@ public class TransactionLogHead<T> {
     private final boolean updateLogBeforeAddTransaction;
     private final DoubleSupplier randomJitterFraction;
     private final ThreadSleep retryWaiter;
-    private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final TransactionLogSnapshotLoader snapshotLoader;
     private final Supplier<Instant> stateUpdateClock;
@@ -88,7 +87,6 @@ public class TransactionLogHead<T> {
         updateLogBeforeAddTransaction = builder.updateLogBeforeAddTransaction;
         randomJitterFraction = builder.randomJitterFraction;
         retryWaiter = builder.retryWaiter;
-        retryBackoff = builder.retryBackoff;
         transactionType = builder.transactionType;
         snapshotLoader = builder.snapshotLoader;
         stateUpdateClock = builder.stateUpdateClock;
@@ -334,9 +332,6 @@ public class TransactionLogHead<T> {
     }
 
     private ExponentialBackoffWithJitter readRetryBackoff() {
-        if (retryBackoff != null) {
-            return retryBackoff;
-        }
         WaitRange waitRange = WaitRange.firstAndMaxWaitCeilingSecs(
                 tableProperties.getLong(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS) / 1000.0,
                 tableProperties.getLong(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS) / 1000.0);
@@ -359,7 +354,6 @@ public class TransactionLogHead<T> {
         private Supplier<Instant> stateUpdateClock = Instant::now;
         private DoubleSupplier randomJitterFraction = Math::random;
         private ThreadSleep retryWaiter = Thread::sleep;
-        private ExponentialBackoffWithJitter retryBackoff;
         private T state;
         private long lastTransactionNumber = 0;
 
@@ -472,18 +466,6 @@ public class TransactionLogHead<T> {
          */
         public Builder<T> retryWaiter(ThreadSleep retryWaiter) {
             this.retryWaiter = retryWaiter;
-            return this;
-        }
-
-        /**
-         * Sets the configuration for exponential backoff during retries adding a transaction.
-         * Overrides the retry configuration in the table properties.
-         *
-         * @param  retryBackoff the backoff configuration
-         * @return              the builder
-         */
-        public Builder<T> retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
-            this.retryBackoff = retryBackoff;
             return this;
         }
 

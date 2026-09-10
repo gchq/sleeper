@@ -25,7 +25,6 @@ import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoa
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.core.util.ThreadSleep;
 
@@ -55,8 +54,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                 .transactionBodyStore(builder.transactionBodyStore)
                 .updateLogBeforeAddTransaction(builder.updateLogBeforeAddTransaction)
                 .randomJitterFraction(builder.randomJitterFraction)
-                .retryWaiter(builder.retryWaiter)
-                .retryBackoff(builder.retryBackoff));
+                .retryWaiter(builder.retryWaiter));
     }
 
     private TransactionLogStateStore(Builder builder, TransactionLogHead.Builder<?> headBuilder) {
@@ -134,7 +132,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private Supplier<Instant> partitionsStateUpdateClock = Instant::now;
         private DoubleSupplier randomJitterFraction = Math::random;
         private ThreadSleep retryWaiter = Thread::sleep;
-        private ExponentialBackoffWithJitter retryBackoff;
 
         private Builder() {
         }
@@ -200,17 +197,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
          */
         public Builder updateLogBeforeAddTransaction(boolean updateLogBeforeAddTransaction) {
             this.updateLogBeforeAddTransaction = updateLogBeforeAddTransaction;
-            return this;
-        }
-
-        /**
-         * Sets the configuration for exponential backoff during retries adding a transaction.
-         *
-         * @param  retryBackoff the backoff configuration
-         * @return              the builder
-         */
-        public Builder retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
-            this.retryBackoff = retryBackoff;
             return this;
         }
 

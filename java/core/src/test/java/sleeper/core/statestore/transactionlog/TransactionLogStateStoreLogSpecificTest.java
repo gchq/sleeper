@@ -42,11 +42,8 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
-import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -55,7 +52,11 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
 import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
@@ -117,27 +118,55 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldUseConfiguredRetryBackoff() {
+        void shouldUseTablePropertiesForRetryWaitRange() {
             // Given
-            List<Duration> configuredRetryWaits = new ArrayList<>();
-            ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(
-                    WaitRange.firstAndMaxWaitCeilingSecs(5, 5),
-                    () -> 1.0,
-                    waitMillis -> configuredRetryWaits.add(Duration.ofMillis(waitMillis)));
-            store = stateStore(stateStoreBuilder(schema).retryBackoff(retryBackoff));
-            FileReference file = fileFactory().rootFile("file.parquet", 100);
-            FileReference otherProcessFile = fileFactory().rootFile("other-file.parquet", 100);
-            filesLogStore.atStartOfNextAddTransaction(() -> {
-                update(otherProcess()).addFile(otherProcessFile);
-            });
+            tableProperties.setNumber(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS, 250);
+            tableProperties.setNumber(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS, 600);
+            store = stateStore(builder -> builder.randomJitterFraction(() -> 0.5));
 
             // When
-            update(store).addFile(file);
+            addFileWithConflicts(4);
 
             // Then
-            assertThat(configuredRetryWaits).containsExactly(Duration.ofSeconds(5));
-            assertThat(retryWaits).isEmpty();
+            assertThat(retryWaits).containsExactly(
+                    Duration.ofMillis(125), Duration.ofMillis(250),
+                    Duration.ofMillis(300), Duration.ofMillis(300));
         }
+
+        @Test
+        void shouldUseInstanceDefaultsForRetryWaitRange() {
+            // Given
+            instanceProperties.setNumber(DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS, 120);
+            instanceProperties.setNumber(DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS, 300);
+            store = stateStore(builder -> builder.randomJitterFraction(() -> 0.5));
+
+            // When
+            addFileWithConflicts(4);
+
+            // Then
+            assertThat(retryWaits).containsExactly(
+                    Duration.ofMillis(60), Duration.ofMillis(120),
+                    Duration.ofMillis(150), Duration.ofMillis(150));
+        }
+
+        @Test
+        void shouldPreferTableRetryWaitRangeOverInstanceDefaults() {
+            // Given
+            instanceProperties.setNumber(DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS, 120);
+            instanceProperties.setNumber(DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS, 300);
+            tableProperties.setNumber(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS, 250);
+            tableProperties.setNumber(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS, 600);
+            store = stateStore(builder -> builder.randomJitterFraction(() -> 0.5));
+
+            // When
+            addFileWithConflicts(4);
+
+            // Then
+            assertThat(retryWaits).containsExactly(
+                    Duration.ofMillis(125), Duration.ofMillis(250),
+                    Duration.ofMillis(300), Duration.ofMillis(300));
+        }
+
 
         @Test
         void shouldRetryAddTransactionWhenConflictOccurredAddingTransaction() {
@@ -230,6 +259,18 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
                     .isEmpty();
             assertThat(retryWaits).isEmpty();
         }
+        private void addFileWithConflicts(int conflicts) {
+            List<FileReference> otherFiles = IntStream.range(0, conflicts)
+                    .mapToObj(index -> fileFactory().rootFile("other-file-" + index + ".parquet", 100))
+                    .collect(toUnmodifiableList());
+            filesLogStore.atStartOfNextAddTransactions(otherFiles.stream()
+                    .map(file -> (ThrowingRunnable) () -> update(otherProcess()).addFile(file))
+                    .collect(toUnmodifiableList()));
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            update(store).addFile(file);
+            assertThat(store.getFileReferences()).containsAll(otherFiles).contains(file);
+        }
+
     }
 
     @Nested
