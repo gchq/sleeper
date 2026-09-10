@@ -49,6 +49,28 @@ public interface JobQuery {
     List<IngestJobStatus> run(IngestJobTracker tracker);
 
     /**
+     * Retrieves compaction jobs matching this query.
+     *
+     * @param  tracker the job tracker
+     * @param  tableId the Sleeper table ID to report on
+     * @return         the jobs
+     */
+    default List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {
+        return run(tracker);
+    }
+
+    /**
+     * Retrieves ingest jobs matching this query.
+     *
+     * @param  tracker the job tracker
+     * @param  tableId the Sleeper table ID to report on
+     * @return         the jobs
+     */
+    default List<IngestJobStatus> run(IngestJobTracker tracker, String tableId) {
+        return run(tracker);
+    }
+
+    /**
      * Retrieves the type of this query.
      *
      * @return the query type
