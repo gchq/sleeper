@@ -104,7 +104,7 @@ public class CompactionStatusReportScreen {
     private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus table, JobQuery.Type queryType, String queryParameters) {
         JobQuery query = JobQuery.fromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), in);
         new CompactionJobStatusReport(trackers.loadCompactionJobTracker(properties),
-                new StandardCompactionJobStatusReporter(out.printStream()), query).run();
+                new StandardCompactionJobStatusReporter(out.printStream()), table, query).run();
         confirmReturnToMainScreen(out, in);
     }
 
