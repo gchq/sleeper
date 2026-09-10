@@ -16,7 +16,6 @@
 package sleeper.clients.report.job.query;
 
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -90,12 +89,11 @@ public class RangeJobsQuery implements JobQuery {
      * Prompts the user to set the time period for a query. Will ask for the start and end times as separate prompts in
      * the format yyyyMMddHHmmss.
      *
-     * @param  table the Sleeper table to be queried
      * @param  in    the console to prompt the user
      * @param  clock a clock to get the current time (can be fixed for testing)
      * @return       a query to report on all jobs in the given time period
      */
-    public static JobQuery prompt(TableStatus table, ConsoleInput in, Clock clock) {
+    public static JobQuery prompt(ConsoleInput in, Clock clock) {
         Instant start = promptStart(in, clock);
         Instant end = promptEnd(in, clock);
         return new RangeJobsQuery(start, end);
