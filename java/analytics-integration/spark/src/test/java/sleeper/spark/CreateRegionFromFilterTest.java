@@ -15,17 +15,22 @@
  */
 package sleeper.spark;
 
+import org.apache.spark.sql.sources.And;
 import org.apache.spark.sql.sources.EqualTo;
 import org.apache.spark.sql.sources.GreaterThan;
 import org.apache.spark.sql.sources.GreaterThanOrEqual;
+import org.apache.spark.sql.sources.In;
 import org.apache.spark.sql.sources.LessThan;
 import org.apache.spark.sql.sources.LessThanOrEqual;
+import org.apache.spark.sql.sources.Or;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
+import sleeper.core.range.RegionCanonicaliser;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.List;
@@ -109,6 +114,230 @@ public class CreateRegionFromFilterTest {
         // Then
         Region expectedRegion = new Region(RANGE_FACTORY.createRange(ROW_KEY_FIELD, "", true, "E", true));
         assertThat(region).isEqualTo(expectedRegion);
+    }
+
+    @Test
+    void shouldCreateCorrectRegionsFromOrFilter() {
+        // Given
+        Or or = new Or(
+                new LessThan(ROW_KEY_FIELD.getName(), "B"),
+                new GreaterThan(ROW_KEY_FIELD.getName(), "Y"));
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(or, SCHEMA);
+
+        // Then
+        Region expectedRegionBelowB = new Region(RANGE_FACTORY.createRange(ROW_KEY_FIELD, "", true, "B", false));
+        Region expectedRegionAboveY = new Region(RANGE_FACTORY.createRange(ROW_KEY_FIELD, "Y", false, null, false));
+        assertThat(regions).containsExactlyInAnyOrder(expectedRegionBelowB, expectedRegionAboveY);
+    }
+
+    @Test
+    void shouldCreateCorrectRegionsFromOrFilterOnTwoRowKeys() {
+        // Given
+        Or or = new Or(
+                new EqualTo(ROW_KEY_FIELD.getName(), "A"),
+                new EqualTo(ROW_KEY_FIELD2.getName(), "B"));
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(or, SCHEMA2);
+
+        // Then each region should leave the other row key unbounded
+        Region expectedRegionKeyA = new Region(List.of(
+                RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD, "A"),
+                RANGE_FACTORY2.createRangeCoveringAllValues(ROW_KEY_FIELD2)));
+        Region expectedRegionKey2B = new Region(List.of(
+                RANGE_FACTORY2.createRangeCoveringAllValues(ROW_KEY_FIELD),
+                RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD2, "B")));
+        assertThat(regions).containsExactlyInAnyOrder(expectedRegionKeyA, expectedRegionKey2B);
+    }
+
+    @Test
+    void shouldIgnoreEmptyInFilterWithinOrFilter() {
+        // Given
+        Or or = new Or(
+                new In(ROW_KEY_FIELD.getName(), new Object[]{}),
+                new EqualTo(ROW_KEY_FIELD.getName(), "C"));
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(or, SCHEMA);
+
+        // Then
+        Region expectedRegionC = new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "C"));
+        assertThat(regions).containsExactly(expectedRegionC);
+    }
+
+    @Test
+    void shouldCreateCorrectRegionsFromNestedOrFilter() {
+        // Given
+        // (key = "A" OR key = "B") OR key = "C"
+        Or or = new Or(
+                new Or(new EqualTo(ROW_KEY_FIELD.getName(), "A"), new EqualTo(ROW_KEY_FIELD.getName(), "B")),
+                new EqualTo(ROW_KEY_FIELD.getName(), "C"));
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(or, SCHEMA);
+
+        // Then
+        Region expectedRegionA = new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "A"));
+        Region expectedRegionB = new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "B"));
+        Region expectedRegionC = new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "C"));
+        assertThat(regions).containsExactlyInAnyOrder(expectedRegionA, expectedRegionB, expectedRegionC);
+    }
+
+    @Test
+    void shouldCreateCorrectRegionsFromOrOfInFilter() {
+        // Given
+        Or or = new Or(
+                new In(ROW_KEY_FIELD.getName(), new Object[]{"A", "B"}),
+                new EqualTo(ROW_KEY_FIELD.getName(), "C"));
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(or, SCHEMA);
+
+        // Then
+        Region expectedRegionA = new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "A"));
+        Region expectedRegionB = new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "B"));
+        Region expectedRegionC = new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "C"));
+        assertThat(regions).containsExactlyInAnyOrder(expectedRegionA, expectedRegionB, expectedRegionC);
+    }
+
+    @Test
+    void shouldCreateCorrectRegionFromAndFilter() {
+        // Given
+        And and = new And(
+                new GreaterThan(ROW_KEY_FIELD.getName(), "E"),
+                new LessThan(ROW_KEY_FIELD.getName(), "Z"));
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(and, SCHEMA);
+
+        // Then
+        Region expectedRegion = RegionCanonicaliser.canonicaliseRegion(
+                new Region(RANGE_FACTORY.createRange(ROW_KEY_FIELD, "E", false, "Z", false)));
+        assertThat(regions.stream().map(RegionCanonicaliser::canonicaliseRegion))
+                .containsExactly(expectedRegion);
+    }
+
+    @Test
+    void shouldCreateCorrectRegionsFromOrFilterWithAndBranch() {
+        // Given
+        // (key > "A" AND key < "C") OR key = "G"
+        Or or = new Or(
+                new And(new GreaterThan(ROW_KEY_FIELD.getName(), "A"), new LessThan(ROW_KEY_FIELD.getName(), "C")),
+                new EqualTo(ROW_KEY_FIELD.getName(), "G"));
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(or, SCHEMA);
+
+        // Then
+        Region expectedRegionAToC = RegionCanonicaliser.canonicaliseRegion(
+                new Region(RANGE_FACTORY.createRange(ROW_KEY_FIELD, "A", false, "C", false)));
+        Region expectedRegionG = RegionCanonicaliser.canonicaliseRegion(
+                new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "G")));
+        assertThat(regions.stream().map(RegionCanonicaliser::canonicaliseRegion))
+                .containsExactlyInAnyOrder(expectedRegionAToC, expectedRegionG);
+    }
+
+    @Test
+    void shouldCreateOverlapOnlyFromAndOfInFilters() {
+        // Given
+        And and = new And(
+                new In(ROW_KEY_FIELD.getName(), new Object[]{"A", "B"}),
+                new In(ROW_KEY_FIELD.getName(), new Object[]{"B", "C"}));
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(and, SCHEMA);
+
+        // Then only the overlapping key should remain, the empty intersections should be dropped
+        Region expectedRegionB = RegionCanonicaliser.canonicaliseRegion(
+                new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "B")));
+        assertThat(regions.stream().map(RegionCanonicaliser::canonicaliseRegion))
+                .containsExactly(expectedRegionB);
+    }
+
+    @Test
+    void shouldCreateCorrectRegionFromAndFilterOnTwoRowKeys() {
+        // Given
+        And and = new And(
+                new EqualTo(ROW_KEY_FIELD.getName(), "A"),
+                new EqualTo(ROW_KEY_FIELD2.getName(), "B"));
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(and, SCHEMA2);
+
+        // Then
+        Region expectedRegion = RegionCanonicaliser.canonicaliseRegion(new Region(List.of(
+                RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD, "A"),
+                RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD2, "B"))));
+        assertThat(regions.stream().map(RegionCanonicaliser::canonicaliseRegion))
+                .containsExactly(expectedRegion);
+    }
+
+    @Test
+    void shouldCreateNoRegionsFromAndFilterWithContradictingBranches() {
+        // Given
+        And and = new And(
+                new EqualTo(ROW_KEY_FIELD.getName(), "A"),
+                new EqualTo(ROW_KEY_FIELD.getName(), "B"));
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(and, SCHEMA);
+
+        // Then
+        assertThat(regions).isEmpty();
+    }
+
+    @Test
+    void shouldCreateCorrectRegionsFromFiltersOnLongKeyField() {
+        // Given
+        Field longKeyField = new Field("longKey", new LongType());
+        Schema longKeySchema = Schema.builder()
+                .rowKeyFields(longKeyField)
+                .valueFields(new Field("value", new StringType()))
+                .build();
+        RangeFactory longRangeFactory = new RangeFactory(longKeySchema);
+        Or or = new Or(
+                new And(new GreaterThan(longKeyField.getName(), 5L), new LessThanOrEqual(longKeyField.getName(), 10L)),
+                new In(longKeyField.getName(), new Object[]{20L, 30L}));
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(or, longKeySchema);
+
+        // Then
+        Region expectedRegion5To10 = RegionCanonicaliser.canonicaliseRegion(
+                new Region(longRangeFactory.createRange(longKeyField, 5L, false, 10L, true)));
+        Region expectedRegion20 = RegionCanonicaliser.canonicaliseRegion(
+                new Region(longRangeFactory.createExactRange(longKeyField, 20L)));
+        Region expectedRegion30 = RegionCanonicaliser.canonicaliseRegion(
+                new Region(longRangeFactory.createExactRange(longKeyField, 30L)));
+        assertThat(regions.stream().map(RegionCanonicaliser::canonicaliseRegion))
+                .containsExactlyInAnyOrder(expectedRegion5To10, expectedRegion20, expectedRegion30);
+    }
+
+    @Test
+    void shouldCreateNoRegionsFromInFilterWithOnlyNullValues() {
+        // Given
+        In in = new In(ROW_KEY_FIELD.getName(), new Object[]{null});
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(in, SCHEMA);
+
+        // Then
+        assertThat(regions).isEmpty();
+    }
+
+    @Test
+    void shouldIgnoreNullValueInInFilter() {
+        // Given
+        In in = new In(ROW_KEY_FIELD.getName(), new Object[]{"A", null});
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(in, SCHEMA);
+
+        // Then
+        Region expectedRegionA = new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "A"));
+        assertThat(regions).containsExactly(expectedRegionA);
     }
 
     @Test

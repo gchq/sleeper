@@ -15,6 +15,7 @@
  */
 package sleeper.spark;
 
+import org.apache.spark.sql.sources.And;
 import org.apache.spark.sql.sources.EqualTo;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.sources.GreaterThan;
@@ -62,21 +63,27 @@ public class FindFiltersToPush {
     }
 
     private boolean pushFilter(Filter filter) {
+        // A comparison with a null value cannot be converted to a region, so it is left for Spark to apply
         if (filter instanceof EqualTo) {
-            return rowKeyFieldNames.contains(((EqualTo) filter).attribute());
+            return ((EqualTo) filter).value() != null && rowKeyFieldNames.contains(((EqualTo) filter).attribute());
         } else if (filter instanceof GreaterThan) {
-            return rowKeyFieldNames.contains(((GreaterThan) filter).attribute());
+            return ((GreaterThan) filter).value() != null && rowKeyFieldNames.contains(((GreaterThan) filter).attribute());
         } else if (filter instanceof GreaterThanOrEqual) {
-            return rowKeyFieldNames.contains(((GreaterThanOrEqual) filter).attribute());
+            return ((GreaterThanOrEqual) filter).value() != null && rowKeyFieldNames.contains(((GreaterThanOrEqual) filter).attribute());
         } else if (filter instanceof LessThan) {
-            return rowKeyFieldNames.contains(((LessThan) filter).attribute());
+            return ((LessThan) filter).value() != null && rowKeyFieldNames.contains(((LessThan) filter).attribute());
         } else if (filter instanceof LessThanOrEqual) {
-            return rowKeyFieldNames.contains(((LessThanOrEqual) filter).attribute());
+            return ((LessThanOrEqual) filter).value() != null && rowKeyFieldNames.contains(((LessThanOrEqual) filter).attribute());
         } else if (filter instanceof In) {
-            return rowKeyFieldNames.contains(((In) filter).attribute());
+            return ((In) filter).values() != null && rowKeyFieldNames.contains(((In) filter).attribute());
         } else if (filter instanceof Or) {
             Or or = (Or) filter;
             if (pushFilter(or.left()) && pushFilter(or.right())) {
+                return true;
+            }
+        } else if (filter instanceof And) {
+            And and = (And) filter;
+            if (pushFilter(and.left()) && pushFilter(and.right())) {
                 return true;
             }
         }
