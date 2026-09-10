@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.restapi.addTable;
+package sleeper.core.table;
 
 import sleeper.core.properties.table.TableProperties;
 
