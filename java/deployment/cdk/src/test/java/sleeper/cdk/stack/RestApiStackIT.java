@@ -21,6 +21,10 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.cdk.testutil.SleeperStackTestBase;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REST_API_ADD_TABLE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REST_API_URL;
+
 public class RestApiStackIT extends SleeperStackTestBase {
 
     @Test
@@ -34,6 +38,19 @@ public class RestApiStackIT extends SleeperStackTestBase {
         // Then
         Approvals.verify(printer.toJson(stack), new Options()
                 .forFile().withName("rest-api", ".json"));
+    }
+
+    @Test
+    void shouldPublishAddTableUrl() {
+        // Given
+        SleeperCoreStacks core = SleeperCoreStacks.create(rootStack, instanceProps());
+
+        // When
+        new RestApiStack(rootStack, "RestApi", instanceProperties, instanceArtefacts(), core);
+
+        // Then
+        assertThat(instanceProperties.get(REST_API_ADD_TABLE_URL))
+                .isEqualTo(instanceProperties.get(REST_API_URL) + "/sleeper/tables");
     }
 
 }

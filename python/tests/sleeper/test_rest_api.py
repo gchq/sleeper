@@ -104,3 +104,35 @@ def aws_credentials(monkeypatch):
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test")
     monkeypatch.setenv("AWS_SESSION_TOKEN", "test")
+
+
+@pytest.mark.parametrize("base_suffix", ["", "/"])
+@patch("sleeper.rest.rest_client.ApiGatewaySigner.sign", return_value={"Authorization": "test-signature"})
+@patch("sleeper.rest.rest_client.requests.post")
+def should_use_deployed_add_table_url(mock_post, mock_sign, base_suffix):
+    # Given a deployed route that cannot be derived from the legacy path
+    properties = create_test_instance_properties()
+    properties.set(RestCdkProperty.REST_BASE_URL, ENDPOINT + base_suffix)
+    deployed_url = ENDPOINT + "/deployment/v2/tables"
+    properties.set(RestCdkProperty.REST_ADD_TABLE_URL, deployed_url)
+    mock_post.return_value.json.return_value = {"tableName": "testing", "tableId": "123"}
+
+    # When
+    RestApiClient(properties).add_table("testing", TableSchema(rowKeyFields=[], sortKeyFields=[], valueFields=[]))
+
+    # Then the exact deployed URL is both signed and used for the request
+    assert mock_sign.call_args.kwargs["url"] == deployed_url
+    assert mock_post.call_args.args == (deployed_url,)
+    assert mock_post.call_args.kwargs["headers"] == {"Authorization": "test-signature"}
+
+
+@pytest.mark.parametrize("base_suffix", ["", "/"])
+@patch("sleeper.rest.rest_client.requests.post")
+def should_support_instances_without_published_routes(mock_post, base_suffix):
+    properties = create_test_instance_properties()
+    properties.set(RestCdkProperty.REST_BASE_URL, ENDPOINT + base_suffix)
+    mock_post.return_value.json.return_value = {"tableName": "testing", "tableId": "123"}
+
+    RestApiClient(properties).add_table("testing", TableSchema(rowKeyFields=[], sortKeyFields=[], valueFields=[]))
+
+    assert mock_post.call_args.args == (ENDPOINT + "/sleeper/tables",)
