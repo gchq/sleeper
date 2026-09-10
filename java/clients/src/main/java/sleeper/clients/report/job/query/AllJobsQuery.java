@@ -44,6 +44,16 @@ public class AllJobsQuery implements JobQuery {
     }
 
     @Override
+    public List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {
+        return tracker.getAllJobs(tableId);
+    }
+
+    @Override
+    public List<IngestJobStatus> run(IngestJobTracker tracker, String tableId) {
+        return tracker.getAllJobs(tableId);
+    }
+
+    @Override
     public Type getType() {
         return Type.ALL;
     }

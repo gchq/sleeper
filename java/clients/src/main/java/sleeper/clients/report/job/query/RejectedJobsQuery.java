@@ -39,6 +39,16 @@ public class RejectedJobsQuery implements JobQuery {
     }
 
     @Override
+    public List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {
+        return List.of(); // not implemented
+    }
+
+    @Override
+    public List<IngestJobStatus> run(IngestJobTracker tracker, String tableId) {
+        return tracker.getInvalidJobs();
+    }
+
+    @Override
     public Type getType() {
         return Type.REJECTED;
     }
