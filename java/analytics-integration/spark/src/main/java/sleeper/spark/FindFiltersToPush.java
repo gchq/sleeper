@@ -15,6 +15,7 @@
  */
 package sleeper.spark;
 
+import org.apache.spark.sql.sources.And;
 import org.apache.spark.sql.sources.EqualTo;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.sources.GreaterThan;
@@ -77,6 +78,11 @@ public class FindFiltersToPush {
         } else if (filter instanceof Or) {
             Or or = (Or) filter;
             if (pushFilter(or.left()) && pushFilter(or.right())) {
+                return true;
+            }
+        } else if (filter instanceof And) {
+            And and = (And) filter;
+            if (pushFilter(and.left()) && pushFilter(and.right())) {
                 return true;
             }
         }
