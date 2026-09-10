@@ -49,10 +49,14 @@ public class CreateRegionsFromPushedFilters {
     public List<Region> getMinimumRegionCoveringPushedFilters(Filter[] pushedFilters) {
         SplitPushedFiltersIntoSingleAndMultiRegionFilters split = new SplitPushedFiltersIntoSingleAndMultiRegionFilters();
         SingleAndMultiRegionFilters singleAndMultiRegionFilters = split.splitPushedFilters(pushedFilters);
-        Region regionFromSingleRegionFilters = getRegionFromSingleRegionFilters(singleAndMultiRegionFilters.getSingleRegionFilters());
+        Optional<Region> regionFromSingleRegionFilters = getRegionFromSingleRegionFilters(singleAndMultiRegionFilters.getSingleRegionFilters());
+        if (!regionFromSingleRegionFilters.isPresent()) {
+            // This happens if the single-region filters contradict each other and in that case nothing matches
+            return List.of();
+        }
         // As the filters are combined with AND, each multi-region filter must be intersected with all the regions
         // found so far, i.e. the result is the cross product of the regions of the individual filters.
-        List<Region> regions = List.of(regionFromSingleRegionFilters);
+        List<Region> regions = List.of(regionFromSingleRegionFilters.get());
         for (Filter filter : singleAndMultiRegionFilters.getMultiRegionFilters()) {
             List<Region> regionsFromFilter = CreateRegionFromFilter.createRegionsFromFilter(filter, schema);
             List<Region> intersectedRegions = new ArrayList<>();
@@ -69,15 +73,20 @@ public class CreateRegionsFromPushedFilters {
         return regions;
     }
 
-    private Region getRegionFromSingleRegionFilters(List<Filter> singleRegionFilters) {
+    private Optional<Region> getRegionFromSingleRegionFilters(List<Filter> singleRegionFilters) {
         if (singleRegionFilters == null || singleRegionFilters.isEmpty()) {
-            return Region.coveringAllValuesOfAllRowKeys(schema);
+            return Optional.of(Region.coveringAllValuesOfAllRowKeys(schema));
         }
         Region intersectedRegion = CreateRegionFromFilter.createRegionFromSimpleFilter(singleRegionFilters.get(0), schema);
         for (int i = 1; i < singleRegionFilters.size(); i++) {
             Region region = CreateRegionFromFilter.createRegionFromSimpleFilter(singleRegionFilters.get(i), schema);
-            intersectedRegion = RegionIntersector.intersectRegions(intersectedRegion, region, new RangeFactory(schema), schema).get();
+            Optional<Region> optionalIntersectedRegion = RegionIntersector.intersectRegions(intersectedRegion, region, rangeFactory, schema);
+            if (!optionalIntersectedRegion.isPresent()) {
+                // The filters do not overlap so no rows can match
+                return Optional.empty();
+            }
+            intersectedRegion = optionalIntersectedRegion.get();
         }
-        return intersectedRegion;
+        return Optional.of(intersectedRegion);
     }
 }

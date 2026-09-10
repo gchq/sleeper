@@ -30,6 +30,7 @@ import sleeper.core.range.Region;
 import sleeper.core.range.RegionCanonicaliser;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.List;
@@ -285,6 +286,58 @@ public class CreateRegionFromFilterTest {
 
         // Then
         assertThat(regions).isEmpty();
+    }
+
+    @Test
+    void shouldCreateCorrectRegionsFromFiltersOnLongKeyField() {
+        // Given
+        Field longKeyField = new Field("longKey", new LongType());
+        Schema longKeySchema = Schema.builder()
+                .rowKeyFields(longKeyField)
+                .valueFields(new Field("value", new StringType()))
+                .build();
+        RangeFactory longRangeFactory = new RangeFactory(longKeySchema);
+        Or or = new Or(
+                new And(new GreaterThan(longKeyField.getName(), 5L), new LessThanOrEqual(longKeyField.getName(), 10L)),
+                new In(longKeyField.getName(), new Object[]{20L, 30L}));
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(or, longKeySchema);
+
+        // Then
+        Region expectedRegion5To10 = RegionCanonicaliser.canonicaliseRegion(
+                new Region(longRangeFactory.createRange(longKeyField, 5L, false, 10L, true)));
+        Region expectedRegion20 = RegionCanonicaliser.canonicaliseRegion(
+                new Region(longRangeFactory.createExactRange(longKeyField, 20L)));
+        Region expectedRegion30 = RegionCanonicaliser.canonicaliseRegion(
+                new Region(longRangeFactory.createExactRange(longKeyField, 30L)));
+        assertThat(regions.stream().map(RegionCanonicaliser::canonicaliseRegion))
+                .containsExactlyInAnyOrder(expectedRegion5To10, expectedRegion20, expectedRegion30);
+    }
+
+    @Test
+    void shouldCreateNoRegionsFromInFilterWithOnlyNullValues() {
+        // Given
+        In in = new In(ROW_KEY_FIELD.getName(), new Object[]{null});
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(in, SCHEMA);
+
+        // Then
+        assertThat(regions).isEmpty();
+    }
+
+    @Test
+    void shouldIgnoreNullValueInInFilter() {
+        // Given
+        In in = new In(ROW_KEY_FIELD.getName(), new Object[]{"A", null});
+
+        // When
+        List<Region> regions = CreateRegionFromFilter.createRegionsFromFilter(in, SCHEMA);
+
+        // Then
+        Region expectedRegionA = new Region(RANGE_FACTORY.createExactRange(ROW_KEY_FIELD, "A"));
+        assertThat(regions).containsExactly(expectedRegionA);
     }
 
     @Test

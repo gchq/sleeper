@@ -89,6 +89,10 @@ public class CreateRegionFromFilter {
             List<Region> regions = new ArrayList<>();
             Object[] values = in.values();
             for (Object value : values) {
+                if (value == null) {
+                    // Ignore nulls as in SQL, "key IN (..., NULL)" will never match a row on the NULL item
+                    continue;
+                }
                 Filter equalFilter = new EqualTo(in.attribute(), value);
                 Region region = createRegionFromSimpleFilter(equalFilter, schema);
                 regions.add(region);

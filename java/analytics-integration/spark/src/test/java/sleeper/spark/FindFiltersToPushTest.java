@@ -119,6 +119,31 @@ public class FindFiltersToPushTest {
     }
 
     @Test
+    void shouldNotPushFilterWithNullValueOnKeyField() {
+        // Given
+        EqualTo equalToNull = new EqualTo(ROW_KEY_FIELD.getName(), null);
+        GreaterThan greaterThanNull = new GreaterThan(ROW_KEY_FIELD.getName(), null);
+        In inWithNullValues = new In(ROW_KEY_FIELD.getName(), null);
+        In inContainingNull = new In(ROW_KEY_FIELD.getName(), new Object[]{"A", null});
+        Filter[] filters = new Filter[]{equalToNull, greaterThanNull, inWithNullValues, inContainingNull};
+        FindFiltersToPush findFiltersToPush = new FindFiltersToPush(SCHEMA);
+
+        // When
+        PushedAndNonPushedFilters pushedAndNonPushedFilters = findFiltersToPush.splitFiltersIntoPushedAndNonPushed(filters);
+
+        // Then (Spark's In.equals method throws an exception on a null values array, so the non-pushed filters are
+        // compared by identity)
+        assertThat(pushedAndNonPushedFilters.getPushedFilters()).containsExactly(inContainingNull);
+        assertThat(pushedAndNonPushedFilters.getNonPushedFilters())
+                .hasSize(3)
+                .satisfies(nonPushed -> {
+                    assertThat(nonPushed.get(0)).isSameAs(equalToNull);
+                    assertThat(nonPushed.get(1)).isSameAs(greaterThanNull);
+                    assertThat(nonPushed.get(2)).isSameAs(inWithNullValues);
+                });
+    }
+
+    @Test
     void shouldPushOrFilterWithNestedOrAndInBranchesOnKeyField() {
         // Given
         // (key IN {"A", "B"} OR key = "C") OR key = "D"
