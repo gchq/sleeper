@@ -102,40 +102,6 @@ public class DeployNewTestInstanceIT {
     class Default {
 
         @Test
-        void shouldLoadInstanceAndSystemTestTableFromDeployAllConfig() throws Exception {
-            // When
-            deployAndCaptureRequest();
-
-            // Then the instance and table come from the deployAll config files
-            instanceProperties.set(ID, "test-instance");
-            instanceProperties.set(VPC_ID, "test-vpc");
-            instanceProperties.set(SUBNETS, "test-subnet");
-            // And the table properties object gains the table ID after deployment when the table is added
-            tableProperties.set(TABLE_ID, tablePropertiesStore.loadByName("system-test").get(TABLE_ID));
-            Path deployAllDir = scriptsDir.resolve(DeployNewTestInstance.DEFAULT_CONFIG_DIRECTORY);
-            assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
-                    .instanceConfig(new SleeperInstanceConfiguration(instanceProperties, tableProperties))
-                    .cdkCommand(CdkCommand.deployNew().withConfigurationDirectory(deployAllDir).toBuilder()
-                            .instanceId("test-instance")
-                            .vpcId("test-vpc")
-                            .subnets("test-subnet")
-                            .build())
-                    .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
-                    .build());
-        }
-
-        @Test
-        void shouldSetInstanceIdVpcAndSubnetsFromPositionalArguments() throws Exception {
-            // When
-            SleeperInstanceConfiguration config = loadConfiguration();
-
-            // Then
-            assertThat(config.getInstanceProperties())
-                    .extracting(properties -> properties.get(ID), properties -> properties.get(VPC_ID), properties -> properties.get(SUBNETS))
-                    .containsExactly("test-instance", "test-vpc", "test-subnet");
-        }
-
-        @Test
         void shouldCreateRealConfigFilesFromTemplatesOnFirstUse() throws Exception {
             // When
             loadConfiguration();
@@ -188,21 +154,6 @@ public class DeployNewTestInstanceIT {
     @Nested
     @DisplayName("Read the whole directory when given --config-dir")
     class ConfigDirGiven {
-
-        @Test
-        void shouldDeployTablesDefinedInTheConfigurationDirectory() throws Exception {
-            // Given
-            Files.writeString(workDir.resolve("instance.properties"), "sleeper.filesystem=from-dir://");
-            writeTableFiles(workDir, "my-table");
-
-            // When
-            SleeperInstanceConfiguration config = loadConfiguration("--config-dir", workDir.toString());
-
-            // Then
-            assertThat(config.getTableProperties())
-                    .extracting(properties -> properties.get(TABLE_NAME))
-                    .containsExactly("my-table");
-        }
 
         @Test
         void shouldHaveNoTablesWhenConfigurationDirectoryHasNone() throws Exception {
@@ -258,6 +209,29 @@ public class DeployNewTestInstanceIT {
     class Deploy {
 
         @Test
+        void shouldDeployDemoConfigurationAsDemonstrationInstance() throws Exception {
+            // When
+            deployAndCaptureRequest();
+
+            // Then the instance and table come from the deployAll config files
+            instanceProperties.set(ID, "test-instance");
+            instanceProperties.set(VPC_ID, "test-vpc");
+            instanceProperties.set(SUBNETS, "test-subnet");
+            // And the table properties object gains the table ID after deployment when the table is added
+            tableProperties.set(TABLE_ID, tablePropertiesStore.loadByName("system-test").get(TABLE_ID));
+            Path deployAllDir = scriptsDir.resolve(DeployNewTestInstance.DEFAULT_CONFIG_DIRECTORY);
+            assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
+                    .instanceConfig(new SleeperInstanceConfiguration(instanceProperties, tableProperties))
+                    .cdkCommand(CdkCommand.deployNew().withConfigurationDirectory(deployAllDir).toBuilder()
+                            .instanceId("test-instance")
+                            .vpcId("test-vpc")
+                            .subnets("test-subnet")
+                            .build())
+                    .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
+                    .build());
+        }
+
+        @Test
         void shouldDeployTablesFromConfigurationDirectory() throws Exception {
             // Given
             instanceProperties.set(FILE_SYSTEM, "from-dir://");
@@ -268,9 +242,19 @@ public class DeployNewTestInstanceIT {
             deployAndCaptureRequest("--config-dir", workDir.toString());
 
             // Then it forwards the tables defined in the directory
-            assertThat(deployRequests).singleElement().satisfies(request -> assertThat(request.getInstanceConfig().getTableProperties())
-                    .extracting(properties -> properties.get(TABLE_NAME))
-                    .containsExactly("my-table"));
+            instanceProperties.set(ID, "test-instance");
+            instanceProperties.set(VPC_ID, "test-vpc");
+            instanceProperties.set(SUBNETS, "test-subnet");
+            tableProperties.set(TABLE_ID, tablePropertiesStore.loadByName("my-table").get(TABLE_ID));
+            assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
+                    .instanceConfig(new SleeperInstanceConfiguration(instanceProperties, tableProperties))
+                    .cdkCommand(CdkCommand.deployNew().withConfigurationDirectory(workDir).toBuilder()
+                            .instanceId("test-instance")
+                            .vpcId("test-vpc")
+                            .subnets("test-subnet")
+                            .build())
+                    .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
+                    .build());
         }
 
         @Test
@@ -278,9 +262,49 @@ public class DeployNewTestInstanceIT {
             // When
             deployAndCaptureRequest("--paused");
 
-            // Then the --paused flag reaches the CDK command, not just the parsed arguments
-            assertThat(deployRequests).singleElement().satisfies(request -> assertThat(request.getCdkCommand().arguments()).contains("deployPaused=true"));
+            // Then
+            instanceProperties.set(ID, "test-instance");
+            instanceProperties.set(VPC_ID, "test-vpc");
+            instanceProperties.set(SUBNETS, "test-subnet");
+            tableProperties.set(TABLE_ID, tablePropertiesStore.loadByName("system-test").get(TABLE_ID));
+            Path deployAllDir = scriptsDir.resolve(DeployNewTestInstance.DEFAULT_CONFIG_DIRECTORY);
+            assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
+                    .instanceConfig(new SleeperInstanceConfiguration(instanceProperties, tableProperties))
+                    .cdkCommand(CdkCommand.deployNewPaused().withConfigurationDirectory(deployAllDir).toBuilder()
+                            .instanceId("test-instance")
+                            .vpcId("test-vpc")
+                            .subnets("test-subnet")
+                            .build())
+                    .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
+                    .build());
         }
+
+        @Test
+        void shouldDeployInstanceOnlyWhenPropertiesFileGiven() throws Exception {
+            // Given
+            Path propertiesFile = Files.writeString(workDir.resolve("instance.properties"), "sleeper.filesystem=from-file://");
+
+            // When
+            deployAndCaptureRequest("--properties-file", propertiesFile.toString());
+
+            // Then
+            InstanceProperties expected = new InstanceProperties();
+            expected.set(ID, "test-instance");
+            expected.set(VPC_ID, "test-vpc");
+            expected.set(SUBNETS, "test-subnet");
+            expected.set(FILE_SYSTEM, "from-file://");
+            assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
+                    .instanceConfig(SleeperInstanceConfiguration.withNoTables(expected))
+                    .cdkCommand(CdkCommand.deployNew().withPropertiesFile(propertiesFile).toBuilder()
+                            .instanceId("test-instance")
+                            .vpcId("test-vpc")
+                            .subnets("test-subnet")
+                            .build())
+                    .cdkApp(SleeperInternalCdkApp.DEMONSTRATION)
+                    .build());
+            assertThat(tableIndex.streamAllTables()).isEmpty();
+        }
+
     }
 
     // Runs the real deploy() seam with in-memory fakes standing in for AWS.
