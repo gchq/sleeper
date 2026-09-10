@@ -68,13 +68,12 @@ public class RangeJobsQuery implements JobQuery {
      * Reads a command line parameter that sets the time period for a query. Takes the start and end of the period in
      * the format yyyyMMddHHmmss, separated by a comma.
      *
-     * @param  table           the Sleeper table to be queried
      * @param  queryParameters the start and end of the period as strings separated by a comma, or null for the default
      *                         period
      * @param  clock           a clock to get the current time (can be fixed for testing)
      * @return                 a query to report on all jobs in the given time period
      */
-    public static JobQuery fromParameters(TableStatus table, String queryParameters, Clock clock) {
+    public static JobQuery fromParameters(String queryParameters, Clock clock) {
         if (queryParameters == null) {
             Instant end = clock.instant();
             Instant start = end.minus(Duration.ofHours(4));

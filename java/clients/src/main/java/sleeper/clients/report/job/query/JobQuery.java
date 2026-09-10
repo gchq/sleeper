@@ -61,13 +61,12 @@ public interface JobQuery {
      * Creates a query for jobs based on parameters. To allow the PROMPT query type,
      * use {@link #fromParametersOrPrompt}.
      *
-     * @param  table           the Sleeper table to generate a report for
      * @param  queryType       the type of query to run
      * @param  queryParameters the parameters for the query, if required
      * @param  clock           the clock to find the current time
      * @return                 the query
      */
-    static JobQuery from(TableStatus table, Type queryType, String queryParameters, Clock clock) {
+    static JobQuery from(Type queryType, String queryParameters, Clock clock) {
         if (queryType.isParametersRequired() && queryParameters == null) {
             throw new IllegalArgumentException("No parameters provided for query type " + queryType);
         }
@@ -79,7 +78,7 @@ public interface JobQuery {
             case DETAILED:
                 return DetailedJobsQuery.fromParameters(queryParameters);
             case RANGE:
-                return RangeJobsQuery.fromParameters(table, queryParameters, clock);
+                return RangeJobsQuery.fromParameters(queryParameters, clock);
             case REJECTED:
                 return new RejectedJobsQuery();
             default:
@@ -119,7 +118,7 @@ public interface JobQuery {
         if (queryType == JobQuery.Type.PROMPT) {
             return JobQueryPrompt.from(table, clock, input, extraQueryTypes);
         }
-        return from(table, queryType, queryParameters, clock);
+        return from(queryType, queryParameters, clock);
     }
 
     /**
