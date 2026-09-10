@@ -55,6 +55,7 @@ public class AwsCompactionReportsDriver implements CompactionReportsDriver {
                     .run();
             new CompactionJobStatusReport(jobTracker(),
                     new StandardCompactionJobStatusReporter(out),
+                    instance.getTableStatus(),
                     new RangeJobsQuery(instance.getTableStatus(), startTime, Instant.MAX))
                     .run();
         };

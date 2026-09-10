@@ -61,15 +61,6 @@ public class CompactionJobStatusReport {
     public CompactionJobStatusReport(
             CompactionJobTracker compactionJobTracker,
             CompactionJobStatusReporter reporter,
-            JobQuery query) {
-        this.compactionJobTracker = compactionJobTracker;
-        this.compactionJobStatusReporter = reporter;
-        this.query = query;
-    }
-
-    public CompactionJobStatusReport(
-            CompactionJobTracker compactionJobTracker,
-            CompactionJobStatusReporter reporter,
             TableStatus tableStatus,
             JobQuery query) {
         this.compactionJobTracker = compactionJobTracker;
@@ -108,7 +99,7 @@ public class CompactionJobStatusReport {
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
                 CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
                 JobQuery query = JobQuery.fromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
-                new CompactionJobStatusReport(tracker, reporter, query).run();
+                new CompactionJobStatusReport(tracker, reporter, table, query).run();
             }
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());
