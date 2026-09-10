@@ -23,7 +23,9 @@ import sleeper.clients.admin.AdminClient;
 import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.DeployConfiguration;
+import sleeper.clients.deploy.container.BaseImageDestination;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
+import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.util.cdk.InvokeCdk;
@@ -57,7 +59,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     protected final List<CommandPipeline> dockerCommandsThatRan = new ArrayList<>();
     protected TablePropertiesStore tablePropertiesStore;
     protected TableIndex tableIndex;
-    protected DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(List.of(), List.of());
+    protected DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(StackDockerImage.DEFAULT_BASE, List.of(), List.of());
 
     @TempDir
     protected Path tempDir;
@@ -83,6 +85,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
                         .commandRunner(recordCommandsRun(dockerCommandsThatRan))
                         .copyFile((source, target) -> {
                         })
+                        .baseImageDestination(BaseImageDestination.managedRegistry(5000))
                         .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                         .version(version)
                         .build(),

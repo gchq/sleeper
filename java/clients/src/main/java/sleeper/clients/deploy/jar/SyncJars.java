@@ -18,6 +18,7 @@ package sleeper.clients.deploy.jar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.sts.StsClient;
 
@@ -75,37 +76,49 @@ public class SyncJars {
         List<Path> jars = listJarsInDirectory(jarsDirectory);
         LOGGER.info("Found {} jars in local directory", jars.size());
 
-        JarsDiff diff = JarsDiff.from(jarsDirectory, jars,
-                s3.listObjectsV2Paginator(builder -> builder.bucket(bucketName)));
-        Collection<Path> uploadJars = diff.getModifiedAndNew().stream()
-                .filter(request.getUploadFilter())
-                .collect(Collectors.toUnmodifiableList());
-        Collection<String> deleteKeys = diff.getS3KeysToDelete();
+        try {
+            JarsDiff diff = JarsDiff.from(jarsDirectory, jars,
+                    s3.listObjectsV2Paginator(builder -> builder.bucket(bucketName)));
+            Collection<Path> uploadJars = diff.getModifiedAndNew().stream()
+                    .filter(request.getUploadFilter())
+                    .collect(Collectors.toUnmodifiableList());
+            Collection<String> deleteKeys = diff.getS3KeysToDelete();
 
-        if (request.isDeleteOldJars() && !deleteKeys.isEmpty()) {
-            LOGGER.info("Deleting {} jars from bucket", deleteKeys.size());
-            s3.deleteObjects(builder -> builder
-                    .bucket(bucketName)
-                    .delete(deleteBuilder -> deleteBuilder
-                            .objects(deleteKeys.stream()
-                                    .map(deleteKey -> ObjectIdentifier.builder().key(deleteKey).build())
-                                    .collect(Collectors.toList()))));
-            changed = true;
-        }
+            if (request.isDeleteOldJars() && !deleteKeys.isEmpty()) {
+                LOGGER.info("Deleting {} jars from bucket", deleteKeys.size());
+                s3.deleteObjects(builder -> builder
+                        .bucket(bucketName)
+                        .delete(deleteBuilder -> deleteBuilder
+                                .objects(deleteKeys.stream()
+                                        .map(deleteKey -> ObjectIdentifier.builder().key(deleteKey).build())
+                                        .collect(Collectors.toList()))));
+                changed = true;
+            }
 
-        LOGGER.info("Uploading {} jars", uploadJars.size());
-        uploadJars.stream().parallel().forEach(jar -> {
-            LOGGER.info("Uploading jar: {}", jar.getFileName());
-            s3.putObject(builder -> builder
-                    .bucket(bucketName)
-                    .key(String.valueOf(jar.getFileName())),
-                    jar);
-            LOGGER.info("Finished uploading jar: {}", jar.getFileName());
-        });
-        if (!uploadJars.isEmpty()) {
-            changed = true;
+            LOGGER.info("Uploading {} jars", uploadJars.size());
+            uploadJars.stream().parallel().forEach(jar -> {
+                LOGGER.info("Uploading jar: {}", jar.getFileName());
+                s3.putObject(builder -> builder
+                        .bucket(bucketName)
+                        .key(String.valueOf(jar.getFileName())),
+                        jar);
+                LOGGER.info("Finished uploading jar: {}", jar.getFileName());
+            });
+            if (!uploadJars.isEmpty()) {
+                changed = true;
+            }
+            return changed;
+        } catch (NoSuchBucketException e) {
+            throw new IllegalArgumentException(missingBucketMessage(bucketName, request), e);
         }
-        return changed;
+    }
+
+    private static String missingBucketMessage(String bucketName, SyncJarsRequest request) {
+        String message = "Jars bucket does not exist: " + bucketName;
+        if (request.getDeploymentId() != null) {
+            message += ". The artefacts deployment may not exist: " + request.getDeploymentId();
+        }
+        return message;
     }
 
     private static List<Path> listJarsInDirectory(Path directory) throws IOException {

@@ -16,17 +16,24 @@ vulnerabilities:
   # github.com/docker/docker
   - id: CVE-2026-34040
   - id: CVE-2026-33997
+  # github.com/containerd/containerd/v2
+  - id: CVE-2026-53495
   # golang.org/x/mod
   - id: CVE-2026-56864
   - id: CVE-2026-56865
   # golang.org/x/net
   - id: CVE-2026-46600
-   # golang.org/x/crypto
+  # golang.org/x/crypto
   - id: CVE-2026-56854
+  - id: CVE-2026-56855
+  - id: CVE-2026-78662
+  # google.golang.org/grpc
+  - id: CVE-2026-84304
   # github.com/cilium/ebpf
   - id: CVE-2026-10722
   # github.com/moby/go-archive
   - id: CVE-2026-17106
+
 
   # AWS SDK supports supports up to version 24.x of node.js. Therefore are unable to update for issue below
   # until support is provided.

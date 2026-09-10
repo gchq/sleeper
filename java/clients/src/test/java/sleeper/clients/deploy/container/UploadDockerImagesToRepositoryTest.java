@@ -152,6 +152,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     void shouldBuildAndPushImageForDemonstrationCdkApp() throws Exception {
         // Given
         DockerImageConfiguration imageConfig = new DockerImageConfiguration(
+                StackDockerImage.DEFAULT_BASE,
                 List.of(DockerDeployment.builder()
                         .deploymentName("data-generation")
                         .cdkApps(List.of(SleeperInternalCdkApp.DEMONSTRATION))
@@ -212,6 +213,17 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     }
 
     @Test
+    void shouldRefuseToBuildAnUploaderWithNoBaseImageDestination() {
+        // Given
+        UploadDockerImages.Builder builder = uploaderBuilder().baseImageDestination(null);
+
+        // When / Then
+        assertThatThrownBy(() -> builder.build())
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("baseImageDestination");
+    }
+
+    @Test
     void shouldFailWhenDockerBuildFails() {
         // Given
         DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
@@ -254,6 +266,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
                 .copyFile((source, target) -> files.put(target, files.get(source)))
                 .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                 .baseImage(baseImage())
+                .baseImageDestination(BaseImageDestination.deploymentRegistry())
                 .version("1.0.0");
     }
 }

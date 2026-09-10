@@ -33,12 +33,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.statestore.InitialiseStateStoreFromSplitPoints.stringsBase64Encoded;
 
 public class InitialiseStateStoreFromSplitPointsTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
+
+    @Test
+    void shouldReadStringsBase64EncodedFromFourthArgument() {
+        assertThat(stringsBase64Encoded(new String[]{"instance", "table", "split-points.txt", "true"}))
+                .isTrue();
+    }
 
     @Test
     void shouldInitialiseStateStoreFromSplitPoints() throws Exception {

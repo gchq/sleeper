@@ -23,7 +23,6 @@ are listed here.
 
 | Deployment Name            | Optional Stack     | Multiplatform |
 |----------------------------|--------------------|---------------|
-| base                       |                    | true          |
 | ingest                     | IngestStack        | false         |
 | bulk-import-runner         | EksBulkImportStack | true          |
 | compaction-job-execution   | CompactionStack    | true          |
@@ -116,9 +115,12 @@ this.
 These commands will create or recreate a builder:
 
 ```bash
-docker buildx rm sleeper || true
-docker buildx create --name sleeper --use
+docker buildx rm sleeper-host-network || true
+docker buildx create --name sleeper-host-network --driver docker-container --driver-opt network=host --use
 ```
+
+The builder has host networking so that it can pull images from the base image registry.
+See [building in a custom environment](../development/custom-environment.md).
 
 This also requires a slightly different command to build and push. This must be done as a single command as the builder
 does not automatically add the image to the Docker Engine image store:
