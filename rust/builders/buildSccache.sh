@@ -33,25 +33,9 @@ if [ -n "$(ls -A "$BASE_DIR/certs" 2>/dev/null | grep -v '^README\.md$')" ]; the
   cp -r "$BASE_DIR/certs" certs
   rm -f certs/README.md
 fi
-docker build -t sleeper-rust-builder-base:current .
+docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-al2023:latest .
 popd
 
-pushd "$THIS_DIR"/base-sccache
-rm -rf certs
-# Copy custom CA certs into build context if present at repo root.
-# Ignore README.md — the certs directory is checked into Git via a placeholder README,
-# so we only treat the directory as populated when it contains at least one other file.
-if [ -n "$(ls -A "$BASE_DIR/certs" 2>/dev/null | grep -v '^README\.md$')" ]; then
-  cp -r "$BASE_DIR/certs" certs
-  rm -f certs/README.md
-fi
-docker build -t sleeper-rust-builder-sccache:current .
-popd
-
-pushd "$THIS_DIR"/x86_64
-docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
-popd
-
-pushd "$THIS_DIR"/aarch64
-docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
+pushd "$THIS_DIR"/sccache
+docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-sccache:latest .
 popd

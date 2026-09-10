@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG BASE_IMAGE="sleeper-rust-builder-base:current"
+ARG BASE_IMAGE="ghcr.io/gchq/sleeper-rust-builder-al2023:latest"
 FROM ${BASE_IMAGE}
 
 COPY install-sccache.sh /

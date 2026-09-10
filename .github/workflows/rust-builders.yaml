@@ -10,8 +10,9 @@ on:
 env:
   DOCKER_PLATFORMS: linux/amd64,linux/arm64/v8
   BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-  BASE_IMAGE: localhost:5000/sleeper-rust-builder-base:latest
-  SCCACHE_IMAGE: localhost:5000/sleeper-rust-builder-sccache:latest
+  BASE_IMAGE_LOCAL: localhost:5000/sleeper-rust-builder-base:latest
+  BASE_IMAGE: ghcr.io/gchq/sleeper-rust-builder-al2023:latest
+  SCCACHE_IMAGE: ghcr.io/gchq/sleeper-rust-builder-sccache:latest
 
 jobs:
   build:
@@ -41,6 +42,19 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: ./rust/builders/base
+          tags: ${{ env.BASE_IMAGE_LOCAL }}
+          sbom: false
+          provenance: false
+          platforms: ${{ env.DOCKER_PLATFORMS }}
+          push: true
+          labels: |
+            git-commit=${{ github.sha }}
+            build-url=${{ env.BUILD_URL }}
+      - name: Push base Docker image
+        uses: docker/build-push-action@v7
+        if: ${{ inputs.pushImages }}
+        with:
+          context: ./rust/builders/base
           tags: ${{ env.BASE_IMAGE }}
           sbom: false
           provenance: false
@@ -49,68 +63,12 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-      - name: Pull base image
-        run: docker pull ${{ env.BASE_IMAGE }}
-      - name: Build base sccache Docker image
+      - name: Build sccache Docker image
         uses: docker/build-push-action@v7
         with:
-          context: ./rust/builders/base-sccache
+          context: ./rust/builders/sccache
           tags: ${{ env.SCCACHE_IMAGE }}
-          build-args: BASE_IMAGE=${{ env.BASE_IMAGE }}
-          sbom: false
-          provenance: false
-          platforms: ${{ env.DOCKER_PLATFORMS }}
-          push: true
-          labels: |
-            git-commit=${{ github.sha }}
-            build-url=${{ env.BUILD_URL }}
-      - name: Pull base sccache image
-        run: docker pull ${{ env.SCCACHE_IMAGE }}
-      - name: Build x86_64 Docker image
-        uses: docker/build-push-action@v7
-        with:
-          context: ./rust/builders/x86_64
-          tags: ghcr.io/gchq/sleeper-rust-builder-x86_64:latest
-          build-args: BASE_IMAGE=${{ env.BASE_IMAGE }}
-          sbom: false
-          provenance: false
-          platforms: ${{ env.DOCKER_PLATFORMS }}
-          push: ${{ inputs.pushImages }}
-          labels: |
-            git-commit=${{ github.sha }}
-            build-url=${{ env.BUILD_URL }}
-      - name: Build aarch64 Docker image
-        uses: docker/build-push-action@v7
-        with:
-          context: ./rust/builders/aarch64
-          tags: ghcr.io/gchq/sleeper-rust-builder-aarch64:latest
-          build-args: BASE_IMAGE=${{ env.BASE_IMAGE }}
-          sbom: false
-          provenance: false
-          platforms: ${{ env.DOCKER_PLATFORMS }}
-          push: ${{ inputs.pushImages }}
-          labels: |
-            git-commit=${{ github.sha }}
-            build-url=${{ env.BUILD_URL }}
-      - name: Build x86_64 sccache Docker image
-        uses: docker/build-push-action@v7
-        with:
-          context: ./rust/builders/x86_64
-          tags: ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest
-          build-args: BASE_IMAGE=${{ env.SCCACHE_IMAGE }}
-          sbom: false
-          provenance: false
-          platforms: ${{ env.DOCKER_PLATFORMS }}
-          push: ${{ inputs.pushImages }}
-          labels: |
-            git-commit=${{ github.sha }}
-            build-url=${{ env.BUILD_URL }}
-      - name: Build aarch64 sccache Docker image
-        uses: docker/build-push-action@v7
-        with:
-          context: ./rust/builders/aarch64
-          tags: ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest
-          build-args: BASE_IMAGE=${{ env.SCCACHE_IMAGE }}
+          build-args: BASE_IMAGE=${{ env.BASE_IMAGE_LOCAL }}
           sbom: false
           provenance: false
           platforms: ${{ env.DOCKER_PLATFORMS }}
@@ -124,7 +82,7 @@ jobs:
         run: |
           echo "token=${{ secrets.GITHUB_TOKEN }}" >> delete.properties
           echo "organization=${{ github.repository_owner }}" >> delete.properties
-          echo "packageNames=sleeper-rust-builder-x86_64,sleeper-rust-builder-aarch64,sleeper-rust-builder-x86_64-sccache,sleeper-rust-builder-aarch64-sccache" >> delete.properties
+          echo "packageNames=sleeper-rust-builder-al2023,sleeper-rust-builder-sccache" >> delete.properties
           echo "ignoreTagsPattern=^latest$" >> delete.properties
           echo "keepMostRecent=4" >> delete.properties
           mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.github.api.containers.DeleteGHCRVersions \

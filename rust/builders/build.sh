@@ -33,13 +33,5 @@ if [ -n "$(ls -A "$BASE_DIR/certs" 2>/dev/null | grep -v '^README\.md$')" ]; the
   cp -r "$BASE_DIR/certs" certs
   rm -f certs/README.md
 fi
-docker build -t sleeper-rust-builder-base:current .
-popd
-
-pushd "$THIS_DIR"/x86_64
-docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-x86_64:latest .
-popd
-
-pushd "$THIS_DIR"/aarch64
-docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-aarch64:latest .
+docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-al2023:latest .
 popd
