@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildMultiplatformImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildNoLoadMultiplatformImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
@@ -80,7 +81,7 @@ public class BuildDockerImageTest extends DockerImagesTestBase {
         writeFile("./scripts/jars/statestore.jar", "jar-content");
 
         // When
-        buildImage(lambdaImageConfig(), "statestore-lambda", "test", "--lambda");
+        buildImage(lambdaImageConfig(), "statestore-lambda", "test");
 
         // Then
         assertThat(commandsThatRan).containsExactly(
@@ -88,6 +89,28 @@ public class BuildDockerImageTest extends DockerImagesTestBase {
         assertThat(files).isEqualTo(Map.of(
                 "./scripts/jars/statestore.jar", "jar-content",
                 "./scripts/docker/lambda/lambda.jar", "jar-content"));
+    }
+
+    @Test
+    void shouldBuildBaseImage() {
+        // When
+        buildImage(dockerDeploymentImageConfig(), "base", "test");
+
+        // Then
+        assertThat(commandsThatRan).containsExactly(
+                buildImageCommand("test", "./scripts/docker/base"));
+    }
+
+    @Test
+    void shouldBuildBaseImageForMultiplePlatforms() {
+        // When
+        buildImage(dockerDeploymentImageConfig(), "base", "test", "--multiplatform");
+
+        // Then
+        assertThat(commandsThatRan).containsExactly(
+                createBuildxBuilderInstanceCommand(),
+                useBuildxBuilderInstanceCommand(),
+                buildMultiplatformImageCommand("test", "./scripts/docker/base"));
     }
 
     @Test

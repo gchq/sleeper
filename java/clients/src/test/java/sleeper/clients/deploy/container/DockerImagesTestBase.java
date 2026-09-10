@@ -29,15 +29,10 @@ import java.util.List;
 import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
 import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCode;
 import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCodeForCommand;
+import static sleeper.clients.testutil.RunCommandTestHelper.returnExitCodeForCommands;
 
 public class DockerImagesTestBase {
-    private static final DockerDeployment BASE = DockerDeployment.builder()
-            .deploymentName("base")
-            .multiplatform(true)
-            .isDefaultBaseImage(true)
-            .build();
     private static final List<DockerDeployment> DOCKER_DEPLOYMENTS = List.of(
-            BASE,
             DockerDeployment.builder()
                     .deploymentName("statestore-committer")
                     .committerPlatform(StateStoreCommitterPlatform.EC2)
@@ -107,20 +102,24 @@ public class DockerImagesTestBase {
         commandRunner = recordCommandsRun(commandsThatRan, returnExitCodeForCommand(exitCode, command));
     }
 
+    protected void setReturnExitCodeForCommands(int exitCode, CommandPipeline... commands) {
+        commandRunner = recordCommandsRun(commandsThatRan, returnExitCodeForCommands(exitCode, commands));
+    }
+
     protected DockerImageConfiguration dockerDeploymentImageConfig() {
-        return new DockerImageConfiguration(DOCKER_DEPLOYMENTS, List.of());
+        return new DockerImageConfiguration(StackDockerImage.DEFAULT_BASE, DOCKER_DEPLOYMENTS, List.of());
     }
 
     protected DockerImageConfiguration lambdaImageConfig() {
-        return new DockerImageConfiguration(List.of(BASE), LAMBDA_HANDLERS);
+        return new DockerImageConfiguration(StackDockerImage.DEFAULT_BASE, List.of(), LAMBDA_HANDLERS);
     }
 
     protected StackDockerImage baseImage() {
-        return StackDockerImage.fromDockerDeployment(BASE);
+        return StackDockerImage.DEFAULT_BASE;
     }
 
     protected DockerImageConfiguration optionalLambdasImageConfig() {
-        return new DockerImageConfiguration(List.of(BASE),
+        return new DockerImageConfiguration(StackDockerImage.DEFAULT_BASE, List.of(),
                 LAMBDA_HANDLERS.stream().filter(lambda -> !lambda.getOptionalStacks().isEmpty()).toList());
     }
 

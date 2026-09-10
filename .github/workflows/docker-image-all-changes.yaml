@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'java/**/Dockerfile'
+      - 'java/**/BuildDockerImage.java'
       - '.github/workflows/docker-image-all.yaml'
       - '.github/workflows/docker-image-test.yaml'
       - 'code-style/.trivyignore.yaml'

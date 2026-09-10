@@ -42,7 +42,7 @@ You can pass an optional second argument for whether to create a new Docker buil
 created that is capable of publishing multiplatform images, like this:
 
 ```bash
-docker buildx create --name sleeper --use
+docker buildx create --name sleeper-host-network --driver docker-container --driver-opt network=host --use
 ```
 
 This may not be suitable for all use cases. You can disable this by passing "false" as the second argument. In that

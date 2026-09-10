@@ -43,7 +43,7 @@ public class CommandArgumentReader {
         while (reader.isArg()) {
             if (!reader.readLongOption(usage, argumentTracker)
                     && !reader.readShortOption(usage, argumentTracker)) {
-                argumentTracker.positionalArgument(reader.readPositionalArg());
+                argumentTracker.positionalArgument(usage, reader.readPositionalArg());
             }
         }
         return argumentTracker.buildArguments(usage);

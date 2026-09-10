@@ -22,7 +22,9 @@ import sleeper.clients.admin.AdminClient;
 import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.DeployConfiguration;
+import sleeper.clients.deploy.container.BaseImageDestination;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
+import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.util.cdk.InvokeCdk;
@@ -53,7 +55,8 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
     protected final Map<Path, String> files = new HashMap<>();
     protected final Path scriptsDirectory = Path.of("./test");
     protected final Path cdkOutputDir = Path.of("test-cdk-output");
-    protected final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(List.of(), List.of());
+    protected final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(
+            StackDockerImage.DEFAULT_BASE, List.of(), List.of());
     protected final InMemoryAdminClientProperties clientProperties = InMemoryAdminClientProperties.create();
     protected final AdminClientPropertiesStore store = new AdminClientPropertiesStore(
             clientProperties, invokeCdk(), scriptsDirectory.resolve("generated"), uploadDockerImages(),
@@ -72,7 +75,8 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
     }
 
     @Override
-    public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws InterruptedException {
+    public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient)
+            throws InterruptedException {
         new AdminClient(clientProperties.createTableIndex(instanceProperties), store, trackers,
                 editor, out.consoleOut(), in.consoleIn(),
                 queueClient, properties -> Collections.emptyMap())
@@ -102,7 +106,8 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
     }
 
     protected void setStateStoreForTable(String tableName, StateStore stateStore) {
-        TableProperties tableProperties = clientProperties.createTablePropertiesStore(instanceProperties).loadByName(tableName);
+        TableProperties tableProperties = clientProperties.createTablePropertiesStore(instanceProperties)
+                .loadByName(tableName);
         clientProperties.setStateStore(tableProperties, stateStore);
     }
 
@@ -129,6 +134,7 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
                         .deployConfig(DeployConfiguration.fromLocalBuild())
                         .commandRunner(recordCommandsRun(commandsThatRan, recordCommandsRun(dockerCommandsThatRan)))
                         .copyFile((source, target) -> files.put(target, files.get(source)))
+                        .baseImageDestination(BaseImageDestination.managedRegistry(5000))
                         .scriptsDirectory(scriptsDirectory)
                         .version(version)
                         .build(),

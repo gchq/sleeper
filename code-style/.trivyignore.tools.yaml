@@ -16,6 +16,8 @@ vulnerabilities:
   # github.com/docker/docker
   - id: CVE-2026-34040
   - id: CVE-2026-33997
+  # github.com/containerd/containerd/v2
+  - id: CVE-2026-53495
   # golang.org/x/mod
   - id: CVE-2026-56864
   - id: CVE-2026-56865
@@ -23,6 +25,8 @@ vulnerabilities:
   - id: CVE-2026-46600
   # golang.org/x/crypto
   - id: CVE-2026-56854
+  - id: CVE-2026-56855
+  - id: CVE-2026-78662
   # google.golang.org/grpc
   - id: CVE-2026-84304
   # github.com/cilium/ebpf
