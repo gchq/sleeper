@@ -1,16 +1,16 @@
 FROM amazonlinux:2023
 # Find architecture of host, e.g. amd64 or arm64
-ARG BUILDARCH
+ARG TARGETARCH
 ARG RUST_VERSION=1.98.0
 
 RUN mkdir -p /opt/sysroot/x86_64/var/cache /opt/sysroot/aarch64/var/cache
 
 # Avoid downloading hosts dnf metadata cache again by symlinking the cache from container into the sysroot
 # matching the host architecture
-RUN case "${BUILDARCH}" in \
+RUN case "${TARGETARCH}" in \
     "amd64") ln -s /var/cache/dnf /opt/sysroot/x86_64/var/cache ;;\
     "arm64") ln -s /var/cache/dnf /opt/sysroot/aarch64/var/cache ;;\
-    *) echo "Architecture ${BUILDARCH} not recognised"; exit 1;;\
+    *) echo "Architecture ${TARGETARCH} not recognised"; exit 1;;\
     esac
 
 # Install compiler and linker which supports x86_64 and aarch64 targets
