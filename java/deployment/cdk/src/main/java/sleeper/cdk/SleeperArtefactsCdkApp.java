@@ -51,6 +51,7 @@ public class SleeperArtefactsCdkApp {
                 .build());
         SleeperArtefactRepositories.Builder.create(stack, deploymentId)
                 .deploy(ToDeploy.fromString(context.tryGetContext("deploy")))
+                .retainLogsAfterDestroy(context.getBooleanOrDefault("retainLogsAfterDestroy", true))
                 .build();
         app.synth();
     }
