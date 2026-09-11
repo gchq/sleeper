@@ -18,6 +18,7 @@ package sleeper.clients.teardown;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.util.console.ConsoleInput;
+import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
@@ -26,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Scanner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,6 +64,13 @@ class TearDownInstanceTest {
         assertThat(TearDownInstance.confirmTearDown(
                 consoleInput("\n", new ByteArrayOutputStream()), readArguments("/scripts", "test-instance")))
                 .isFalse();
+    }
+
+    @Test
+    void shouldWaitUpToOneHourForStackDeletion() {
+        assertThat(WaitForStackToDelete.defaultPoll())
+                .isEqualTo(PollWithRetries.intervalAndPollingTimeout(
+                        Duration.ofSeconds(30), Duration.ofHours(1)));
     }
 
     @Test
