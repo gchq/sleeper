@@ -131,10 +131,10 @@ public class IngestJobStatusReport {
             TableStatus table = tableIndex.getTableByName(reportArgs.tableName())
                     .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + reportArgs.tableName()));
             IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-            JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(table, reportArgs.queryType(),
+            JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(reportArgs.queryType(),
                     determineQueryParams(reportArgs),
                     Clock.systemUTC(), ConsoleInput.stdIn());
-            new IngestJobStatusReport(tracker, query, reportArgs.reporter(),
+            new IngestJobStatusReport(tracker, table, query, reportArgs.reporter(),
                     QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
                     PersistentEmrStepCount.byStatus(instanceProperties, emrClient)).run();
         }
@@ -192,7 +192,7 @@ public class IngestJobStatusReport {
                 if (optionalDetailed.isPresent()) {
                     jobId = optionalDetailed.get();
                 } else {
-                    throw new CommandArgumentsException("Additional paramter of Job ID is required for the detailed query type.");
+                    throw new CommandArgumentsException("Additional parameter of Job ID is required for the detailed query type.");
                 }
                 break;
             case RANGE:
@@ -221,9 +221,9 @@ public class IngestJobStatusReport {
                     startTime = optionalStart.get();
                     endTime = optionalEnd.get();
                 } else if (optionalStart.isEmpty() && optionalEnd.isPresent()) {
-                    throw new CommandArgumentsException("Missing paramter of start-time which is required for the ranged query type.");
+                    throw new CommandArgumentsException("Missing parameter of start-time which is required for the Range query type.");
                 } else if (optionalStart.isPresent() && optionalEnd.isEmpty()) {
-                    throw new CommandArgumentsException("Missing paramter of end-time which is required for the ranged query type.");
+                    throw new CommandArgumentsException("Missing parameter of end-time which is required for the Range query type.");
                 }
                 break;
             default:
