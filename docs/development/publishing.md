@@ -84,24 +84,40 @@ docker login your.registry.example.com
 
 This can also be changed later, without reinstalling, using `sleeper cli set-registry <registry>`.
 
-By default, images are pulled with the tag `latest`, regardless of which registry you're using. If you installed from
-a local repository checkout, you can instead pull the version of Sleeper currently checked out there, using
-`--useLocalVersion`:
+By default, images are pulled with the tag `latest`, regardless of which registry you're using. If your pipeline
+publishes images tagged with the version, you can instead pull the version of Sleeper in a local repository checkout.
+This needs two options, `--useLocalRepo` to tie the installation to the checkout you're running the install script
+from, and `--useLocalVersion` to read the version from there:
 
 ```bash
-./scripts/cli/install.sh --registry your.registry.example.com/sleeper --useLocalVersion
+./scripts/cli/install.sh --registry your.registry.example.com/sleeper --useLocalRepo --useLocalVersion
 ```
 
 This reads the version from the repository's `pom.xml` each time images are pulled, so switching branches locally
-will be picked up automatically, and the pulled images match the version you're working with.
+will be picked up automatically, and the pulled images match the version you're working with. Note that the version
+covers a whole release line, so images tagged with it will not necessarily have been built from the commit you have
+checked out.
 
-This only works against a registry that publishes images tagged with the version, so you must set a custom registry
-alongside it, either with `--registry` as above or from a previous installation. The default Sleeper registry only
-publishes the tag `latest`, so the install script will fail immediately if you use `--useLocalVersion` without a
-registry, or if you're not installing from a local repository checkout.
+The install script will fail immediately if these options can't be satisfied, either because `--useLocalVersion` was
+used without `--useLocalRepo`, because you're not running the script from a local repository checkout, or because no
+custom registry is set. The default Sleeper registry only publishes the tag `latest`, so a version tag would never be
+found there.
 
-Use of the local version can also be toggled later using `sleeper cli set-use-local-version <true|false>`, but requires
-the CLI to have been installed from a local repository checkout.
+Use of the local version can also be toggled later using `sleeper cli set-use-local-version <true|false>`, which needs
+the CLI to have been installed with `--useLocalRepo`.
+
+### Installing the CLI from a local repository
+
+`--useLocalRepo` also changes where the CLI itself comes from. Normally the install script downloads the `sleeper`
+command from GitHub, and `sleeper cli upgrade` downloads it again from the `develop` branch each time you upgrade.
+With `--useLocalRepo`, the command is taken from `scripts/cli/runInDocker.sh` in the checkout you installed from, and
+upgrades are taken from there too, along with the CLI runner Dockerfile.
+
+This is what you want when you're developing the CLI itself, or installing from a checkout that matches what your
+pipeline publishes. It does mean upgrades no longer track GitHub, so the CLI only changes when that checkout does. To
+make that visible, `sleeper cli upgrade` reports the repository it's updating from and the branch and commit it has
+checked out, and pulling images reports the registry and tag being used. To go back to tracking GitHub, install again
+without `--useLocalRepo`.
 
 ### Installing published artefacts
 

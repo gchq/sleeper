@@ -63,7 +63,7 @@ LOCAL_REPO_CONFIG_PATH="$HOME/.sleeper/local-repo"
 get_version_tag() {
   if [ -f "$USE_LOCAL_VERSION_CONFIG_PATH" ] && [ "$(cat "$USE_LOCAL_VERSION_CONFIG_PATH")" == "true" ]; then
     if [ ! -f "$LOCAL_REPO_CONFIG_PATH" ]; then
-      echo "Error: --useLocalVersion requires the CLI to have been installed from a local repository checkout." >&2
+      echo "Error: the local version requires the CLI to have been installed with --useLocalRepo." >&2
       exit 1
     fi
     LOCAL_REPO=$(<"$LOCAL_REPO_CONFIG_PATH")
@@ -74,9 +74,26 @@ get_version_tag() {
 }
 
 set_use_local_version() {
+  if [ "$1" == "true" ] && [ ! -f "$LOCAL_REPO_CONFIG_PATH" ]; then
+    echo "Error: the local version requires the CLI to have been installed with --useLocalRepo," >&2
+    echo "as the version is read from the repository's java/pom.xml." >&2
+    exit 1
+  fi
   mkdir -p "$DOCKER_TOOLS_CONFIG_DIR"
   echo "$1" > "$USE_LOCAL_VERSION_CONFIG_PATH"
   echo "Use local version set to: $1"
+}
+
+# Report the checkout an install is tied to, so any mismatch with the images being pulled is visible
+echo_local_repo_checkout() {
+  local LOCAL_REPO=$1
+  echo "Local repository: $LOCAL_REPO"
+  local BRANCH COMMIT
+  BRANCH=$(git -C "$LOCAL_REPO" rev-parse --abbrev-ref HEAD 2> /dev/null) || BRANCH=""
+  COMMIT=$(git -C "$LOCAL_REPO" rev-parse --short HEAD 2> /dev/null) || COMMIT=""
+  if [ -n "$COMMIT" ]; then
+    echo "Checked out at $BRANCH ($COMMIT)"
+  fi
 }
 
 run_in_docker() {
@@ -176,7 +193,7 @@ pull_docker_images() {
   fi
 
   VERSION=$(get_version_tag)
-  echo "Pulling CLI Docker images (version: $VERSION)"
+  echo "Pulling CLI Docker images from $(get_registry) (version: $VERSION)"
   for IMAGE_NAME in "${ALL_IMAGES[@]}"; do
     echo "Pulling image: $IMAGE_NAME"
     REMOTE_IMAGE="$(get_registry)/$IMAGE_NAME:$VERSION"
@@ -258,6 +275,7 @@ upgrade_cli() {
   if [ -f "$HOME/.sleeper/local-repo" ]; then
     echo "Sleeper Docker tools CLI was previously installed from a local repository, updating from there"
     LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
+    echo_local_repo_checkout "$LOCAL_REPO"
     SCRIPT_PATH="$LOCAL_REPO/scripts/cli/runInDocker.sh"
   else
     echo "Downloading Sleeper CLI"

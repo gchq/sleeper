@@ -17,10 +17,12 @@ set -e
 unset CDPATH
 
 REGISTRY=""
+USE_LOCAL_REPO=false
 USE_LOCAL_VERSION=false
 while [[ "$#" -gt 0 ]]; do
   case $1 in
     --registry) REGISTRY="$2"; shift 2 ;;
+    --useLocalRepo) USE_LOCAL_REPO=true; shift 1 ;;
     --useLocalVersion) USE_LOCAL_VERSION=true; shift 1 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
@@ -31,14 +33,18 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 LOCAL_SCRIPT="$THIS_DIR/runInDocker.sh"
 REGISTRY_CONFIG_PATH="$HOME/.sleeper/docker-tools/registry"
 
-# Fail before changing anything if the version to pull can't be found, or won't be published
-if [ "$USE_LOCAL_VERSION" == "true" ]; then
+# Fail before changing anything if the options can't be satisfied
+if [ "$USE_LOCAL_VERSION" == "true" ] && [ "$USE_LOCAL_REPO" != "true" ]; then
+  echo "Error: --useLocalVersion requires --useLocalRepo," >&2
+  echo "as the version is read from the repository's java/pom.xml." >&2
+  exit 1
+fi
+if [ "$USE_LOCAL_REPO" == "true" ]; then
   if [ ! -f "$LOCAL_SCRIPT" ]; then
-    echo "Error: --useLocalVersion requires installing from a local repository checkout," >&2
-    echo "as the version is read from the repository's java/pom.xml." >&2
+    echo "Error: --useLocalRepo requires running this script from a local repository checkout." >&2
     exit 1
   fi
-  if [ -z "$REGISTRY" ] && [ ! -f "$REGISTRY_CONFIG_PATH" ]; then
+  if [ "$USE_LOCAL_VERSION" == "true" ] && [ -z "$REGISTRY" ] && [ ! -f "$REGISTRY_CONFIG_PATH" ]; then
     echo "Error: --useLocalVersion requires a registry that publishes version tags, set with --registry." >&2
     echo "The default registry only publishes the tag 'latest'." >&2
     exit 1
@@ -48,8 +54,8 @@ fi
 TEMP_DIR=$(mktemp -d)
 TEMP_PATH="$TEMP_DIR/sleeper"
 
-if [ -f "$LOCAL_SCRIPT" ]; then
-  echo "Local Sleeper CLI found, using that"
+if [ "$USE_LOCAL_REPO" == "true" ]; then
+  echo "Installing the Sleeper CLI from this repository"
   SCRIPT_PATH="$LOCAL_SCRIPT"
   echo "Saving local repo path to ~/.sleeper/local-repo"
   mkdir -p "$HOME/.sleeper"
