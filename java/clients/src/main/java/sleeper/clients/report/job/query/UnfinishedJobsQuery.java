@@ -15,7 +15,6 @@
  */
 package sleeper.clients.report.job.query;
 
-import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -27,19 +26,14 @@ import java.util.List;
  * A query to generate a report on jobs in a job tracker that have not yet finished.
  */
 public class UnfinishedJobsQuery implements JobQuery {
-    private final String tableId;
-
-    public UnfinishedJobsQuery(TableStatus table) {
-        this.tableId = table.getTableUniqueId();
-    }
 
     @Override
-    public List<CompactionJobStatus> run(CompactionJobTracker tracker) {
+    public List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {
         return tracker.getUnfinishedJobs(tableId);
     }
 
     @Override
-    public List<IngestJobStatus> run(IngestJobTracker tracker) {
+    public List<IngestJobStatus> run(IngestJobTracker tracker, String tableId) {
         return tracker.getUnfinishedJobs(tableId);
     }
 
