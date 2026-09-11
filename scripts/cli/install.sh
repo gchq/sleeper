@@ -27,11 +27,27 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+LOCAL_SCRIPT="$THIS_DIR/runInDocker.sh"
+REGISTRY_CONFIG_PATH="$HOME/.sleeper/docker-tools/registry"
+
+# Fail before changing anything if the version to pull can't be found, or won't be published
+if [ "$USE_LOCAL_VERSION" == "true" ]; then
+  if [ ! -f "$LOCAL_SCRIPT" ]; then
+    echo "Error: --useLocalVersion requires installing from a local repository checkout," >&2
+    echo "as the version is read from the repository's java/pom.xml." >&2
+    exit 1
+  fi
+  if [ -z "$REGISTRY" ] && [ ! -f "$REGISTRY_CONFIG_PATH" ]; then
+    echo "Error: --useLocalVersion requires a registry that publishes version tags, set with --registry." >&2
+    echo "The default registry only publishes the tag 'latest'." >&2
+    exit 1
+  fi
+fi
+
 TEMP_DIR=$(mktemp -d)
 TEMP_PATH="$TEMP_DIR/sleeper"
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-LOCAL_SCRIPT="$THIS_DIR/runInDocker.sh"
 if [ -f "$LOCAL_SCRIPT" ]; then
   echo "Local Sleeper CLI found, using that"
   SCRIPT_PATH="$LOCAL_SCRIPT"
@@ -39,10 +55,9 @@ if [ -f "$LOCAL_SCRIPT" ]; then
   mkdir -p "$HOME/.sleeper"
   echo $(cd "$THIS_DIR" && cd ../.. && pwd) > ~/.sleeper/local-repo
 else
-  if [ -f "$HOME/.sleeper/local-repo" ] || [ -d "$HOME/.sleeper/docker-tools" ]; then
-    echo "Clearing local repo path and registry/version config from any previous installation"
+  if [ -f "$HOME/.sleeper/local-repo" ]; then
+    echo "Clearing local repo path from any previous installation"
     rm -f "$HOME/.sleeper/local-repo"
-    rm -rf "$HOME/.sleeper/docker-tools"
   fi
 
   echo "Downloading Sleeper CLI"

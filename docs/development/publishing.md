@@ -52,9 +52,28 @@ You can also configure options for the build with `scripts/deploy/setDeployConfi
 see [building in a custom environment](custom-environment.md). If it's set to deploy images from a remote repository,
 this publishing will fail.
 
-### Configuring the CLI to use a custom registry
+### Publishing Docker tools images
 
-If you've published Docker images to your own registry, as described above, you can point the Sleeper CLI at it
+The [Sleeper Docker tools](../deployment/docker-tools.md) CLI uses its own images, which are not published by
+`publishDocker.sh`. The ones we publish are built and pushed to `ghcr.io/gchq` with the tag `latest` by the "Docker CLI
+Deployment" GitHub Actions workflow, in [`.github/workflows/docker-cli-main.yaml`](/.github/workflows/docker-cli-main.yaml).
+
+To publish them to your own registry, build them as described
+in [the developer guide](../developer-guide.md#sleeper-docker-tools), then tag and push them:
+
+```bash
+for IMAGE in sleeper-builder sleeper-local; do
+  docker tag "$IMAGE:current" "my.registry.com/path/$IMAGE:latest"
+  docker push "my.registry.com/path/$IMAGE:latest"
+done
+```
+
+The CLI pulls each image as `<registry>/<image name>:<tag>`, so the image names must be kept as they are, and the tag
+must be `latest` unless you set the CLI to use the version in a local repository checkout, as described below.
+
+### Configuring the Docker tools CLI to use a custom registry
+
+If you've published Docker tools images to your own registry, as described above, you can point the Sleeper CLI at it
 instead of the default Sleeper registry. Pass `--registry` when installing the CLI. You must first log in to that
 registry with Docker, otherwise the image pull will fail:
 
@@ -70,14 +89,19 @@ a local repository checkout, you can instead pull the version of Sleeper current
 `--useLocalVersion`:
 
 ```bash
-./scripts/cli/install.sh --useLocalVersion
+./scripts/cli/install.sh --registry your.registry.example.com/sleeper --useLocalVersion
 ```
 
 This reads the version from the repository's `pom.xml` each time images are pulled, so switching branches locally
-will be picked up automatically. This is useful when working with a custom registry that does publish version tags,
-so the pulled images match the version you're working with. This can also be toggled later using
-`sleeper cli set-use-local-version <true|false>`, but requires the CLI to have been installed from a local repository
-checkout.
+will be picked up automatically, and the pulled images match the version you're working with.
+
+This only works against a registry that publishes images tagged with the version, so you must set a custom registry
+alongside it, either with `--registry` as above or from a previous installation. The default Sleeper registry only
+publishes the tag `latest`, so the install script will fail immediately if you use `--useLocalVersion` without a
+registry, or if you're not installing from a local repository checkout.
+
+Use of the local version can also be toggled later using `sleeper cli set-use-local-version <true|false>`, but requires
+the CLI to have been installed from a local repository checkout.
 
 ### Installing published artefacts
 

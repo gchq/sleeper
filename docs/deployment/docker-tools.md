@@ -32,7 +32,7 @@ version of the CLI, rather than the version of Sleeper you will deploy.
 ### Installing from a local repository
 
 If you have cloned the Sleeper repository locally, you can run the install script directly from the repository. It will
-automatically detect the relevent files alongside it and use that instead of downloading them from GitHub:
+automatically detect the relevant files alongside it and use that instead of downloading them from GitHub:
 
 ```bash
 ./scripts/cli/install.sh
@@ -52,7 +52,7 @@ You can upgrade to the latest version of the CLI using `sleeper cli upgrade`. Th
 build and deployment tools up to date.
 
 If you're pulling images from your own container registry rather than the default Sleeper one, see
-[publishing artefacts](../development/publishing.md#configuring-the-cli-to-use-a-custom-registry) for how to point the
+[publishing artefacts](../development/publishing.md#configuring-the-docker-tools-cli-to-use-a-custom-registry) for how to point the
 CLI at it.
 
 There's a `sleeper environment` command that you can use to prepare your AWS account to deploy Sleeper into it. This is
