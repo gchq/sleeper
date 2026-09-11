@@ -50,7 +50,6 @@ public class EksBulkImportStackIT extends SleeperStackTestBase {
     void shouldGenerateCloudFormationTemplateForAutomodeCluster() {
         // Given
         instanceProperties.setEnum(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE);
-        instanceProperties.set(BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL, "true");
         SleeperCoreStacks core = SleeperCoreStacks.create(rootStack, instanceProps());
         BulkImportBucketStack bucket = new BulkImportBucketStack(rootStack, "BulkImportBucket", instanceProperties, core);
 

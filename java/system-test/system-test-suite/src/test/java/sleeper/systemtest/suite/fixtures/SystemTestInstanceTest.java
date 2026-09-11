@@ -29,7 +29,10 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL;
 import static sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper.parametersBuilder;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_EKS_AUTO;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_PERFORMANCE_EKS;
 
 public class SystemTestInstanceTest {
 
@@ -48,6 +51,15 @@ public class SystemTestInstanceTest {
         assertThat(instances)
                 .extracting(instance -> parameters.buildInstanceId(instance.getShortName()))
                 .allMatch(CommonProperty.ID.getValidationPredicate());
+    }
+
+    @Test
+    void shouldUseDefaultNodePoolConfigurationInEksAutoModeSystemTests() {
+        SystemTestParameters parameters = parametersBuilder().build();
+
+        assertThat(List.of(BULK_IMPORT_EKS_AUTO, BULK_IMPORT_PERFORMANCE_EKS))
+                .extracting(config -> config.buildDeployConfig(parameters).getInstanceProperties())
+                .allMatch(properties -> properties.getBoolean(BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL));
     }
 
     @Test
