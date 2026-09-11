@@ -252,8 +252,8 @@ public class SleeperCoreStacks {
         return autoDeleteS3Stack.addAutoDeleteS3Objects(scope, bucket);
     }
 
-    public void addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(Construct scope, ICluster cluster, IFunction taskCreator) {
-        ecsClusterTasksStack.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(scope, cluster, taskCreator);
+    public CustomResource addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(Construct scope, ICluster cluster, IFunction taskCreator) {
+        return ecsClusterTasksStack.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(scope, cluster, taskCreator);
     }
 
     public EcsClusterTasksStack getEcsClusterTasksStack() {

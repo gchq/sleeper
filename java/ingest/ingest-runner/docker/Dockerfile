@@ -14,8 +14,8 @@
 ARG BASE_IMAGE=sleeper-base:current
 FROM ${BASE_IMAGE}
 
-COPY ingest.jar /ingest.jar
-COPY run.sh /run.sh
+COPY --chown=sleeper:sleeper ingest.jar /ingest.jar
+COPY --chown=sleeper:sleeper run.sh /run.sh
 RUN ["chmod", "+x", "/run.sh"]
 
 ENTRYPOINT ["/run.sh"]

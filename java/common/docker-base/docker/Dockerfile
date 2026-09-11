@@ -26,3 +26,9 @@ RUN echo "deb [signed-by=/etc/apt/keyrings/corretto-keyring.gpg] https://apt.cor
 RUN apt-get update && apt-get install -y --no-install-recommends \
     java-17-amazon-corretto-jdk \
     && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --system sleeper \
+    && useradd --system --gid sleeper --no-create-home sleeper \
+    && mkdir -p /mnt/scratch \
+    && chown sleeper:sleeper /mnt/scratch
+USER sleeper

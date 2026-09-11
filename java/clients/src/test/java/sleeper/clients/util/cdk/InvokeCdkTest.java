@@ -41,6 +41,7 @@ class InvokeCdkTest {
     private final List<CommandPipeline> commandsThatRan = new ArrayList<>();
     private final Path propertiesFile = Path.of("instance.properties");
     private final Path configurationDirectory = Path.of("config");
+    private final Path outputDir = Path.of("test-cdk-output");
 
     private InvokeCdk cdk() {
         return cdk(recordCommandsRun(commandsThatRan));
@@ -50,6 +51,7 @@ class InvokeCdkTest {
         return InvokeCdk.builder()
                 .jarsDirectory(Path.of("."))
                 .runCommand(commandRunner)
+                .outputDirFactory(() -> outputDir)
                 .version("1.0").build();
     }
 
@@ -65,6 +67,7 @@ class InvokeCdkTest {
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command(
                     "cdk",
+                    "--output", "test-cdk-output",
                     "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                     "deploy",
                     "--require-approval", "never",
@@ -79,6 +82,7 @@ class InvokeCdkTest {
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
+                    "--output", "test-cdk-output",
                     "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "deploy",
                     "--require-approval", "never",
@@ -93,6 +97,7 @@ class InvokeCdkTest {
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
+                    "--output", "test-cdk-output",
                     "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                     "deploy",
                     "--require-approval", "never",
@@ -108,6 +113,7 @@ class InvokeCdkTest {
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
+                    "--output", "test-cdk-output",
                     "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                     "deploy",
                     "--require-approval", "never",
@@ -123,6 +129,7 @@ class InvokeCdkTest {
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
+                    "--output", "test-cdk-output",
                     "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "deploy",
                     "--require-approval", "never",
@@ -155,6 +162,7 @@ class InvokeCdkTest {
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
+                    "--output", "test-cdk-output",
                     "-a", "java -cp \"./cdk-1.0.jar\" sleeper.cdk.SleeperCdkApp",
                     "destroy", "--force",
                     "-c", "propertiesFile=instance.properties",
@@ -169,6 +177,7 @@ class InvokeCdkTest {
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
+                    "--output", "test-cdk-output",
                     "-a", "java -cp \"./system-test-cdk-1.0.jar\" sleeper.systemtest.cdk.SleeperDemonstrationCdkApp",
                     "destroy", "--force",
                     "-c", "propertiesFile=instance.properties",

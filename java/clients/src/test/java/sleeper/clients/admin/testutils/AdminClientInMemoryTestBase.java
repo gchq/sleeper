@@ -54,7 +54,9 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
     protected final List<CommandPipeline> dockerCommandsThatRan = new ArrayList<>();
     protected final Map<Path, String> files = new HashMap<>();
     protected final Path scriptsDirectory = Path.of("./test");
-    protected final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(StackDockerImage.DEFAULT_BASE, List.of(), List.of());
+    protected final Path cdkOutputDir = Path.of("test-cdk-output");
+    protected final DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration(
+            StackDockerImage.DEFAULT_BASE, List.of(), List.of());
     protected final InMemoryAdminClientProperties clientProperties = InMemoryAdminClientProperties.create();
     protected final AdminClientPropertiesStore store = new AdminClientPropertiesStore(
             clientProperties, invokeCdk(), scriptsDirectory.resolve("generated"), uploadDockerImages(),
@@ -73,7 +75,8 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
     }
 
     @Override
-    public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws InterruptedException {
+    public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient)
+            throws InterruptedException {
         new AdminClient(clientProperties.createTableIndex(instanceProperties), store, trackers,
                 editor, out.consoleOut(), in.consoleIn(),
                 queueClient, properties -> Collections.emptyMap())
@@ -103,7 +106,8 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
     }
 
     protected void setStateStoreForTable(String tableName, StateStore stateStore) {
-        TableProperties tableProperties = clientProperties.createTablePropertiesStore(instanceProperties).loadByName(tableName);
+        TableProperties tableProperties = clientProperties.createTablePropertiesStore(instanceProperties)
+                .loadByName(tableName);
         clientProperties.setStateStore(tableProperties, stateStore);
     }
 
@@ -120,6 +124,7 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
                 .version(version)
                 .scriptsDirectory(scriptsDirectory)
                 .runCommand(recordCommandsRun(commandsThatRan, recordCommandsRun(cdkCommandsThatRan)))
+                .outputDirFactory(() -> cdkOutputDir)
                 .build();
     }
 

@@ -58,6 +58,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class DeployNewInstanceIT {
+
     InstanceProperties instanceProperties = new InstanceProperties();
     Schema schema = createSchemaWithKey("key");
     InMemoryTableIndex tableIndex = new InMemoryTableIndex();
@@ -107,6 +108,12 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstanceWhenUsingConfigDir() throws Exception {
             // Given
+            // Set the same properties that CDK would write to S3, so that instancePropertiesLoader
+            // (which the new deploy() calls after CDK to reload deployed properties) returns
+            // the right base when AddTableClient creates tables.
+            instanceProperties.set(ID, "my-instance");
+            instanceProperties.set(VPC_ID, "test-vpc");
+            instanceProperties.set(SUBNETS, "test-subnet");
             instanceProperties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
             writeInstancePropertiesFile();
             TableProperties tableProperties = new TableProperties(instanceProperties);

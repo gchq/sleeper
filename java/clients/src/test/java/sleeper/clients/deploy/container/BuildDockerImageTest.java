@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildMultiplatformImageCommand;
+import static sleeper.clients.deploy.container.DockerImageCommandTestData.buildNoLoadMultiplatformImageCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.createBuildxBuilderInstanceCommand;
 import static sleeper.clients.deploy.container.DockerImageCommandTestData.useBuildxBuilderInstanceCommand;
 import static sleeper.clients.util.command.Command.command;
@@ -61,7 +62,7 @@ public class BuildDockerImageTest extends DockerImagesTestBase {
         assertThat(commandsThatRan).containsExactly(
                 createBuildxBuilderInstanceCommand(),
                 useBuildxBuilderInstanceCommand(),
-                buildMultiplatformImageCommand("test", "./scripts/docker/compaction"));
+                buildNoLoadMultiplatformImageCommand("test", "./scripts/docker/compaction"));
     }
 
     @Test

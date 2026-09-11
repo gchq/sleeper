@@ -14,8 +14,8 @@
 ARG BASE_IMAGE=sleeper-base:current
 FROM ${BASE_IMAGE}
 
-COPY compaction-job-execution.jar /compaction-job-execution.jar
-COPY run.sh /run.sh
+COPY --chown=sleeper:sleeper compaction-job-execution.jar /compaction-job-execution.jar
+COPY --chown=sleeper:sleeper run.sh /run.sh
 RUN ["chmod", "+x", "/run.sh"]
 
 ENTRYPOINT ["/run.sh"]
