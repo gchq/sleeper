@@ -138,7 +138,7 @@ class SleeperPropertiesPrettyPrinterTest {
             // When / Then
             assertThat(printEmptyInstanceProperties())
                     .contains("# (no value set, uncomment to set a value)\n" +
-                            "# sleeper.logging.root.level=\n");
+                            "# sleeper.logging.rust=\n");
         }
 
         @Test
@@ -152,8 +152,8 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyValueSetToEmptyString() {
             // When / Then
-            assertThat(printInstanceProperties("sleeper.logging.root.level="))
-                    .contains("\n# sleeper.logging.root.level=\n");
+            assertThat(printInstanceProperties("sleeper.logging.rust="))
+                    .contains("\n# sleeper.logging.rust=\n");
         }
 
         @Test
@@ -163,13 +163,14 @@ class SleeperPropertiesPrettyPrinterTest {
                     "sleeper.logging.parquet.level=INFO\n" +
                     "sleeper.logging.aws.level=INFO\n" +
                     "sleeper.logging.root.level=INFO"))
-                    .contains("# The logging level for Parquet logs.\n" +
+                    .contains("# The logging level for Apache Parquet. This overrides the corresponding Log4j setting.\n" +
                             "sleeper.logging.parquet.level=INFO\n" +
                             "\n" +
-                            "# The logging level for AWS logs.\n" +
+                            "# The logging level for AWS SDK libraries. This overrides the corresponding Log4j setting.\n" +
                             "sleeper.logging.aws.level=INFO\n" +
                             "\n" +
-                            "# The logging level for everything else.\n" +
+                            "# The root logging level for messages not covered by a more specific category. This overrides the\n" +
+                            "# corresponding Log4j setting.\n" +
                             "sleeper.logging.root.level=INFO");
         }
 
