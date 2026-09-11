@@ -16,21 +16,77 @@
 set -e
 unset CDPATH
 
-echo "Downloading Sleeper CLI"
+REGISTRY=""
+USE_LOCAL_REPO=false
+USE_LOCAL_VERSION=false
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --registry) REGISTRY="$2"; shift 2 ;;
+    --useLocalRepo) USE_LOCAL_REPO=true; shift 1 ;;
+    --useLocalVersion) USE_LOCAL_VERSION=true; shift 1 ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
+
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+LOCAL_SCRIPT="$THIS_DIR/runInDocker.sh"
+REGISTRY_CONFIG_PATH="$HOME/.sleeper/docker-tools/registry"
+
+# Fail before changing anything if the options can't be satisfied
+if [ "$USE_LOCAL_VERSION" == "true" ] && [ "$USE_LOCAL_REPO" != "true" ]; then
+  echo "Error: --useLocalVersion requires --useLocalRepo," >&2
+  echo "as the version is read from the repository's java/pom.xml." >&2
+  exit 1
+fi
+if [ "$USE_LOCAL_REPO" == "true" ]; then
+  if [ ! -f "$LOCAL_SCRIPT" ]; then
+    echo "Error: --useLocalRepo requires running this script from a local repository checkout." >&2
+    exit 1
+  fi
+  if [ "$USE_LOCAL_VERSION" == "true" ] && [ -z "$REGISTRY" ] && [ ! -f "$REGISTRY_CONFIG_PATH" ]; then
+    echo "Error: --useLocalVersion requires a registry that publishes version tags, set with --registry." >&2
+    echo "The default registry only publishes the tag 'latest'." >&2
+    exit 1
+  fi
+fi
+
 TEMP_DIR=$(mktemp -d)
 TEMP_PATH="$TEMP_DIR/sleeper"
-curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
-chmod a+x "$TEMP_PATH"
-echo "Downloaded command"
 
-"$TEMP_PATH" cli pull-images
+if [ "$USE_LOCAL_REPO" == "true" ]; then
+  echo "Installing the Sleeper CLI from this repository"
+  SCRIPT_PATH="$LOCAL_SCRIPT"
+  echo "Saving local repo path to ~/.sleeper/local-repo"
+  mkdir -p "$HOME/.sleeper"
+  echo $(cd "$THIS_DIR" && cd ../.. && pwd) > ~/.sleeper/local-repo
+else
+  if [ -f "$HOME/.sleeper/local-repo" ]; then
+    echo "Clearing local repo path from any previous installation"
+    rm -f "$HOME/.sleeper/local-repo"
+  fi
+
+  echo "Downloading Sleeper CLI"
+  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+  SCRIPT_PATH="$TEMP_PATH"
+  echo "Downloaded command"
+fi
+chmod a+x "$SCRIPT_PATH"
+
+# Set registry if provided, overriding the default
+if [ -n "$REGISTRY" ]; then
+  "$SCRIPT_PATH" cli set-registry "$REGISTRY"
+fi
+# Always set explicitly, so re-running without the flag resets to pulling latest
+"$SCRIPT_PATH" cli set-use-local-version "$USE_LOCAL_VERSION"
+"$SCRIPT_PATH" cli pull-images
 echo "Downloaded Docker images"
 
 EXECUTABLE_DIR="$HOME/.local/bin"
 mkdir -p "$EXECUTABLE_DIR"
 EXECUTABLE_PATH="$EXECUTABLE_DIR/sleeper"
-mv "$TEMP_PATH" "$EXECUTABLE_PATH"
-rmdir "$TEMP_DIR"
+cp "$SCRIPT_PATH" "$EXECUTABLE_PATH"
+rm -rf "$TEMP_DIR"
 echo "Installed"
 
 # Ensure executable directory is on path
