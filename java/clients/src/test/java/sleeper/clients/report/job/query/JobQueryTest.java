@@ -16,13 +16,17 @@
 
 package sleeper.clients.report.job.query;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.report.job.query.JobQuery.Type;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.util.cli.CommandArguments;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -121,5 +125,82 @@ public class JobQueryTest extends JobQueryTestBase {
         // When / Then
         assertThatThrownBy(() -> queryStatusesWithParams(queryType, queryParameters))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Nested
+    @DisplayName("Determine query type test")
+    class DetermineQueryTypeTests {
+
+        @Test
+        void shouldReturnAllQueryType() {
+            // Given
+            CommandArguments args = CommandArguments.builder()
+                    .argByName(Map.of())
+                    .flagByName(Map.of("all", Boolean.TRUE))
+                    .build();
+
+            // When / Then
+            assertThat(JobQuery.determineQueryType(args)).isEqualTo(JobQuery.Type.ALL);
+        }
+
+        @Test
+        void shouldReturnDetailedQueryType() {
+            // Given
+            CommandArguments args = CommandArguments.builder()
+                    .argByName(Map.of())
+                    .flagByName(Map.of("detailed", Boolean.TRUE))
+                    .build();
+
+            // When / Then
+            assertThat(JobQuery.determineQueryType(args)).isEqualTo(JobQuery.Type.DETAILED);
+        }
+
+        @Test
+        void shouldReturnRangeQueryType() {
+            // Given
+            CommandArguments args = CommandArguments.builder()
+                    .argByName(Map.of())
+                    .flagByName(Map.of("range", Boolean.TRUE))
+                    .build();
+
+            // When / Then
+            assertThat(JobQuery.determineQueryType(args)).isEqualTo(JobQuery.Type.RANGE);
+        }
+
+        @Test
+        void shouldReturnUnfinishedQueryType() {
+            // Given
+            CommandArguments args = CommandArguments.builder()
+                    .argByName(Map.of())
+                    .flagByName(Map.of("unfinished", Boolean.TRUE))
+                    .build();
+
+            // When / Then
+            assertThat(JobQuery.determineQueryType(args)).isEqualTo(JobQuery.Type.UNFINISHED);
+        }
+
+        @Test
+        void shouldReturnRejectedQueryType() {
+            // Given
+            CommandArguments args = CommandArguments.builder()
+                    .argByName(Map.of())
+                    .flagByName(Map.of("rejected", Boolean.TRUE))
+                    .build();
+
+            // When / Then
+            assertThat(JobQuery.determineQueryType(args)).isEqualTo(JobQuery.Type.REJECTED);
+        }
+
+        @Test
+        void shouldReturnPromptQueryType() {
+            // Given
+            CommandArguments args = CommandArguments.builder()
+                    .argByName(Map.of())
+                    .flagByName(Map.of())
+                    .build();
+
+            // When / Then
+            assertThat(JobQuery.determineQueryType(args)).isEqualTo(JobQuery.Type.PROMPT);
+        }
     }
 }
