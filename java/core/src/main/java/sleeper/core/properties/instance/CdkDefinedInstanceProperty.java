@@ -812,6 +812,11 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
+    CdkDefinedInstanceProperty REST_API_ADD_TABLE_URL = Index.propertyBuilder("sleeper.rest.api.add.table.url")
+            .description("The URL for creating a table through the Sleeper REST API.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
     @Override
     default boolean isSetByCdk() {
         return true;

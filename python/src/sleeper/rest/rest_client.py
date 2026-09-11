@@ -47,6 +47,12 @@ class RestApiClient:
         except KeyError as err:
             raise SleeperConfigurationError("The Sleeper REST API stack has not been deployed. REST API methods such as 'add_table' cannot be used until it is deployed.") from err
 
+        try:
+            self.add_table_url = instance_properties.get(RestCdkProperty.REST_ADD_TABLE_URL)
+        except KeyError:
+            # Older deployments only publish the base URL.
+            self.add_table_url = self.endpoint.rstrip("/") + "/" + CommonProperty.ADD_TABLE_PATH
+
         self.signer = ApiGatewaySigner(region=self.region)
 
     def _add_table(self, request: AddTableRequest) -> AddTableResponse:
@@ -58,7 +64,7 @@ class RestApiClient:
         :return: Details of the created table.
         """
 
-        url = self.endpoint + "/" + CommonProperty.ADD_TABLE_PATH
+        url = self.add_table_url
         body = request.to_json()
         logger.debug(f"Signing request {body} for url: {url}")
         signer = ApiGatewaySigner(region=self.region)
