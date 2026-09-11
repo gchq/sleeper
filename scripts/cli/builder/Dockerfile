@@ -29,8 +29,8 @@ RUN apt-get update && apt-get install -y \
     rsync \
     # Rust build time dependencies
     build-essential pkg-config libssl-dev \
-    # Clang installation dependencies
-    lsb-release wget software-properties-common gnupg \
+    clang-20 \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Trivy for vulnerability scanning
@@ -39,10 +39,6 @@ RUN echo "deb [signed-by=/etc/apt/keyrings/trivy.gpg] https://aquasecurity.githu
     | tee /etc/apt/sources.list.d/trivy.list > /dev/null
 RUN apt-get update && apt-get install -y \
     trivy \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Clang 20
-RUN wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 20 \
     && rm -rf /var/lib/apt/lists/*
 
 # VS Code Java extension requires Java 21, so we install that but set the preferred version to match AWS EMR.
