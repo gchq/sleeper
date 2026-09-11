@@ -27,6 +27,7 @@ import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SP
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_IMAGE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
@@ -210,7 +211,9 @@ public class SparkConfigurationUtils {
 
         // spark.kubernetes properties
         sparkConf.put("spark.master", "k8s://" + instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_ENDPOINT));
-        sparkConf.put("spark.kubernetes.container.image", DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties));
+        sparkConf.put("spark.kubernetes.container.image", instanceProperties.isSet(BULK_IMPORT_EKS_IMAGE)
+                ? instanceProperties.get(BULK_IMPORT_EKS_IMAGE)
+                : DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties));
         sparkConf.put("spark.kubernetes.namespace", instanceProperties.get(BULK_IMPORT_EKS_NAMESPACE));
         sparkConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", "spark");
         sparkConf.put("spark.kubernetes.executor.podTemplateFile", "/tmp/executor-template.yaml");
