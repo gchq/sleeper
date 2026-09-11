@@ -172,7 +172,7 @@
             <!-- Override the parent pom's hadoop-client managed dependency to also exclude reload4j -->
             <!-- and slf4j-reload4j. Hadoop 3.4 bundles them in several of its sub-modules (hadoop-common, -->
             <!-- hadoop-yarn-common, ...), so excluding them at hadoop-client level cascades across the subtree. -->
-            <!-- The log4j and netty-all exclusions are inherited from the parent pom but must be repeated -->
+            <!-- The log4j, netty-all and Jetty webapp exclusions from the parent pom must be repeated -->
             <!-- here, since a child dependencyManagement entry replaces the parent's rather than merging. -->
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
@@ -194,6 +194,16 @@
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>slf4j-reload4j</artifactId>
+                    </exclusion>
+                    <!-- Hadoop daemon web applications are not used by Sleeper's filesystem clients.
+                    Exclude them at source so they cannot pull Jetty servers into production artifacts. -->
+                    <exclusion>
+                        <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>jetty-servlet</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>jetty-webapp</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

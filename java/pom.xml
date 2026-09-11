@@ -638,6 +638,16 @@
                         <groupId>io.netty</groupId>
                         <artifactId>netty-all</artifactId>
                     </exclusion>
+                    <!-- Hadoop daemon web applications are not used by Sleeper's filesystem clients.
+                    Exclude them at source so they cannot pull Jetty servers into production artifacts. -->
+                    <exclusion>
+                        <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>jetty-servlet</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>jetty-webapp</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1884,11 +1894,17 @@
                             <excludes>
                                 <exclude>*log4j*:*log4j*</exclude>
                                 <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                <!-- Sleeper uses Hadoop as a filesystem client, not an embedded HTTP server.
+                                Keep Jetty's server and authentication implementation out of runtime artifacts. -->
+                                <exclude>org.eclipse.jetty:jetty-server:*:*:compile</exclude>
+                                <exclude>org.eclipse.jetty:jetty-server:*:*:runtime</exclude>
+                                <exclude>org.eclipse.jetty:jetty-security:*:*:compile</exclude>
+                                <exclude>org.eclipse.jetty:jetty-security:*:*:runtime</exclude>
                             </excludes>
                             <includes>
                                 <include>org.apache.logging.log4j:*</include>
                             </includes>
-                            <message>Log4j conflicts with reload4j, add an exclusion</message>
+                            <message>Remove conflicting Log4j or production Jetty server dependencies. Jetty servers are only needed by test utilities.</message>
                         </bannedDependencies>
                         <dependencyConvergence />
                         <banDuplicatePomDependencyVersions />

@@ -1,9 +1,4 @@
 
-vulnerabilities:
+vulnerabilities: []
   # You can suppress known vulnerabilities here like this:
   # - id: CVE-2000-12345
-
-  #  org.eclipse.jetty:jetty-security
-  - id: CVE-2026-10050
-  #  org.eclipse.jetty:jetty-server
-  - id: CVE-2026-6790
