@@ -21,11 +21,6 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
-  echo "Usage: $0 <instance-id> <vpc> <csv-list-of-subnets> <optional-deploy-paused-flag> <optional-split-points-file>"
-  exit 1
-fi
-
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
@@ -34,12 +29,9 @@ SYSTEM_TEST_JAR="${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar"
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-PROPERTIES_FILE="$THIS_DIR/system-test-instance.properties"
-if [ ! -f "$PROPERTIES_FILE" ]; then
-   cp "$PROPERTIES_FILE.template" "$PROPERTIES_FILE"
-fi
-
-java -cp "${SYSTEM_TEST_JAR}" sleeper.systemtest.drivers.cdk.DeployNewTestInstance "${SCRIPTS_DIR}" "${PROPERTIES_FILE}" "$@"
+# Deploy the demonstration instance. With no --properties-file/--config-dir, the Java app falls back to the
+# system test configuration in this directory, seeding it from the .template files here on first run.
+java -cp "${SYSTEM_TEST_JAR}" sleeper.systemtest.drivers.cdk.DeployNewTestInstance "${SCRIPTS_DIR}" "$@"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
