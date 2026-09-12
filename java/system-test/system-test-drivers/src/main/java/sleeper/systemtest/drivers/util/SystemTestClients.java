@@ -60,7 +60,6 @@ import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 
-import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -70,7 +69,6 @@ import java.util.function.UnaryOperator;
 public class SystemTestClients {
     private final Region region;
     private final AwsCredentialsProvider credentialsProvider;
-    private final HttpClient httpClient;
     private final S3Client s3;
     private final S3AsyncClient s3Async;
     private final S3TransferManager s3TransferManager;
@@ -98,7 +96,6 @@ public class SystemTestClients {
     private SystemTestClients(Builder builder) {
         region = builder.region;
         credentialsProvider = builder.credentialsProvider;
-        httpClient = builder.httpClient;
         s3 = builder.s3;
         s3Async = builder.s3Async;
         s3TransferManager = builder.s3TransferManager;
@@ -163,7 +160,6 @@ public class SystemTestClients {
         return builder()
                 .region(region)
                 .credentialsProvider(aws.credentialsProvider())
-                .httpClient(httpClient)
                 .s3(aws.buildClient(S3Client.builder()))
                 .s3Async(aws.buildClient(S3AsyncClient.crtBuilder()))
                 .dynamo(aws.buildClient(DynamoDbClient.builder()))
@@ -194,10 +190,6 @@ public class SystemTestClients {
 
     public AwsCredentialsProvider getCredentialsProvider() {
         return credentialsProvider;
-    }
-
-    public HttpClient getHttpClient() {
-        return httpClient;
     }
 
     public S3Client getS3() {
@@ -332,7 +324,6 @@ public class SystemTestClients {
     public static class Builder {
         private Region region;
         private AwsCredentialsProvider credentialsProvider;
-        private HttpClient httpClient = HttpClient.newHttpClient();
         private S3Client s3;
         private S3AsyncClient s3Async;
         private S3TransferManager s3TransferManager;
@@ -366,11 +357,6 @@ public class SystemTestClients {
 
         public Builder credentialsProvider(AwsCredentialsProvider credentialsProvider) {
             this.credentialsProvider = credentialsProvider;
-            return this;
-        }
-
-        public Builder httpClient(HttpClient httpClient) {
-            this.httpClient = httpClient;
             return this;
         }
 
