@@ -75,6 +75,15 @@
             <groupId>org.jetbrains.pty4j</groupId>
             <artifactId>pty4j</artifactId>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>apache-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>rest-api</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
