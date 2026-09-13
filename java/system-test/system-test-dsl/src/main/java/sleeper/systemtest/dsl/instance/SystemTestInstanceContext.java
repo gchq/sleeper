@@ -79,7 +79,7 @@ public class SystemTestInstanceContext {
     }
 
     public SystemTestDrivers adminDrivers() {
-        return currentInstance().getInstanceAdminDrivers();
+        return currentInstance().adminDrivers();
     }
 
     private SleeperTablesDriver tablesDriver() {
@@ -236,7 +236,7 @@ public class SystemTestInstanceContext {
         }
         DeployedSleeperInstance instance = currentInstance();
         InstanceProperties instanceProperties = instance.getInstanceProperties();
-        SleeperTablesDriver tablesDriver = instance.getInstanceAdminDrivers().tables(parameters);
+        SleeperTablesDriver tablesDriver = instance.adminDrivers().tables(parameters);
         currentTables.streamTableProperties().forEach(table -> {
             table.set(TABLE_ONLINE, "false");
             tablesDriver.saveTableProperties(instanceProperties, table);
