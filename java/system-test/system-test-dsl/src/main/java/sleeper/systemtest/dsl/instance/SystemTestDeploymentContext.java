@@ -20,24 +20,31 @@ import sleeper.systemtest.dsl.SystemTestDrivers;
 public class SystemTestDeploymentContext {
 
     private final SystemTestParameters parameters;
-    private final SystemTestDrivers drivers;
+    private final SystemTestDrivers baseDrivers;
     private final DeployedSystemTestResources deployedResources;
     private final DeployedSleeperInstances deployedInstances;
 
-    public SystemTestDeploymentContext(SystemTestParameters parameters, SystemTestDrivers drivers) {
+    public SystemTestDeploymentContext(SystemTestParameters parameters, SystemTestDrivers baseDrivers) {
         this.parameters = parameters;
-        this.drivers = drivers;
-        this.deployedResources = new DeployedSystemTestResources(parameters, drivers.systemTestDeployment(parameters));
+        this.baseDrivers = baseDrivers;
+        this.deployedResources = new DeployedSystemTestResources(parameters, baseDrivers.systemTestDeployment(parameters));
         this.deployedInstances = new DeployedSleeperInstances(
-                parameters, deployedResources, drivers.instance(parameters), drivers.assumeAdminRole(), drivers.schedules());
+                parameters, deployedResources, baseDrivers.instance(parameters), baseDrivers.assumeAdminRole(), baseDrivers.schedules());
     }
 
     public SystemTestParameters parameters() {
         return parameters;
     }
 
-    public SystemTestDrivers drivers() {
-        return drivers;
+    /**
+     * Returns drivers using the credentials of the system test process. These are used for deployment-scoped actions
+     * that cannot be performed through an instance role. For operations on a connected instance, prefer that
+     * instance's admin drivers so the system tests exercise the permissions granted to the instance admin role.
+     *
+     * @return the base system test drivers
+     */
+    public SystemTestDrivers baseDrivers() {
+        return baseDrivers;
     }
 
     public DeployedSystemTestResources deployedResources() {
