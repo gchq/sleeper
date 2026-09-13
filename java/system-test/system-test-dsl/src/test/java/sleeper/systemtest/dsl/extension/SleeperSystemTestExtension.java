@@ -59,7 +59,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
 
     protected SleeperSystemTestExtension(SystemTestDeploymentContext context) {
         parameters = context.parameters();
-        drivers = context.drivers();
+        drivers = context.baseDrivers();
         deployedResources = context.deployedResources();
         deployedInstances = context.deployedInstances();
     }
