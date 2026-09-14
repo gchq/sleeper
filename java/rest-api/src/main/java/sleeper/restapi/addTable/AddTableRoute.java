@@ -24,6 +24,10 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.AddTable;
+import sleeper.core.table.AddTableRequest;
+import sleeper.core.table.AddTableRequestSerDe;
+import sleeper.core.table.AddTableResponse;
+import sleeper.core.table.AddTableResponseSerDe;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.restapi.Route;
 
