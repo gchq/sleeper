@@ -16,7 +16,10 @@
 package sleeper.cdk.artefacts;
 
 import org.apache.commons.lang3.EnumUtils;
+import software.amazon.awscdk.CfnDeletionPolicy;
+import software.amazon.awscdk.CfnResource;
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.ICfnResourceOptions;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.ecr.IRepository;
@@ -26,6 +29,8 @@ import software.amazon.awscdk.services.ecr.TagStatus;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
+import software.amazon.awscdk.services.logs.LogGroup;
+import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketAccessControl;
@@ -62,14 +67,27 @@ public class SleeperArtefactRepositories {
         deploymentId = Objects.requireNonNull(builder.deploymentId, "deploymentId must not be null");
         String accountName = Objects.requireNonNull(builder.accountName, "accountName must not be null");
         deploy = Optional.ofNullable(builder.deploy).orElse(ToDeploy.ALL);
-        jarsBucket = deploy.isDeployJars() ? createJarsBucket(scope, accountName, deploymentId) : null;
+        jarsBucket = deploy.isDeployJars() ? createJarsBucket(scope, accountName, deploymentId, builder.retainLogsAfterDestroy) : null;
         if (deploy.isDeployImages()) {
             deployImages();
         }
     }
 
     public static IBucket createJarsBucket(Construct scope, String accountName, String deploymentId) {
-        return Bucket.Builder.create(scope, "JarsBucket")
+        return createJarsBucket(scope, accountName, deploymentId, true);
+    }
+
+    /**
+     * Creates a versioned jars bucket with managed logs for its cleanup function.
+     *
+     * @param  scope                  the scope for the bucket
+     * @param  accountName            the AWS account
+     * @param  deploymentId           the artefacts deployment ID
+     * @param  retainLogsAfterDestroy whether to retain cleanup logs after stack deletion
+     * @return                        the jars bucket
+     */
+    public static IBucket createJarsBucket(Construct scope, String accountName, String deploymentId, boolean retainLogsAfterDestroy) {
+        IBucket bucket = Bucket.Builder.create(scope, "JarsBucket")
                 .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(accountName, deploymentId))
                 .encryption(BucketEncryption.S3_MANAGED)
                 .accessControl(BucketAccessControl.PRIVATE)
@@ -83,6 +101,36 @@ public class SleeperArtefactRepositories {
                 // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
                 .versioned(true)
                 .build();
+        configureCleanupLogs(scope, retainLogsAfterDestroy);
+        return bucket;
+    }
+
+    private static void configureCleanupLogs(Construct scope, boolean retainLogsAfterDestroy) {
+        // Keep the existing provider and custom resource so upgrading does not replace the bucket cleanup resource.
+        Construct provider = (Construct) Stack.of(scope).getNode().findChild("Custom::S3AutoDeleteObjectsCustomResourceProvider");
+        CfnResource handler = (CfnResource) provider.getNode().findChild("Handler");
+        CfnDeletionPolicy deletionPolicy = retainLogsAfterDestroy ? CfnDeletionPolicy.RETAIN : CfnDeletionPolicy.DELETE;
+        LogGroup logGroup = (LogGroup) provider.getNode().tryFindChild("LogGroup");
+        if (logGroup == null) {
+            logGroup = LogGroup.Builder.create(provider, "LogGroup")
+                    .retention(RetentionDays.INFINITE)
+                    .removalPolicy(retainLogsAfterDestroy ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY)
+                    .build();
+            // Referencing the group keeps it alive until the cleanup function has been deleted.
+            handler.addPropertyOverride("LoggingConfig.LogGroup", logGroup.getLogGroupName());
+        } else {
+            CfnResource logResource = (CfnResource) logGroup.getNode().getDefaultChild();
+            if (logResource == null) {
+                throw new IllegalStateException("Cleanup log group has no CloudFormation resource");
+            }
+            ICfnResourceOptions options = logResource.getCfnOptions();
+            if (options == null) {
+                throw new IllegalStateException("Cleanup log group has no CloudFormation options");
+            }
+            if (!Objects.equals(deletionPolicy, options.getDeletionPolicy())) {
+                throw new IllegalArgumentException("Buckets sharing a cleanup provider must use the same log retention policy");
+            }
+        }
     }
 
     public String getDeploymentId() {
@@ -147,6 +195,7 @@ public class SleeperArtefactRepositories {
         private final String deploymentId;
         private String accountName;
         private ToDeploy deploy;
+        private boolean retainLogsAfterDestroy = true;
 
         private Builder(Construct scope, String deploymentId) {
             this.scope = scope;
@@ -167,6 +216,17 @@ public class SleeperArtefactRepositories {
 
         public Builder deploy(ToDeploy deploy) {
             this.deploy = deploy;
+            return this;
+        }
+
+        /**
+         * Sets whether cleanup logs are retained when the artefacts stack is destroyed. Defaults to true.
+         *
+         * @param  retainLogsAfterDestroy whether to retain the logs
+         * @return                        this builder
+         */
+        public Builder retainLogsAfterDestroy(boolean retainLogsAfterDestroy) {
+            this.retainLogsAfterDestroy = retainLogsAfterDestroy;
             return this;
         }
 
