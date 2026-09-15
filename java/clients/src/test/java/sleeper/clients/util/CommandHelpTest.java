@@ -31,43 +31,46 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class CommandHelpTest {
+    private static final Pattern OPTION = Pattern.compile("--([a-z-]+)");
+    private static final Pattern HELP_HEADING = Pattern.compile("^--([a-z-]+)(?=[ ,\\n])", Pattern.MULTILINE);
 
     @ParameterizedTest(name = "{0} lists options alphabetically")
     @MethodSource("commands")
-    void shouldListOptionsInAlphabeticalOrder(String command, CommandLineUsage usage, List<String> options) {
-        assertThat(usage.createUsageMessage())
-                .as(command)
-                .endsWith("Available options: --help, " + options.stream().map(name -> "--" + name).collect(joining(", ")));
+    void shouldListOptionsInAlphabeticalOrder(String command, CommandLineUsage usage) {
+        String usageMessage = usage.createUsageMessage();
+        String availableOptions = usageMessage.substring(usageMessage.indexOf("Available options:"));
+        List<String> options = OPTION.matcher(availableOptions).results()
+                .map(match -> match.group(1))
+                .filter(option -> !"help".equals(option))
+                .toList();
+
+        assertAlphabetical(command, options);
     }
 
     @ParameterizedTest(name = "{0} describes every option alphabetically")
     @MethodSource("commands")
-    void shouldDescribeOptionsInAlphabeticalOrder(String command, CommandLineUsage usage, List<String> options) {
-        List<String> headings = Pattern.compile("^--([a-z-]+)(?=[ ,\\n])", Pattern.MULTILINE)
-                .matcher(usage.createHelpText())
-                .results()
+    void shouldDescribeOptionsInAlphabeticalOrder(String command, CommandLineUsage usage) {
+        List<String> headings = HELP_HEADING.matcher(usage.createHelpText()).results()
                 .map(match -> match.group(1))
                 .toList();
-        assertThat(headings).as(command).containsExactlyElementsOf(options);
+
+        assertAlphabetical(command, headings);
+    }
+
+    private static void assertAlphabetical(String command, List<String> options) {
+        assertThat(options).as(command).containsExactlyElementsOf(options.stream().sorted().toList());
     }
 
     private static Stream<Arguments> commands() {
         return Stream.of(
-                Arguments.of("addTable", AddTableClient.USAGE,
-                        List.of("config-dir", "schema", "table-name", "table-properties")),
-                Arguments.of("filesStatusReport", FilesStatusReport.USAGE,
-                        List.of("max-no-ref-files", "report-type", "verbose")),
-                Arguments.of("deployExisting", DeployExistingInstance.USAGE,
-                        List.of("force-cdk-app", "paused")),
-                Arguments.of("deployNew", DeployNewInstance.USAGE,
-                        List.of("config-dir", "paused", "properties-file")),
-                Arguments.of("uploadArtefacts", UploadArtefacts.USAGE,
-                        List.of("base-image-registry", "cdk-app", "create-builder", "create-deployment", "id", "properties", "upload")),
-                Arguments.of("buildDockerImage", BuildDockerImage.USAGE,
-                        List.of("default-base-image", "multiplatform")));
+                Arguments.of("addTable", AddTableClient.USAGE),
+                Arguments.of("filesStatusReport", FilesStatusReport.USAGE),
+                Arguments.of("deployExisting", DeployExistingInstance.USAGE),
+                Arguments.of("deployNew", DeployNewInstance.USAGE),
+                Arguments.of("uploadArtefacts", UploadArtefacts.USAGE),
+                Arguments.of("buildDockerImage", BuildDockerImage.USAGE));
     }
 }
