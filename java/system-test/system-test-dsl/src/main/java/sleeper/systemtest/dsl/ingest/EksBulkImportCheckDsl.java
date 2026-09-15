@@ -57,8 +57,8 @@ public class EksBulkImportCheckDsl {
         }
     }
 
-    public List<String> getPods() {
-        return adminDriver.getPods();
+    public List<String> getDriverPods() {
+        return adminDriver.getDriverPods();
     }
 
     public List<String> getJobs() {

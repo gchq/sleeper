@@ -66,6 +66,16 @@ public class InitialiseStateStoreFromSplitPoints {
     }
 
     /**
+     * Reads whether string split points are Base64 encoded from the command line arguments.
+     *
+     * @param  args the command line arguments
+     * @return      true if the fourth argument specifies Base64 encoded strings
+     */
+    static boolean stringsBase64Encoded(String[] args) {
+        return 4 == args.length && Boolean.parseBoolean(args[3]);
+    }
+
+    /**
      * Initialises a state store from the command line.
      *
      * @param  args        the command line arguments
@@ -89,7 +99,7 @@ public class InitialiseStateStoreFromSplitPoints {
             List<Object> splitPoints = null;
             if (args.length > 2) {
                 String splitPointsFile = args[2];
-                boolean stringsBase64Encoded = 4 == args.length && Boolean.parseBoolean(args[2]);
+                boolean stringsBase64Encoded = stringsBase64Encoded(args);
                 splitPoints = readSplitPoints(tableProperties, splitPointsFile, stringsBase64Encoded);
             }
 

@@ -31,6 +31,19 @@ public class CommandUtilsTest {
     private Path tempDir;
 
     @Test
+    void shouldRunCommandWithPtyOnce() throws IOException, InterruptedException {
+        // Given
+        Path output = tempDir.resolve("output.txt");
+        Command command = command("sh", "-c", "echo run >> \"$1\"", "sh", output.toString());
+
+        // When
+        CommandUtils.runCommandLogOutputWithPty(command);
+
+        // Then
+        assertThat(Files.readAllLines(output)).containsExactly("run");
+    }
+
+    @Test
     void shouldPassAFileToACommandWithoutQuotes() throws IOException, InterruptedException {
         // Given
         Path path = Files.createFile(tempDir.resolve("test1.jar"));

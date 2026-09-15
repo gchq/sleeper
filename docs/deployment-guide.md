@@ -118,15 +118,13 @@ it is paused.
 
 ### Tear down
 
-If you deployed Sleeper with the scripts or the Sleeper CDK apps, and you still have the `generated` folder in the
-project root directory, you can run:
+If you deployed Sleeper with the scripts or the Sleeper CDK apps, pass the instance ID to tear down:
 
 ```bash
-./scripts/deploy/tearDown.sh
+./scripts/deploy/tearDown.sh ${INSTANCE_ID}
 ```
 
-If you have deployed multiple instances or you do not have the same `generated` folder that was created when it was
-deployed, you can pass the instance ID as an argument to this script.
+The script will ask for confirmation before deleting the instance. Use `--force` to skip the confirmation prompt.
 
 You can also delete the CloudFormation stacks that were deployed by the CDK directly, as described
 in [Deployment with the CDK](deployment/deploy-with-cdk.md#tear-down).

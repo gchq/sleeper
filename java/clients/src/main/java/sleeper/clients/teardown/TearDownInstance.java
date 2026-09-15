@@ -19,17 +19,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.local.LoadLocalProperties;
+import sleeper.clients.util.console.ConsoleInput;
 import sleeper.core.util.FilesUtil;
+import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandLineUsage;
+import sleeper.core.util.cli.CommandOption;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
-import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
@@ -45,17 +46,53 @@ public class TearDownInstance {
     private TearDownInstance(Builder builder) {
         cloudFormationClient = Objects.requireNonNull(builder.cloudFormationClient, "cloudFormationClient must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
-        instanceId = Optional.ofNullable(builder.instanceId)
-                .orElseGet(() -> loadInstanceIdFromGeneratedDirectory(scriptsDir));
+        instanceId = Objects.requireNonNull(builder.instanceId, "instanceId must not be null");
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 1 || args.length > 2) {
-            throw new IllegalArgumentException("Usage: <scripts directory> <optional instance id>");
+    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
+            .positionalArguments(List.of("scripts directory", "instance ID"))
+            .systemArguments(List.of("scripts directory"))
+            .options(List.of(CommandOption.longFlag("force")))
+            .helpSummary("" +
+                    "Deletes a Sleeper instance and associated artefacts.\n" +
+                    "\n" +
+                    "--force\n" +
+                    "Skips the confirmation prompt before deleting the instance.")
+            .build();
+
+    public static void main(String[] rawArgs) throws IOException, InterruptedException {
+        Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, TearDownInstance::readArguments);
+        if (!confirmTearDown(ConsoleInput.stdIn(), args)) {
+            return;
         }
-        builder().scriptsDir(Path.of(args[0]))
-                .instanceId(optionalArgument(args, 1).orElse(null))
+        builder().scriptsDir(args.scriptsDirectory())
+                .instanceId(args.instanceId())
                 .tearDownWithDefaultClients();
+    }
+
+    static Arguments readArguments(CommandArguments arguments) {
+        return new Arguments(
+                Path.of(arguments.getString("scripts directory")),
+                arguments.getString("instance ID"),
+                arguments.isFlagSet("force"));
+    }
+
+    static boolean confirmTearDown(ConsoleInput input, Arguments args) {
+        if (args.force()) {
+            return true;
+        }
+        String result = input.promptLine("Are you sure you want to tear down Sleeper instance " + args.instanceId() + "? [y/N]");
+        return "y".equalsIgnoreCase(result);
+    }
+
+    /**
+     * Command line arguments for tearing down an instance.
+     *
+     * @param scriptsDirectory the Sleeper scripts directory
+     * @param instanceId       the instance ID to tear down
+     * @param force            whether to skip the confirmation prompt
+     */
+    record Arguments(Path scriptsDirectory, String instanceId, boolean force) {
     }
 
     public static Builder builder() {
@@ -143,12 +180,6 @@ public class TearDownInstance {
         }
     }
 
-    private static String loadInstanceIdFromGeneratedDirectory(Path scriptsDir) {
-        InstanceProperties instanceProperties = LoadLocalProperties
-                .loadInstancePropertiesNoValidationFromDirectory(scriptsDir.resolve("generated"));
-        return instanceProperties.get(ID);
-    }
-
     /**
      * Creates instances of this class.
      */
@@ -172,9 +203,8 @@ public class TearDownInstance {
         }
 
         /**
-         * Sets the local scripts directory. If the instance ID is not set, this will be used to find the last instance
-         * whose configuration was saved locally, either during deployment or by explicit download. Such a configuration
-         * will be deleted when the tear down is complete.
+         * Sets the local scripts directory. The generated configuration directory will be cleared when the tear down is
+         * complete.
          *
          * @param  scriptsDir the scripts directory
          * @return            this builder
@@ -185,8 +215,7 @@ public class TearDownInstance {
         }
 
         /**
-         * Sets the ID of the Sleeper instance to delete. This is optional. If it is not set it will be looked up in the
-         * local configuration.
+         * Sets the ID of the Sleeper instance to delete.
          *
          * @param  instanceId the instance ID
          * @return            this builder

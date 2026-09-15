@@ -59,7 +59,7 @@ public class CommandUtils {
     public static void runCommandLogOutputWithPty(Command command) throws IOException, InterruptedException {
         LOGGER.info("Running command: {}", command);
         PtyProcess process = command.toPtyProcessBuilder().start();
-        CompletableFuture<Void> logOutput = logOutput(command.toPtyProcessBuilder().start());
+        CompletableFuture<Void> logOutput = logOutput(process);
         int exitCode = process.waitFor();
         logOutput.join();
         LOGGER.info("Exit code: {}", exitCode);
