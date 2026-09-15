@@ -24,6 +24,7 @@ import sleeper.core.SleeperVersion;
 import sleeper.core.properties.model.SleeperInternalCdkApp;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -88,13 +89,17 @@ public class InvokeCdk {
     }
 
     private static void deleteQuietly(Path dir) {
+        // Files.walk throws UncheckedIOException during traversal, so catch that as well. This runs in a
+        // finally block, and letting anything escape here would hide the failure we're reporting.
         try (var stream = Files.walk(dir).sorted(Comparator.reverseOrder())) {
-            stream.forEach(p -> {
-                if (!p.toFile().delete()) {
-                    LOGGER.warn("Failed to delete CDK output file: {}", p);
+            stream.forEach(path -> {
+                try {
+                    Files.delete(path);
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to delete CDK output file: {}", path, e);
                 }
             });
-        } catch (IOException e) {
+        } catch (IOException | UncheckedIOException e) {
             LOGGER.warn("Failed to delete CDK output directory: {}", dir, e);
         }
     }

@@ -54,6 +54,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
@@ -79,7 +80,6 @@ public class CompactionTaskResources {
     private final Stack stack;
     private final SleeperInstanceProps props;
     private final InstanceProperties instanceProperties;
-    private CompactionOnEc2Resources ec2Resources;
 
     public CompactionTaskResources(Stack stack,
             SleeperInstanceProps props,
@@ -93,20 +93,20 @@ public class CompactionTaskResources {
         this.props = props;
         this.instanceProperties = props.getInstanceProperties();
 
-        Cluster cluster = ecsClusterForCompactionTasks(coreStacks, jarsBucket, ecsImages, lambdaCode, jobResources);
+        CompactionCluster compactionCluster = ecsClusterForCompactionTasks(coreStacks, jarsBucket, ecsImages, lambdaCode, jobResources);
+        Cluster cluster = compactionCluster.cluster();
         IFunction taskCreator = lambdaToCreateCompactionTasks(coreStacks, lambdaCode, jobResources.getCompactionJobsQueue());
         CustomResource autoStopEcsClusterTasks = coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(stack, cluster, taskCreator);
-        if (ec2Resources != null) {
-            // Ensures ECS tasks are stopped before the EC2 Auto Scaling Group is scaled down and deleted.
-            // Otherwise the custom termination policy (which only terminates empty instances) can block deletion.
-            ec2Resources.stopTasksBeforeDeletingScalingGroup(autoStopEcsClusterTasks);
-        }
+        // Ensures ECS tasks are stopped before the EC2 Auto Scaling Group is scaled down and deleted.
+        // Otherwise the custom termination policy (which only terminates empty instances) can block deletion.
+        compactionCluster.ec2Resources().ifPresent(
+                ec2Resources -> ec2Resources.stopTasksBeforeDeletingScalingGroup(autoStopEcsClusterTasks));
 
         // Allow running compaction tasks
         coreStacks.getInvokeCompactionPolicyForGrants().addStatements(runTasksPolicyStatement());
     }
 
-    private Cluster ecsClusterForCompactionTasks(
+    private CompactionCluster ecsClusterForCompactionTasks(
             SleeperCoreStacks coreStacks, IBucket jarsBucket, SleeperEcsImages ecsImages, SleeperLambdaCode lambdaCode, CompactionJobResources jobResources) {
         String clusterName = String.join("-", "sleeper",
                 instanceProperties.cleanInstanceId(), "compaction-cluster");
@@ -125,6 +125,7 @@ public class CompactionTaskResources {
 
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         ITaskDefinition taskDefinition;
+        CompactionOnEc2Resources ec2Resources = null;
         if ("FARGATE".equalsIgnoreCase(launchType)) {
             taskDefinition = new CompactionOnFargateResources(instanceProperties, stack, coreStacks)
                     .createTaskDefinition(containerImage, environmentVariables);
@@ -149,7 +150,17 @@ public class CompactionTaskResources {
                 .build();
         new CfnOutput(stack, COMPACTION_CLUSTER_NAME, compactionClusterProps);
 
-        return cluster;
+        return new CompactionCluster(cluster, Optional.ofNullable(ec2Resources));
+    }
+
+    /**
+     * The ECS cluster that compaction tasks run in. The EC2 resources are only present when the tasks run
+     * on EC2 rather than Fargate, and are only set once the task definition has been created.
+     *
+     * @param cluster      the ECS cluster
+     * @param ec2Resources the EC2 resources backing the cluster, if it's not running on Fargate
+     */
+    private record CompactionCluster(Cluster cluster, Optional<CompactionOnEc2Resources> ec2Resources) {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
