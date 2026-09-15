@@ -47,6 +47,7 @@ class ValidateIngestFileS3IT extends LocalStackTestBase {
 
     @Test
     void shouldValidateS3PathWithSpacesWithoutChangingTheObject() throws IOException {
+        // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
         TableProperties table = createTestTableProperties(createTestInstanceProperties(), schema);
         table.set(TABLE_NAME, "test-table");
@@ -65,8 +66,13 @@ class ValidateIngestFileS3IT extends LocalStackTestBase {
             ToStringConsoleOutput out = new ToStringConsoleOutput();
             ValidateIngestFile client = new ValidateIngestFile(tables, hadoopConf, out.consoleOut());
 
-            assertThat(client.run("instance", "test-table", "s3://" + bucket + "/" + key)).isTrue();
-            assertThat(client.run("instance", "test-table", "s3a://" + bucket + "/" + key)).isTrue();
+            // When
+            boolean s3Compatible = client.run("instance", "test-table", "s3://" + bucket + "/" + key);
+            boolean s3aCompatible = client.run("instance", "test-table", "s3a://" + bucket + "/" + key);
+
+            // Then
+            assertThat(s3Compatible).isTrue();
+            assertThat(s3aCompatible).isTrue();
             assertThat(out.toString()).contains("Schema is compatible with standard ingest");
             assertThat(s3Client.headObject(request -> request.bucket(bucket).key(key)).eTag()).isEqualTo(originalTag);
             assertThat(listObjectKeys(bucket)).containsExactly(key);
