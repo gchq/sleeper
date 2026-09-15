@@ -19,10 +19,19 @@ import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 
+import sleeper.bulkimport.core.configuration.SparkConfigurationUtils;
+import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
+import sleeper.cdk.artefacts.containers.SleeperContainerImageDigestProvider;
+import sleeper.cdk.artefacts.containers.SleeperContainerImagesFromProperties;
+import sleeper.cdk.artefacts.jars.SleeperJarVersionIdProvider;
+import sleeper.cdk.artefacts.jars.SleeperJarsFromProperties;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.testutil.SleeperStackTestBase;
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.model.EksClusterType;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_IMAGE;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_FLUENT_BIT_LOGGING_ENABLED;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AWSCLI_LAYER_ARN;
@@ -129,6 +138,48 @@ public class EksBulkImportStackIT extends SleeperStackTestBase {
         // Then
         Approvals.verify(printer.toJson(stack), new Options()
                 .forFile().withName("eks-bulk-import-awscli-layer", ".json"));
+    }
+
+    @Test
+    void shouldUseCustomImageForFargateCluster() {
+        assertUsesCustomImage(EksClusterType.FARGATE);
+    }
+
+    @Test
+    void shouldUseCustomImageForAutoModeCluster() {
+        assertUsesCustomImage(EksClusterType.AUTOMODE);
+    }
+
+    private void assertUsesCustomImage(EksClusterType clusterType) {
+        // Given
+        String customImage = "registry.example.com/custom/spark@sha256:" + "a".repeat(64);
+        instanceProperties.setEnum(BULK_IMPORT_EKS_CLUSTER_TYPE, clusterType);
+        SleeperCoreStacks core = SleeperCoreStacks.create(rootStack, instanceProps());
+        BulkImportBucketStack bucket = new BulkImportBucketStack(rootStack, "BulkImportBucket", instanceProperties, core);
+        SleeperContainerImagesFromProperties images = new SleeperContainerImagesFromProperties(instanceProperties,
+                new SleeperContainerImageDigestProvider((image, repository) -> "test-digest")) {
+            @Override
+            public String getDockerImageName(DockerDeployment deployment) {
+                assertThat(deployment).isSameAs(DockerDeployment.EKS_BULK_IMPORT);
+                return customImage;
+            }
+        };
+        SleeperInstanceArtefacts customArtefacts = new SleeperInstanceArtefacts(instanceProperties,
+                new SleeperJarsFromProperties(instanceProperties,
+                        new SleeperJarVersionIdProvider(jar -> jar.getArtifactId() + "-test-version")),
+                images);
+
+        // When
+        EksBulkImportStack stack = new EksBulkImportStack(
+                rootStack, "EksBulkImport", instanceProperties, customArtefacts, bucket, core);
+
+        // Then
+        assertThat(printer.toJson(stack))
+                .contains(customImage)
+                .doesNotContain(DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties));
+        assertThat(instanceProperties.get(BULK_IMPORT_EKS_IMAGE)).isEqualTo(customImage);
+        assertThat(SparkConfigurationUtils.getSparkConfigurationForEKSFromInstanceProperties(instanceProperties))
+                .containsEntry("spark.kubernetes.container.image", customImage);
     }
 
 }

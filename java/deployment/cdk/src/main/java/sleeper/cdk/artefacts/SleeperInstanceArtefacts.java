@@ -21,6 +21,7 @@ import sleeper.cdk.artefacts.containers.SleeperContainerImages;
 import sleeper.cdk.artefacts.containers.SleeperEcsImages;
 import sleeper.cdk.artefacts.jars.SleeperJars;
 import sleeper.cdk.lambda.SleeperLambdaCode;
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.LambdaDeployType;
 
@@ -63,6 +64,16 @@ public class SleeperInstanceArtefacts {
      */
     public SleeperEcsImages ecsImagesAtScope(Construct scope) {
         return containerImages.ecsImagesAtScope(scope);
+    }
+
+    /**
+     * Retrieves the full image name for a container deployment.
+     *
+     * @param  deployment the container deployment
+     * @return            the image name, including registry and tag or digest
+     */
+    public String getDockerImageName(DockerDeployment deployment) {
+        return containerImages.getDockerImageName(deployment);
     }
 
 }
