@@ -207,7 +207,7 @@ class GeneratePropertiesTemplatesTest {
 
         @Test
         void shouldWritePropertyIncludedInBasicExample() {
-            assertThat(propertiesString).containsSubsequence("""
+            assertThat(propertiesString).contains("""
                     # A unique name identifying this table.
                     # Note that this property is not directly editable, i.e. you cannot change the name of a table by
                     # changing this property. However you can rename a table by using the renameTable.sh script.
