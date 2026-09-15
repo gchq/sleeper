@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -euo pipefail
 unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
@@ -52,3 +52,13 @@ if [ $PYTHON_CHECK_VERSION != $PYTHON_VERSION ]; then
     echo "Python version number is $PYTHON_VERSION but should be $PYTHON_CHECK_VERSION"
     exit 1
 fi
+
+# Check the version of the AWS SDK fixed to match EMR has not been auto-upgraded by Dependabot
+pushd "${PROJECT_ROOT}/java"
+BULK_IMPORT_AWS_VERSION=$(mvn help:evaluate -Dexpression=aws-java-sdk-v2.bulk-import.version -q -DforceStdout)
+echo "Bulk import version of AWS SDK: $BULK_IMPORT_AWS_VERSION"
+if [ $BULK_IMPORT_AWS_VERSION != "2.31.16" ]; then
+    echo "Bulk import module's AWS SDK version has been upgraded. Only change this if deliberately matching EMR."
+    exit 1
+fi
+popd
