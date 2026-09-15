@@ -53,8 +53,8 @@ public class SleeperArtefactRepositories {
     private final Construct scope;
     private final String deploymentId;
     private final ToDeploy deploy;
-    private final List<LambdaJar> deployLambdas;
-    private final List<DockerDeployment> deployDeployments;
+    private final List<LambdaJar> lambdasWithRepositories;
+    private final List<DockerDeployment> deploymentsWithRepositories;
     private final IBucket jarsBucket;
     private final Map<LambdaJar, IRepository> jarToRepository = new HashMap<>();
     private final Map<DockerDeployment, IRepository> deploymentToRepository = new HashMap<>();
@@ -64,8 +64,8 @@ public class SleeperArtefactRepositories {
         deploymentId = Objects.requireNonNull(builder.deploymentId, "deploymentId must not be null");
         String accountName = Objects.requireNonNull(builder.accountName, "accountName must not be null");
         deploy = Optional.ofNullable(builder.deploy).orElse(ToDeploy.ALL);
-        deployLambdas = Objects.requireNonNull(builder.deployLambdas, "deployLambdas must not be null");
-        deployDeployments = Objects.requireNonNull(builder.deployDeployments, "deployDeployments must not be null");
+        lambdasWithRepositories = Objects.requireNonNull(builder.lambdasWithRepositories, "lambdasWithRepositories must not be null");
+        deploymentsWithRepositories = Objects.requireNonNull(builder.deploymentsWithRepositories, "deploymentsWithRepositories must not be null");
         jarsBucket = deploy.isDeployJars() ? createJarsBucket(scope, accountName, deploymentId) : null;
         if (deploy.isDeployImages()) {
             deployImages();
@@ -106,11 +106,11 @@ public class SleeperArtefactRepositories {
     }
 
     private void deployImages() {
-        for (LambdaJar jar : deployLambdas) {
+        for (LambdaJar jar : lambdasWithRepositories) {
             jarToRepository.put(jar, createRepository(jar.getImageName()));
         }
 
-        for (DockerDeployment deployment : deployDeployments) {
+        for (DockerDeployment deployment : deploymentsWithRepositories) {
             Repository repository = createRepository(deployment.getDeploymentName());
 
             if (deployment.isCreateEmrServerlessPolicy()) {
@@ -151,8 +151,8 @@ public class SleeperArtefactRepositories {
         private final String deploymentId;
         private String accountName;
         private ToDeploy deploy;
-        private List<LambdaJar> deployLambdas = LambdaJar.all();
-        private List<DockerDeployment> deployDeployments = DockerDeployment.all();
+        private List<LambdaJar> lambdasWithRepositories = LambdaJar.all();
+        private List<DockerDeployment> deploymentsWithRepositories = DockerDeployment.all();
 
         private Builder(Construct scope, String deploymentId) {
             this.scope = scope;
@@ -176,13 +176,27 @@ public class SleeperArtefactRepositories {
             return this;
         }
 
-        public Builder deployLambdas(List<LambdaJar> deployLambdas) {
-            this.deployLambdas = deployLambdas;
+        /**
+         * Sets which lambda jars need ECR repositories, so that lambdas can be deployed from container images.
+         * This defaults to all lambdas, and should usually be left at the default.
+         *
+         * @param  lambdasWithRepositories the list of lambda jars
+         * @return                         this builder for chaining
+         */
+        public Builder lambdasWithRepositories(List<LambdaJar> lambdasWithRepositories) {
+            this.lambdasWithRepositories = lambdasWithRepositories;
             return this;
         }
 
-        public Builder deployDeployments(List<DockerDeployment> deployDeployments) {
-            this.deployDeployments = deployDeployments;
+        /**
+         * Sets which non-lambda deployments need ECR repositories, so that they can be deployed from container images.
+         * This defaults to all deployments, and should usually be left at the default.
+         *
+         * @param  deploymentsWithRepositories the list of deployments
+         * @return                             this builder for chaining
+         */
+        public Builder deploymentsWithRepositories(List<DockerDeployment> deploymentsWithRepositories) {
+            this.deploymentsWithRepositories = deploymentsWithRepositories;
             return this;
         }
 
