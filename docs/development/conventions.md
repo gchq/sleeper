@@ -89,6 +89,31 @@ and we don't need to call the setter methods when not initialising those fields.
 In a data class, a field can be null if it's optional by necessity. An Optional can be used to expose the value outside
 the class. Wherever possible, we avoid using null values in a class responsible for logic, wiring or high level policy.
 
+## Naming
+
+We use names that describe the role of an item in the domain and follow the usual Java conventions for classes, methods
+and fields. We also use a few recurring naming patterns to make common APIs easier to recognise.
+
+### Static constructors
+
+When a static method creates an instance of its own class, we usually give it a name beginning with `from` when the
+input describes the source representation or context. For example, `DeployConfiguration.fromScriptsDirectory` creates
+a deployment configuration from a scripts directory, and `MavenModuleStructure.fromProjectBase` creates a module
+structure from a project directory.
+
+We use names beginning with `create` when the method is primarily an explicit creation operation rather than a
+conversion from another representation. This also matches the naming used by AWS SDK clients. For example,
+`SleeperClient.createForInstanceId` creates a client for an instance ID.
+
+The rest of the method name should describe the inputs that distinguish that construction path. Avoid generic factory
+names when a more specific `from...` or `create...` name makes the call site clearer.
+
+### Serialisation and deserialisation
+
+A class that owns both serialisation and deserialisation for a type is usually named with the `SerDe` suffix. Examples
+include `SchemaSerDe`, `PartitionSerDe`, `IngestJobSerDe` and `RowJsonSerDe`. The name before `SerDe` should identify
+the value being converted, with an additional format qualifier such as `Json` when that distinction is useful.
+
 ## Ordering within a Java class
 
 We try to keep to this ordering of elements in a class declaration:
