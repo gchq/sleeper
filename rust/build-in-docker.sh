@@ -17,20 +17,21 @@ set -ex
 unset CDPATH
 
 PROJECT_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+BUILD_IMAGE=${RUST_BUILD_IMAGE:-"ghcr.io/gchq/sleeper-rust-builder-al2023:latest"}
 
 PLATFORM=$1
 shift
 if [ "$PLATFORM" = "x86_64" ]; then
-  BUILD_IMAGE=${RUST_BUILD_IMAGE_X86_64:-"ghcr.io/gchq/sleeper-rust-builder-x86_64:latest"}
+  CARGO_TARGET="x86_64-unknown-linux-gnu"
 elif [ "$PLATFORM" = "aarch64" ]; then
-  BUILD_IMAGE=${RUST_BUILD_IMAGE_AARCH64:-"ghcr.io/gchq/sleeper-rust-builder-aarch64:latest"}
+  CARGO_TARGET="aarch64-unknown-linux-gnu"
 else
   echo "Platform not recognised, expected x86_64 or aarch64: $PLATFORM"
   exit 1
 fi
 
 if [[ -z $1 ]]; then
-  BUILD_COMMAND=(cargo build --release --package sleeper_df)
+  BUILD_COMMAND=(cargo build --target ${CARGO_TARGET} --release --package sleeper_df)
 else
   BUILD_COMMAND=("$@")
 fi
@@ -46,6 +47,7 @@ RUN_PARAMS=()
 if [ -t 1 ]; then # Only pass TTY to Docker if connected to terminal
   RUN_PARAMS+=(-it)
 fi
+
 RUN_PARAMS+=(
   --rm
   -v "$MOUNT_DIR":/workspace
@@ -81,11 +83,14 @@ if [ -n "${EXTRA_CARGO_CONFIG:-}" ]; then
   printf '\n%b\n' "$EXTRA_CARGO_CONFIG" >> "$ALT_CARGO_HOME/config.toml"
   RUN_PARAMS+=(
     -v "$MOUNT_DIR/rust/.cargo-home-mirror":/workspace/rust/.cargo-home-mirror
+    -v sleeper-cargo-registry:/workspace/rust/.cargo-home-mirror/registry
     -e CARGO_HOME=/workspace/rust/.cargo-home-mirror
   )
+else
+  RUN_PARAMS+=(-v sleeper-cargo-registry:/usr/local/.cargo/registry)
 fi
 
-RUN_PARAMS+=("$BUILD_IMAGE")
+RUN_PARAMS+=("${BUILD_IMAGE}")
 
 # Skip pulling image if environment variable is set and non-empty
 if [ -n "${SKIP_DOCKER_PULL:-}" ]; then
