@@ -22,4 +22,8 @@ RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/r
     chmod +x /usr/local/bin/aws-lambda-rie
 
 COPY entrypoint.sh /
+
+# Restore the non-root user, otherwise the USER root above would leave this image running as root,
+# unlike the image it's built from.
+USER sleeper
 ENTRYPOINT [ "/entrypoint.sh" ]
