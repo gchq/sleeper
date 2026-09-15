@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.utils.S3Path;
@@ -107,7 +108,7 @@ public class ReinitialiseTable {
         }
         String instanceId = args[0];
         String tableName = args[1];
-        boolean deletePartitions = args.length != 2 && Boolean.parseBoolean(args[2]);
+        boolean deletePartitions = args.length != 2 && ClientUtils.parseBooleanArgument(args[2]);
 
         System.out.println("If you continue all data will be deleted in the table.");
         if (deletePartitions) {
