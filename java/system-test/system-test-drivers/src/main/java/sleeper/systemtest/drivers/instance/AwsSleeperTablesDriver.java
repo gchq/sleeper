@@ -54,6 +54,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REST_API_ADD_TABLE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REST_API_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -139,6 +140,10 @@ public class AwsSleeperTablesDriver implements SleeperTablesDriver {
     }
 
     private static URI addTableUri(InstanceProperties instanceProperties) {
+        if (instanceProperties.isSet(REST_API_ADD_TABLE_URL)) {
+            return URI.create(instanceProperties.get(REST_API_ADD_TABLE_URL));
+        }
+        // Retain compatibility with instances deployed before route URLs were published.
         String restApiUrl = instanceProperties.get(REST_API_URL);
         return URI.create(restApiUrl + (restApiUrl.endsWith("/") ? "" : "/") + "sleeper/tables");
     }

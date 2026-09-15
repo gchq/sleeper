@@ -71,8 +71,9 @@ public class RestApiStack extends NestedStack {
 
         HttpLambdaIntegration integration = HttpLambdaIntegration.Builder.create(instanceId, lambda).build();
         List<HttpRoute> allRoutes = new ArrayList<>();
+        String addTablePath = "/sleeper/tables";
         allRoutes.addAll(restHttpApi.addRoutes(AddRoutesOptions.builder()
-                .path("/sleeper/tables")
+                .path(addTablePath)
                 .methods(List.of(HttpMethod.POST))
                 .integration(integration).build()));
 
@@ -84,5 +85,6 @@ public class RestApiStack extends NestedStack {
                 .value(restHttpApi.getApiEndpoint())
                 .build());
         instanceProperties.set(CdkDefinedInstanceProperty.REST_API_URL, restHttpApi.getApiEndpoint());
+        instanceProperties.set(CdkDefinedInstanceProperty.REST_API_ADD_TABLE_URL, restHttpApi.getApiEndpoint() + addTablePath);
     }
 }

@@ -20,6 +20,7 @@ class QueryCdkProperty:
 
 class RestCdkProperty:
     REST_BASE_URL = InstanceProperty("sleeper.rest.api.url")
+    REST_ADD_TABLE_URL = InstanceProperty("sleeper.rest.api.add.table.url")
 
 
 class CommonCdkProperty:

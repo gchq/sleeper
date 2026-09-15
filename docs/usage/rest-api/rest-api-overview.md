@@ -48,6 +48,18 @@ Once the stack is deployed, the API's invoke URL is available in two places:
 The URL has the form `https://<apiId>.execute-api.<region>.amazonaws.com`. Append the endpoint
 path (for example `/sleeper/tables`) to make a request.
 
+For table creation, use the full URL in the CDK-defined instance property
+`sleeper.rest.api.add.table.url`. The CDK publishes this from the same path used to
+create the API Gateway route. The Python client and Java system-test driver read
+this property, including when it specifies a different deployment prefix. For older
+instances that do not yet have this property, they retain the legacy `/sleeper/tables`
+path relative to `sleeper.rest.api.url`.
+
+When adding a route, define a CDK-set property named `sleeper.rest.api.<action>.<resource>.url`
+in `CdkDefinedInstanceProperty` and the matching Python `RestCdkProperty`. Set it in
+`RestApiStack` from the API endpoint and the route path, and use that property in clients.
+Route URLs describe the deployment; they are not user configuration for changing its routes.
+
 ## Authentication
 
 The API uses AWS IAM (Signature Version 4) for authentication. Every request must be signed with

@@ -36,6 +36,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REST_API_ADD_TABLE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REST_API_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -47,16 +48,38 @@ class AwsSleeperTablesDriverWiremockIT {
 
     @Test
     void shouldAddOneTable(WireMockRuntimeInfo runtimeInfo) {
+        checkAddTable("/sleeper/tables", false, false, runtimeInfo);
+    }
+
+    @Test
+    void shouldAddOneTableWithTrailingBaseUrlSlash(WireMockRuntimeInfo runtimeInfo) {
+        checkAddTable("/sleeper/tables", false, true, runtimeInfo);
+    }
+
+    @Test
+    void shouldUsePublishedAddTableUrl(WireMockRuntimeInfo runtimeInfo) {
+        checkAddTable("/deployment/v2/tables", true, false, runtimeInfo);
+    }
+
+    @Test
+    void shouldUsePublishedAddTableUrlWithTrailingBaseUrlSlash(WireMockRuntimeInfo runtimeInfo) {
+        checkAddTable("/deployment/v2/tables", true, true, runtimeInfo);
+    }
+
+    private void checkAddTable(String path, boolean hasPublishedRoute, boolean trailingSlash, WireMockRuntimeInfo runtimeInfo) {
         // Given
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(REST_API_URL, runtimeInfo.getHttpBaseUrl());
+        instanceProperties.set(REST_API_URL, runtimeInfo.getHttpBaseUrl() + (trailingSlash ? "/" : ""));
+        if (hasPublishedRoute) {
+            instanceProperties.set(REST_API_ADD_TABLE_URL, runtimeInfo.getHttpBaseUrl() + path);
+        }
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "test-table");
         tableProperties.setSchema(DEFAULT_SCHEMA);
         AwsSleeperTablesDriver driver = new AwsSleeperTablesDriver(SystemTestClients.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("access-key", "secret-key")))
                 .build());
-        stubFor(post("/sleeper/tables")
+        stubFor(post(path)
                 .willReturn(aResponse()
                         .withStatus(201)
                         .withBody("""
@@ -70,7 +93,7 @@ class AwsSleeperTablesDriverWiremockIT {
         driver.addTable(instanceProperties, tableProperties);
 
         // Then the REST API is called
-        verify(postRequestedFor(urlEqualTo("/sleeper/tables"))
+        verify(postRequestedFor(urlEqualTo(path))
                 .withHeader("Authorization", matching("AWS4-HMAC-SHA256 .*"))
                 .withHeader("Content-Type", equalTo("application/json"))
                 .withRequestBody(matchingJsonPath("$.properties['sleeper.table.name']", equalTo("test-table")))
