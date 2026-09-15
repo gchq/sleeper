@@ -27,6 +27,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 
@@ -140,5 +141,23 @@ public class RangeJobsQuery implements JobQuery {
         SimpleDateFormat dateInputFormat = new SimpleDateFormat(DATE_FORMAT);
         dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         return dateInputFormat;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(tableId, start, end);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        return Objects.equals(tableId, ((RangeJobsQuery) o).tableId)
+                && Objects.equals(start, ((RangeJobsQuery) o).start)
+                && Objects.equals(end, ((RangeJobsQuery) o).end);
     }
 }

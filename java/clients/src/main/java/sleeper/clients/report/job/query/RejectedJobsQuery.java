@@ -22,6 +22,7 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A query to generate a report on jobs in a job tracker that were rejected as invalid.
@@ -41,5 +42,15 @@ public class RejectedJobsQuery implements JobQuery {
     @Override
     public Type getType() {
         return Type.REJECTED;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof RejectedJobsQuery;
     }
 }
