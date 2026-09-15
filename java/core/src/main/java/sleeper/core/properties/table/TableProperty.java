@@ -130,7 +130,9 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
     // User defined
     TableProperty TABLE_NAME = Index.propertyBuilder("sleeper.table.name")
             .validationPredicate(Objects::nonNull)
-            .description("A unique name identifying this table.")
+            .description("A unique name identifying this table.\n" +
+                    "Note that this property is not directly editable, i.e. you cannot change the name of a table by " +
+                    "changing this property. However you can rename a table by using the renameTable.sh script.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .includedInBasicTemplate(true)
             .editable(false).build();
