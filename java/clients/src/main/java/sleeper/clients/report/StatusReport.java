@@ -83,7 +83,8 @@ public class StatusReport {
         // Jobs
         new CompactionJobStatusReport(compactionJobTracker,
                 new StandardCompactionJobStatusReporter(),
-                new UnfinishedJobsQuery(tableProperties.getStatus())).run();
+                tableProperties.getStatus(),
+                new UnfinishedJobsQuery()).run();
 
         // Tasks
         new CompactionTaskStatusReport(compactionTaskTracker,

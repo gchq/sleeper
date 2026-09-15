@@ -344,8 +344,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * @param file the file to save to
      */
     public void save(File file) {
-        try {
-            OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
+        try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file))) {
             save(outputStream);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -359,8 +358,7 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
      * @param file the path to save to
      */
     public void save(Path file) {
-        try {
-            OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(file));
+        try (OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(file))) {
             save(outputStream);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

@@ -47,7 +47,7 @@ import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
  * snapshots.
  */
 public class TransactionLogSnapshotDeletionTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreationTriggerLambda.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotDeletionTriggerLambda.class);
 
     private final InstanceProperties instanceProperties;
     private final S3Client s3Client;
