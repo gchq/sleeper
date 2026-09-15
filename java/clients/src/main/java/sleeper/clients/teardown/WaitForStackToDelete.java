@@ -53,11 +53,7 @@ public class WaitForStackToDelete {
      * @return                      the monitor to wait for deletion
      */
     public static WaitForStackToDelete from(CloudFormationClient cloudFormationClient, String stackName) {
-        return from(defaultPoll(), cloudFormationClient, stackName);
-    }
-
-    static PollWithRetries defaultPoll() {
-        return DEFAULT_POLL;
+        return from(DEFAULT_POLL, cloudFormationClient, stackName);
     }
 
     /**
