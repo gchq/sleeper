@@ -16,7 +16,6 @@
 
 package sleeper.clients.deploy.localstack;
 
-import org.eclipse.jetty.io.RuntimeIOException;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -39,6 +38,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -124,7 +124,7 @@ public class DeployDockerInstance {
                         StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                         .run();
             } catch (IOException e) {
-                throw new RuntimeIOException(e);
+                throw new UncheckedIOException(e);
             }
         }
     }

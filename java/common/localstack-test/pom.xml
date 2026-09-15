@@ -86,4 +86,23 @@
             </exclusions>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <configuration>
+                    <rules>
+                        <bannedDependencies>
+                            <!-- This test-support module runs WireMock. Its consumers must use test scope. -->
+                            <includes combine.children="append">
+                                <include>org.eclipse.jetty:jetty-server</include>
+                                <include>org.eclipse.jetty:jetty-security</include>
+                            </includes>
+                        </bannedDependencies>
+                    </rules>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
