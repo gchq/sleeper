@@ -16,6 +16,5 @@ FROM ${BASE_IMAGE}
 
 COPY bulk-export-task-execution.jar /bulk-export-task-execution.jar
 COPY run.sh /run.sh
-RUN ["chmod", "+x", "/run.sh"]
 
 ENTRYPOINT ["/run.sh"]

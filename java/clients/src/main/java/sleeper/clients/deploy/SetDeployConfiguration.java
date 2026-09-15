@@ -74,7 +74,8 @@ public class SetDeployConfiguration {
                     "By default the base image is built from the \"base\" subdirectory of the scripts docker " +
                     "directory. Set this only if you need to substitute a custom base Dockerfile. " +
                     "Cannot be combined with \"--image-location repository\" — the override only applies to " +
-                    "local builds.\n" +
+                    "local builds. A custom base image must create a \"sleeper\" user and set \"USER sleeper\", " +
+                    "as the images built on top of it expect to run as that user.\n" +
                     "\n" +
                     "--override-base-image-dir-by-image <image>=<dir>[,<image>=<dir>...]\n" +
                     "This works similarly to \"--override-base-image-dir\", except that it sets the base for " +
