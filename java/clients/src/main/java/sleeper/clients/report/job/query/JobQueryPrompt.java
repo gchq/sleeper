@@ -17,7 +17,6 @@
 package sleeper.clients.report.job.query;
 
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.core.table.TableStatus;
 
 import java.time.Clock;
 import java.util.Map;
@@ -33,29 +32,28 @@ public class JobQueryPrompt {
     /**
      * Creates a query by prompting the user. This can be used to generate a report from a job tracker.
      *
-     * @param  table        the Sleeper table to query
      * @param  clock        a clock to get the current time (can be fixed for tests)
      * @param  in           the console to prompt the user
      * @param  extraQueries specific queries to allow for this prompt
      * @return              the query
      */
-    public static JobQuery from(TableStatus table, Clock clock, ConsoleInput in, Map<String, JobQuery> extraQueries) {
+    public static JobQuery from(Clock clock, ConsoleInput in, Map<String, JobQuery> extraQueries) {
         String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
         if ("".equals(type)) {
             return null;
         } else if ("a".equalsIgnoreCase(type)) {
-            return new AllJobsQuery(table);
+            return new AllJobsQuery();
         } else if ("u".equalsIgnoreCase(type)) {
-            return new UnfinishedJobsQuery(table);
+            return new UnfinishedJobsQuery();
         } else if ("d".equalsIgnoreCase(type)) {
             String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
             return DetailedJobsQuery.fromParameters(jobIds);
         } else if ("r".equalsIgnoreCase(type)) {
-            return RangeJobsQuery.prompt(table, in, clock);
+            return RangeJobsQuery.prompt(in, clock);
         } else if (extraQueries.containsKey(type)) {
             return extraQueries.get(type);
         } else {
-            return from(table, clock, in, extraQueries);
+            return from(clock, in, extraQueries);
         }
     }
 }

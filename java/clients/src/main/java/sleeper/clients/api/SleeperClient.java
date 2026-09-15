@@ -46,6 +46,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -58,6 +60,8 @@ import java.util.stream.Stream;
  * data in ways that are not thread safe, so this client should be owned by a single thread.
  */
 public class SleeperClient implements AutoCloseable {
+
+    private static final Predicate<String> LOWER_ALPHANUMERICS_AND_DASHES = Pattern.compile("^[a-z0-9-]+$").asPredicate();
 
     private final InstanceProperties instanceProperties;
     private final TableIndex tableIndex;
@@ -283,11 +287,25 @@ public class SleeperClient implements AutoCloseable {
      * It is vital that the Sleeper table is pre-split first. Bulk import jobs will be refused unless there are a
      * minimum number of partitions defined, set in the table property `sleeper.table.bulk.import.min.leaf.partitions`.
      *
-     * @param platform the platform the import should run on
-     * @param job      the job listing files in S3 to ingest
+     * @param  platform the platform the import should run on
+     * @param  job      the job listing files in S3 to ingest
+     * @return          the ID of the job for tracking
      */
-    public void bulkImportFromFiles(BulkImportPlatform platform, BulkImportJob job) {
+    public String bulkImportFromFiles(BulkImportPlatform platform, BulkImportJob job) {
+        Objects.requireNonNull(job, "job must not be null");
+        String jobId = job.getId();
+        if (jobId == null) {
+            jobId = UUID.randomUUID().toString();
+            job = job.toBuilder().id(jobId).build();
+        }
+        if (!LOWER_ALPHANUMERICS_AND_DASHES.test(jobId)) {
+            throw new IllegalArgumentException("Job Ids must only contain lowercase alphanumerics and dashes.");
+        }
+        if (jobId.length() > 63) {
+            throw new IllegalArgumentException("Job IDs are only allowed to be up to 63 characters long.");
+        }
         bulkImportJobSender.sendFilesToBulkImport(platform, job);
+        return jobId;
     }
 
     /**
