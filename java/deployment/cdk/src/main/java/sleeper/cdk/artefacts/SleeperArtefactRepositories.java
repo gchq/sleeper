@@ -53,6 +53,8 @@ public class SleeperArtefactRepositories {
     private final Construct scope;
     private final String deploymentId;
     private final ToDeploy deploy;
+    private final List<LambdaJar> deployLambdaImages;
+    private final List<DockerDeployment> deployDeploymentImages;
     private final IBucket jarsBucket;
     private final Map<LambdaJar, IRepository> jarToRepository = new HashMap<>();
     private final Map<DockerDeployment, IRepository> deploymentToRepository = new HashMap<>();
@@ -62,6 +64,8 @@ public class SleeperArtefactRepositories {
         deploymentId = Objects.requireNonNull(builder.deploymentId, "deploymentId must not be null");
         String accountName = Objects.requireNonNull(builder.accountName, "accountName must not be null");
         deploy = Optional.ofNullable(builder.deploy).orElse(ToDeploy.ALL);
+        deployLambdaImages = Objects.requireNonNull(builder.deployLambdaImages, "deployLambdaImages must not be null");
+        deployDeploymentImages = Objects.requireNonNull(builder.deployDeploymentImages, "deployDeploymentImages must not be null");
         jarsBucket = deploy.isDeployJars() ? createJarsBucket(scope, accountName, deploymentId) : null;
         if (deploy.isDeployImages()) {
             deployImages();
@@ -102,11 +106,11 @@ public class SleeperArtefactRepositories {
     }
 
     private void deployImages() {
-        for (LambdaJar jar : LambdaJar.all()) {
+        for (LambdaJar jar : deployLambdaImages) {
             jarToRepository.put(jar, createRepository(jar.getImageName()));
         }
 
-        for (DockerDeployment deployment : DockerDeployment.all()) {
+        for (DockerDeployment deployment : deployDeploymentImages) {
             Repository repository = createRepository(deployment.getDeploymentName());
 
             if (deployment.isCreateEmrServerlessPolicy()) {
@@ -147,6 +151,8 @@ public class SleeperArtefactRepositories {
         private final String deploymentId;
         private String accountName;
         private ToDeploy deploy;
+        private List<LambdaJar> deployLambdaImages = LambdaJar.all();
+        private List<DockerDeployment> deployDeploymentImages = DockerDeployment.all();
 
         private Builder(Construct scope, String deploymentId) {
             this.scope = scope;
@@ -167,6 +173,16 @@ public class SleeperArtefactRepositories {
 
         public Builder deploy(ToDeploy deploy) {
             this.deploy = deploy;
+            return this;
+        }
+
+        public Builder deployLambdaImages(List<LambdaJar> deployLambdaImages) {
+            this.deployLambdaImages = deployLambdaImages;
+            return this;
+        }
+
+        public Builder deployDeploymentImages(List<DockerDeployment> deployDeploymentImages) {
+            this.deployDeploymentImages = deployDeploymentImages;
             return this;
         }
 
