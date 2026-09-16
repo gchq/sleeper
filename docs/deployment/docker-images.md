@@ -69,24 +69,6 @@ Docker image for each lambda jar.
 | rest-api-`<version-number>`.jar                      | rest-api-lambda                   | false                |
 
 
-## The base image
-
-All of the images above are built from a shared base image, output by a build of Sleeper
-at `scripts/docker/base`. This installs the JDK, and creates a non-root `sleeper` user that the images run as.
-
-This means that if you inject code into a running container, it will not run as root, and will not be able to modify
-the contents of the container. The jar and entrypoint script in each image are owned by root, and are not writable by
-the `sleeper` user. Two directories are writable, for components that need to write files locally:
-
-* `/mnt/scratch` - used as a local working directory, e.g. by standard ingest
-* `/tmp`
-
-The bulk import on EKS image is the exception, as it's built from an EMR on EKS base image, and runs as the
-non-root `hadoop` user that image provides.
-
-If you substitute your own base image with `--override-base-image-dir`, it must also create a `sleeper` user and set
-`USER sleeper`, as the images built on top of it expect to run as that user.
-
 ## Building and pushing
 
 See the [deployment guide](../deployment-guide.md) and [deployment with the CDK](./deploy-with-cdk.md) for information
