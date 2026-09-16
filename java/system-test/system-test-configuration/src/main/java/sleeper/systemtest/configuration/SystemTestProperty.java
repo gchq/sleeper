@@ -138,6 +138,9 @@ public interface SystemTestProperty extends InstanceProperty {
     SystemTestProperty RANDOM_BYTE_ARRAY_LENGTH = Index.propertyBuilder("sleeper.systemtest.random.bytearray.length")
             .description("The length of byte arrays generated randomly during random row generation")
             .defaultValue("10").validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger).build();
+    SystemTestProperty RANDOM_NULL_PROBABILITY = Index.propertyBuilder("sleeper.systemtest.random.null.probability")
+            .description("The probability of generating null for nullable value fields during random row generation")
+            .defaultValue("0.2").validationPredicate(value -> SleeperPropertyValueUtils.isDoubleInRangeInclusive(value, 0.0, 1.0)).build();
     SystemTestProperty MAX_ENTRIES_RANDOM_MAP = Index.propertyBuilder("sleeper.systemtest.random.map.length")
             .description("The maximum number of entries in maps generated randomly during random row generation\n" +
                     "(the number of entries in the map will range randomly from 0 to this number)")
