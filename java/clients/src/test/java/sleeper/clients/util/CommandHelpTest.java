@@ -15,6 +15,7 @@
  */
 package sleeper.clients.util;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,34 +35,66 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class CommandHelpTest {
-    private static final Pattern OPTION = Pattern.compile("--([a-z-]+)");
-    private static final Pattern HELP_HEADING = Pattern.compile("^--([a-z-]+)(?=[ ,\\n])", Pattern.MULTILINE);
+    private static final Pattern OPTION = Pattern.compile("--([^\\s,]+)");
+    private static final Pattern HELP_HEADING = Pattern.compile("^--([^\\s,]+)(?=[\\s,]|$)", Pattern.MULTILINE);
 
-    @ParameterizedTest(name = "{0} lists options alphabetically")
+    @ParameterizedTest(name = "{0} lists options in usage message alphabetically")
     @MethodSource("commands")
-    void shouldListOptionsInAlphabeticalOrder(String command, CommandLineUsage usage) {
-        String usageMessage = usage.createUsageMessage();
+    void shouldListOptionsInUsageMessageInAlphabeticalOrder(String command, CommandLineUsage usage) {
+        List<String> options = getOrderOfOptionNamesInUsageMessage(usage.createUsageMessage());
+
+        assertThat(options).as(command).containsExactlyElementsOf(alphabeticalOrder(options));
+    }
+
+    @ParameterizedTest(name = "{0} describes every option in help text alphabetically")
+    @MethodSource("commands")
+    void shouldDescribeEveryOptionInHelpTextInAlphabeticalOrder(String command, CommandLineUsage usage) {
+        List<String> optionNames = getOrderOfOptionNamesInUsageMessage(usage.createUsageMessage());
+        List<String> headings = getOrderOfOptionHeadingsInHelpText(usage.createHelpText());
+
+        assertThat(headings).as(command).containsExactlyElementsOf(optionNames);
+        assertThat(headings).as(command).containsExactlyElementsOf(alphabeticalOrder(headings));
+    }
+
+    @Test
+    void shouldReadOrderOfOptionNamesInUsageMessage() {
+        String usageMessage = "Usage: <arg>\nAvailable options: --help, --Upper_Case, --dot.name, --slash/value";
+
+        assertThat(getOrderOfOptionNamesInUsageMessage(usageMessage))
+                .containsExactly("Upper_Case", "dot.name", "slash/value");
+    }
+
+    @Test
+    void shouldReadOrderOfOptionHeadingsInHelpText() {
+        String helpText = """
+                Available options: --help, --Upper_Case, --dot.name, --slash/value
+
+                --Upper_Case First option
+                --dot.name, -d Second option
+                --slash/value
+                Third option
+                """;
+
+        assertThat(getOrderOfOptionHeadingsInHelpText(helpText))
+                .containsExactly("Upper_Case", "dot.name", "slash/value");
+    }
+
+    private static List<String> getOrderOfOptionNamesInUsageMessage(String usageMessage) {
         String availableOptions = usageMessage.substring(usageMessage.indexOf("Available options:"));
-        List<String> options = OPTION.matcher(availableOptions).results()
+        return OPTION.matcher(availableOptions).results()
                 .map(match -> match.group(1))
                 .filter(option -> !"help".equals(option))
                 .toList();
-
-        assertAlphabetical(command, options);
     }
 
-    @ParameterizedTest(name = "{0} describes every option alphabetically")
-    @MethodSource("commands")
-    void shouldDescribeOptionsInAlphabeticalOrder(String command, CommandLineUsage usage) {
-        List<String> headings = HELP_HEADING.matcher(usage.createHelpText()).results()
+    private static List<String> getOrderOfOptionHeadingsInHelpText(String helpText) {
+        return HELP_HEADING.matcher(helpText).results()
                 .map(match -> match.group(1))
                 .toList();
-
-        assertAlphabetical(command, headings);
     }
 
-    private static void assertAlphabetical(String command, List<String> options) {
-        assertThat(options).as(command).containsExactlyElementsOf(options.stream().sorted().toList());
+    private static List<String> alphabeticalOrder(List<String> options) {
+        return options.stream().sorted().toList();
     }
 
     private static Stream<Arguments> commands() {
