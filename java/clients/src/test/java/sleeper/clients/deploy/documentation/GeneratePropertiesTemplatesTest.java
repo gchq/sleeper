@@ -29,6 +29,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
@@ -45,8 +46,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_RETAIN_TABLE_AFTER_REMOVAL;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_TABLE_REUSE_EXISTING;
+import static sleeper.core.properties.instance.CommonProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_CORES;
@@ -61,6 +68,7 @@ import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
@@ -182,6 +190,26 @@ class GeneratePropertiesTemplatesTest {
         @Test
         void shouldGenerateEmptyInstanceProperties() {
             assertThat(instancePropertiesFromString(propertiesString)).isEqualTo(new InstanceProperties());
+        }
+
+        @Test
+        void shouldIncludeBasicPropertiesInLogicalOrder() {
+            assertThat(propertyNames(propertiesString)).containsExactly(
+                    OPTIONAL_STACKS.getPropertyName(),
+                    USER_JARS.getPropertyName(),
+                    EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION.getPropertyName(),
+                    RETAIN_INFRA_AFTER_DESTROY.getPropertyName(),
+                    RETAIN_LOGS_AFTER_DESTROY.getPropertyName(),
+                    DEFAULT_RETAIN_TABLE_AFTER_REMOVAL.getPropertyName(),
+                    DEFAULT_TABLE_REUSE_EXISTING.getPropertyName(),
+                    LOGGING_LEVEL.getPropertyName());
+        }
+
+        @Test
+        void shouldNotCreateASeparateLoggingSectionForOneBasicProperty() {
+            assertThat(propertiesString)
+                    .contains(LOGGING_LEVEL.getPropertyName())
+                    .doesNotContain(InstancePropertyGroup.LOGGING.getDescription());
         }
     }
 
@@ -326,6 +354,14 @@ class GeneratePropertiesTemplatesTest {
             assertThat(tablePropertiesWithDefaultValues())
                     .allSatisfy(property -> assertThat(tableProperties.isSet(property)).isFalse());
         }
+    }
+
+    private List<String> propertyNames(String propertiesString) {
+        return propertiesString.lines()
+                .map(String::trim)
+                .filter(line -> line.startsWith("# sleeper."))
+                .map(line -> line.substring(2, line.indexOf('=')))
+                .toList();
     }
 
     private String loadFileAsString(String path) {

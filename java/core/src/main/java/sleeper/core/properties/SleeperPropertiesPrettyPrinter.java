@@ -24,6 +24,7 @@ import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -40,6 +41,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private final boolean hideUnknownProperties;
     private final boolean printTemplate;
     private final boolean printGroupDetails;
+    private final Set<PropertyGroup> hiddenGroupHeaders;
 
     private SleeperPropertiesPrettyPrinter(Builder<T> builder) {
         sortedProperties = builder.sortedProperties;
@@ -49,6 +51,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         hideUnknownProperties = builder.hideUnknownProperties;
         printTemplate = builder.printTemplate;
         printGroupDetails = builder.printGroupDetails;
+        hiddenGroupHeaders = builder.hiddenGroupHeaders;
     }
 
     public static Builder<?> builder() {
@@ -101,7 +104,9 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
                 printGroupHeader(currentGroup);
             } else if (!currentGroup.equals(property.getPropertyGroup())) {
                 currentGroup = property.getPropertyGroup();
-                println();
+                if (!hiddenGroupHeaders.contains(currentGroup)) {
+                    println();
+                }
                 printGroupHeader(currentGroup);
             }
             printProperty(properties, property);
@@ -120,6 +125,9 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     }
 
     private void printGroupHeader(PropertyGroup group) {
+        if (hiddenGroupHeaders.contains(group)) {
+            return;
+        }
         println();
         println(formatDescription("## ", group.getDescription()));
         if (printGroupDetails && group.getDetails() != null) {
@@ -200,6 +208,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         private boolean hideUnknownProperties;
         private boolean printTemplate;
         private boolean printGroupDetails = true;
+        private Set<PropertyGroup> hiddenGroupHeaders = Set.of();
 
         private Builder() {
         }
@@ -282,6 +291,17 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
          */
         public Builder<T> printGroupDetails(boolean printGroupDetails) {
             this.printGroupDetails = printGroupDetails;
+            return this;
+        }
+
+        /**
+         * Sets property group headers that should not be printed. Properties in those groups are still printed.
+         *
+         * @param  groups property groups whose headers should be hidden
+         * @return        this builder
+         */
+        public Builder<T> hideGroupHeaders(PropertyGroup... groups) {
+            hiddenGroupHeaders = Set.of(groups);
             return this;
         }
 
