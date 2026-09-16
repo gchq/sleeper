@@ -19,10 +19,10 @@ unset CDPATH
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 BASE_DIR=$(cd "$THIS_DIR" && cd "../../" && pwd)
 
-# If environment variables RUSTUP_DIST_SERVER or RUSTUP_UPDATE_ROOT are set, then expand them into a string like
-# --build-arg RUSTUP_DIST_SERVER=${RUSTUP_SERVER} in BUILD_ARGS. If both are empty, then BUILD_ARGS is empty,
+# If environment variables are set, then expand them into a string like
+# --build-arg RUSTUP_DIST_SERVER=${RUSTUP_SERVER} in BUILD_ARGS. If all are empty, then BUILD_ARGS is empty,
 # otherwise, e.g. if RUSTUP_DIST_SERVER=http://example.com then BUILD_ARGS is "--build-arg RUSTUP_DIST_SERVER=http://example.com "
-BUILD_ARGS="${RUSTUP_DIST_SERVER:+--build-arg RUSTUP_DIST_SERVER=${RUSTUP_DIST_SERVER} }${RUSTUP_UPDATE_ROOT:+--build-arg RUSTUP_UPDATE_ROOT=${RUSTUP_UPDATE_ROOT} }"
+BUILD_ARGS="${RUSTUP_INIT_URL:+--build-arg RUSTUP_INIT_URL=${RUSTUP_INIT_URL} }${RUSTUP_DIST_SERVER:+--build-arg RUSTUP_DIST_SERVER=${RUSTUP_DIST_SERVER} }${RUSTUP_UPDATE_ROOT:+--build-arg RUSTUP_UPDATE_ROOT=${RUSTUP_UPDATE_ROOT} }"
 
 pushd "$THIS_DIR"/base
 rm -rf certs

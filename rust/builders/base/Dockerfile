@@ -2,6 +2,9 @@ FROM amazonlinux:2023
 # Find architecture of host, e.g. amd64 or arm64
 ARG TARGETARCH
 ARG RUST_VERSION=1.98.0
+ARG RUSTUP_INIT_URL=https://sh.rustup.rs
+ARG RUSTUP_DIST_SERVER
+ARG RUSTUP_UPDATE_ROOT
 
 RUN mkdir -p /opt/sysroot/x86_64/var/cache /opt/sysroot/aarch64/var/cache
 
@@ -23,7 +26,9 @@ ENV RUSTUP_HOME=/usr/local/rustup \
 
 # Install Rust and add both required targets to toolchain
 RUN curl --proto '=https' --tlsv1.2 --fail --show-error --silent --output /tmp/rustup-init.sh \
-    https://sh.rustup.rs \
+    ${RUSTUP_INIT_URL} \
+    && [ -z "${RUSTUP_DIST_SERVER}" ] || export RUSTUP_DIST_SERVER="${RUSTUP_DIST_SERVER}" \
+    && [ -z "${RUSTUP_UPDATE_ROOT}" ] || export RUSTUP_UPDATE_ROOT="${RUSTUP_UPDATE_ROOT}" \
     && sh /tmp/rustup-init.sh -y --no-modify-path --profile minimal --default-toolchain ${RUST_VERSION} \
     && rm -f /tmp/rustup-init.sh \
     && rustup target add aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu --toolchain ${RUST_VERSION}
