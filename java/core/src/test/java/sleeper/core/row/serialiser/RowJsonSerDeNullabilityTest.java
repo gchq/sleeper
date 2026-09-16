@@ -41,7 +41,7 @@ class RowJsonSerDeNullabilityTest {
     @MethodSource("valueTypes")
     void shouldOmitMissingNonNullableValue(Type type) {
         // Given
-        RowJsonSerDe serDe = serDe(type, false);
+        RowJsonSerDe serDe = serDeWithNonNullableValue(type);
 
         // When / Then
         assertThat(serDe.fromJson("{\"key\":1}"))
@@ -52,7 +52,7 @@ class RowJsonSerDeNullabilityTest {
     @MethodSource("valueTypes")
     void shouldOmitExplicitNullForNonNullableValue(Type type) {
         // Given
-        RowJsonSerDe serDe = serDe(type, false);
+        RowJsonSerDe serDe = serDeWithNonNullableValue(type);
 
         // When / Then
         assertThat(serDe.fromJson("{\"key\":1,\"value\":null}"))
@@ -63,7 +63,7 @@ class RowJsonSerDeNullabilityTest {
     @MethodSource("valueTypes")
     void shouldStoreNullForMissingNullableValue(Type type) {
         // Given
-        RowJsonSerDe serDe = serDe(type, true);
+        RowJsonSerDe serDe = serDeWithNullableValue(type);
         Row expected = new Row(Map.of("key", 1));
         expected.put("value", null);
 
@@ -76,7 +76,7 @@ class RowJsonSerDeNullabilityTest {
     @MethodSource("valueTypes")
     void shouldStoreExplicitNullForNullableValue(Type type) {
         // Given
-        RowJsonSerDe serDe = serDe(type, true);
+        RowJsonSerDe serDe = serDeWithNullableValue(type);
         Row expected = new Row(Map.of("key", 1));
         expected.put("value", null);
 
@@ -99,10 +99,18 @@ class RowJsonSerDeNullabilityTest {
         assertThat(serDe.fromJson(json)).isEqualTo(new Row());
     }
 
-    private RowJsonSerDe serDe(Type type, boolean nullable) {
+    private RowJsonSerDe serDeWithNonNullableValue(Type type) {
+        return serDeWithValue(new Field("value", type));
+    }
+
+    private RowJsonSerDe serDeWithNullableValue(Type type) {
+        return serDeWithValue(new Field("value", type, true));
+    }
+
+    private RowJsonSerDe serDeWithValue(Field valueField) {
         return new RowJsonSerDe(Schema.builder()
                 .rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", type, nullable))
+                .valueFields(valueField)
                 .build());
     }
 
