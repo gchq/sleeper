@@ -57,7 +57,7 @@ fi
 pushd "${PROJECT_ROOT}/java"
 BULK_IMPORT_AWS_VERSION=$(mvn help:evaluate -Dexpression=aws-java-sdk-v2.bulk-import.version -q -DforceStdout)
 echo "Bulk import version of AWS SDK: $BULK_IMPORT_AWS_VERSION"
-if [ $BULK_IMPORT_AWS_VERSION != "2.31.16" ]; then
+if [ $BULK_IMPORT_AWS_VERSION != "2.35.5" ]; then
     echo "Bulk import module's AWS SDK version has been upgraded. Only change this if deliberately matching EMR."
     exit 1
 fi
