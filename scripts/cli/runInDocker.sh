@@ -103,7 +103,11 @@ run_in_docker() {
     RUN_PARAMS+=(-it)
   fi
   local TEMP_DIR=$(mktemp -d)
+  # Create the directories we bind mount below. If we left this to Docker, it would create any
+  # missing ones as root, and the non-root user in the container would not be able to write to them.
   mkdir -p "$HOME/.aws"
+  mkdir -p "$HOME/.ssh"
+  mkdir -p "$HOME/.cache"
   RUN_PARAMS+=(
     --rm
     --add-host "host.docker.internal=host-gateway"
