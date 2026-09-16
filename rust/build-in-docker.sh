@@ -23,8 +23,12 @@ PLATFORM=$1
 shift
 if [ "$PLATFORM" = "x86_64" ]; then
   CARGO_TARGET="x86_64-unknown-linux-gnu"
+  SCCACHE_C_CUSTOM_CACHE_BUSTER="x86_64"
+  SCCACHE_GHA_VERSION="x86_64"
 elif [ "$PLATFORM" = "aarch64" ]; then
   CARGO_TARGET="aarch64-unknown-linux-gnu"
+  SCCACHE_C_CUSTOM_CACHE_BUSTER="aarch64"
+  SCCACHE_GHA_VERSION="aarch64"
 else
   echo "Platform not recognised, expected x86_64 or aarch64: $PLATFORM"
   exit 1
@@ -56,6 +60,8 @@ RUN_PARAMS+=(
   -e SCCACHE_LOG
   -e SSCACHE_CACHE_SIZE
   -e SCCACHE_GHA_ENABLED
+  -e SCCACHE_C_CUSTOM_CACHE_BUSTER
+  -e SCCACHE_GHA_VERSION
   -e ACTIONS_CACHE_URL
   -e ACTIONS_RESULTS_URL
   -e ACTIONS_RUNTIME_TOKEN
