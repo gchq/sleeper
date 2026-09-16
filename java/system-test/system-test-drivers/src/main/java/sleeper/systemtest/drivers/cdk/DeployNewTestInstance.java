@@ -68,13 +68,15 @@ public class DeployNewTestInstance {
                             If neither --properties-file nor --config-dir is set, the instance and a "system-test" table are deployed from the default system test configuration in scripts/test/deployAll. This is the default.
 
                             --config-dir <dir>
-                            Path to a full configuration directory (instance.properties plus tables). The instance and its tables are deployed as-is. Cannot be combined with --properties-file.
+                            Path to a full configuration directory (instance.properties plus tables), or directly to an instance.properties file within one. The instance and its tables are deployed as-is. Cannot be combined with --properties-file.
 
                             --paused
                             If set, the instance will be deployed paused. Periodic background processes will not run until the instance is manually resumed.
 
                             --properties-file <file>
-                            Path to an instance.properties file. Only the instance configuration is read; no tables are deployed. Cannot be combined with --config-dir.""")
+                            Path to an instance.properties file. Only the instance configuration is read; no tables are deployed. Cannot be combined with --config-dir.
+
+                            Note: deployTest.sh writes test data into a "system-test" table after deploying. Use --properties-file or --config-dir with deployTest.sh only when the deployed configuration includes a table by that name; otherwise use deploy.sh, which doesn't write test data.""")
             .build();
 
     private DeployNewTestInstance() {
@@ -156,7 +158,7 @@ public class DeployNewTestInstance {
         Path configDir = args.configDir();
         if (args.propertiesFile() == null && configDir == null) {
             // Otherwise the CDK sees no tables, so the demo table gets no widgets.
-            configDir = defaultConfigDir(args);
+            configDir = defaultInstancePropertiesFile(args);
         }
 
         DeployNewInstance.builder()
