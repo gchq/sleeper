@@ -69,6 +69,25 @@ class RandomRowSupplierTest {
     }
 
     @Test
+    void shouldUseConfiguredNullProbabilityForNullableField() {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new StringType(), true))
+                .build();
+        SystemTestRandomDataSettings settings = SystemTestRandomDataSettings.builder()
+                .nullProbability(1.0)
+                .build();
+        RandomRowSupplier supplier = new RandomRowSupplier(schema, settings, randomGenerator);
+
+        // When
+        List<Row> rows = generateRows(supplier);
+
+        // Then
+        assertThat(rows).allSatisfy(row -> assertThat(row.get("value")).isNull());
+    }
+
+    @Test
     void shouldNeverGenerateNullForRowKeyField() {
         // Given
         Schema schema = Schema.builder()
