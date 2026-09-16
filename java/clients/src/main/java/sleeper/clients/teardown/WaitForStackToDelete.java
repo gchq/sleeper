@@ -33,7 +33,7 @@ import java.time.Duration;
 public class WaitForStackToDelete {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForStackToDelete.class);
     private static final PollWithRetries DEFAULT_POLL = PollWithRetries
-            .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(45));
+            .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1));
 
     private final PollWithRetries poll;
     private final CloudFormationClient cloudFormationClient;
