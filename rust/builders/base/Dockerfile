@@ -20,6 +20,14 @@ ARG RUSTUP_INIT_URL=https://sh.rustup.rs
 ARG RUSTUP_DIST_SERVER
 ARG RUSTUP_UPDATE_ROOT
 
+# Copy certs/ if it exists, skip silently if not. The glob pattern cert[s]/ matches "certs/" when
+# present but matches nothing (instead of failing) when absent — Docker's COPY fails on missing
+# sources unless a glob is used. This must come before any network access below, as dnf and curl
+# both verify against the system trust store.
+COPY cert[s]/ /etc/pki/ca-trust/source/anchors/
+# Only rebuild the trust bundle if certs are present in the anchors dir
+RUN [ -z "$(ls -A /etc/pki/ca-trust/source/anchors 2>/dev/null)" ] || update-ca-trust extract
+
 RUN mkdir -p /opt/sysroot/x86_64/var/cache /opt/sysroot/aarch64/var/cache
 
 # Avoid downloading hosts dnf metadata cache again by symlinking the cache from container into the sysroot
