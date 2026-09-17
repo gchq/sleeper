@@ -41,8 +41,6 @@ ENV RUSTUP_HOME=/usr/local/rustup \
 # Install Rust and add both required targets to toolchain
 RUN curl --proto '=https' --tlsv1.2 --fail --show-error --silent --output /tmp/rustup-init.sh \
     ${RUSTUP_INIT_URL} \
-    && [ -z "${RUSTUP_DIST_SERVER}" ] || export RUSTUP_DIST_SERVER="${RUSTUP_DIST_SERVER}" \
-    && [ -z "${RUSTUP_UPDATE_ROOT}" ] || export RUSTUP_UPDATE_ROOT="${RUSTUP_UPDATE_ROOT}" \
     && sh /tmp/rustup-init.sh -y --no-modify-path --profile minimal --default-toolchain ${RUST_VERSION} \
     && rm -f /tmp/rustup-init.sh \
     && rustup target add aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu --toolchain ${RUST_VERSION}
