@@ -98,24 +98,6 @@ ENV CC_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-clang \
     CXX_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-clang++ \
     CXX_x86_64_unknown_linux_gnu=/usr/local/bin/x86_64-linux-gnu-clang++
 
-# Configure Rust to use per-target cross-compilation wrappers and lld linker.
-# To compile Rust code with cargo for cross-compilation targets:
-#   cargo build --target aarch64-unknown-linux-gnu
-#   cargo build --target x86_64-unknown-linux-gnu
-# For C/C++ code, invoke the compiler wrappers directly with the -fuse-ld=lld flag to use the lld linker:
-#   $(CXX_aarch64_unknown_linux_gnu) -fuse-ld=lld -o output main.cpp other.cpp
-#   $(CC_x86_64_unknown_linux_gnu) -fuse-ld=lld -c source.c -o source.o
-# The linker path points to our clang/clang++ wrappers (which inject --target and --sysroot)
-# rustflags adds -fuse-ld=lld only at link time to avoid "unused parameter" errors during C compilation
-RUN mkdir -p /usr/local/.cargo \
-    && cat > /usr/local/.cargo/config.toml <<'EOF'
-[target.aarch64-unknown-linux-gnu]
-linker = "/usr/local/bin/aarch64-linux-gnu-clang"
-rustflags = ["-C", "link-arg=-fuse-ld=lld"]
-
-[target.x86_64-unknown-linux-gnu]
-linker = "/usr/local/bin/x86_64-linux-gnu-clang"
-rustflags = ["-C", "link-arg=-fuse-ld=lld"]
-EOF
+COPY config.toml /usr/local/.cargo/
 
 WORKDIR /workspace
