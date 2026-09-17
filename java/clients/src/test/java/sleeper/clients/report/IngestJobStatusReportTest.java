@@ -213,7 +213,7 @@ public class IngestJobStatusReportTest {
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "20221101085959"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Missing paramter of end-time which is required for the ranged query type.");
+                    .hasMessage("Missing parameter of end-time which is required for the Range query type.");
         }
 
         @Test
@@ -221,7 +221,7 @@ public class IngestJobStatusReportTest {
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--end-time", "20240912093000"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Missing paramter of start-time which is required for the ranged query type.");
+                    .hasMessage("Missing parameter of start-time which is required for the Range query type.");
         }
     }
 
