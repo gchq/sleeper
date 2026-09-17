@@ -21,7 +21,9 @@ RUN dnf install -y --setopt=install_weak_deps=False git tar && dnf clean package
 COPY install-sccache.sh /
 RUN /install-sccache.sh
 
-ENV CC="sccache clang"
-ENV CXX="sccache clang++"
+ENV CC_aarch64_unknown_linux_gnu="sccache $CC_aarch64_unknown_linux_gnu"
+ENV CC_x86_64_unknown_linux_gnu="sccache $CC_x86_64_unknown_linux_gnu"
+ENV CXX_aarch64_unknown_linux_gnu="sccache $CXX_aarch64_unknown_linux_gnu"
+ENV CXX_x86_64_unknown_linux_gnu="sccache $CXX_x86_64_unknown_linux_gnu"
 ENV RUSTC_WRAPPER="sccache"
 ENV SCCACHE_DIR="/tmp/sccache"
