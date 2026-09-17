@@ -15,7 +15,7 @@
 FROM amazonlinux:2023
 # Find architecture of host, e.g. amd64 or arm64
 ARG TARGETARCH
-ARG RUST_VERSION=1.98.0
+ARG RUST_VERSION=1.96
 ARG RUSTUP_INIT_URL=https://sh.rustup.rs
 ARG RUSTUP_DIST_SERVER
 ARG RUSTUP_UPDATE_ROOT
