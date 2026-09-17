@@ -29,7 +29,6 @@ import sleeper.clients.report.job.query.RangeJobsQuery;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
 import sleeper.clients.report.job.query.UnfinishedJobsQuery;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.core.table.TableStatus;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
@@ -267,20 +266,16 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldCreateValidAllJobsQuery() {
-            // Given
-            String tableName = "all-job-table";
-            AllJobsQuery allJobsQuery = new AllJobsQuery(createTableStatus(tableName));
-
-            // When
+            // Given / When
             JobQuery jobFromArgs = createJobQueryFromArguments(
                     new Arguments("all-job-instance",
-                            tableName,
+                            "all-job-table",
                             reporter,
                             JobQuery.Type.ALL,
                             null, null, null));
 
             // Then
-            assertThat(jobFromArgs).isEqualTo(allJobsQuery);
+            assertThat(jobFromArgs).isInstanceOf(AllJobsQuery.class);
         }
 
         @Test
@@ -308,7 +303,7 @@ public class IngestJobStatusReportTest {
             String tableName = "range-job-table";
             Instant startTime = Instant.parse("2020-10-10T09:30:00Z");
             Instant endTime = Instant.parse("2021-10-08T15:00:00Z");
-            RangeJobsQuery rangeJobsQuery = new RangeJobsQuery(createTableStatus(tableName), startTime, endTime);
+            RangeJobsQuery rangeJobsQuery = new RangeJobsQuery(startTime, endTime);
 
             // When
             JobQuery jobFromArgs = createJobQueryFromArguments(
@@ -325,28 +320,21 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldCreateValidUnfinishedJobsQuery() {
-            // Given
-            String tableName = "unfinished-job-table";
-            UnfinishedJobsQuery unfinishedJobsQuery = new UnfinishedJobsQuery(createTableStatus(tableName));
-
-            // When
+            // Given / When
             JobQuery jobFromArgs = createJobQueryFromArguments(
                     new Arguments("unfinished-job-instance",
-                            tableName,
+                            "unfinished-job-table",
                             reporter,
                             JobQuery.Type.UNFINISHED,
                             null, null, null));
 
             // Then
-            assertThat(jobFromArgs).isEqualTo(unfinishedJobsQuery);
+            assertThat(jobFromArgs).isInstanceOf(UnfinishedJobsQuery.class);
         }
 
         @Test
         void shouldCreateValidRejectedJobsQuery() {
-            // Given
-            RejectedJobsQuery rejectedJobsQuery = new RejectedJobsQuery();
-
-            // When
+            // Given / When
             JobQuery jobFromArgs = createJobQueryFromArguments(
                     new Arguments("rejected-job-instance",
                             "rejected-job-table",
@@ -355,19 +343,15 @@ public class IngestJobStatusReportTest {
                             null, null, null));
 
             // Then
-            assertThat(jobFromArgs).isEqualTo(rejectedJobsQuery);
+            assertThat(jobFromArgs).isInstanceOf(RejectedJobsQuery.class);
         }
 
         private JobQuery createJobQueryFromArguments(Arguments args) {
-            return IngestJobStatusReport.queryfromParametersOrPrompt(createTableStatus(args.tableName()),
+            return IngestJobStatusReport.queryfromParametersOrPrompt(
                     args.queryType(),
                     IngestJobStatusReport.determineQueryParams(args),
                     Clock.systemUTC(),
                     ConsoleInput.stdIn());
-        }
-
-        private TableStatus createTableStatus(String tableName) {
-            return TableStatus.uniqueIdAndName(tableName, tableName, Boolean.TRUE);
         }
     }
 

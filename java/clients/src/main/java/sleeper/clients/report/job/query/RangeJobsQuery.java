@@ -145,7 +145,7 @@ public class RangeJobsQuery implements JobQuery {
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableId, start, end);
+        return Objects.hash(start, end);
     }
 
     @Override
@@ -156,8 +156,7 @@ public class RangeJobsQuery implements JobQuery {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        return Objects.equals(tableId, ((RangeJobsQuery) o).tableId)
-                && Objects.equals(start, ((RangeJobsQuery) o).start)
+        return Objects.equals(start, ((RangeJobsQuery) o).start)
                 && Objects.equals(end, ((RangeJobsQuery) o).end);
     }
 }
