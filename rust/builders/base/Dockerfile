@@ -90,11 +90,22 @@ EOF
 RUN chmod 0755 /usr/local/bin/aarch64-linux-gnu-clang /usr/local/bin/x86_64-linux-gnu-clang \
     /usr/local/bin/aarch64-linux-gnu-clang++ /usr/local/bin/x86_64-linux-gnu-clang++
 
-ENV CC_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-clang \
+# Configure Rust to use per-target cross-compilation wrappers and lld linker.
+# To compile Rust code with cargo for cross-compilation targets:
+#   cargo build --target aarch64-unknown-linux-gnu
+#   cargo build --target x86_64-unknown-linux-gnu
+# For C/C++ code, invoke the compiler wrappers directly with the -fuse-ld=lld flag to use the lld linker:
+#   $(CXX_aarch64_unknown_linux_gnu) -fuse-ld=lld -o output main.cpp other.cpp
+#   $(CC_x86_64_unknown_linux_gnu) -fuse-ld=lld -c source.c -o source.o
+# The linker path points to our clang/clang++ wrappers (which inject --target and --sysroot)
+# rustflags adds -fuse-ld=lld only at link time to avoid "unused parameter" errors during C compilation
+ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=/usr/local/bin/aarch64-linux-gnu-clang \
+    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-Clink-arg=-fuse-ld=lld -Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1" \
+    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=/usr/local/bin/x86_64-linux-gnu-clang \
+    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-Clink-arg=-fuse-ld=lld" \
+    CC_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-clang \
     CC_x86_64_unknown_linux_gnu=/usr/local/bin/x86_64-linux-gnu-clang \
     CXX_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-clang++ \
     CXX_x86_64_unknown_linux_gnu=/usr/local/bin/x86_64-linux-gnu-clang++
-
-COPY config.toml /usr/local/.cargo/
 
 WORKDIR /workspace
