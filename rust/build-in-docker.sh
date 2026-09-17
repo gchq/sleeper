@@ -89,11 +89,8 @@ if [ -n "${EXTRA_CARGO_CONFIG:-}" ]; then
   printf '\n%b\n' "$EXTRA_CARGO_CONFIG" >> "$ALT_CARGO_HOME/config.toml"
   RUN_PARAMS+=(
     -v "$MOUNT_DIR/rust/.cargo-home-mirror":/workspace/rust/.cargo-home-mirror
-    -v sleeper-cargo-registry:/workspace/rust/.cargo-home-mirror/registry
     -e CARGO_HOME=/workspace/rust/.cargo-home-mirror
   )
-else
-  RUN_PARAMS+=(-v sleeper-cargo-registry:/usr/local/.cargo/registry)
 fi
 
 RUN_PARAMS+=("${BUILD_IMAGE}")
