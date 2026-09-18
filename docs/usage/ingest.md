@@ -196,3 +196,26 @@ For example:
 ./scripts/report/ingestBatcherReport.sh <instance-id> standard -a # All files
 ./scripts/report/ingestBatcherReport.sh <instance-id> standard -p # Pending files (not yet in a job)
 ```
+
+## Check a file before ingest
+
+To check a Parquet file against an existing table without submitting an ingest job, run:
+
+```bash
+scripts/utility/validateIngestFile.sh <instance-id> <table-name> <file-path>
+```
+
+The file can be local or in S3. Quote paths containing spaces. For example:
+
+```bash
+scripts/utility/validateIngestFile.sh my-instance my-table 's3://my-bucket/input file.parquet'
+```
+
+The command reads the file footer and reports schema mismatches for standard ingest,
+including nullable fields where the table requires a non-nullable value. It also reports
+missing non-nullable fields. Extra columns and missing nullable value fields are allowed.
+A compatible schema produces exit code 0; incompatibility or an error produces a non-zero exit code.
+
+This is a schema check, not a full data validation. It does not read every row, check every
+value or prove that the file's data pages are intact. Spark bulk import is not validated:
+its schema and null-handling rules may differ from standard ingest.
