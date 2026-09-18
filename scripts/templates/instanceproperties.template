@@ -1181,14 +1181,13 @@
 # (EKS mode only) The type of EKS cluster to deploy for bulk import.
 # Valid values are: [fargate, automode]
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.cluster.type=FARGATE
+# sleeper.bulk.import.eks.cluster.type=AUTOMODE
 
 # (EKS mode only, automode cluster type only) Whether to configure the node pool for the cluster. If
 # this is enabled, related properties will be applied. Otherwise it will use the default behaviour for
 # EKS Auto Mode.
-# Node pool configuration is currently experimental.
 # (default value shown below, uncomment to set a value)
-# sleeper.bulk.import.eks.automode.nodepool.enabled=false
+# sleeper.bulk.import.eks.automode.nodepool.enabled=true
 
 # (EKS mode only, automode cluster type only) Comma-separated list of AWS EC2 instance types that the
 # Karpenter NodePool is allowed to launch for Spark pods.
