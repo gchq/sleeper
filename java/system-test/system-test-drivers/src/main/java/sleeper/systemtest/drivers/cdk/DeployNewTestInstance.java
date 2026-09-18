@@ -112,7 +112,7 @@ public class DeployNewTestInstance {
             LOGGER.info("Properties file specified, reading instance configuration only");
             config = SleeperInstanceConfiguration.fromLocalConfiguration(args.propertiesFile());
         } else if (args.configDir() != null) {
-            LOGGER.info("Configuration directory specified, reading its instance and tables");
+            LOGGER.info("Configuration directory specified, reading its instance and table properties");
             config = SleeperInstanceConfiguration.fromLocalConfigurationDirectory(args.configDir());
         } else {
             Path instancePropertiesFile = defaultInstancePropertiesFile(args);

@@ -112,6 +112,7 @@ public class DeployNewTestInstanceIT {
             instanceProperties.set(SUBNETS, "test-subnet");
             // And the table properties object gains the table ID after deployment when the table is added
             tableProperties.set(TABLE_ID, tablePropertiesStore.loadByName("system-test").get(TABLE_ID));
+            // And the deploy request reflects that configuration
             assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
                     .instanceConfig(new SleeperInstanceConfiguration(instanceProperties, tableProperties))
                     .cdkCommand(CdkCommand.deployNew().withConfigurationDirectory(defaultInstancePropertiesFile()).toBuilder()
