@@ -111,8 +111,16 @@ names when a more specific `from...` or `create...` name makes the call site cle
 ### Serialisation and deserialisation
 
 A class that owns both serialisation and deserialisation for a type is usually named with the `SerDe` suffix. Examples
-include `SchemaSerDe`, `PartitionSerDe`, `IngestJobSerDe` and `RowJsonSerDe`. The name before `SerDe` should identify
-the value being converted, with an additional format qualifier such as `Json` when that distinction is useful.
+include `SchemaSerDe`, `PartitionSerDe`, `IngestJobSerDe` and `RowJsonSerDe`. The name before `SerDe` or `JsonSerDe`
+should identify the value being converted. The `Json` part is usually only used when we are considering other options
+for serialisation formats.
+
+We prefer SerDe classes to implement both serialisation and deserialisation consistently. Tests will usually cover both
+directions in two ways:
+
+1. Start with the Java object, serialise it to JSON and deserialize it again, then assert the resulting object is equal
+   to the original.
+2. Start with the Java object, serialise it to JSON and assert the JSON representation, usually with an approval test.
 
 ## Ordering within a Java class
 
