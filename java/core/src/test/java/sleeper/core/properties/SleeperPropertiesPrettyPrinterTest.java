@@ -306,6 +306,17 @@ class SleeperPropertiesPrettyPrinterTest {
             assertThat(output).contains("\n\n" +
                     "## The following instance properties relate to standard ingest");
         }
+
+        @Test
+        void shouldHideSelectedGroupHeaderWithoutHidingProperties() {
+            String output = print(
+                    InstanceProperties.createPrettyPrinterBuilder().hideGroupHeaders(InstancePropertyGroup.LOGGING),
+                    new InstanceProperties());
+
+            assertThat(output)
+                    .contains("sleeper.logging.level=")
+                    .doesNotContain(InstancePropertyGroup.LOGGING.getDescription());
+        }
     }
 
     @Nested

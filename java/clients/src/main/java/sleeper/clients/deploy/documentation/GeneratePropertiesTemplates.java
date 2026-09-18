@@ -32,13 +32,20 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_RETAIN_TABLE_AFTER_REMOVAL;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_TABLE_REUSE_EXISTING;
+import static sleeper.core.properties.instance.CommonProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_CORES;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES;
@@ -51,6 +58,7 @@ import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
@@ -73,6 +81,16 @@ public class GeneratePropertiesTemplates {
             "#                  instance aimed towards reducing running costs                #\n" +
             "#               and will apply to any bulk import stacks you enable             #\n" +
             "#################################################################################";
+
+    private static final List<InstanceProperty> BASIC_INSTANCE_PROPERTY_ORDER = List.of(
+            OPTIONAL_STACKS,
+            USER_JARS,
+            EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION,
+            RETAIN_INFRA_AFTER_DESTROY,
+            RETAIN_LOGS_AFTER_DESTROY,
+            DEFAULT_RETAIN_TABLE_AFTER_REMOVAL,
+            DEFAULT_TABLE_REUSE_EXISTING,
+            LOGGING_LEVEL);
 
     private GeneratePropertiesTemplates() {
     }
@@ -147,9 +165,23 @@ public class GeneratePropertiesTemplates {
      * @param writer the writer
      */
     public static void writeExampleBasicInstanceProperties(Writer writer) {
-        writeBasicPropertiesTemplate(writer,
-                new InstanceProperties(),
-                InstancePropertyGroup.getAll());
+        InstanceProperties properties = new InstanceProperties();
+        List<InstanceProperty> basicProperties = properties.getPropertiesIndex().getUserDefined().stream()
+                .filter(SleeperProperty::isIncludedInBasicTemplate)
+                .sorted(Comparator.comparingInt(GeneratePropertiesTemplates::basicInstancePropertyOrder))
+                .toList();
+        SleeperPropertiesPrettyPrinter.builder()
+                .sortedProperties(basicProperties)
+                .writer(new PrintWriter(writer))
+                .printTemplate(true)
+                .hideGroupHeaders(InstancePropertyGroup.LOGGING)
+                .build()
+                .print(properties);
+    }
+
+    private static int basicInstancePropertyOrder(InstanceProperty property) {
+        int index = BASIC_INSTANCE_PROPERTY_ORDER.indexOf(property);
+        return index >= 0 ? index : BASIC_INSTANCE_PROPERTY_ORDER.size();
     }
 
     /**
