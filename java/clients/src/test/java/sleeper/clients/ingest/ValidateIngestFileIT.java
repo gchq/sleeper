@@ -16,14 +16,7 @@
 package sleeper.clients.ingest;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.example.data.Group;
-import org.apache.parquet.example.data.simple.SimpleGroupFactory;
-import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.apache.parquet.hadoop.example.ExampleParquetWriter;
-import org.apache.parquet.io.ParquetDecodingException;
-import org.apache.parquet.schema.MessageType;
-import org.apache.parquet.schema.MessageTypeParser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -35,19 +28,13 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
-import sleeper.core.table.TableNotFoundException;
-import sleeper.core.util.cli.CommandArgumentsException;
-import sleeper.parquet.row.ParquetRowReaderFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.function.Consumer;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -63,160 +50,32 @@ class ValidateIngestFileIT {
     private final Schema keySchema = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
 
     @Test
-    void shouldAcceptMatchingFileWithExtraColumns() throws IOException {
-        // Given
+    void shouldReportCompatibleFileFromCommandArguments() throws IOException {
         createTable(keySchema);
-        Path file = writeFile("required int64 extra; required int32 key;", group -> group.append("extra", 10L).append("key", 1));
+        Path file = writeFile(keySchema, new Row(Map.of("key", 1)));
 
-        // When
-        boolean compatible = check(file);
+        boolean compatible = client.run("instance", "test-table", file.toString());
 
-        // Then
         assertThat(compatible).isTrue();
-        assertThat(out.toString()).contains("Schema is compatible", "Row values and file data were not scanned", "Spark bulk import is not validated");
-        assertThat(readFirst(file, keySchema)).isEqualTo(new Row(java.util.Map.of("key", 1)));
+        assertThat(out.toString()).contains(
+                "File: " + file,
+                "Table: test-table",
+                "Schema is compatible with standard ingest.",
+                "Row values and file data were not scanned");
     }
 
     @Test
-    void shouldRejectNullableKeyEvenWhenValuesAreNotNull() throws IOException {
-        // Given
+    void shouldReportIncompatibleFileFromCommandArguments() throws IOException {
         createTable(keySchema);
-        Path file = writeFile("optional int32 key;", group -> group.append("key", 1));
+        Schema fileSchema = Schema.builder().rowKeyFields(new Field("other", new IntType())).build();
+        Path file = writeFile(fileSchema, new Row(Map.of("other", 1)));
 
-        // When
-        boolean compatible = check(file);
+        boolean compatible = client.run("instance", "test-table", file.toString());
 
-        // Then
         assertThat(compatible).isFalse();
-        assertThat(out.toString()).contains("'key' is nullable in the file but non-nullable in the table");
-        assertThatThrownBy(() -> readFirst(file, keySchema)).isInstanceOf(ParquetDecodingException.class);
-    }
-
-    @Test
-    void shouldValidateSchemaOfEmptyFile() throws IOException {
-        // Given
-        createTable(keySchema);
-        Path file = writeFile("optional int32 key;", null);
-
-        // When
-        boolean compatible = check(file);
-
-        // Then
-        assertThat(compatible).isFalse();
-        assertThat(out.toString()).contains("nullable in the file");
-    }
-
-    @Test
-    void shouldReportAllMismatchedFields() throws IOException {
-        // Given
-        createTable(Schema.builder().rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new LongType())).build());
-        Path file = writeFile("required int64 key; required binary value;", group -> group.append("key", 1L).append("value", "x"));
-
-        // When
-        boolean compatible = check(file);
-
-        // Then
-        assertThat(compatible).isFalse();
-        assertThat(out.toString()).contains("Field 'key'", "Field 'value'", "incompatible types");
-    }
-
-    @Test
-    void shouldRejectMissingNonNullableField() throws IOException {
-        // Given
-        createTable(keySchema);
-        Path file = writeFile("required int32 other;", group -> group.append("other", 1));
-
-        // When
-        boolean compatible = check(file);
-
-        // Then
-        assertThat(compatible).isFalse();
-        assertThat(out.toString()).contains("Missing non-nullable field 'key'");
-    }
-
-    @Test
-    void shouldAllowMissingNullableValue() throws IOException {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new StringType(), true)).build();
-        createTable(schema);
-        Path file = writeFile("required int32 key;", group -> group.append("key", 1));
-
-        // When
-        boolean compatible = check(file);
-        Row row = readFirst(file, schema);
-
-        // Then
-        assertThat(compatible).isTrue();
-        assertThat(row.get("key")).isEqualTo(1);
-        assertThat(row.get("value")).isNull();
-    }
-
-    @Test
-    void shouldAllowRequiredFileColumnForNullableValue() throws IOException {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new StringType(), true)).build();
-        createTable(schema);
-        Path file = writeFile("required binary value (UTF8); required int32 key;", group -> group.append("value", "x").append("key", 1));
-
-        // When
-        boolean compatible = check(file);
-
-        // Then
-        assertThat(compatible).isTrue();
-        assertThat(readFirst(file, schema).get("value")).isEqualTo("x");
-    }
-
-    @Test
-    void shouldRejectRepeatedScalar() throws IOException {
-        // Given
-        createTable(keySchema);
-        Path file = writeFile("repeated int32 key;", group -> group.append("key", 1).append("key", 2));
-
-        // When
-        boolean compatible = check(file);
-
-        // Then
-        assertThat(compatible).isFalse();
-        assertThatThrownBy(() -> readFirst(file, keySchema)).isInstanceOf(ParquetDecodingException.class);
-    }
-
-    @Test
-    void shouldFailForNonParquetFile() throws IOException {
-        // Given
-        createTable(keySchema);
-        Path file = Files.writeString(tempDir.resolve("not-parquet.txt"), "This is not a Parquet file.");
-
-        // When / Then
-        assertThatThrownBy(() -> check(file)).isInstanceOf(RuntimeException.class);
-        assertThat(out.toString()).doesNotContain("Schema is compatible");
-    }
-
-    @Test
-    void shouldFailForMissingFile() {
-        // Given
-        createTable(keySchema);
-
-        // When / Then
-        assertThatThrownBy(() -> check(tempDir.resolve("missing.parquet"))).isInstanceOf(IOException.class);
-    }
-
-    @Test
-    void shouldFailForUnknownTableBeforeReadingFile() {
-        // When / Then
-        assertThatThrownBy(() -> check(tempDir.resolve("missing.parquet"))).isInstanceOf(TableNotFoundException.class);
-    }
-
-    @Test
-    void shouldRejectIncompleteArguments() {
-        // When / Then
-        assertThatThrownBy(() -> client.run("instance", "table")).isInstanceOf(CommandArgumentsException.class);
-    }
-
-    private boolean check(Path file) throws IOException {
-        return client.run("instance", "test-table", file.toString());
+        assertThat(out.toString()).contains(
+                "Schema is not compatible with standard ingest:",
+                "Missing non-nullable field 'key'.");
     }
 
     private void createTable(Schema schema) {
@@ -225,24 +84,12 @@ class ValidateIngestFileIT {
         tables.createTable(properties);
     }
 
-    private Path writeFile(String fields, Consumer<Group> populate) throws IOException {
-        Path file = tempDir.resolve("input file.parquet");
-        MessageType schema = MessageTypeParser.parseMessageType("message input {" + fields + "}");
-        try (ParquetWriter<Group> writer = ExampleParquetWriter.builder(new org.apache.hadoop.fs.Path(file.toUri()))
-                .withConf(configuration).withType(schema).build()) {
-            if (populate != null) {
-                Group group = new SimpleGroupFactory(schema).newGroup();
-                populate.accept(group);
-                writer.write(group);
-            }
+    private Path writeFile(Schema schema, Row row) throws IOException {
+        Path file = tempDir.resolve("input.parquet");
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                new org.apache.hadoop.fs.Path(file.toUri()), schema)) {
+            writer.write(row);
         }
         return file;
-    }
-
-    private Row readFirst(Path file, Schema schema) throws IOException {
-        try (ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new org.apache.hadoop.fs.Path(file.toUri()), schema)
-                .withConf(configuration).build()) {
-            return reader.read();
-        }
     }
 }

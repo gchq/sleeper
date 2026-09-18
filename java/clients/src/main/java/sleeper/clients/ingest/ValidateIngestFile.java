@@ -16,10 +16,6 @@
 package sleeper.clients.ingest;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetFileReader;
-import org.apache.parquet.hadoop.util.HadoopInputFile;
-import org.apache.parquet.schema.MessageType;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -77,14 +73,7 @@ public class ValidateIngestFile {
         }
     }
 
-    /**
-     * Checks a file using the supplied command line arguments and writes the result to the console.
-     *
-     * @param  rawArgs     the instance ID, table name and file path
-     * @return             true if the file schema is compatible
-     * @throws IOException if the file cannot be read
-     */
-    public boolean run(String... rawArgs) throws IOException {
+    boolean run(String... rawArgs) throws IOException {
         return run(CommandArgumentReader.parse(USAGE, rawArgs));
     }
 
@@ -92,12 +81,7 @@ public class ValidateIngestFile {
         String tableName = args.getString("table-name");
         Schema schema = tables.loadByName(tableName).getSchema();
         String file = args.getString("file-path");
-        Path path = new Path(file.startsWith("s3://") ? "s3a://" + file.substring(5) : file);
-        MessageType fileSchema;
-        try (ParquetFileReader reader = ParquetFileReader.open(HadoopInputFile.fromPath(path, configuration))) {
-            fileSchema = reader.getFooter().getFileMetaData().getSchema();
-        }
-        List<String> problems = ParquetSchemaValidation.validate(schema, fileSchema);
+        List<String> problems = ParquetSchemaValidation.validateFile(schema, file, configuration);
         out.println("File: " + file);
         out.println("Table: " + tableName);
         if (problems.isEmpty()) {
