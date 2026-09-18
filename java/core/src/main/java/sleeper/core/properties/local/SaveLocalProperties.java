@@ -65,7 +65,22 @@ public class SaveLocalProperties {
     public static void saveToDirectory(
             Path directory, InstanceProperties instanceProperties,
             Stream<TableProperties> tablePropertiesStream) throws IOException {
-        writeInstanceProperties(instanceProperties, directory.resolve("instance.properties"));
+        saveToFile(directory.resolve("instance.properties"), instanceProperties, tablePropertiesStream);
+    }
+
+    /**
+     * Saves instance and table properties to the directory containing a given filename.
+     *
+     * @param  instancePropertiesFile the path for the instance properties file
+     * @param  instanceProperties     the instance properties
+     * @param  tablePropertiesStream  the table properties
+     * @throws IOException            if we could not write to the file system
+     */
+    public static void saveToFile(Path instancePropertiesFile, InstanceProperties instanceProperties,
+            Stream<TableProperties> tablePropertiesStream) throws IOException {
+        Path parent = instancePropertiesFile.getParent();
+        Path directory = parent != null ? parent : Path.of(".");
+        writeInstanceProperties(instanceProperties, instancePropertiesFile);
         Files.writeString(directory.resolve("tags.properties"), instanceProperties.getTagsPropertiesAsString());
         saveTablesToDirectory(directory, tablePropertiesStream);
     }
