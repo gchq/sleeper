@@ -107,6 +107,8 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <executions>
+                            <!-- You need one execution per architecture target you are building. Make sure
+                            you add the appropriate resources plugin execution below! -->
                             <execution>
                                 <id>Invoke Rust Cargo build (Linux x86_64)</id>
                                 <phase>generate-resources</phase>
