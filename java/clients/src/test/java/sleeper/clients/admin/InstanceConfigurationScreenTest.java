@@ -465,6 +465,7 @@ class InstanceConfigurationScreenTest extends AdminClientInMemoryTestBase {
             // And the CDK is invoked
             assertThat(cdkCommandsThatRan).containsExactly(pipeline(command(
                     "cdk",
+                    "--output", "test-cdk-output",
                     "-a", "java -cp \"./test/jars/cdk-1.2.3.jar\" sleeper.cdk.SleeperCdkApp",
                     "deploy",
                     "--require-approval", "never",

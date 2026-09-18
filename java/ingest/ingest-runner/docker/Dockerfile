@@ -16,6 +16,5 @@ FROM ${BASE_IMAGE}
 
 COPY ingest.jar /ingest.jar
 COPY run.sh /run.sh
-RUN ["chmod", "+x", "/run.sh"]
 
 ENTRYPOINT ["/run.sh"]

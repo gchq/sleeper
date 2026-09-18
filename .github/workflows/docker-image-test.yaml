@@ -84,6 +84,14 @@ jobs:
         run: ./scripts/dev/buildDockerImage.sh base ${{ env.BASE_IMAGE }} ${{ inputs.dockerOptions }} --builder sleeper --push
       - name: Build Docker image ${{ inputs.imageName }}
         run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test-no-rie --default-base-image ${{ env.BASE_IMAGE }} ${{ inputs.dockerOptions }} --builder sleeper --load
+      - name: Check Docker image does not run as root
+        run: |
+          IMAGE_USER=$(docker image inspect --format '{{.Config.User}}' ${{ inputs.imageName }}:test-no-rie)
+          echo "Image ${{ inputs.imageName }} runs as user: '$IMAGE_USER'"
+          if [ -z "$IMAGE_USER" ] || [ "$IMAGE_USER" = "root" ] || [ "$IMAGE_USER" = "0" ]; then
+            echo "::error::Image ${{ inputs.imageName }} runs as root. Images deployed in an instance of Sleeper must run as a non-root user, so that code injected into a running container cannot modify the container. See docs/deployment/docker-images.md."
+            exit 1
+          fi
       - name: Add RIE to Docker image
         if: ${{ inputs.testClassNames != '' && inputs.isLambda }}
         run: |
