@@ -15,6 +15,10 @@
  */
 package sleeper.parquet.row;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.apache.parquet.io.ColumnIOFactory;
 import org.apache.parquet.io.ParquetDecodingException;
 import org.apache.parquet.schema.MessageType;
@@ -22,6 +26,7 @@ import org.apache.parquet.schema.Type;
 
 import sleeper.core.schema.Schema;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +35,22 @@ import java.util.List;
  */
 public class ParquetSchemaValidation {
     private ParquetSchemaValidation() {
+    }
+
+    /**
+     * Reads the Parquet footer and checks compatibility with a Sleeper table schema.
+     *
+     * @param  schema        the target Sleeper table schema
+     * @param  file          a local path, s3:// URI or s3a:// URI
+     * @param  configuration Hadoop configuration used to open the file
+     * @return               descriptions of incompatible fields, or an empty list if compatible
+     * @throws IOException   if the file cannot be read
+     */
+    public static List<String> validateFile(Schema schema, String file, Configuration configuration) throws IOException {
+        Path path = new Path(file.startsWith("s3://") ? "s3a://" + file.substring(5) : file);
+        try (ParquetFileReader reader = ParquetFileReader.open(HadoopInputFile.fromPath(path, configuration))) {
+            return validate(schema, reader.getFooter().getFileMetaData().getSchema());
+        }
     }
 
     /**
