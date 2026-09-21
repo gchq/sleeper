@@ -51,18 +51,8 @@ jobs:
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
       - name: Push base Docker image
-        uses: docker/build-push-action@v7
         if: ${{ inputs.pushImages }}
-        with:
-          context: ./rust/builders/base
-          tags: ${{ env.BASE_IMAGE }}
-          sbom: false
-          provenance: false
-          platforms: ${{ env.DOCKER_PLATFORMS }}
-          push: true
-          labels: |
-            git-commit=${{ github.sha }}
-            build-url=${{ env.BUILD_URL }}
+        run: docker buildx imagetools create --tag ${{ env.BASE_IMAGE }} ${{ env.BASE_IMAGE_LOCAL }}
       - name: Build sccache Docker image
         uses: docker/build-push-action@v7
         with:
