@@ -136,7 +136,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         parquetWriter.close();
         sketchesStore.saveFileSketches(path, schema, sketches);
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-        double rate = numRows / (double) duration.getSeconds();
+        double rate = numRows / duration.getSecondsAsDouble();
         LOGGER.info("Finished writing {} rows to file {} in {} (rate was {} per second)",
                 numRows, path, duration, rate);
     }

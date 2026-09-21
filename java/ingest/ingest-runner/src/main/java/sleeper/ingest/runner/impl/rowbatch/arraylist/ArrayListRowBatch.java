@@ -156,11 +156,11 @@ public class ArrayListRowBatch<INCOMINGDATATYPE> implements RowBatch<INCOMINGDAT
                     "[sorting {} ({}/s), writing {} ({}/s)] - filename: {}",
                     inMemoryBatch.size(),
                     wholeDuration,
-                    FORMATTER.format(inMemoryBatch.size() / (double) wholeDuration.getSeconds()),
+                    FORMATTER.format(inMemoryBatch.size() / wholeDuration.getSecondsAsDouble()),
                     sortDuration,
-                    FORMATTER.format(inMemoryBatch.size() / (double) sortDuration.getSeconds()),
+                    FORMATTER.format(inMemoryBatch.size() / sortDuration.getSecondsAsDouble()),
                     writeDuration,
-                    FORMATTER.format(inMemoryBatch.size() / (double) writeDuration.getSeconds()),
+                    FORMATTER.format(inMemoryBatch.size() / writeDuration.getSecondsAsDouble()),
                     outputFileName);
             localFileNames.add(outputFileName);
             noOfRowsInLocalStore += inMemoryBatch.size();

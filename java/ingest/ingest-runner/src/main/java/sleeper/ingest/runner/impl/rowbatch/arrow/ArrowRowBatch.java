@@ -449,7 +449,7 @@ public class ArrowRowBatch<INCOMINGDATATYPE> implements RowBatch<INCOMINGDATATYP
                 currentInsertIndex,
                 bytesWrittenToLocalFile,
                 duration,
-                FORMATTER.format(currentInsertIndex / (double) duration.getSeconds()),
+                FORMATTER.format(currentInsertIndex / duration.getSecondsAsDouble()),
                 localFileName);
         vectorSchemaRoot.clear();
         currentInsertIndex = 0;
