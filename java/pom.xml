@@ -230,7 +230,7 @@
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>
         <jakarta.activation.version>2.1.4</jakarta.activation.version>
-        <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
+        <jakarta.xml.bind.version>4.0.0</jakarta.xml.bind.version>
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.3</jgrapht.version>
         <apfloat.version>1.16.0</apfloat.version>
