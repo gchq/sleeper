@@ -36,7 +36,7 @@ See [publishing artefacts](publishing.md) for the full publish flow.
 
 ## Rust build
 
-The Rust components are built inside Docker containers via `rust/build-in-docker.sh` (this script is called in-directly from Maven during a normal Sleeper build process), with the builder images themselves produced by `rust/builders/buildAll.sh` (or `buildBase.sh`). The configuration points below affect either the building of those builder images or how the Rust workload runs inside them.
+The Rust components are built inside Docker containers via `rust/build-in-docker.sh` (this script is called in-directly from Maven during a normal Sleeper build process), with the builder image itself produced by `rust/builders/buildAll.sh` (or `buildBase.sh`). The configuration points below affect either the building of the builder image or how the Rust workload runs inside them.
 
 The variables below should be set via environment variables as shown.
 
