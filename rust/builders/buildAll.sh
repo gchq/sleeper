@@ -37,5 +37,5 @@ docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-al2023:latest .
 popd
 
 pushd "$THIS_DIR"/sccache
-docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-sccache:latest .
+docker build -t ghcr.io/gchq/sleeper-rust-builder-sccache:latest .
 popd
