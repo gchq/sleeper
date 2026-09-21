@@ -142,36 +142,48 @@ public class IngestJobStatusReport {
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
             .positionalArguments(List.of("instance-id", "table-name"))
-            .options(List.of(CommandOption.longOption("output-type"),
+            .options(List.of(
                     CommandOption.shortFlag('a', "all"),
                     CommandOption.shortOption('d', "detailed"),
-                    CommandOption.shortFlag('n', "rejected"),
-                    CommandOption.shortFlag('r', "range"),
-                    CommandOption.longOption("start-time"),
                     CommandOption.longOption("end-time"),
+                    CommandOption.longOption("output-type"),
+                    CommandOption.shortFlag('r', "range"),
+                    CommandOption.shortFlag('n', "rejected"),
+                    CommandOption.longOption("start-time"),
                     CommandOption.shortFlag('u', "unfinished")))
             .helpSummary("" +
                     "A report on ingest jobs within a Sleeper instance.\n" +
                     "\n" +
+                    "The jobs to report on are chosen with one of the query type options, " +
+                    "which are --all, --detailed, --range, --rejected and --unfinished. " +
+                    "Only one may be set at a time. If none is set, you will be prompted to choose one.\n" +
+                    "\n" +
+                    "--all, -a\n" +
+                    "Reports on all jobs.\n" +
+                    "\n" +
+                    "--detailed, -d <job-id>\n" +
+                    "Reports on a single job with the given ID.\n" +
+                    "\n" +
+                    "--end-time <time>\n" +
+                    "End of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
+                    "Must be set together with --start-time, and only applies to the --range query type.\n" +
+                    "\n" +
                     "--output-type <type>\n" +
                     "Output format. One of STANDARD, JSON. Defaults to STANDARD.\n" +
                     "\n" +
-                    "Available query types for the report are (Choose 1):\n " +
-                    "-a, --all\n" +
-                    "Returns all jobs.\n" +
+                    "--range, -r\n" +
+                    "Reports on all jobs in a time period. Defaults to the last 4 hours, " +
+                    "or set the period with --start-time and --end-time.\n" +
                     "\n" +
-                    "-d, --detailed <jobId>\n" +
-                    "Returns a detailed report for the job ID provided.\n" +
+                    "--rejected, -n\n" +
+                    "Reports on all rejected jobs.\n" +
                     "\n" +
-                    "-n, --rejected\n" +
-                    "Returns all rejected jobs.\n" +
+                    "--start-time <time>\n" +
+                    "Start of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
+                    "Must be set together with --end-time, and only applies to the --range query type.\n" +
                     "\n" +
-                    "-r, --range --start-time <startTime> --end-time <endTime>\n" +
-                    "Returns all jobs within a given range. If not set, defaults to 4 hours.\n" +
-                    "The range can be declared with --start-time and --end-time. They must in the following format: yyyyMMddhhmmss.\n" +
-                    "\n" +
-                    "-u, --unfinished\n" +
-                    "Returns all unfinished jobs.")
+                    "--unfinished, -u\n" +
+                    "Reports on all unfinished jobs.")
             .build();
 
     /**

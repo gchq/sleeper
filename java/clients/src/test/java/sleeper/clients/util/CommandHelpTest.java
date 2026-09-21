@@ -25,6 +25,7 @@ import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.UploadArtefacts;
 import sleeper.clients.deploy.container.BuildDockerImage;
 import sleeper.clients.report.FilesStatusReport;
+import sleeper.clients.report.IngestJobStatusReport;
 import sleeper.clients.table.AddTableClient;
 import sleeper.core.util.cli.CommandLineUsage;
 
@@ -101,6 +102,7 @@ class CommandHelpTest {
         return Stream.of(
                 Arguments.of("addTable", AddTableClient.USAGE),
                 Arguments.of("filesStatusReport", FilesStatusReport.USAGE),
+                Arguments.of("ingestJobStatusReport", IngestJobStatusReport.USAGE),
                 Arguments.of("deployExisting", DeployExistingInstance.USAGE),
                 Arguments.of("deployNew", DeployNewInstance.USAGE),
                 Arguments.of("uploadArtefacts", UploadArtefacts.USAGE),
