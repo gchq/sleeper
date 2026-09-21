@@ -35,6 +35,7 @@ RUN mkdir -p /opt/sysroot/x86_64/var/cache /opt/sysroot/aarch64/var/cache
 RUN case "${TARGETARCH}" in \
     "amd64") ln -s /var/cache/dnf /opt/sysroot/x86_64/var/cache ;;\
     "arm64") ln -s /var/cache/dnf /opt/sysroot/aarch64/var/cache ;;\
+    "") echo "TARGETARCH not set - this image requires BuildKit"; exit 1;;\
     *) echo "Architecture ${TARGETARCH} not recognised"; exit 1;;\
     esac
 
