@@ -25,6 +25,7 @@ import sleeper.clients.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.report.compaction.task.StandardCompactionTaskStatusReporter;
 import sleeper.clients.report.job.query.UnfinishedJobsQuery;
 import sleeper.clients.report.partitions.PartitionsStatusReporter;
+import sleeper.clients.util.ClientUtils;
 import sleeper.common.task.QueueMessageCount;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
@@ -102,7 +103,7 @@ public class StatusReport {
         String instanceId = args[0];
         String tableName = args[1];
         boolean verbose = optionalArgument(args, 2)
-                .map(Boolean::parseBoolean)
+                .map(ClientUtils::parseBooleanArgument)
                 .orElse(false);
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());

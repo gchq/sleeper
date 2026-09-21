@@ -69,27 +69,30 @@ public class DeployExistingInstance {
         return new Builder();
     }
 
+    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
+            .positionalArguments(List.of("scripts directory", "instance ID"))
+            .systemArguments(List.of("scripts directory"))
+            .options(List.of(
+                    CommandOption.longOption("force-cdk-app"),
+                    CommandOption.longFlag("paused")))
+            .helpSummary("" +
+                    "Redeploys an existing Sleeper instance. This can only be used with an instance that was deployed " +
+                    "with the standard scripts or CDK app from the main Sleeper GitHub.\n" +
+                    "\n" +
+                    "--force-cdk-app <app>\n" +
+                    "This can be used to force use of a specific CDK app to deploy the instance. Usually the CDK app " +
+                    "will be automatically detected. This should only be used if the detection fails, for example if " +
+                    "you are upgrading from a version that did not have this auto-detection. Do not use this if the " +
+                    "instance was deployed with a CDK app that is not listed.\n" +
+                    "Available apps from Sleeper GitHub: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance() + "\n" +
+                    "\n" +
+                    "--paused\n" +
+                    "If set, the instance will be deployed paused. Periodic background processes will not run until " +
+                    "the instance is manually resumed.")
+            .build();
+
     public static void main(String[] rawArgs) throws IOException, InterruptedException {
-        CommandLineUsage usage = CommandLineUsage.builder()
-                .positionalArguments(List.of("scripts directory", "instance ID"))
-                .systemArguments(List.of("scripts directory"))
-                .options(List.of(CommandOption.longFlag("paused"), CommandOption.longOption("force-cdk-app")))
-                .helpSummary("" +
-                        "Redeploys an existing Sleeper instance. This can only be used with an instance that was deployed " +
-                        "with the standard scripts or CDK app from the main Sleeper GitHub.\n" +
-                        "\n" +
-                        "--paused\n" +
-                        "If set, the instance will be deployed paused. Periodic background processes will not run until " +
-                        "the instance is manually resumed.\n" +
-                        "\n" +
-                        "--force-cdk-app <app>\n" +
-                        "This can be used to force use of a specific CDK app to deploy the instance. Usually the CDK app " +
-                        "will be automatically detected. This should only be used if the detection fails, for example if " +
-                        "you are upgrading from a version that did not have this auto-detection. Do not use this if the " +
-                        "instance was deployed with a CDK app that is not listed.\n" +
-                        "Available apps from Sleeper GitHub: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())
-                .build();
-        Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
+        Arguments args = CommandArguments.parseAndValidateOrExit(USAGE, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),
                 arguments.getString("instance ID"),
                 arguments.isFlagSet("paused"),
