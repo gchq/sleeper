@@ -22,7 +22,8 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
 import software.amazon.awssdk.services.dynamodb.model.Condition;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
-import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
+import software.amazon.awssdk.services.dynamodb.paginators.QueryIterable;
+import software.amazon.awssdk.services.dynamodb.paginators.ScanIterable;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -104,7 +105,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
     @Override
     public List<TrackedQuery> getAllQueries() {
-        ScanResponse response = dynamoClient.scan(request -> request.tableName(trackerTableName));
+        ScanIterable response = dynamoClient.scanPaginator(request -> request.tableName(trackerTableName));
         return response.items().stream()
                 .map(DynamoDBQueryTrackerEntry::toTrackedQuery)
                 .toList();
@@ -112,7 +113,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
     @Override
     public List<TrackedQuery> getQueriesWithState(QueryState state) {
-        ScanResponse response = dynamoClient.scan(request -> request
+        ScanIterable response = dynamoClient.scanPaginator(request -> request
                 .tableName(trackerTableName)
                 .filterExpression("#LastState = :state")
                 .expressionAttributeNames(Map.of("#LastState", LAST_KNOWN_STATE))
@@ -124,7 +125,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
     @Override
     public List<TrackedQuery> getFailedQueries() {
-        ScanResponse response = dynamoClient.scan(request -> request
+        ScanIterable response = dynamoClient.scanPaginator(request -> request
                 .tableName(trackerTableName)
                 .filterExpression("#LastState = :failed or #LastState = :partiallyFailed")
                 .expressionAttributeNames(Map.of("#LastState", LAST_KNOWN_STATE))
@@ -204,17 +205,16 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     private void updateStateOfParent(DynamoDBQueryTrackerEntry leafQueryEntry) {
-        List<Map<String, AttributeValue>> trackedQueries = dynamoClient.query(request -> request
+        QueryIterable trackedQueries = dynamoClient.queryPaginator(request -> request
                 .tableName(trackerTableName)
                 .consistentRead(true)
                 .keyConditions(Map.of(
                         QUERY_ID, Condition.builder()
                                 .attributeValueList(AttributeValue.fromS(leafQueryEntry.getQueryId()))
                                 .comparisonOperator(ComparisonOperator.EQ)
-                                .build())))
-                .items();
+                                .build())));
 
-        List<TrackedQuery> children = trackedQueries.stream()
+        List<TrackedQuery> children = trackedQueries.items().stream()
                 .map(DynamoDBQueryTrackerEntry::toTrackedQuery)
                 .filter(trackedQuery -> !trackedQuery.getSubQueryId().equals(NON_NESTED_QUERY_PLACEHOLDER))
                 .collect(Collectors.toList());
