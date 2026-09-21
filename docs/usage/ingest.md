@@ -178,6 +178,9 @@ query type, the script will prompt you for one.
 # Details of a single job
 ./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --detailed <job-id>
 
+# Details of several jobs, with the IDs separated by commas
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --detailed <job-id>,<job-id>
+
 # Jobs in a date range, in format yyyyMMddHHmmss.
 # --start-time and --end-time must be given together, and only apply to this query type.
 ./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --range --start-time 20250523090000 --end-time 20250523100000

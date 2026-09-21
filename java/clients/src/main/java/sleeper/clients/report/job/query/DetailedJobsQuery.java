@@ -22,7 +22,6 @@ import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -71,21 +70,5 @@ public class DetailedJobsQuery implements JobQuery {
             return null;
         }
         return new DetailedJobsQuery(Arrays.asList(queryParameters.split(",")));
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(jobIds);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        return Objects.equals(jobIds, ((DetailedJobsQuery) o).jobIds);
     }
 }

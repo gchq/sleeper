@@ -162,8 +162,8 @@ public class IngestJobStatusReport {
                     "--all, -a\n" +
                     "Reports on all jobs.\n" +
                     "\n" +
-                    "--detailed, -d <job-id>\n" +
-                    "Reports on a single job with the given ID.\n" +
+                    "--detailed, -d <job-ids>\n" +
+                    "Reports in detail on the jobs with the given IDs. Separate several IDs with commas.\n" +
                     "\n" +
                     "--end-time <time>\n" +
                     "End of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
@@ -201,7 +201,11 @@ public class IngestJobStatusReport {
         switch (jobType) {
             case DETAILED:
                 // The query type is only DETAILED when this option was set, and the option always takes a value.
+                // The value can still be empty if it was set like "--detailed=", which would report on no jobs.
                 jobId = arguments.getString("detailed");
+                if (jobId.isEmpty()) {
+                    throw new CommandArgumentsException("Expected a value for option: detailed");
+                }
                 break;
             case RANGE:
                 Optional<String> optionalStart = arguments.getOptionalString("start-time");
