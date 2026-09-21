@@ -34,6 +34,7 @@ import sleeper.core.util.cli.CommandArgumentsException;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -247,6 +248,15 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
+        void shouldCreateNullParamsForRangeTypeWhenNoTimesGiven() {
+            assertThat(IngestJobStatusReport.determineQueryParams(
+                    readArguments("range-params-instance", "range-params-table", "-r"))).isNull();
+
+            assertThat(IngestJobStatusReport.determineQueryParams(
+                    readArguments("range-params-instance", "range-params-table", "--range"))).isNull();
+        }
+
+        @Test
         void shouldCreateNullParamsForTypesThatDontRequireQueryParams() {
             assertThat(IngestJobStatusReport.determineQueryParams(
                     readArguments("all-params-instance", "all-params-table", "--all"))).isNull();
@@ -319,6 +329,23 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
+        void shouldCreateRangeJobsQueryForDefaultPeriodWhenNoTimesGiven() {
+            // Given
+            Instant now = Instant.parse("2024-05-01T12:00:00Z");
+            RangeJobsQuery rangeJobsQuery = new RangeJobsQuery(Instant.parse("2024-05-01T08:00:00Z"), now);
+
+            // When
+            JobQuery shortFlagQuery = createJobQueryFromArguments(
+                    readArguments("range-default-instance", "range-default-table", "-r"), now);
+            JobQuery longFlagQuery = createJobQueryFromArguments(
+                    readArguments("range-default-instance", "range-default-table", "--range"), now);
+
+            // Then
+            assertThat(shortFlagQuery).isEqualTo(rangeJobsQuery);
+            assertThat(longFlagQuery).isEqualTo(rangeJobsQuery);
+        }
+
+        @Test
         void shouldCreateValidUnfinishedJobsQuery() {
             // Given / When
             JobQuery jobFromArgs = createJobQueryFromArguments(
@@ -347,10 +374,14 @@ public class IngestJobStatusReportTest {
         }
 
         private JobQuery createJobQueryFromArguments(Arguments args) {
+            return createJobQueryFromArguments(args, Instant.now());
+        }
+
+        private JobQuery createJobQueryFromArguments(Arguments args, Instant now) {
             return IngestJobStatusReport.queryfromParametersOrPrompt(
                     args.queryType(),
                     IngestJobStatusReport.determineQueryParams(args),
-                    Clock.systemUTC(),
+                    Clock.fixed(now, ZoneId.of("UTC")),
                     ConsoleInput.stdIn());
         }
     }

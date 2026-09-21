@@ -259,16 +259,20 @@ public class IngestJobStatusReport {
     }
 
     /**
-     * Method for generating paramterts to add to the job query.
+     * Method for generating parameters to add to the job query.
      *
-     * @param  args arguments pass into the report
-     * @return      details presented as a string for latter use
+     * @param  args arguments passed into the report
+     * @return      details presented as a string, or null if the query type needs no parameters
      */
     public static String determineQueryParams(Arguments args) {
         switch (args.queryType()) {
             case DETAILED:
                 return args.jobId();
             case RANGE:
+                // A range with no times set falls back to the default period defined by RangeJobsQuery.
+                if (args.startTime() == null || args.endTime() == null) {
+                    return null;
+                }
                 return args.startTime() + "," + args.endTime();
             default:
                 return null;
