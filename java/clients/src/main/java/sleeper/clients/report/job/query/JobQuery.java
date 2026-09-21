@@ -138,14 +138,15 @@ public interface JobQuery {
             }
         });
 
-        // Additional step to trigger range query if no flag presented, but start-time and end-time present
+        // Additional step to trigger range query if no flag presented, but start-time or end-time present.
+        // Either one on its own is an error, but it is reported when the range is read, so that the user is told
+        // which one is missing rather than that the time they did set is invalid for some other query type.
         // Likely to be refactored when including range as an option with the Query Types rather than a separate one
         // See ticket: https://github.com/gchq/sleeper/issues/8061
-        if (typeList.size() == 0) {
-            if (args.getOptionalString("start-time").isPresent()
-                    && args.getOptionalString("end-time").isPresent()) {
-                typeList.add(Type.RANGE);
-            }
+        if (typeList.isEmpty()
+                && (args.getOptionalString("start-time").isPresent()
+                        || args.getOptionalString("end-time").isPresent())) {
+            typeList.add(Type.RANGE);
         }
 
         if (typeList.size() > 1) {

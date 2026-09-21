@@ -224,6 +224,22 @@ public class IngestJobStatusReportTest {
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Missing parameter of start-time which is required for the Range query type.");
         }
+
+        @Test
+        void shouldReportMissingEndTimeWhenOnlyStartTimeGivenWithNoQueryTypeFlag() {
+            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table",
+                    "--start-time", "20221101085959"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Missing parameter of end-time which is required for the Range query type.");
+        }
+
+        @Test
+        void shouldReportMissingStartTimeWhenOnlyEndTimeGivenWithNoQueryTypeFlag() {
+            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table",
+                    "--end-time", "20240912093000"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Missing parameter of start-time which is required for the Range query type.");
+        }
     }
 
     @Nested

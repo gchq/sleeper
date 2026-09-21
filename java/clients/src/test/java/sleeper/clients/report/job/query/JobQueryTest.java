@@ -192,6 +192,42 @@ public class JobQueryTest extends JobQueryTestBase {
         }
 
         @Test
+        void shouldReturnRangeQueryTypeWhenOnlyStartAndEndTimesSet() {
+            // Given
+            CommandArguments args = CommandArguments.builder()
+                    .argByName(Map.of("start-time", "20200101000000", "end-time", "20200102000000"))
+                    .flagByName(Map.of())
+                    .build();
+
+            // When / Then
+            assertThat(JobQuery.determineQueryType(args)).isEqualTo(JobQuery.Type.RANGE);
+        }
+
+        @Test
+        void shouldReturnRangeQueryTypeWhenOnlyStartTimeSet() {
+            // Given
+            CommandArguments args = CommandArguments.builder()
+                    .argByName(Map.of("start-time", "20200101000000"))
+                    .flagByName(Map.of())
+                    .build();
+
+            // When / Then
+            assertThat(JobQuery.determineQueryType(args)).isEqualTo(JobQuery.Type.RANGE);
+        }
+
+        @Test
+        void shouldReturnRangeQueryTypeWhenOnlyEndTimeSet() {
+            // Given
+            CommandArguments args = CommandArguments.builder()
+                    .argByName(Map.of("end-time", "20200102000000"))
+                    .flagByName(Map.of())
+                    .build();
+
+            // When / Then
+            assertThat(JobQuery.determineQueryType(args)).isEqualTo(JobQuery.Type.RANGE);
+        }
+
+        @Test
         void shouldReturnPromptQueryType() {
             // Given
             CommandArguments args = CommandArguments.builder()
