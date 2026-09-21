@@ -47,9 +47,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -61,13 +59,12 @@ import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
  * the jobs matching that query.
  */
 public class IngestJobStatusReport {
-    private static final String DEFAULT_REPORTER = "STANDARD";
-    private static final Map<String, IngestJobStatusReporter> REPORTERS = new HashMap<>();
-
-    static {
-        REPORTERS.put(DEFAULT_REPORTER, new StandardIngestJobStatusReporter());
-        REPORTERS.put("JSON", new JsonIngestJobStatusReporter());
-    }
+    private static final IngestJobStatusReporter STANDARD_REPORTER = new StandardIngestJobStatusReporter();
+    private static final IngestJobStatusReporter JSON_REPORTER = new JsonIngestJobStatusReporter();
+    private static final ReportTypeArgument<IngestJobStatusReporter> REPORT_TYPE = ReportTypeArgument
+            .withDefault("STANDARD", STANDARD_REPORTER)
+            .addReporter("JSON", JSON_REPORTER)
+            .build();
 
     private final IngestJobTracker tracker;
     private final IngestJobStatusReporter reporter;
@@ -146,9 +143,9 @@ public class IngestJobStatusReport {
                     CommandOption.shortFlag('a', "all"),
                     CommandOption.shortOption('d', "detailed"),
                     CommandOption.longOption("end-time"),
-                    CommandOption.longOption("output-type"),
                     CommandOption.shortFlag('r', "range"),
                     CommandOption.shortFlag('n', "rejected"),
+                    ReportTypeArgument.option(),
                     CommandOption.longOption("start-time"),
                     CommandOption.shortFlag('u', "unfinished")))
             .helpSummary("" +
@@ -168,15 +165,14 @@ public class IngestJobStatusReport {
                     "End of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
                     "Must be set together with --start-time, and only applies to the --range query type.\n" +
                     "\n" +
-                    "--output-type <type>\n" +
-                    "Output format. One of STANDARD, JSON. Defaults to STANDARD.\n" +
-                    "\n" +
                     "--range, -r\n" +
                     "Reports on all jobs in a time period. Defaults to the last 4 hours, " +
                     "or set the period with --start-time and --end-time.\n" +
                     "\n" +
                     "--rejected, -n\n" +
                     "Reports on all rejected jobs.\n" +
+                    "\n" +
+                    REPORT_TYPE.helpText() + "\n" +
                     "\n" +
                     "--start-time <time>\n" +
                     "Start of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
@@ -200,12 +196,8 @@ public class IngestJobStatusReport {
 
         switch (jobType) {
             case DETAILED:
-                Optional<String> optionalDetailed = arguments.getOptionalString("detailed");
-                if (optionalDetailed.isPresent()) {
-                    jobId = optionalDetailed.get();
-                } else {
-                    throw new CommandArgumentsException("Additional parameter of Job ID is required for the detailed query type.");
-                }
+                // The query type is only DETAILED when this option was set, and the option always takes a value.
+                jobId = arguments.getString("detailed");
                 break;
             case RANGE:
                 Optional<String> optionalStart = arguments.getOptionalString("start-time");
@@ -249,21 +241,9 @@ public class IngestJobStatusReport {
             throw new CommandArgumentsException("Range time flags, start-time and end-time are not valid for following query type: " + jobType);
         }
 
-        IngestJobStatusReporter reporter;
-        Optional<String> optionalOutput = arguments.getOptionalString("output-type");
-        if (optionalOutput.isPresent()) {
-            String outputValue = optionalOutput.get().toUpperCase(Locale.ROOT);
-            if (!REPORTERS.containsKey(optionalOutput.get().toUpperCase(Locale.ROOT))) {
-                throw new CommandArgumentsException("Output type not supported: " + optionalOutput.get() + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
-            }
-            reporter = REPORTERS.get(outputValue);
-        } else {
-            reporter = REPORTERS.get(DEFAULT_REPORTER);
-        }
-
         return new Arguments(arguments.getString("instance-id"),
                 arguments.getString("table-name"),
-                reporter,
+                REPORT_TYPE.read(arguments),
                 jobType,
                 jobId,
                 startTime,
@@ -304,7 +284,5 @@ public class IngestJobStatusReport {
      */
     public record Arguments(String instanceId, String tableName, IngestJobStatusReporter reporter, JobQuery.Type queryType,
             String jobId, String startTime, String endTime) {
-        public Arguments {
-        }
     }
 }

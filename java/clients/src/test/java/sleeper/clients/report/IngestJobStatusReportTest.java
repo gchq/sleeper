@@ -109,8 +109,8 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
-        void shouldReadOutputTypeJson() {
-            Arguments args = readArguments("json-instance", "json-table", "--output-type", "json");
+        void shouldReadReportTypeJson() {
+            Arguments args = readArguments("json-instance", "json-table", "--report-type", "json");
             assertThat(args.reporter()).isInstanceOf(JsonIngestJobStatusReporter.class);
         }
 
@@ -126,9 +126,9 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectUnknownReportType() {
-            assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--output-type", "BAD-REPORT"))
+            assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--report-type", "BAD-REPORT"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Output type not supported: BAD-REPORT. Valid types: JSON, STANDARD");
+                    .hasMessage("Report type not supported: BAD-REPORT. Valid types: STANDARD, JSON");
         }
 
         @Test
