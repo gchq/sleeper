@@ -92,7 +92,7 @@
     "local:///opt/spark/workdir/bulk-import-runner.jar",
     "config-bucket",
     "test-job",
-    "state-machine-arn",
+    "eks-cluster-EKS",
     "test-job-run",
     "bulk_import/test-job-test-job-run.json",
     "EKS"
