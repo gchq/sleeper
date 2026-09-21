@@ -116,8 +116,8 @@ public class IngestJobStatusReportTest {
                     "--start-time", "20201114120101",
                     "--end-time", "20210407150000");
             assertThat(args.queryType()).isEqualTo(JobQuery.Type.RANGE);
-            assertThat(args.startTime()).isEqualTo("20201114120101");
-            assertThat(args.endTime()).isEqualTo("20210407150000");
+            assertThat(args.startTime()).isEqualTo(Instant.parse("2020-11-14T12:01:01Z"));
+            assertThat(args.endTime()).isEqualTo(Instant.parse("2021-04-07T15:00:00Z"));
         }
 
         @Test
@@ -298,49 +298,6 @@ public class IngestJobStatusReportTest {
         }
     }
 
-    @Nested
-    class QueryParametersGeneration {
-
-        @Test
-        void shouldGenerateCorrectParamsForDetailedType() {
-            // Given
-            Arguments args = readArguments("detailed-params-instance", "detailed-params-table", "--detailed", "151958191");
-
-            // When / Then
-            assertThat(IngestJobStatusReport.determineQueryParams(args)).isEqualTo("151958191");
-        }
-
-        @Test
-        void shouldGenerateCorrectParamsForRangeType() {
-            // Given
-            Arguments args = readArguments("range-params-instance", "range-params-table", "--range", "--start-time", "20200809152311", "--end-time", "20210403111111");
-
-            // When / Then
-            assertThat(IngestJobStatusReport.determineQueryParams(args)).isEqualTo("20200809152311,20210403111111");
-        }
-
-        @Test
-        void shouldCreateNullParamsForRangeTypeWhenNoTimesGiven() {
-            assertThat(IngestJobStatusReport.determineQueryParams(
-                    readArguments("range-params-instance", "range-params-table", "-r"))).isNull();
-
-            assertThat(IngestJobStatusReport.determineQueryParams(
-                    readArguments("range-params-instance", "range-params-table", "--range"))).isNull();
-        }
-
-        @Test
-        void shouldCreateNullParamsForTypesThatDontRequireQueryParams() {
-            assertThat(IngestJobStatusReport.determineQueryParams(
-                    readArguments("all-params-instance", "all-params-table", "--all"))).isNull();
-
-            assertThat(IngestJobStatusReport.determineQueryParams(
-                    readArguments("unfinished-params-instance", "unfinished-params-table", "--unfinished"))).isNull();
-
-            assertThat(IngestJobStatusReport.determineQueryParams(
-                    readArguments("rejected-params-instance", "rejected-params-table", "--rejected"))).isNull();
-        }
-    }
-
     /**
      * Checks that the arguments produce a query that asks the job tracker the right question. Drives the whole path
      * from the command line, so that the query type, the query parameters and the query are all covered together.
@@ -436,11 +393,7 @@ public class IngestJobStatusReportTest {
 
         private void runQueryFromArgumentsAtTime(Instant now, String... args) {
             Arguments arguments = readArguments(args);
-            IngestJobStatusReport.queryfromParametersOrPrompt(
-                    arguments.queryType(),
-                    IngestJobStatusReport.determineQueryParams(arguments),
-                    Clock.fixed(now, ZoneId.of("UTC")),
-                    ConsoleInput.stdIn())
+            IngestJobStatusReport.createQuery(arguments, Clock.fixed(now, ZoneId.of("UTC")), ConsoleInput.stdIn())
                     .run(tracker, TABLE_ID);
         }
     }

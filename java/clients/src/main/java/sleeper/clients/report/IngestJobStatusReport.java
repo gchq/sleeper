@@ -132,9 +132,7 @@ public class IngestJobStatusReport {
             TableStatus table = tableIndex.getTableByName(reportArgs.tableName())
                     .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + reportArgs.tableName()));
             IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-            JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(reportArgs.queryType(),
-                    determineQueryParams(reportArgs),
-                    Clock.systemUTC(), ConsoleInput.stdIn());
+            JobQuery query = createQuery(reportArgs, Clock.systemUTC(), ConsoleInput.stdIn());
             new IngestJobStatusReport(tracker, table, query, reportArgs.reporter(),
                     QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
                     PersistentEmrStepCount.byStatus(instanceProperties, emrClient)).run();
@@ -195,8 +193,8 @@ public class IngestJobStatusReport {
     public static Arguments readArguments(CommandArguments arguments) {
         JobQuery.Type jobType = determineQueryType(arguments);
         String jobId = null;
-        String startTime = null;
-        String endTime = null;
+        Instant startTime = null;
+        Instant endTime = null;
 
         switch (jobType) {
             case DETAILED:
@@ -212,13 +210,11 @@ public class IngestJobStatusReport {
                 Optional<String> optionalEnd = arguments.getOptionalString("end-time");
 
                 if (optionalStart.isPresent() && optionalEnd.isPresent()) {
-                    Instant startInstant = readTime("start-time", optionalStart.get());
-                    Instant endInstant = readTime("end-time", optionalEnd.get());
-                    if (endInstant.isBefore(startInstant)) {
+                    startTime = readTime("start-time", optionalStart.get());
+                    endTime = readTime("end-time", optionalEnd.get());
+                    if (endTime.isBefore(startTime)) {
                         throw new CommandArgumentsException("Range end is before range start. Range start: " + optionalStart.get() + ", range end: " + optionalEnd.get());
                     }
-                    startTime = optionalStart.get();
-                    endTime = optionalEnd.get();
                 } else if (optionalStart.isEmpty() && optionalEnd.isPresent()) {
                     throw new CommandArgumentsException("Missing parameter of start-time which is required for the Range query type.");
                 } else if (optionalStart.isPresent() && optionalEnd.isEmpty()) {
@@ -300,23 +296,23 @@ public class IngestJobStatusReport {
     }
 
     /**
-     * Method for generating parameters to add to the job query.
+     * Creates the query for the jobs to report on. The times for a range are read when the arguments are validated,
+     * so the range is built directly rather than passing the times as parameters to be read again.
      *
-     * @param  args arguments passed into the report
-     * @return      details presented as a string, or null if the query type needs no parameters
+     * @param  args  the arguments read from the command line
+     * @param  clock a clock to get the current time, to read relative time ranges
+     * @param  input the console input, to prompt for further parameters
+     * @return       the query
      */
-    public static String determineQueryParams(Arguments args) {
+    public static JobQuery createQuery(Arguments args, Clock clock, ConsoleInput input) {
         switch (args.queryType()) {
-            case DETAILED:
-                return args.jobId();
             case RANGE:
-                // A range with no times set falls back to the default period defined by RangeJobsQuery.
-                if (args.startTime() == null || args.endTime() == null) {
-                    return null;
+                if (args.startTime() == null) {
+                    return RangeJobsQuery.forDefaultPeriod(clock);
                 }
-                return args.startTime() + "," + args.endTime();
+                return new RangeJobsQuery(args.startTime(), args.endTime());
             default:
-                return null;
+                return queryfromParametersOrPrompt(args.queryType(), args.jobId(), clock, input);
         }
     }
 
@@ -327,11 +323,11 @@ public class IngestJobStatusReport {
      * @param tableName  the table name
      * @param reporter   the reporter format, either STANDARD or JSON
      * @param queryType  the type of query to execute for the ingest report
-     * @param jobId      optional jobID for the detailed query
+     * @param jobId      optional job IDs separated by commas for the detailed query
      * @param startTime  optional start time for range query
      * @param endTime    optional end time for range query
      */
     public record Arguments(String instanceId, String tableName, IngestJobStatusReporter reporter, JobQuery.Type queryType,
-            String jobId, String startTime, String endTime) {
+            String jobId, Instant startTime, Instant endTime) {
     }
 }

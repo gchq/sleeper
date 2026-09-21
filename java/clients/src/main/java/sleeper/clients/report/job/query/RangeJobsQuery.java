@@ -36,6 +36,7 @@ import java.util.function.Supplier;
 public class RangeJobsQuery implements JobQuery {
 
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
+    private static final Duration DEFAULT_PERIOD = Duration.ofHours(4);
 
     private final Instant start;
     private final Instant end;
@@ -74,15 +75,25 @@ public class RangeJobsQuery implements JobQuery {
      */
     public static JobQuery fromParameters(String queryParameters, Clock clock) {
         if (queryParameters == null) {
-            Instant end = clock.instant();
-            Instant start = end.minus(Duration.ofHours(4));
-            return new RangeJobsQuery(start, end);
+            return forDefaultPeriod(clock);
         } else {
             String[] parts = queryParameters.split(",");
             Instant start = parseStart(parts[0], clock);
             Instant end = parseEnd(parts[1], clock);
             return new RangeJobsQuery(start, end);
         }
+    }
+
+    /**
+     * Creates a query for the default time period, which is the last 4 hours. Used when a range is asked for without
+     * setting the period.
+     *
+     * @param  clock a clock to get the current time (can be fixed for testing)
+     * @return       a query to report on all jobs in the default time period
+     */
+    public static JobQuery forDefaultPeriod(Clock clock) {
+        Instant end = clock.instant();
+        return new RangeJobsQuery(end.minus(DEFAULT_PERIOD), end);
     }
 
     /**
@@ -118,7 +129,7 @@ public class RangeJobsQuery implements JobQuery {
     }
 
     private static Instant parseStart(String startStr, Clock clock) {
-        return parseDate(startStr, () -> clock.instant().minus(Duration.ofHours(4)));
+        return parseDate(startStr, () -> clock.instant().minus(DEFAULT_PERIOD));
     }
 
     private static Instant parseEnd(String endStr, Clock clock) {
