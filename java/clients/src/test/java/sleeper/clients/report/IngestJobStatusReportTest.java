@@ -83,7 +83,7 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
-        void shoudlReadQueryTypeRangeFlag() {
+        void shouldReadQueryTypeRangeFlag() {
             Arguments shortArgs = readArguments("range-instance", "range-table", "-r");
             assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.RANGE);
 
@@ -179,26 +179,26 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
-        void shouldRejectDetailedReportWithoutInstanceId() {
+        void shouldRejectDetailedReportWithoutJobId() {
             assertThatThrownBy(() -> readArguments("detail-fail-instance", "detail-fail-table", "-d"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected an argument for option: detailed");
         }
 
         @Test
-        void shouldRejectRangeReportWithInvalidateDateFormatStartTime() {
+        void shouldRejectRangeReportWithInvalidDateFormatStartTime() {
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "asdad", "--end-time", "20150411084545"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("start-time parameter don't match expected format: yyyyMMddHHmmss");
+                    .hasMessage("start-time parameter doesn't match expected format: yyyyMMddHHmmss");
         }
 
         @Test
-        void shouldRejectRangeReportWithInvalidateDateFormatEndTime() {
+        void shouldRejectRangeReportWithInvalidDateFormatEndTime() {
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "20170404152121", "--end-time", "gdsd"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("end-time parameter don't match expected format: yyyyMMddHHmmss");
+                    .hasMessage("end-time parameter doesn't match expected format: yyyyMMddHHmmss");
         }
 
         @Test
@@ -218,7 +218,7 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
-        void shouldRejectRangeReportWithEndTimeButStartTime() {
+        void shouldRejectRangeReportWithEndTimeButNoStartTime() {
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--end-time", "20240912093000"))
                     .isInstanceOf(CommandArgumentsException.class)

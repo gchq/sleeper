@@ -43,15 +43,12 @@ import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Clock;
-import java.util.Date;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TimeZone;
 
 import static java.util.stream.Collectors.joining;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
@@ -211,22 +208,9 @@ public class IngestJobStatusReport {
                 Optional<String> optionalEnd = arguments.getOptionalString("end-time");
 
                 if (optionalStart.isPresent() && optionalEnd.isPresent()) {
-                    SimpleDateFormat dateInputFormat = new SimpleDateFormat(RangeJobsQuery.DATE_FORMAT);
-                    dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-                    Date startDate, endDate;
-
-                    try {
-                        startDate = dateInputFormat.parse(optionalStart.get());
-                    } catch (ParseException e) {
-                        throw new CommandArgumentsException("start-time parameter don't match expected format: " + RangeJobsQuery.DATE_FORMAT);
-                    }
-                    try {
-                        endDate = dateInputFormat.parse(optionalEnd.get());
-                    } catch (ParseException e) {
-                        throw new CommandArgumentsException("end-time parameter don't match expected format: " + RangeJobsQuery.DATE_FORMAT);
-                    }
-
-                    if (endDate.before(startDate)) {
+                    Instant startInstant = readTime("start-time", optionalStart.get());
+                    Instant endInstant = readTime("end-time", optionalEnd.get());
+                    if (endInstant.isBefore(startInstant)) {
                         throw new CommandArgumentsException("Range end is before range start. Range start: " + optionalStart.get() + ", range end: " + optionalEnd.get());
                     }
                     startTime = optionalStart.get();
@@ -286,6 +270,15 @@ public class IngestJobStatusReport {
             return JobQuery.Type.RANGE;
         }
         return JobQuery.Type.PROMPT;
+    }
+
+    private static Instant readTime(String option, String value) {
+        try {
+            return RangeJobsQuery.parseTime(value);
+        } catch (IllegalArgumentException e) {
+            throw new CommandArgumentsException(
+                    option + " parameter doesn't match expected format: " + RangeJobsQuery.DATE_FORMAT);
+        }
     }
 
     private static boolean isOptionSet(CommandArguments arguments, String option) {

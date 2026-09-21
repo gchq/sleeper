@@ -126,15 +126,27 @@ public class RangeJobsQuery implements JobQuery {
         return parseDate(endStr, clock::instant);
     }
 
-    private static Instant parseDate(String input, Supplier<Instant> getDefault) {
-        if ("".equals(input)) {
-            return getDefault.get();
-        }
+    /**
+     * Reads a time set on the command line. Report commands use this to read the start and end of the period to
+     * report on, so that the expected format is only defined here. See {@link #DATE_FORMAT} for that format.
+     *
+     * @param  input                    the time
+     * @return                          the time
+     * @throws IllegalArgumentException if the time is not in the expected format
+     */
+    public static Instant parseTime(String input) {
         try {
             return createDateInputFormat().parse(input).toInstant();
         } catch (ParseException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    private static Instant parseDate(String input, Supplier<Instant> getDefault) {
+        if ("".equals(input)) {
+            return getDefault.get();
+        }
+        return parseTime(input);
     }
 
     private static SimpleDateFormat createDateInputFormat() {
