@@ -20,15 +20,10 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
-import sleeper.core.util.cli.CommandArguments;
-import sleeper.core.util.cli.CommandArgumentsException;
 
 import java.time.Clock;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * A query to generate a report based on jobs in a job tracker. Different types of query can include jobs based on their
@@ -121,43 +116,6 @@ public interface JobQuery {
             return JobQueryPrompt.from(clock, input, extraQueryTypes);
         }
         return from(queryType, queryParameters, clock);
-    }
-
-    /**
-     * Method to determine what query type has been passed in as an argument.
-     *
-     * @param  args object containing all possible flags set
-     * @return      query type that matches the flag set. Will default to ALL if none set.
-     */
-    static Type determineQueryType(CommandArguments args) {
-        ArrayList<Type> typeList = new ArrayList<Type>();
-        Stream.of(Type.values()).forEach(valueStr -> {
-            String checkVal = valueStr.name().toLowerCase(Locale.ROOT);
-            if (args.isFlagSet(checkVal) || args.getOptionalString(checkVal).isPresent()) {
-                typeList.add(valueStr);
-            }
-        });
-
-        // Additional step to trigger range query if no flag presented, but start-time or end-time present.
-        // Either one on its own is an error, but it is reported when the range is read, so that the user is told
-        // which one is missing rather than that the time they did set is invalid for some other query type.
-        // Likely to be refactored when including range as an option with the Query Types rather than a separate one
-        // See ticket: https://github.com/gchq/sleeper/issues/8061
-        if (typeList.isEmpty()
-                && (args.getOptionalString("start-time").isPresent()
-                        || args.getOptionalString("end-time").isPresent())) {
-            typeList.add(Type.RANGE);
-        }
-
-        if (typeList.size() > 1) {
-            StringBuilder outStr = new StringBuilder();
-            typeList.stream().forEach(type -> outStr.append(type.name() + ", "));
-            throw new CommandArgumentsException("Too many query type flags are set, maximum of 1. Flags set: " + outStr.substring(0, outStr.length() - 2));
-        } else if (typeList.size() == 0) {
-            return Type.PROMPT;
-        } else {
-            return typeList.get(0);
-        }
     }
 
     /**

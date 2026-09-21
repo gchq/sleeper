@@ -47,11 +47,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 
+import static java.util.stream.Collectors.joining;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
@@ -65,6 +67,11 @@ public class IngestJobStatusReport {
             .withDefault("STANDARD", STANDARD_REPORTER)
             .addReporter("JSON", JSON_REPORTER)
             .build();
+    /**
+     * The query type options, and the query type each one selects. Declared in the order they appear in the usage,
+     * which is the order they are reported in if the user sets more than one.
+     */
+    private static final Map<String, JobQuery.Type> QUERY_TYPE_BY_OPTION = createQueryTypeByOption();
 
     private final IngestJobTracker tracker;
     private final IngestJobStatusReporter reporter;
@@ -189,7 +196,7 @@ public class IngestJobStatusReport {
      * @return           the arguments
      */
     public static Arguments readArguments(CommandArguments arguments) {
-        JobQuery.Type jobType = JobQuery.determineQueryType(arguments);
+        JobQuery.Type jobType = determineQueryType(arguments);
         String jobId = null;
         String startTime = null;
         String endTime = null;
@@ -248,6 +255,51 @@ public class IngestJobStatusReport {
                 jobId,
                 startTime,
                 endTime);
+    }
+
+    /**
+     * Determines which query type the user asked for. Exactly one query type option may be set. If none is set, the
+     * user is prompted for one, unless a time was given for a range.
+     *
+     * @param  arguments the parsed command line arguments
+     * @return           the query type
+     */
+    private static JobQuery.Type determineQueryType(CommandArguments arguments) {
+        List<JobQuery.Type> setTypes = QUERY_TYPE_BY_OPTION.entrySet().stream()
+                .filter(entry -> isOptionSet(arguments, entry.getKey()))
+                .map(Map.Entry::getValue)
+                .toList();
+        if (setTypes.size() > 1) {
+            throw new CommandArgumentsException("Too many query type flags are set, maximum of 1. Flags set: " +
+                    setTypes.stream().map(JobQuery.Type::name).collect(joining(", ")));
+        }
+        if (!setTypes.isEmpty()) {
+            return setTypes.get(0);
+        }
+        // Additional step to trigger range query if no flag presented, but start-time or end-time present.
+        // Either one on its own is an error, but it is reported when the range is read, so that the user is told
+        // which one is missing rather than that the time they did set is invalid for some other query type.
+        // Likely to be refactored when including range as an option with the Query Types rather than a separate one
+        // See ticket: https://github.com/gchq/sleeper/issues/8061
+        if (arguments.getOptionalString("start-time").isPresent()
+                || arguments.getOptionalString("end-time").isPresent()) {
+            return JobQuery.Type.RANGE;
+        }
+        return JobQuery.Type.PROMPT;
+    }
+
+    private static boolean isOptionSet(CommandArguments arguments, String option) {
+        return arguments.isFlagSet(option) || arguments.getOptionalString(option).isPresent();
+    }
+
+    private static Map<String, JobQuery.Type> createQueryTypeByOption() {
+        Map<String, JobQuery.Type> queryTypeByOption = new LinkedHashMap<>();
+        queryTypeByOption.put("all", JobQuery.Type.ALL);
+        queryTypeByOption.put("detailed", JobQuery.Type.DETAILED);
+        queryTypeByOption.put("range", JobQuery.Type.RANGE);
+        queryTypeByOption.put("rejected", JobQuery.Type.REJECTED);
+        queryTypeByOption.put("unfinished", JobQuery.Type.UNFINISHED);
+        return queryTypeByOption;
     }
 
     /**
