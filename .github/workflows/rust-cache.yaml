@@ -32,7 +32,7 @@ jobs:
         run: cargo build --verbose
       - name: Build x86_64
         working-directory: ./rust
-        run: ./build-in-docker.sh x86_64 cargo build --release --verbose
+        run: ./build-in-docker.sh x86_64 --release --verbose
       - name: Build aarch64
         working-directory: ./rust
-        run: ./build-in-docker.sh aarch64 cargo build --release --verbose
+        run: ./build-in-docker.sh aarch64 --release --verbose

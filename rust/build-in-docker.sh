@@ -37,7 +37,7 @@ fi
 if [[ -z $1 ]]; then
   BUILD_COMMAND=(cargo build --target ${CARGO_TARGET} --release --package sleeper_df)
 else
-  BUILD_COMMAND=("$@")
+  BUILD_COMMAND=(cargo build --target ${CARGO_TARGET} "$@")
 fi
 
 if [ "$IN_CLI_CONTAINER" = "true" ]; then
