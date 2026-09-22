@@ -132,7 +132,8 @@ class DynamoDBQueryTrackerEntry {
 
     public boolean isUpdateParent() {
         return isSubQuery() &&
-                (state.equals(QueryState.COMPLETED) || state.equals(QueryState.FAILED));
+                (state.equals(QueryState.COMPLETED) || state.equals(QueryState.FAILED)
+                        || state.equals(QueryState.PARTIALLY_FAILED));
     }
 
     private boolean isSubQuery() {
