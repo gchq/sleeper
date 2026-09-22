@@ -35,7 +35,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --image-prefix)
-      if [[ -z "$2" ]]; then
+      if [[ $# -lt 2 ]]; then
         echo "--image-prefix needs a value"
         usage
         exit 1
@@ -51,8 +51,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-BASE_IMAGE="$IMAGE_PREFIX/sleeper-rust-builder-al2023:latest"
-SCCACHE_IMAGE="$IMAGE_PREFIX/sleeper-rust-builder-sccache:latest"
+# Only add the separating slash when a prefix is set, so an empty prefix gives an unprefixed image name
+IMAGE_PATH_PREFIX="${IMAGE_PREFIX:+$IMAGE_PREFIX/}"
+BASE_IMAGE="${IMAGE_PATH_PREFIX}sleeper-rust-builder-al2023:latest"
+SCCACHE_IMAGE="${IMAGE_PATH_PREFIX}sleeper-rust-builder-sccache:latest"
 
 # If environment variables are set, then expand them into a string like
 # --build-arg RUSTUP_DIST_SERVER=${RUSTUP_SERVER} in BUILD_ARGS. If all are empty, then BUILD_ARGS is empty,
