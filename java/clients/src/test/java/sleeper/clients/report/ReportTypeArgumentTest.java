@@ -21,6 +21,7 @@ import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
+import sleeper.core.util.cli.CommandOption;
 
 import java.util.List;
 
@@ -42,21 +43,25 @@ public class ReportTypeArgumentTest {
 
     @Test
     void shouldReadDefaultReporterWhenOptionNotSet() {
+        // When / Then
         assertThat(read("my-instance")).isEqualTo("standard-reporter");
     }
 
     @Test
     void shouldReadReporterWhenOptionSet() {
+        // When / Then
         assertThat(read("my-instance", "--report-type", "JSON")).isEqualTo("json-reporter");
     }
 
     @Test
     void shouldReadReporterIgnoringCase() {
+        // When / Then
         assertThat(read("my-instance", "--report-type", "json")).isEqualTo("json-reporter");
     }
 
     @Test
     void shouldFailWhenReportTypeIsNotSupported() {
+        // When / Then
         assertThatThrownBy(() -> read("my-instance", "--report-type", "xml"))
                 .isInstanceOf(CommandArgumentsException.class)
                 .hasMessage("Report type not supported: xml. Valid types: STANDARD, JSON, CSV");
@@ -64,13 +69,18 @@ public class ReportTypeArgumentTest {
 
     @Test
     void shouldDeclareOptionWithSharedName() {
-        assertThat(ReportTypeArgument.option().longName()).isEqualTo("report-type");
-        assertThat(ReportTypeArgument.option().shortName()).isNull();
-        assertThat(ReportTypeArgument.option().isFlag()).isFalse();
+        // When
+        CommandOption option = ReportTypeArgument.option();
+
+        // Then
+        assertThat(option.longName()).isEqualTo("report-type");
+        assertThat(option.shortName()).isNull();
+        assertThat(option.isFlag()).isFalse();
     }
 
     @Test
     void shouldCreateHelpTextListingTypesWithTheDefaultFirst() {
+        // When / Then
         assertThat(reportType.helpText()).isEqualTo("" +
                 "--report-type <type>\n" +
                 "Output format. One of STANDARD, JSON, CSV. Defaults to STANDARD.");

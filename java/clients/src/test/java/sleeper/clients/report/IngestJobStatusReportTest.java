@@ -45,8 +45,10 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldReadDefaultsWhenOnlyRequiredArgsGiven() {
+            // When
             Arguments args = readArguments("my-instance", "my-table", "--all");
 
+            // Then
             assertThat(args.instanceId()).isEqualTo("my-instance");
             assertThat(args.tableName()).isEqualTo("my-table");
             assertThat(args.reporter()).isInstanceOf(StandardIngestJobStatusReporter.class);
@@ -58,63 +60,78 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldReadQueryTypeAllFlag() {
+            // When
             Arguments shortArgs = readArguments("all-instance", "all-table", "-a");
-            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.ALL);
-
             Arguments longArgs = readArguments("all-instance", "all-table", "--all");
+
+            // Then
+            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.ALL);
             assertThat(longArgs.queryType()).isEqualTo(JobQuery.Type.ALL);
         }
 
         @Test
         void shouldReadQueryTypeDetailedFlag() {
+            // When
             Arguments shortArgs = readArguments("detailed-instance", "detailed-table", "-d", "23");
+            Arguments longArgs = readArguments("detailed-instance", "detailed-table", "--detailed", "5871");
+
+            // Then
             assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.DETAILED);
             assertThat(shortArgs.jobId()).isEqualTo("23");
-
-            Arguments longArgs = readArguments("detailed-instance", "detailed-table", "--detailed", "5871");
             assertThat(longArgs.queryType()).isEqualTo(JobQuery.Type.DETAILED);
             assertThat(longArgs.jobId()).isEqualTo("5871");
         }
 
         @Test
         void shouldReadJobIdAttachedToShortOption() {
+            // When
             Arguments args = readArguments("detailed-instance", "detailed-table", "-d23");
 
+            // Then
             assertThat(args.queryType()).isEqualTo(JobQuery.Type.DETAILED);
             assertThat(args.jobId()).isEqualTo("23");
         }
 
         @Test
         void shouldReadJobIdThatLooksLikeAnOption() {
+            // When
             Arguments args = readArguments("detailed-instance", "detailed-table", "-d", "-a");
 
+            // Then
             assertThat(args.queryType()).isEqualTo(JobQuery.Type.DETAILED);
             assertThat(args.jobId()).isEqualTo("-a");
         }
 
         @Test
         void shouldReadQueryTypeRejectedFlag() {
+            // When
             Arguments shortArgs = readArguments("rejected-instance", "rejected-table", "-n");
-            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.REJECTED);
-
             Arguments longArgs = readArguments("rejected-instance", "rejected-table", "--rejected");
+
+            // Then
+            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.REJECTED);
             assertThat(longArgs.queryType()).isEqualTo(JobQuery.Type.REJECTED);
         }
 
         @Test
         void shouldReadQueryTypeRangeFlag() {
+            // When
             Arguments shortArgs = readArguments("range-instance", "range-table", "-r");
-            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.RANGE);
-
             Arguments longArgs = readArguments("range-instance", "range-table", "--range");
+
+            // Then
+            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.RANGE);
             assertThat(longArgs.queryType()).isEqualTo(JobQuery.Type.RANGE);
         }
 
         @Test
         void shouldReadQueryTypeRangeWhenOnlyStartTimeEndTimeFlagsGiven() {
+            // When
             Arguments args = readArguments("start-end-instance", "start-end-table",
                     "--start-time", "20201114120101",
                     "--end-time", "20210407150000");
+
+            // Then
             assertThat(args.queryType()).isEqualTo(JobQuery.Type.RANGE);
             assertThat(args.startTime()).isEqualTo(Instant.parse("2020-11-14T12:01:01Z"));
             assertThat(args.endTime()).isEqualTo(Instant.parse("2021-04-07T15:00:00Z"));
@@ -122,36 +139,48 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldReadQueryTypeRangeWhenRangeFlagSetToTrue() {
+            // When
             Arguments args = readArguments("range-instance", "range-table", "--range=true");
 
+            // Then
             assertThat(args.queryType()).isEqualTo(JobQuery.Type.RANGE);
         }
 
         @Test
         void shouldReadQueryTypePromptWhenRangeFlagSetToFalse() {
+            // When
             Arguments args = readArguments("range-instance", "range-table", "--range=false");
 
+            // Then
             assertThat(args.queryType()).isEqualTo(JobQuery.Type.PROMPT);
         }
 
         @Test
         void shouldReadQueryTypeUnfinishedFlag() {
+            // When
             Arguments shortArgs = readArguments("unfinished-instance", "unfinished-table", "-u");
-            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.UNFINISHED);
-
             Arguments longArgs = readArguments("unfinished-instance", "unfinished-table", "--unfinished");
+
+            // Then
+            assertThat(shortArgs.queryType()).isEqualTo(JobQuery.Type.UNFINISHED);
             assertThat(longArgs.queryType()).isEqualTo(JobQuery.Type.UNFINISHED);
         }
 
         @Test
         void shouldReadReportTypeJson() {
+            // When
             Arguments args = readArguments("json-instance", "json-table", "--report-type", "json");
+
+            // Then
             assertThat(args.reporter()).isInstanceOf(JsonIngestJobStatusReporter.class);
         }
 
         @Test
         void shouldReturnPromptQueryTypeWhenNoFlagSet() {
+            // When
             Arguments args = readArguments("prompt-instance", "prompt-table");
+
+            // Then
             assertThat(args.queryType()).isEqualTo(JobQuery.Type.PROMPT);
         }
     }
@@ -161,6 +190,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectUnknownReportType() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--report-type", "BAD-REPORT"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Report type not supported: BAD-REPORT. Valid types: STANDARD, JSON");
@@ -168,6 +198,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectMultipleFlagsSet() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "--all", "--unfinished"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Too many query type flags are set, maximum of 1. Flags set: ALL, UNFINISHED");
@@ -175,6 +206,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectMultipleFlagsSetAsCombinedShortFlags() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "-au"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Too many query type flags are set, maximum of 1. Flags set: ALL, UNFINISHED");
@@ -182,6 +214,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldListEveryQueryTypeSetInTheOrderTheyAppearInTheUsage() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "-aur"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Too many query type flags are set, maximum of 1. Flags set: ALL, RANGE, UNFINISHED");
@@ -189,6 +222,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectDetailedReportWithEmptyJobId() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("detail-fail-instance", "detail-fail-table", "--detailed="))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected a value for option: detailed");
@@ -197,6 +231,7 @@ public class IngestJobStatusReportTest {
         // Will need be removed as part of work for https://github.com/gchq/sleeper/issues/8061
         @Test
         void shouldRejectAllQueryWithTimeFlagsSet() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("all-time-instance", "all-time-table", "--all",
                     "--start-time", "20220417053218",
                     "--end-time", "20241122120001"))
@@ -207,6 +242,7 @@ public class IngestJobStatusReportTest {
         // Will need be removed as part of work for https://github.com/gchq/sleeper/issues/8061
         @Test
         void shouldRejectDetailedQueryWithTimeFlagsSet() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--detailed", "84916",
                     "--start-time", "20251112140000",
                     "--end-time", "20260101152929"))
@@ -217,6 +253,7 @@ public class IngestJobStatusReportTest {
         // Will need be removed as part of work for https://github.com/gchq/sleeper/issues/8061
         @Test
         void shouldRejectRejectedQueryWithTimeFlagsSet() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--rejected",
                     "--start-time", "20231225120000",
                     "--end-time", "20231228120000"))
@@ -227,6 +264,7 @@ public class IngestJobStatusReportTest {
         // Will need be removed as part of work for https://github.com/gchq/sleeper/issues/8061
         @Test
         void shouldRejectUnfinishedQueryWithTimeFlagsSet() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--unfinished",
                     "--start-time", "20260901180000",
                     "--end-time", "20260902175959"))
@@ -236,6 +274,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectDetailedReportWithoutJobId() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("detail-fail-instance", "detail-fail-table", "-d"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected an argument for option: detailed");
@@ -243,6 +282,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectRangeReportWithInvalidDateFormatStartTime() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "asdad", "--end-time", "20150411084545"))
                     .isInstanceOf(CommandArgumentsException.class)
@@ -251,6 +291,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectRangeReportWithInvalidDateFormatEndTime() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "20170404152121", "--end-time", "gdsd"))
                     .isInstanceOf(CommandArgumentsException.class)
@@ -259,6 +300,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectRangeReportWithEndTimeBeforeStartTime() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "20200101120000", "--end-time", "19700101120000"))
                     .isInstanceOf(CommandArgumentsException.class)
@@ -267,6 +309,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectRangeReportWithStartTimeButNoEndTime() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "20221101085959"))
                     .isInstanceOf(CommandArgumentsException.class)
@@ -275,6 +318,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldRejectRangeReportWithEndTimeButNoStartTime() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--end-time", "20240912093000"))
                     .isInstanceOf(CommandArgumentsException.class)
@@ -283,6 +327,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldReportMissingEndTimeWhenOnlyStartTimeGivenWithNoQueryTypeFlag() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table",
                     "--start-time", "20221101085959"))
                     .isInstanceOf(CommandArgumentsException.class)
@@ -291,6 +336,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldReportMissingStartTimeWhenOnlyEndTimeGivenWithNoQueryTypeFlag() {
+            // When / Then
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table",
                     "--end-time", "20240912093000"))
                     .isInstanceOf(CommandArgumentsException.class)
