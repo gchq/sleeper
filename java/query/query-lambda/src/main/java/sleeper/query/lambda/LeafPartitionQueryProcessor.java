@@ -33,8 +33,8 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
-public class SqsLeafPartitionQueryProcessor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqsLeafPartitionQueryProcessor.class);
+public class LeafPartitionQueryProcessor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionQueryProcessor.class);
 
     private final TablePropertiesProvider tablePropertiesProvider;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
@@ -42,7 +42,7 @@ public class SqsLeafPartitionQueryProcessor {
     private final ObjectFactory objectFactory;
     private final QueryStatusReportListener queryTracker;
 
-    private SqsLeafPartitionQueryProcessor(Builder builder) throws ObjectFactoryException {
+    private LeafPartitionQueryProcessor(Builder builder) throws ObjectFactoryException {
         tablePropertiesProvider = builder.tablePropertiesProvider;
         rowRetrieverProvider = builder.rowRetrieverProvider;
         resultsOutputProvider = builder.resultsOutputProvider;
@@ -115,8 +115,8 @@ public class SqsLeafPartitionQueryProcessor {
             return this;
         }
 
-        public SqsLeafPartitionQueryProcessor build() throws ObjectFactoryException {
-            return new SqsLeafPartitionQueryProcessor(this);
+        public LeafPartitionQueryProcessor build() throws ObjectFactoryException {
+            return new LeafPartitionQueryProcessor(this);
         }
     }
 }

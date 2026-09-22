@@ -62,7 +62,7 @@ import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAM
 public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsLeafPartitionQueryLambda.class);
 
-    private final SqsLeafPartitionQueryProcessor processor;
+    private final LeafPartitionQueryProcessor processor;
     private final QueryMessageHandler messageHandler;
 
     public SqsLeafPartitionQueryLambda() throws ObjectFactoryException {
@@ -85,7 +85,7 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
         LeafPartitionRowRetrieverProvider dataFusionProvider = dataFusionProviderFactory.apply(instanceProperties);
         QueryStatusReportListener queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, queryTracker);
-        processor = SqsLeafPartitionQueryProcessor.builder()
+        processor = LeafPartitionQueryProcessor.builder()
                 .tablePropertiesProvider(tablePropertiesProvider)
                 .rowRetrieverProvider(QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider))
                 .resultsOutputProvider(new AwsResultsOutputProvider(instanceProperties, hadoopProvider, sqsClient))
