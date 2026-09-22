@@ -19,6 +19,41 @@ unset CDPATH
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 BASE_DIR=$(cd "$THIS_DIR" && cd "../../" && pwd)
 
+usage() {
+  echo "Usage: $(basename "$0") [--with-sccache] [--image-prefix <prefix>]"
+  echo "  --with-sccache          Also build the sccache builder image"
+  echo "  --image-prefix <prefix> Prefix for image names, defaults to GitHub Container Registry if not set"
+}
+
+WITH_SCCACHE=false
+IMAGE_PREFIX="ghcr.io/gchq"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --with-sccache)
+      WITH_SCCACHE=true
+      shift
+      ;;
+    --image-prefix)
+      if [[ -z "$2" ]]; then
+        echo "--image-prefix needs a value"
+        usage
+        exit 1
+      fi
+      IMAGE_PREFIX="${2%/}" # Tolerate a trailing slash, as images are named "$IMAGE_PREFIX/..."
+      shift 2
+      ;;
+    *)
+      echo "Unrecognised option: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+BASE_IMAGE="$IMAGE_PREFIX/sleeper-rust-builder-al2023:latest"
+SCCACHE_IMAGE="$IMAGE_PREFIX/sleeper-rust-builder-sccache:latest"
+
 # If environment variables are set, then expand them into a string like
 # --build-arg RUSTUP_DIST_SERVER=${RUSTUP_SERVER} in BUILD_ARGS. If all are empty, then BUILD_ARGS is empty,
 # otherwise, e.g. if RUSTUP_DIST_SERVER=http://example.com then BUILD_ARGS is "--build-arg RUSTUP_DIST_SERVER=http://example.com "
@@ -33,11 +68,12 @@ if [ -n "$(ls -A "$BASE_DIR/certs" 2>/dev/null | grep -v '^README\.md$')" ]; the
   cp -r "$BASE_DIR/certs" certs
   rm -f certs/README.md
 fi
-docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-al2023:latest .
+docker build ${BUILD_ARGS} -t "$BASE_IMAGE" .
 popd
 
-if [[ "$1" == "--with-sccache" ]]; then
+if [[ "$WITH_SCCACHE" == "true" ]]; then
   pushd "$THIS_DIR"/sccache
-  docker build -t ghcr.io/gchq/sleeper-rust-builder-sccache:latest .
+  # Pass the base image explicitly so this builds on the image we just built, not the default in the Dockerfile
+  docker build --build-arg BASE_IMAGE="$BASE_IMAGE" -t "$SCCACHE_IMAGE" .
   popd
 fi
