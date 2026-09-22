@@ -282,7 +282,7 @@ upgrade_cli() {
     echo_local_repo_checkout "$LOCAL_REPO"
     SCRIPT_PATH="$LOCAL_REPO/scripts/cli/runInDocker.sh"
   else
-    echo "Downloading Sleeper CLI"
+    echo "Downloading Sleeper Docker tools CLI"
     curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
     SCRIPT_PATH="$TEMP_PATH"
     echo "Downloaded command"

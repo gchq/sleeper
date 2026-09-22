@@ -55,7 +55,7 @@ TEMP_DIR=$(mktemp -d)
 TEMP_PATH="$TEMP_DIR/sleeper"
 
 if [ "$USE_LOCAL_REPO" == "true" ]; then
-  echo "Installing the Sleeper CLI from this repository"
+  echo "Installing the Sleeper Docker tools CLI from this repository"
   SCRIPT_PATH="$LOCAL_SCRIPT"
   echo "Saving local repo path to ~/.sleeper/local-repo"
   mkdir -p "$HOME/.sleeper"
@@ -66,7 +66,7 @@ else
     rm -f "$HOME/.sleeper/local-repo"
   fi
 
-  echo "Downloading Sleeper CLI"
+  echo "Downloading Sleeper Docker tools CLI"
   curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   SCRIPT_PATH="$TEMP_PATH"
   echo "Downloaded command"

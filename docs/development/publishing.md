@@ -106,7 +106,7 @@ found there.
 Use of the local version can also be toggled later using `sleeper cli set-use-local-version <true|false>`, which needs
 the CLI to have been installed with `--useLocalRepo`.
 
-### Installing the CLI from a local repository
+### Installing the Docker tools CLI from a local repository
 
 `--useLocalRepo` also changes where the CLI itself comes from. Normally the install script downloads the `sleeper`
 command from GitHub, and `sleeper cli upgrade` downloads it again from the `develop` branch each time you upgrade.
