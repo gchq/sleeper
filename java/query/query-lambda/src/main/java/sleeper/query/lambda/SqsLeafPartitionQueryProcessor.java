@@ -17,10 +17,8 @@ package sleeper.query.lambda;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.row.Row;
@@ -32,26 +30,24 @@ import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.output.ResultsOutputProvider;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
-import sleeper.query.runner.tracker.DynamoDBQueryTracker;
+import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
 public class SqsLeafPartitionQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsLeafPartitionQueryProcessor.class);
 
-    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
     private final ResultsOutputProvider resultsOutputProvider;
     private final ObjectFactory objectFactory;
-    private final DynamoDBQueryTracker queryTracker;
+    private final QueryStatusReportListener queryTracker;
 
     private SqsLeafPartitionQueryProcessor(Builder builder) throws ObjectFactoryException {
-        instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         rowRetrieverProvider = builder.rowRetrieverProvider;
         resultsOutputProvider = builder.resultsOutputProvider;
         objectFactory = builder.objectFactory;
-        queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
+        queryTracker = builder.queryTracker;
     }
 
     public static Builder builder() {
@@ -85,19 +81,13 @@ public class SqsLeafPartitionQueryProcessor {
     }
 
     public static final class Builder {
-        private InstanceProperties instanceProperties;
         private TablePropertiesProvider tablePropertiesProvider;
         private LeafPartitionRowRetrieverProvider rowRetrieverProvider;
         private ResultsOutputProvider resultsOutputProvider;
         private ObjectFactory objectFactory;
-        private DynamoDbClient dynamoClient;
+        private QueryStatusReportListener queryTracker;
 
         private Builder() {
-        }
-
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            this.instanceProperties = instanceProperties;
-            return this;
         }
 
         public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
@@ -120,8 +110,8 @@ public class SqsLeafPartitionQueryProcessor {
             return this;
         }
 
-        public Builder dynamoClient(DynamoDbClient dynamoClient) {
-            this.dynamoClient = dynamoClient;
+        public Builder queryTracker(QueryStatusReportListener queryTracker) {
+            this.queryTracker = queryTracker;
             return this;
         }
 

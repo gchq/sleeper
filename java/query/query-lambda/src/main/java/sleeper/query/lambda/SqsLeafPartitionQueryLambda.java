@@ -37,6 +37,7 @@ import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
+import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
@@ -82,13 +83,14 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
         LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(
                 Executors.newFixedThreadPool(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS)), hadoopProvider);
         LeafPartitionRowRetrieverProvider dataFusionProvider = dataFusionProviderFactory.apply(instanceProperties);
-        messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
+        QueryStatusReportListener queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
+        messageHandler = new QueryMessageHandler(tablePropertiesProvider, queryTracker);
         processor = SqsLeafPartitionQueryProcessor.builder()
-                .dynamoClient(dynamoClient)
-                .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
+                .tablePropertiesProvider(tablePropertiesProvider)
                 .rowRetrieverProvider(QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider))
                 .resultsOutputProvider(new AwsResultsOutputProvider(instanceProperties, hadoopProvider, sqsClient))
                 .objectFactory(new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory())
+                .queryTracker(queryTracker)
                 .build();
     }
 
