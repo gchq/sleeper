@@ -38,6 +38,7 @@ RUN groupadd --system --gid 28157 sleeper \
 
 # The sleeper user has no home directory and can't write to /, so point both at /tmp. Otherwise
 # anything writing to either fails, which is easy to miss as it's usually not fatal.
-ENV HOME=/tmp
-WORKDIR /tmp
+RUN mkdir -p /tmp/sleeper-home && chown sleeper:sleeper /tmp/sleeper-home
+ENV HOME=/tmp/sleeper-home
+WORKDIR /tmp/sleeper-home
 USER sleeper
