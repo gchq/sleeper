@@ -28,9 +28,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user for images built from this one to run as. The IDs are set explicitly so they
-# don't shift if a later base image adds system users of its own. 1000 is taken by the "ubuntu" user.
-RUN groupadd --system --gid 999 sleeper \
-    && useradd --system --uid 999 --gid sleeper --no-create-home sleeper \
+# don't shift if a later base image adds system users of its own. 28157 chosen randomly bettween 1000 and 32767.
+RUN groupadd --system --gid 28157 sleeper \
+    && useradd --system --uid 28157 --gid sleeper --no-create-home sleeper \
     && mkdir -p /mnt/scratch \
     && chown sleeper:sleeper /mnt/scratch
 
