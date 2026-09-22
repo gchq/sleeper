@@ -29,7 +29,10 @@ Files can be submitted as messages to the batcher submission SQS queue. A script
 
 Paths to the files must be in an S3 bucket, specified with the bucket name and object key like
 this: `bucket-name/folder-prefix/file.parquet`. If you provide a directory in S3 instead of a file, the batcher
-will look in all subdirectories and track any files found in them.
+will look in all subdirectories and track any files found in them. A path to an individual file must include
+a `.parquet` extension, and a path only matches a file at exactly that key or files under it as a directory. Files or
+directories whose names start with the same characters as the path are not matched. See the
+[ingest guide](ingest.md#file-paths) for the full rules.
 
 You can also submit requests to the queue manually as described [below](#manually-sending-files-to-the-batcher-queue).
 
@@ -82,4 +85,6 @@ An example message is shown below:
 ```
 
 Each message is a request to ingest a collection of files into a Sleeper table. If you provide a directory in S3
-instead of a file, the batcher will look in all subdirectories and track any files found in them.
+instead of a file, the batcher will look in all subdirectories and track any files found in them. Paths are resolved
+as described in the [ingest guide](ingest.md#file-paths). If any path in the message matches no files, the message is
+sent to the dead letter queue.

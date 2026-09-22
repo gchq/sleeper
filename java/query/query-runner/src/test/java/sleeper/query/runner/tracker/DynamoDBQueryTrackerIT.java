@@ -162,6 +162,23 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
     }
 
     @Test
+    public void shouldUpdateParentStateInTableWhenTheLastChildToFinishPartiallyFailed() throws QueryTrackerException {
+        // When
+        queryTracker().queryInProgress(createQueryWithId("parent"));
+        queryTracker().queryInProgress(createSubQueryWithId("parent", "my-id"));
+        queryTracker().queryInProgress(createSubQueryWithId("parent", "my-other-id"));
+        queryTracker().queryCompleted(createSubQueryWithId("parent", "my-id"), new ResultsOutputInfo(10, Collections.emptyList()));
+        queryTracker().queryCompleted(createSubQueryWithId("parent", "my-other-id"),
+                new ResultsOutputInfo(5, Collections.emptyList(), new Exception("Failed part way through")));
+
+        // Then
+        assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(PARTIALLY_FAILED);
+        assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(15));
+        assertThat(queryTracker().getStatus("parent", "my-id").getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(queryTracker().getStatus("parent", "my-other-id").getLastKnownState()).isEqualTo(PARTIALLY_FAILED);
+    }
+
+    @Test
     public void shouldUpdateParentStateWithTotalRowsReturnedByAllChildren() throws QueryTrackerException {
         // When
         queryTracker().queryInProgress(createQueryWithId("parent"));

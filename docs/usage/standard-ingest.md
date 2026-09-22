@@ -45,7 +45,10 @@ to Sleeper's ingest queue telling it that the data should be ingested. This mess
 ```
 
 Here the items listed under `files` can be either files or directories. If they are directories, then Sleeper
-will recursively look for files ending in `.parquet` within them.
+will recursively look for files ending in `.parquet` within them.  A path to an individual file must include
+a `.parquet` extension, and a path only matches a file at exactly that key or files under it as a directory. Files or
+directories whose names start with the same characters as the path are not matched. See the
+[ingest guide](ingest.md#file-paths) for the full rules. If any path in the job matches no files, the job will fail.
 
 Files to be ingested must be accessible to the ECS tasks that run the jobs. See
 the [ingest guide](ingest.md#prepare-files) for how to prepare your files for access.
