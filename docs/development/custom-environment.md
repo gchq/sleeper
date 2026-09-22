@@ -36,7 +36,7 @@ See [publishing artefacts](publishing.md) for the full publish flow.
 
 ## Rust build
 
-The Rust components are built inside Docker containers via `rust/build-in-docker.sh` (this script is called in-directly from Maven during a normal Sleeper build process). The builder image itself is produced by scripts in `rust/builders`. There's an alternative builder image that includes `sccache` for use in CI/CD. The configuration points below affect either the building of the builder image or how the Rust workload runs inside them.
+The Rust components are built inside Docker containers via `rust/build-in-docker.sh` (this script is called in-directly from Maven during a normal Sleeper build process). The builder image itself is produced by `rust/builders/build.sh`. You can pass `--with-sscache` to this script to also build an image that includes `sccache` for use in CI/CD. The configuration points below affect either the building of the builder image or how the Rust workload runs inside them.
 
 The variables below should be set via environment variables as shown.
 
@@ -50,7 +50,7 @@ Example:
 export RUSTUP_INIT_URL=https://sh.rustup.internal.example.com
 export RUSTUP_DIST_SERVER=https://rustup.internal.example.com
 export RUSTUP_UPDATE_ROOT=https://rustup.internal.example.com/rustup
-./rust/builders/buildAll.sh
+./rust/builders/build.sh
 ```
 
 Any variable can be set independently. If all are unset, the builder images are built against the public rustup servers.
@@ -89,7 +89,7 @@ Useful when you have built the builder image locally and do not want it overwrit
 Example:
 
 ```bash
-./rust/builders/buildAll.sh            # builds and tags the images locally
+./rust/builders/build.sh            # builds and tags the images locally
 export SKIP_DOCKER_PULL=true
 ./rust/build-in-docker.sh x86_64           # uses the local image, no pull
 ```
@@ -106,5 +106,5 @@ Example:
 
 ```bash
 cp my-corporate-root-ca.crt certs/
-./rust/builders/buildAll.sh
+./rust/builders/build.sh
 ```
