@@ -55,6 +55,9 @@ jobs:
         id: test
         run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -Drust.skip=true -Dmaven.repo.local=${{ runner.temp }}/.m2/repository -e
         working-directory: ./java
+      - name: Check native library version linking
+        if: ${{ ! inputs.skipRust }}
+        run: ./rust/check-native-lib.sh rust/target/x86_64-unknown-linux-gnu/release/libsleeper_df.so x86_64
       - name: Generate site
         id: site
         if: failure() && steps.test.conclusion == 'failure'
