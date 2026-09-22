@@ -36,7 +36,7 @@ See [publishing artefacts](publishing.md) for the full publish flow.
 
 ## Rust build
 
-The Rust components are built inside Docker containers via `rust/build-in-docker.sh` (this script is called in-directly from Maven during a normal Sleeper build process). The builder image itself is produced by `rust/builders/build.sh`. The configuration points below affect either the building of the builder image or how the Rust workload runs inside them.
+The Rust components are built inside Docker containers via `rust/build-in-docker.sh` (this script is called in-directly from Maven during a normal Sleeper build process). The builder image itself is produced by `rust/builders/build.sh`. The configuration points below affect either the building of the builder image or how the Rust workload runs inside it.
 
 The `rust/builders/build.sh` script accepts a couple of options:
 
@@ -96,14 +96,14 @@ Example:
 ```bash
 ./rust/builders/build.sh            # builds and tags the images locally
 export SKIP_DOCKER_PULL=true
-./rust/build-in-docker.sh x86_64           # uses the local image, no pull
+./rust/build-in-docker.sh x86_64    # uses the local image, no pull
 ```
 
 ### `certs/` directory
 
 Drop PEM-encoded CA certificate files into the `certs/` directory at the repository root if the Rust builder image needs to trust a private certificate authority. Any file extension may be used — `.crt`, `.pem`, `.cer`, etc.
 
-Files placed here (other than the placeholder `README.md`) are picked up by the `rust/builders` build scripts and installed as trusted CA certificates **inside the builder container**. Nothing is installed on the host.
+Files placed here (other than the placeholder `README.md`) are picked up by `rust/builders/build.sh` and installed as trusted CA certificates **inside the builder container**. Nothing is installed on the host.
 
 If `certs/` only contains the placeholder `README.md`, the builder images are built without any custom CA trust changes.
 
