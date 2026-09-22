@@ -28,12 +28,11 @@ import static sleeper.build.uptime.lambda.BuildUptimeCondition.TEST_FINISHED_FRO
 public class BuildUptimeConditionTest {
 
     private final Map<String, String> s3PathToObject = new HashMap<>();
-    private Instant timeNow = Instant.now();
 
     @Test
     void shouldNotFindTestFinishedFromTodayWhenNoSummaryIsInBucket() {
         // When / Then
-        assertThat(checkTestFinishedFromTodayInBucket("test-bucket"))
+        assertThat(checkTestFinishedFromTodayInBucketAtTime("test-bucket", Instant.now()))
                 .isFalse();
     }
 
@@ -44,10 +43,10 @@ public class BuildUptimeConditionTest {
                 "\"executions\": [{" +
                 "\"startTime\": \"2026-09-20T20:00:00Z\"" +
                 "}]}");
-        timeNow = Instant.parse("2026-09-21T08:00:01Z");
+        Instant timeNow = Instant.parse("2026-09-21T08:00:01Z");
 
         // When / Then
-        assertThat(checkTestFinishedFromTodayInBucket("test-bucket"))
+        assertThat(checkTestFinishedFromTodayInBucketAtTime("test-bucket", timeNow))
                 .isFalse();
     }
 
@@ -58,14 +57,14 @@ public class BuildUptimeConditionTest {
                 "\"executions\": [{" +
                 "\"startTime\": \"2026-09-20T20:00:00Z\"" +
                 "}]}");
-        timeNow = Instant.parse("2026-09-21T07:59:59Z");
+        Instant timeNow = Instant.parse("2026-09-21T07:59:59Z");
 
         // When / Then
-        assertThat(checkTestFinishedFromTodayInBucket("test-bucket"))
+        assertThat(checkTestFinishedFromTodayInBucketAtTime("test-bucket", timeNow))
                 .isTrue();
     }
 
-    private boolean checkTestFinishedFromTodayInBucket(String bucket) {
+    private boolean checkTestFinishedFromTodayInBucketAtTime(String bucket, Instant timeNow) {
         return BuildUptimeCondition.conditionAndBucket(TEST_FINISHED_FROM_TODAY, bucket)
                 .check(getS3ObjectAsString(), timeNow);
     }
