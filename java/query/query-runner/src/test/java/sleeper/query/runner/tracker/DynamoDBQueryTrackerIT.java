@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.range.Range;
@@ -37,6 +38,7 @@ import sleeper.query.core.tracker.TrackedQuery;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
@@ -287,6 +289,82 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
                     .containsExactlyInAnyOrder(
                             queryFailed(query4, "Failed"),
                             queryPartiallyFailed(query5, 123L, "Partially failed"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Paginate through tracked queries when they exceed one page")
+    class PaginateResults {
+        // Roughly 350KB - 4 or more of these will exceed 1MB
+        String largeErrorMessage = "x".repeat(350 * 1024);
+
+        @Test
+        void shouldGetAllQueriesWhenTheyExceedOnePage() {
+            // Given
+            // 5 of these large error messages will exceed 1MB
+            for (int i = 1; i <= 5; i++) {
+                queryTracker().queryFailed(createQueryWithId("query-" + i), new Exception(largeErrorMessage));
+            }
+
+            // When / Then
+            assertThat(countPagesInScanOfTracker()).isGreaterThan(1);
+            assertThat(queryTracker().getAllQueries())
+                    .extracting(TrackedQuery::getQueryId)
+                    .containsExactlyInAnyOrder("query-1", "query-2", "query-3", "query-4", "query-5");
+            assertThat(queryTracker().getQueriesWithState(FAILED)).hasSize(5);
+            assertThat(queryTracker().getFailedQueries()).hasSize(5);
+        }
+
+        @Test
+        void shouldNotFinishParentWhenUnfinishedChildIsBeyondFirstPageOfChildren() throws QueryTrackerException {
+            // Given a child that is still running, which sorts after more than one page of finished children
+            queryTracker().queryInProgress(createQueryWithId("parent"));
+            queryTracker().queryInProgress(createSubQueryWithId("parent", "z-still-running"));
+
+            // When
+            // 4 of these exceed 1MB
+            for (int i = 1; i <= 4; i++) {
+                queryTracker().queryFailed(createSubQueryWithId("parent", "child-" + i), new Exception(largeErrorMessage));
+            }
+
+            // Then
+            assertThat(countPagesInQueryForId("parent")).isGreaterThan(1);
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(IN_PROGRESS);
+            assertThat(queryTracker().getStatus("parent", "z-still-running").getLastKnownState()).isEqualTo(IN_PROGRESS);
+        }
+
+        @Test
+        void shouldFinishParentWhenChildrenExceedOnePage() throws QueryTrackerException {
+            // Given
+            queryTracker().queryInProgress(createQueryWithId("parent"));
+            queryTracker().queryInProgress(createSubQueryWithId("parent", "z-last-child"));
+
+            // When
+            // 4 of these exceed 1MB
+            for (int i = 1; i <= 4; i++) {
+                queryTracker().queryFailed(createSubQueryWithId("parent", "child-" + i), new Exception(largeErrorMessage));
+            }
+            queryTracker().queryCompleted(createSubQueryWithId("parent", "z-last-child"), new ResultsOutputInfo(10, Collections.emptyList()));
+
+            // Then
+            assertThat(countPagesInQueryForId("parent")).isGreaterThan(1);
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(PARTIALLY_FAILED);
+            assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(10));
+        }
+
+        private long countPagesInScanOfTracker() {
+            return dynamoClient.scanPaginator(request -> request
+                    .tableName(instanceProperties.get(QUERY_TRACKER_TABLE_NAME)))
+                    .stream().count();
+        }
+
+        private long countPagesInQueryForId(String queryId) {
+            return dynamoClient.queryPaginator(request -> request
+                    .tableName(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
+                    .keyConditionExpression("#QueryId = :queryId")
+                    .expressionAttributeNames(Map.of("#QueryId", DynamoDBQueryTracker.QUERY_ID))
+                    .expressionAttributeValues(Map.of(":queryId", AttributeValue.fromS(queryId))))
+                    .stream().count();
         }
     }
 
