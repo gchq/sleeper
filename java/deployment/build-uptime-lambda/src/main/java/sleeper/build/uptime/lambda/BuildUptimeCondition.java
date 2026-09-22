@@ -32,7 +32,11 @@ public class BuildUptimeCondition {
     }
 
     public static BuildUptimeCondition of(BuildUptimeEvent event) {
-        return new BuildUptimeCondition(event.getCondition(), event.getTestBucket());
+        return conditionAndBucket(event.getCondition(), event.getTestBucket());
+    }
+
+    public static BuildUptimeCondition conditionAndBucket(String condition, String bucket) {
+        return new BuildUptimeCondition(condition, bucket);
     }
 
     public boolean check(S3Client s3, Instant now) {
