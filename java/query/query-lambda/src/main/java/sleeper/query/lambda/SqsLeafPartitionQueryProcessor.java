@@ -18,9 +18,7 @@ package sleeper.query.lambda;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -37,8 +35,6 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
-import java.nio.file.Path;
-
 public class SqsLeafPartitionQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsLeafPartitionQueryProcessor.class);
 
@@ -54,7 +50,7 @@ public class SqsLeafPartitionQueryProcessor {
         tablePropertiesProvider = builder.tablePropertiesProvider;
         rowRetrieverProvider = builder.rowRetrieverProvider;
         resultsOutputProvider = builder.resultsOutputProvider;
-        objectFactory = new S3UserJarsLoader(instanceProperties, builder.s3Client, Path.of("/tmp")).buildObjectFactory();
+        objectFactory = builder.objectFactory;
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
     }
 
@@ -93,7 +89,7 @@ public class SqsLeafPartitionQueryProcessor {
         private TablePropertiesProvider tablePropertiesProvider;
         private LeafPartitionRowRetrieverProvider rowRetrieverProvider;
         private ResultsOutputProvider resultsOutputProvider;
-        private S3Client s3Client;
+        private ObjectFactory objectFactory;
         private DynamoDbClient dynamoClient;
 
         private Builder() {
@@ -119,8 +115,8 @@ public class SqsLeafPartitionQueryProcessor {
             return this;
         }
 
-        public Builder s3Client(S3Client s3Client) {
-            this.s3Client = s3Client;
+        public Builder objectFactory(ObjectFactory objectFactory) {
+            this.objectFactory = objectFactory;
             return this;
         }
 

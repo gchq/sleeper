@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -41,6 +42,7 @@ import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
+import java.nio.file.Path;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 
@@ -82,10 +84,11 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
         LeafPartitionRowRetrieverProvider dataFusionProvider = dataFusionProviderFactory.apply(instanceProperties);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsLeafPartitionQueryProcessor.builder()
-                .s3Client(s3Client).dynamoClient(dynamoClient)
+                .dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .rowRetrieverProvider(QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider))
                 .resultsOutputProvider(new AwsResultsOutputProvider(instanceProperties, hadoopProvider, sqsClient))
+                .objectFactory(new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory())
                 .build();
     }
 
