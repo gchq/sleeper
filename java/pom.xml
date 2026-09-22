@@ -94,9 +94,9 @@
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.3</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
-        <protobuf.version>4.36.1</protobuf.version>
+        <protobuf.version>4.36.2</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
-        <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of LZ4 Java with vulnerabilities. -->
         <org.lz4.version>1.8.1</org.lz4.version>
         <yawk.lz4.version>1.11.3</yawk.lz4.version>
@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.54.17</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.55.1</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         It's not compatible with the latest version, so we match the version that it provides.
@@ -181,10 +181,10 @@
         <httpclient5.version>5.6.4</httpclient5.version>
         <httpcore5.version>5.4.3</httpcore5.version>
         <jaxb.version>2.3.1</jaxb.version>
-        <jline.version>4.4.3</jline.version>
+        <jline.version>4.4.5</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-16</zstd-jni.version>
+        <zstd-jni.version>1.5.7-17</zstd-jni.version>
         <airlift.units.version>1.10</airlift.units.version>
         <airlift.slice.version>2.3</airlift.slice.version>
         <!-- Trino and its dependencies declare different versions of Airlift. -->
@@ -204,7 +204,7 @@
         <google.http-client.version>2.2.0</google.http-client.version>
         <google.grpc.version>1.84.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.269.0</cdk.version>
+        <cdk.version>2.270.0</cdk.version>
         <constructs.version>10.8.1</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
         <jsii.version>1.140.0</jsii.version>
@@ -212,7 +212,7 @@
         <slf4j.version>2.0.19</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <aspectj.version>1.9.25.1</aspectj.version>
-        <pty4j.version>0.13.12</pty4j.version>
+        <pty4j.version>0.13.13</pty4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.86</bouncycastle.version>
         <athena.version>2025.15.1</athena.version>
@@ -230,13 +230,13 @@
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>
         <jakarta.activation.version>2.1.4</jakarta.activation.version>
-        <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
+        <jakarta.xml.bind.version>4.0.0</jakarta.xml.bind.version>
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.3</jgrapht.version>
         <apfloat.version>1.16.0</apfloat.version>
         <joda-time.version>2.14.3</joda-time.version>
         <json-smart.version>2.6.0</json-smart.version>
-        <jnr.ffi.version>2.3.1</jnr.ffi.version>
+        <jnr.ffi.version>2.3.3</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <docker-java.version>3.7.1</docker-java.version>
         <jib.version>0.28.2</jib.version>
@@ -249,12 +249,12 @@
         <mockito.version>5.23.0</mockito.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <handlebars.version>4.5.4</handlebars.version>
+        <handlebars.version>4.5.5</handlebars.version>
         <assertj.version>3.27.7</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>31.0.0</approvaltests.version>
         <json-path.version>3.0.0</json-path.version>
-        <xmlunit.version>2.13.0</xmlunit.version>
+        <xmlunit.version>2.14.0</xmlunit.version>
         <jsonunit.version>6.2.0</jsonunit.version>
         <checkstyle.version>12.3.1</checkstyle.version>
         <sleeper.system.test.short.id />
