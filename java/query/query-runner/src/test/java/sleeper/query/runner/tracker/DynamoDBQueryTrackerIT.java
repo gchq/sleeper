@@ -328,7 +328,9 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
             }
 
             // Then
-            assertThat(countPagesInQueryForId("parent")).isGreaterThan(1);
+            assertThat(gatherPagesOfSubQueryIdsForQueryId("parent")).containsExactly(
+                    List.of("child-1", "child-2", "child-3"),
+                    List.of("child-4", "z-still-running"));
             assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(IN_PROGRESS);
             assertThat(queryTracker().getStatus("parent", "z-still-running").getLastKnownState()).isEqualTo(IN_PROGRESS);
         }
@@ -347,7 +349,9 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
             queryTracker().queryCompleted(createSubQueryWithId("parent", "z-last-child"), new ResultsOutputInfo(10, Collections.emptyList()));
 
             // Then
-            assertThat(countPagesInQueryForId("parent")).isGreaterThan(1);
+            assertThat(gatherPagesOfSubQueryIdsForQueryId("parent")).containsExactly(
+                    List.of("child-1", "child-2", "child-3"),
+                    List.of("child-4", "z-last-child"));
             assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(PARTIALLY_FAILED);
             assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(10));
         }
@@ -358,13 +362,22 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
                     .stream().count();
         }
 
-        private long countPagesInQueryForId(String queryId) {
+        private List<List<String>> gatherPagesOfSubQueryIdsForQueryId(String queryId) {
             return dynamoClient.queryPaginator(request -> request
                     .tableName(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
-                    .keyConditionExpression("#QueryId = :queryId")
-                    .expressionAttributeNames(Map.of("#QueryId", DynamoDBQueryTracker.QUERY_ID))
-                    .expressionAttributeValues(Map.of(":queryId", AttributeValue.fromS(queryId))))
-                    .stream().count();
+                    .keyConditionExpression("#QueryId = :queryId AND #SubQueryId != :noSubQuery")
+                    .expressionAttributeNames(Map.of(
+                            "#QueryId", DynamoDBQueryTracker.QUERY_ID,
+                            "#SubQueryId", DynamoDBQueryTracker.SUB_QUERY_ID))
+                    .expressionAttributeValues(Map.of(
+                            ":queryId", AttributeValue.fromS(queryId),
+                            ":noSubQuery", AttributeValue.fromS(DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER))))
+                    .stream()
+                    .map(response -> response.items().stream()
+                            .map(item -> item.get(DynamoDBQueryTracker.SUB_QUERY_ID))
+                            .map(AttributeValue::s)
+                            .toList())
+                    .toList();
         }
     }
 
