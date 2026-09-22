@@ -142,8 +142,9 @@ afterwards will overwrite those images with the ones from the registry**.
 
 Tools are available to publish built artefacts to shared repositories, and to install them locally to avoid the need to
 build Sleeper yourself. We do not currently publish artefacts publicly.
-See [publishing artefacts](development/publishing.md) for how to set this up yourself, including pointing the Docker
-tools CLI at your own container registry.
+See [publishing artefacts](development/publishing.md) for how to set this up yourself, and
+[publishing the Docker tools CLI](development/publishing-docker-tools.md) for pointing the Docker tools CLI at your own
+container registry.
 
 ## Using the codebase
 
