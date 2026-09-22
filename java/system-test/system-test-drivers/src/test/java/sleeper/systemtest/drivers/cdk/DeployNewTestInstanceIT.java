@@ -106,13 +106,13 @@ public class DeployNewTestInstanceIT {
             // When
             deployAndCaptureRequest();
 
-            // Then the instance and table come from the deployAll config files
+            // Then the instance ID, VPC and subnets come from the positional command line arguments
             instanceProperties.set(ID, "test-instance");
             instanceProperties.set(VPC_ID, "test-vpc");
             instanceProperties.set(SUBNETS, "test-subnet");
             // And the table properties object gains the table ID after deployment when the table is added
             tableProperties.set(TABLE_ID, tablePropertiesStore.loadByName("system-test").get(TABLE_ID));
-            // And the deploy request reflects that configuration
+            // And the rest of the instance and table configuration comes from the deployAll config files
             assertThat(deployRequests).containsExactly(DeployInstanceRequest.builder()
                     .instanceConfig(new SleeperInstanceConfiguration(instanceProperties, tableProperties))
                     .cdkCommand(CdkCommand.deployNew().withConfigurationDirectory(defaultInstancePropertiesFile()).toBuilder()
