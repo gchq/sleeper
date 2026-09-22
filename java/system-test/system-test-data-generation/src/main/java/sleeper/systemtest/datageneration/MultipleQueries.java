@@ -145,7 +145,7 @@ public class MultipleQueries {
             }
         }
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-        double rate = totalResults / (double) duration.getSeconds();
+        double rate = totalResults / duration.getSecondsAsDouble();
         LOGGER.info("{} rows returned in {} at {} per second)", totalResults, duration, String.format("%.2f", rate));
     }
 

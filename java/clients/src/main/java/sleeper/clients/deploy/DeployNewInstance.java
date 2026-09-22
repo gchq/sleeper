@@ -77,9 +77,9 @@ public class DeployNewInstance {
             .systemArguments(List.of("scriptsDirectory"))
             .positionalArguments(List.of("scriptsDirectory", "instanceId", "vpcId", "subnetIds"))
             .options(List.of(
-                    CommandOption.longOption("properties-file"),
                     CommandOption.longOption("config-dir"),
-                    CommandOption.longFlag("paused")))
+                    CommandOption.longFlag("paused"),
+                    CommandOption.longOption("properties-file")))
             .helpSummary("" +
                     "Deploys a new instance of Sleeper.\n" +
                     "\n" +

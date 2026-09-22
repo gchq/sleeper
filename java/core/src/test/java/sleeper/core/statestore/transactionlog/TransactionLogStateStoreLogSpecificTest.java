@@ -52,7 +52,9 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
 import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
@@ -112,6 +114,31 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
                     .containsExactly(file1, file2, file3);
             assertThat(retryWaits).hasSize(1);
         }
+
+        @Test
+        void shouldUseTablePropertiesForRetryWaitRange() {
+            // Given
+            tableProperties.setNumber(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS, 250);
+            tableProperties.setNumber(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS, 600);
+            store = stateStore(builder -> builder.randomJitterFraction(() -> 0.5));
+            List<FileReference> otherFiles = IntStream.range(0, 4)
+                    .mapToObj(index -> fileFactory().rootFile("other-file-" + index + ".parquet", 100))
+                    .collect(toUnmodifiableList());
+            filesLogStore.atStartOfNextAddTransactions(otherFiles.stream()
+                    .map(file -> (ThrowingRunnable) () -> update(otherProcess()).addFile(file))
+                    .collect(toUnmodifiableList()));
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+
+            // When
+            update(store).addFile(file);
+
+            // Then
+            assertThat(store.getFileReferences()).containsAll(otherFiles).contains(file);
+            assertThat(retryWaits).containsExactly(
+                    Duration.ofMillis(125), Duration.ofMillis(250),
+                    Duration.ofMillis(300), Duration.ofMillis(300));
+        }
+
 
         @Test
         void shouldRetryAddTransactionWhenConflictOccurredAddingTransaction() {
