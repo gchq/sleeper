@@ -15,21 +15,24 @@
 
 # Checks that a native library we have built can be loaded on Amazon Linux 2023.
 #
-# Amazon Linux 2023 includes glibc 2.34, and if a library is built against a newer version it can
-# fail to dynamically link to the version available in Amazon Linux. We scan the library file for
-# which versions of glibc it links against.
-#
 # Usage: check-native-lib.sh <library> <x86_64|aarch64>
 
 set -euo pipefail
 unset CDPATH
 
+# Amazon Linux 2023 includes glibc 2.34, and if a library is built against a newer version it can
+# fail to dynamically link to the version available in Amazon Linux. We scan the library file for
+# which versions of glibc it links against.
 # See https://docs.aws.amazon.com/linux/al2023/ug/core-glibc.html
 MAX_GLIBC="2.34"
+
+# Also check for when the library requires a newer version of the C++ standard library. Amazon do
+# not make guarantees about which version of this is used. If our build increases the required
+# version, it will no longer run on an older version of Amazon Linux, which it previously worked on.
 MAX_GLIBCXX="3.4.29"
 
 if [ $# -ne 2 ]; then
-  echo "Usage: $0 <library> <x86_64|aarch64>" >&2
+  echo "Usage: $0 <library> <x86_64|aarch64>"
   exit 1
 fi
 
@@ -75,7 +78,7 @@ FAILED=false
 MACHINE=$(readelf -h "$LIBRARY" | sed -n 's/^ *Machine: *//p')
 echo "Found library is built for for $MACHINE"
 if [ "$MACHINE" != "$EXPECTED_MACHINE" ]; then
-  echo "FAILED: Expected $EXPECTED_MACHINE for $ARCH" >&2
+  echo "FAILED: Expected $EXPECTED_MACHINE for $ARCH"
   FAILED=true
 fi
 
