@@ -82,9 +82,10 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
         LeafPartitionRowRetrieverProvider dataFusionProvider = dataFusionProviderFactory.apply(instanceProperties);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsLeafPartitionQueryProcessor.builder()
-                .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
-                .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider).hadoopProvider(hadoopProvider)
+                .s3Client(s3Client).dynamoClient(dynamoClient)
+                .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .rowRetrieverProvider(QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider))
+                .resultsOutputProvider(new AwsResultsOutputProvider(instanceProperties, hadoopProvider, sqsClient))
                 .build();
     }
 
