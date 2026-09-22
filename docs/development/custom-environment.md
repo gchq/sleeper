@@ -36,7 +36,7 @@ See [publishing artefacts](publishing.md) for the full publish flow.
 
 ## Rust build
 
-The Rust components are built inside Docker containers via `rust/build-in-docker.sh` (this script is called in-directly from Maven during a normal Sleeper build process). The builder image itself is produced by `rust/builders/build.sh`. You can pass `--with-sscache` to this script to also build an image that includes `sccache` for use in CI/CD. The configuration points below affect either the building of the builder image or how the Rust workload runs inside them.
+The Rust components are built inside Docker containers via `rust/build-in-docker.sh` (this script is called in-directly from Maven during a normal Sleeper build process). The builder image itself is produced by `rust/builders/build.sh`. You can pass `--with-sccache` to this script to also build an image that includes `sccache` for use in CI/CD. The configuration points below affect either the building of the builder image or how the Rust workload runs inside them.
 
 The variables below should be set via environment variables as shown.
 
