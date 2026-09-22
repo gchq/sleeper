@@ -35,3 +35,9 @@ if [ -n "$(ls -A "$BASE_DIR/certs" 2>/dev/null | grep -v '^README\.md$')" ]; the
 fi
 docker build ${BUILD_ARGS} -t ghcr.io/gchq/sleeper-rust-builder-al2023:latest .
 popd
+
+if [[ "$1" == "--with-sccache" ]]; then
+  pushd "$THIS_DIR"/sccache
+  docker build -t ghcr.io/gchq/sleeper-rust-builder-sccache:latest .
+  popd
+fi
