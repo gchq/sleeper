@@ -23,8 +23,16 @@ import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.assertions.Match;
+import software.amazon.awscdk.assertions.Template;
+import software.constructs.Construct;
 
 import sleeper.cdk.testutil.StackPrinter;
+
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SleeperArtefactRepositoriesIT {
 
@@ -41,6 +49,95 @@ public class SleeperArtefactRepositoriesIT {
         // Then
         Approvals.verify(printer.toJson(stack), new Options()
                 .forFile().withName("repositories", ".json"));
+    }
+
+    @Test
+    void shouldManageCleanupLogGroup() {
+        // Given
+        Stack stack = createRootStack("test-deployment");
+
+        // When
+        SleeperArtefactRepositories.Builder.create(stack, "test-deployment").build();
+
+        // Then
+        Template.fromStack(stack).resourceCountIs("AWS::Logs::LogGroup", 1);
+    }
+
+    @Test
+    void shouldRetainCleanupLogsWhenConfigured() {
+        assertCleanupLogRemovalPolicy(true);
+    }
+
+    @Test
+    void shouldDeleteCleanupLogsWhenConfigured() {
+        assertCleanupLogRemovalPolicy(false);
+    }
+
+    private void assertCleanupLogRemovalPolicy(boolean retain) {
+        // Given
+        Stack stack = createRootStack("test-deployment");
+
+        // When
+        SleeperArtefactRepositories.Builder.create(stack, "test-deployment")
+                .retainLogsAfterDestroy(retain)
+                .build();
+
+        // Then
+        Template template = Template.fromStack(stack);
+        Map<String, Map<String, Object>> groups = template.findResources("AWS::Logs::LogGroup");
+        assertThat(groups).hasSize(1);
+        String logGroupId = groups.keySet().iterator().next();
+        template.hasResourceProperties("AWS::Logs::LogGroup", Map.of("RetentionInDays", Match.absent()));
+        template.hasResource("AWS::Logs::LogGroup", Map.of(
+                "DeletionPolicy", retain ? "Retain" : "Delete",
+                "UpdateReplacePolicy", retain ? "Retain" : "Delete"));
+        template.hasResourceProperties("AWS::Lambda::Function", Map.of(
+                "LoggingConfig", Map.of("LogGroup", Map.of("Ref", logGroupId))));
+        template.resourceCountIs("AWS::Lambda::Function", 1);
+        template.resourceCountIs("Custom::S3AutoDeleteObjects", 1);
+    }
+
+    @Test
+    void shouldNotCreateCleanupLogsForImagesOnly() {
+        // Given
+        Stack stack = createRootStack("test-deployment");
+
+        // When
+        SleeperArtefactRepositories.Builder.create(stack, "test-deployment")
+                .deploy(SleeperArtefactRepositories.ToDeploy.IMAGES)
+                .retainLogsAfterDestroy(false)
+                .build();
+
+        // Then
+        Template.fromStack(stack).resourceCountIs("AWS::Logs::LogGroup", 0);
+        Template.fromStack(stack).resourceCountIs("AWS::Lambda::Function", 0);
+    }
+
+    @Test
+    void shouldShareCleanupLogsAcrossBucketsInOneStack() {
+        // Given
+        Stack stack = createRootStack("test-deployment");
+
+        // When
+        SleeperArtefactRepositories.createJarsBucket(new Construct(stack, "First"), "test-account", "first", false);
+        SleeperArtefactRepositories.createJarsBucket(new Construct(stack, "Second"), "test-account", "second", false);
+
+        // Then
+        Template.fromStack(stack).resourceCountIs("AWS::Logs::LogGroup", 1);
+        Template.fromStack(stack).resourceCountIs("Custom::S3AutoDeleteObjects", 2);
+    }
+
+    @Test
+    void shouldRejectConflictingCleanupLogPolicies() {
+        // Given
+        Stack stack = createRootStack("test-deployment");
+        SleeperArtefactRepositories.createJarsBucket(new Construct(stack, "First"), "test-account", "first", true);
+
+        // When / Then
+        assertThatThrownBy(() -> SleeperArtefactRepositories.createJarsBucket(
+                new Construct(stack, "Second"), "test-account", "second", false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Buckets sharing a cleanup provider must use the same log retention policy");
     }
 
     private Stack createRootStack(String deploymentId) {
