@@ -62,6 +62,11 @@ public class InMemoryResultsOutput implements ResultsOutput, ResultsOutputProvid
         return queryIdToPublishedResults;
     }
 
+    /**
+     * Streams through the rows published for all queries.
+     *
+     * @return the rows
+     */
     public Stream<Row> streamPublishedResults() {
         return queryIdToPublishedResults.values().stream().flatMap(List::stream);
     }

@@ -47,7 +47,7 @@ public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetrie
 
     @Override
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
-        return new TrackingIterator<>(getRowsOrThrow(leafPartitionQuery.getFiles())
+        return new TrackingIterator(getRowsOrThrow(leafPartitionQuery.getFiles())
                 .filter(row -> isRowInRegion(row, leafPartitionQuery, dataReadSchema))
                 .map(row -> mapToReadSchema(row, dataReadSchema))
                 .iterator());
@@ -104,9 +104,9 @@ public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetrie
     /**
      * Wraps an iterator and tracks whether it was closed.
      */
-    private class TrackingIterator<T> extends WrappedIterator<T> {
+    private class TrackingIterator extends WrappedIterator<Row> {
 
-        public TrackingIterator(Iterator<T> iterator) {
+        TrackingIterator(Iterator<Row> iterator) {
             super(iterator);
             iteratorsOpened++;
         }
