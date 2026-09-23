@@ -15,14 +15,19 @@
  */
 package sleeper.ingest.runner.testutils;
 
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
+import sleeper.ingest.core.IngestResult;
+import sleeper.ingest.runner.IngestRowsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.sketches.testutils.InMemorySketchesStore;
+
+import java.util.List;
 
 public class InMemoryIngest {
 
@@ -39,6 +44,10 @@ public class InMemoryIngest {
         this.stateStore = stateStore;
         this.rowStore = rowStore;
         this.sketchesStore = sketchesStore;
+    }
+
+    public IngestResult write(List<Row> rows) throws Exception {
+        return new IngestRowsFromIterator(createCoordinator(), new WrappedIterator<>(rows.iterator())).write();
     }
 
     public IngestCoordinator<Row> createCoordinator() {

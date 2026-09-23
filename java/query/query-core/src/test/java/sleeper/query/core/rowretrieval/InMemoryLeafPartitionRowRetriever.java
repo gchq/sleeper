@@ -25,6 +25,7 @@ import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.LeafPartitionQuery;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Stream;
@@ -37,6 +38,8 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetriever, LeafPartitionRowRetrieverProvider {
 
     private final InMemoryRowStore rowStore;
+    private int iteratorsOpened = 0;
+    private int iteratorsClosed = 0;
 
     public InMemoryLeafPartitionRowRetriever(InMemoryRowStore rowStore) {
         this.rowStore = rowStore;
@@ -44,7 +47,7 @@ public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetrie
 
     @Override
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
-        return new WrappedIterator<>(getRowsOrThrow(leafPartitionQuery.getFiles())
+        return new TrackingIterator<>(getRowsOrThrow(leafPartitionQuery.getFiles())
                 .filter(row -> isRowInRegion(row, leafPartitionQuery, dataReadSchema))
                 .map(row -> mapToReadSchema(row, dataReadSchema))
                 .iterator());
@@ -53,6 +56,14 @@ public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetrie
     @Override
     public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
         return this;
+    }
+
+    public int getIteratorsOpened() {
+        return iteratorsOpened;
+    }
+
+    public int getIteratorsClosed() {
+        return iteratorsClosed;
     }
 
     private Stream<Row> getRowsOrThrow(List<String> files) throws RowRetrievalException {
@@ -88,5 +99,22 @@ public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetrie
             result.put(fieldName, row.get(fieldName));
         }
         return result;
+    }
+
+    /**
+     * Wraps an iterator and tracks whether it was closed.
+     */
+    private class TrackingIterator<T> extends WrappedIterator<T> {
+
+        public TrackingIterator(Iterator<T> iterator) {
+            super(iterator);
+            iteratorsOpened++;
+        }
+
+        @Override
+        public void close() {
+            iteratorsClosed++;
+        }
+
     }
 }

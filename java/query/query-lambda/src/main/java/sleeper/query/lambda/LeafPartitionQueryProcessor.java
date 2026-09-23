@@ -23,7 +23,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.core.util.ObjectFactory;
-import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutputInfo;
@@ -42,7 +41,7 @@ public class LeafPartitionQueryProcessor {
     private final ObjectFactory objectFactory;
     private final QueryStatusReportListener queryTracker;
 
-    private LeafPartitionQueryProcessor(Builder builder) throws ObjectFactoryException {
+    private LeafPartitionQueryProcessor(Builder builder) {
         tablePropertiesProvider = builder.tablePropertiesProvider;
         rowRetrieverProvider = builder.rowRetrieverProvider;
         resultsOutputProvider = builder.resultsOutputProvider;
@@ -115,7 +114,7 @@ public class LeafPartitionQueryProcessor {
             return this;
         }
 
-        public LeafPartitionQueryProcessor build() throws ObjectFactoryException {
+        public LeafPartitionQueryProcessor build() {
             return new LeafPartitionQueryProcessor(this);
         }
     }
