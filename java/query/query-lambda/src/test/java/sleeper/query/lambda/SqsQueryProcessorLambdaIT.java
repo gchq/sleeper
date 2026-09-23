@@ -74,12 +74,9 @@ import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,11 +118,13 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     private SqsQueryProcessorLambda queryProcessorLambda;
     private SqsLeafPartitionQueryLambda queyLeafPartitionQueryLambda;
 
+    private static final List<String> KEY1_VALUES = List.of("D", "F", "G", "U");
+
     private static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(
-                    new Field("year", new IntType()),
-                    new Field("month", new IntType()),
-                    new Field("day", new IntType()))
+                    new Field("key1", new StringType()),
+                    new Field("key2", new IntType()),
+                    new Field("key3", new IntType()))
             .sortKeyFields(
                     new Field("timestamp", new LongType()))
             .valueFields(
@@ -153,15 +152,16 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     @Test
     public void shouldSetStatusOfQueryToCompletedIfLeadingToNoSubQueries() {
         // Given
-        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        TableProperties table = createTable();
+        // No data is loaded
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
-        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2000, 2010);
+        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "A", "Z");
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, null);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, null);
         Query query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
@@ -180,16 +180,16 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     @Test
     public void shouldSplitUpQueryWhenItSpansMultiplePartitions() throws Exception {
         // Given
-        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
-        loadData(timeSeriesTable, 2005, 2008);
+        TableProperties table = createTable();
+        loadData(table);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
-        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2000, true, 2010, true);
+        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "A", true, "Z", true);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, true, null, true);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, true, null, true);
         Query query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
@@ -216,14 +216,14 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     @Test
     public void shouldSetStatusOfQueryAndSubQueriesToCOMPLETEDWhenAllSubQueriesHaveFinished() throws Exception {
         // Given
-        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
-        loadData(timeSeriesTable, 2005, 2008);
+        TableProperties table = createTable();
+        loadData(table);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2000, true, 2010, true);
+        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "A", true, "Z", true);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, true, null, true);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, true, null, true);
         Query query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
@@ -239,28 +239,28 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         assertThat(queryTracker.getAllQueries())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
                 .containsExactlyInAnyOrder(
-                        builder.lastKnownState(COMPLETED).rowCount(1461L).build(),
-                        builder.lastKnownState(COMPLETED).rowCount(365L).build(),
-                        builder.lastKnownState(COMPLETED).rowCount(365L).build(),
-                        builder.lastKnownState(COMPLETED).rowCount(365L).build(),
-                        builder.lastKnownState(COMPLETED).rowCount(366L).build());
+                        builder.lastKnownState(COMPLETED).rowCount(1344L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(336L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(336L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(336L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(336L).build());
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate", "subQueryId")
-                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1461L).build());
+                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1344L).build());
     }
 
     @Test
     public void shouldSetStatusOfQueryAndSubQueriesToCOMPLETEDWhenAllSubQueriesHaveFinishedForTwoTables() throws Exception {
         // Given
-        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
-        loadData(timeSeriesTable, 2005, 2008);
+        TableProperties table = createTable();
+        loadData(table);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2000, true, 2010, true);
+        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "A", true, "Z", true);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, true, null, true);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, true, null, true);
         Query query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
@@ -277,11 +277,11 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
-                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1461L).build());
+                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1344L).build());
         // Given
-        timeSeriesTable = createTimeSeriesTable(2000, 2020);
+        table = createTable();
         query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
@@ -303,16 +303,16 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     @Test
     public void shouldSetStatusOfQueryToCOMPLETEDWhenOnlyOneSubQueryIsCreated() {
         // Given
-        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
-        loadData(timeSeriesTable, 2005, 2008);
+        TableProperties table = createTable();
+        loadData(table);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
-        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 2, true);
         Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 3, true, 7, true);
         Query query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
@@ -341,21 +341,21 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     @Test
     public void shouldPublishResultsToS3ByDefault() throws Exception {
         // Given
-        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
-        loadData(timeSeriesTable, 2005, 2008);
+        TableProperties table = createTable();
+        loadData(table);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
-        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
-        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
+        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 4, true, 28, true);
         Region region1 = new Region(Arrays.asList(range11, range12, range13));
-        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Query query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
                 .build();
@@ -373,16 +373,16 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     @Test
     public void shouldPublishResultsToS3() throws Exception {
         // Given
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(2000, 2020);
-        loadData(timeSeriesTable, 2005, 2008);
+        TableProperties table = this.createTable();
+        loadData(table);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
-        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
-        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
+        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 4, true, 28, true);
         Region region1 = new Region(Arrays.asList(range11, range12, range13));
-        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
@@ -390,7 +390,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         resultsPublishConfig.put(ResultsOutput.DESTINATION, S3ResultsOutput.S3);
         resultsPublishConfig.put(S3ResultsOutput.S3_BUCKET, instanceProperties.get(QUERY_RESULTS_BUCKET));
         Query query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
                 .processingConfig(QueryProcessingConfig.builder()
@@ -411,16 +411,16 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     @Test
     public void shouldPublishResultsToSQS() throws Exception {
         // Given
-        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
-        loadData(timeSeriesTable, 2005, 2008);
+        TableProperties table = createTable();
+        loadData(table);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
-        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
-        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
+        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 4, true, 28, true);
         Region region1 = new Region(Arrays.asList(range11, range12, range13));
-        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
@@ -429,7 +429,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         resultsPublishConfig.put(SQSResultsOutput.SQS_RESULTS_URL, instanceProperties.get(QUERY_RESULTS_QUEUE_URL));
         resultsPublishConfig.put(SQSResultsOutput.BATCH_SIZE, "1");
         Query query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
                 .processingConfig(QueryProcessingConfig.builder()
@@ -450,8 +450,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     @Test
     public void shouldPublishResultsToWebSocket() throws Exception {
         // Given
-        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
-        loadData(timeSeriesTable, 2005, 2008);
+        TableProperties table = createTable();
+        loadData(table);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
@@ -460,11 +460,11 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         wireMockServer.start();
 
         // When
-        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
-        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
+        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 4, true, 28, true);
         Region region1 = new Region(Arrays.asList(range11, range12, range13));
-        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
@@ -477,7 +477,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         resultsPublishConfig.put(WebSocketOutput.ACCESS_KEY, "accessKey");
         resultsPublishConfig.put(WebSocketOutput.SECRET_KEY, "secretKey");
         Query query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
                 .processingConfig(QueryProcessingConfig.builder()
@@ -494,7 +494,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
             assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
             assertThat(status.getRowCount().longValue()).isEqualTo(28);
             wireMockServer.verify(28, postRequestedFor(url));
-            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(containing("\"day\":2,")));
+            wireMockServer.verify(1, postRequestedFor(url).withRequestBody(containing("\"key3\":2,")));
         } finally {
             wireMockServer.stop();
         }
@@ -503,8 +503,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     @Test
     public void shouldPublishResultsToWebSocketInBatches() throws Exception {
         // Given
-        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
-        loadData(timeSeriesTable, 2005, 2008);
+        TableProperties table = createTable();
+        loadData(table);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
@@ -513,11 +513,11 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         wireMockServer.start();
 
         // When
-        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
-        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
+        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 4, true, 28, true);
         Region region1 = new Region(Arrays.asList(range11, range12, range13));
-        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
@@ -530,7 +530,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         resultsPublishConfig.put(WebSocketOutput.ACCESS_KEY, "accessKey");
         resultsPublishConfig.put(WebSocketOutput.SECRET_KEY, "secretKey");
         Query query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
                 .processingConfig(QueryProcessingConfig.builder()
@@ -555,8 +555,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     @Test
     public void shouldPublishStatusReportsToWebSocket() {
         // Given
-        TableProperties timeSeriesTable = this.createTimeSeriesTable(2000, 2020);
-        loadData(timeSeriesTable, 2005, 2008);
+        TableProperties table = this.createTable();
+        loadData(table);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
@@ -565,11 +565,11 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         wireMockServer.start();
 
         // When
-        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
-        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
+        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 4, true, 28, true);
         Region region1 = new Region(Arrays.asList(range11, range12, range13));
-        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
@@ -581,7 +581,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         statusReportDestination.put(WebSocketOutput.ACCESS_KEY, "accessKey");
         statusReportDestination.put(WebSocketOutput.SECRET_KEY, "secretKey");
         Query query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
                 .processingConfig(QueryProcessingConfig.builder()
@@ -614,8 +614,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     @Test
     public void shouldPublishMultipleStatusReportsToWebSocketForSubQueries() {
         // Given
-        TableProperties timeSeriesTable = createTimeSeriesTable(2000, 2020);
-        loadData(timeSeriesTable, 2005, 2008);
+        TableProperties table = createTable();
+        loadData(table);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
@@ -624,11 +624,11 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         wireMockServer.start();
 
         // When
-        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
+        Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "G", true, "G", true);
         Range range12 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 1, true, 1, true);
-        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 7, true, 31, true);
+        Range range13 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 4, true, 28, true);
         Region region1 = new Region(Arrays.asList(range11, range12, range13));
-        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2007, true, 2007, true);
+        Range range21 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "U", true, "U", true);
         Range range22 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 2, true, 2, true);
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
@@ -640,7 +640,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         statusReportDestination.put(WebSocketOutput.ACCESS_KEY, "accessKey");
         statusReportDestination.put(WebSocketOutput.SECRET_KEY, "secretKey");
         Query query = Query.builder()
-                .tableName(timeSeriesTable.get(TABLE_NAME))
+                .tableName(table.get(TABLE_NAME))
                 .queryId("abc")
                 .regions(List.of(region1, region2))
                 .processingConfig(QueryProcessingConfig.builder()
@@ -730,7 +730,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         processLeafPartitionQuery(1);
     }
 
-    private void loadData(TableProperties tableProperties, Integer minYear, Integer maxYear) {
+    private void loadData(TableProperties tableProperties) {
         try {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
@@ -739,44 +739,41 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                     .instanceProperties(instanceProperties)
                     .hadoopConfiguration(hadoopConf)
                     .build();
-            factory.ingestFromRowIterator(tableProperties, generateTimeSeriesData(minYear, maxYear).iterator());
+            factory.ingestFromRowIterator(tableProperties, generateData().iterator());
         } catch (IOException | IteratorCreationException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         }
     }
 
-    private List<Row> generateTimeSeriesData(Integer minYear, Integer maxYear) {
-        LocalDate startDate = LocalDate.of(minYear, 1, 1);
-        LocalDate endDate = LocalDate.of(maxYear + 1, 1, 1);
+    private List<Row> generateData() {
         List<Row> rows = new ArrayList<>();
-        for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
-            Row row = new Row();
-            row.put("year", date.getYear());
-            row.put("month", date.getMonthValue());
-            row.put("day", date.getDayOfMonth());
-            row.put("timestamp", Date.from(Timestamp.valueOf(date.atStartOfDay()).toInstant()).getTime());
-            row.put("count", (long) date.getYear() * (long) date.getMonthValue() * (long) date.getDayOfMonth());
-            HashMap<String, String> map = new HashMap<>();
-            map.put(date.getMonth().name(), date.getMonth().name());
-            row.put("map", map);
-            row.put("list", Lists.newArrayList(date.getEra().toString()));
-            row.put("str", date.toString());
-            rows.add(row);
+        for (String key1 : KEY1_VALUES) {
+            for (int key2 = 1; key2 <= 12; key2++) {
+                for (int key3 = 1; key3 <= 28; key3++) {
+                    Row row = new Row();
+                    row.put("key1", key1);
+                    row.put("key2", key2);
+                    row.put("key3", key3);
+                    row.put("timestamp", (long) key2 * 100 + key3);
+                    row.put("count", (long) key2 * key3);
+                    HashMap<String, String> map = new HashMap<>();
+                    map.put("mapKey", "mapValue");
+                    row.put("map", map);
+                    row.put("list", Lists.newArrayList("listValue"));
+                    row.put("str", key1 + "-" + key2 + "-" + key3);
+                    rows.add(row);
+                }
+            }
         }
 
         return rows;
     }
 
-    private TableProperties createTimeSeriesTable(Integer minSplitPoint, Integer maxSplitPoint) {
-        List<Object> splitPoints = new ArrayList<>();
-        for (int i = minSplitPoint; i <= maxSplitPoint; i++) {
-            splitPoints.add(i);
-        }
-
-        return createTimeSeriesTable(splitPoints);
+    private TableProperties createTable() {
+        return createTable(List.of("F", "G", "U"));
     }
 
-    private TableProperties createTimeSeriesTable(List<Object> splitPoints) {
+    private TableProperties createTable(List<Object> splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
