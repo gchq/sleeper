@@ -52,7 +52,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATimeFrom;
 
-public class LeafPartitionQueryProcessorTest {
+public class SqsLeafPartitionQueryProcessorTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new StringType()));
@@ -96,14 +96,14 @@ public class LeafPartitionQueryProcessorTest {
 
     private void executeQuery(Query query) {
         List<LeafPartitionQuery> subQueries = QueryPlanner.initialiseNow(tableProperties, stateStore).splitIntoLeafPartitionQueries(query);
-        LeafPartitionQueryProcessor processor = createProcessor();
+        SqsLeafPartitionQueryProcessor processor = createProcessor();
         for (LeafPartitionQuery subQuery : subQueries) {
             processor.processQuery(subQuery);
         }
     }
 
-    private LeafPartitionQueryProcessor createProcessor() {
-        return LeafPartitionQueryProcessor.builder()
+    private SqsLeafPartitionQueryProcessor createProcessor() {
+        return SqsLeafPartitionQueryProcessor.builder()
                 .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                 .rowRetrieverProvider(rowRetriever)
                 .resultsOutputProvider(resultsOutput)
