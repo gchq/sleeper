@@ -56,9 +56,10 @@ See the [deployment guide](../deployment-guide.md). We have support for deployin
 the CDK directly, either with your own CDK app or with ours in the CDK CLI.
 
 Our scripts take an instance ID, VPC ID, subnet IDs, and options to point it to an instance configuration, either as a
-single properties file with `--properties-file`, or as a configuration directory with `--config-dir`. The
-`scripts/deploy/deployNew.sh` script requires one of these options to be set, so a caller must always provide their own
-instance configuration.
+single properties file with `--properties-file`, or as a configuration directory with `--config-dir`. Using
+`--properties-file` deploys the instance with no tables, while `--config-dir` also scans the directory for table
+properties, tags and schemas so that tables can be deployed along with the instance. The `scripts/deploy/deployNew.sh`
+script requires one of these options to be set, so a caller must always provide their own instance configuration.
 
 There is also an optional `--paused` flag to deploy the instance with periodic background processes paused. Run
 `scripts/deploy/deployNew.sh --help` for the full command line usage.

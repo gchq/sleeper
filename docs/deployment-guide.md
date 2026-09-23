@@ -52,8 +52,13 @@ be read by the CDK.
 
 You must provide your own configuration for a Sleeper instance to deploy a new one. See
 the [configuration documentation](deployment/instance-configuration.md) for more details. These commands use the basic
-example as a starting point. You can either point at an instance properties file with `--properties-file`, or at a
-directory containing an `instance.properties` file with `--config-dir`:
+example as a starting point. There are two ways to provide your configuration:
+
+- `--properties-file` points at a single instance properties file. This will deploy the instance with no tables.
+- `--config-dir` points at a directory containing an `instance.properties` file. The directory will also be scanned for
+  table properties, tags and schemas, so tables can be deployed along with the instance. See
+  the [configuration documentation](deployment/instance-configuration.md#configuration-folder-structure) for the expected
+  directory structure.
 
 ```bash
 mkdir scripts/my-instance
