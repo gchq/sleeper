@@ -32,7 +32,7 @@ If you prefer to use the CDK CLI directly for deployment, or you want to include
 
 ### Scripted deployment
 
-The scripts for deployment create an instance of Sleeper either from your own configuration files, or from templates.
+The scripts for deployment create an instance of Sleeper either from your own configuration files.
 
 The two scripts available to use are found in scripts/deploy and have the following usecases:
 
