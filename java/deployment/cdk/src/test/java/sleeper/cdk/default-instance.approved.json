@@ -7841,6 +7841,9 @@
               }
             ],
             "BillingMode": "PAY_PER_REQUEST",
+            "PointInTimeRecoverySpecification": {
+              "PointInTimeRecoveryEnabled": false
+            },
             "KeySchema": [
               {
                 "AttributeName": "TABLE_ID",
@@ -7879,6 +7882,9 @@
               "StreamViewType": "NEW_IMAGE"
             },
             "BillingMode": "PAY_PER_REQUEST",
+            "PointInTimeRecoverySpecification": {
+              "PointInTimeRecoveryEnabled": false
+            },
             "KeySchema": [
               {
                 "AttributeName": "TABLE_ID",
@@ -7918,6 +7924,9 @@
               }
             ],
             "BillingMode": "PAY_PER_REQUEST",
+            "PointInTimeRecoverySpecification": {
+              "PointInTimeRecoveryEnabled": false
+            },
             "KeySchema": [
               {
                 "AttributeName": "TABLE_ID_AND_SNAPSHOT_TYPE",
@@ -7960,6 +7969,9 @@
               "StreamViewType": "NEW_IMAGE"
             },
             "BillingMode": "PAY_PER_REQUEST",
+            "PointInTimeRecoverySpecification": {
+              "PointInTimeRecoveryEnabled": false
+            },
             "KeySchema": [
               {
                 "AttributeName": "TABLE_ID",
@@ -22774,6 +22786,9 @@
               }
             ],
             "BillingMode": "PAY_PER_REQUEST",
+            "PointInTimeRecoverySpecification": {
+              "PointInTimeRecoveryEnabled": false
+            },
             "KeySchema": [
               {
                 "AttributeName": "queryId",
