@@ -48,35 +48,33 @@ for details. These artefacts will be uploaded to a separate CDK stack from the S
 The required configuration files will be copied or written to a folder called `generated` in the scripts directory, to
 be read by the CDK.
 
-#### From templates
-
-You can find the template files [here](../scripts/templates). It is recommended that you change these templates to
-configure Sleeper in the way that you want before you run the automated script. At the very least you will want to
-change the tags.template file. See the Configuration section below for further details.
-
-If you deploy from the templates, it will create an instance with no tables:
-
-```bash
-cd scripts
-editor templates/instanceproperties.template
-editor templates/tags.template
-./deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids>
-```
-
-Here `vpc-id` and `subnet-ids` are the ids of the VPC and subnets that some components of Sleeper will be deployed into.
-Multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
-
 #### From configuration files
 
-You can create your own configuration for a Sleeper instance, including tables, and deploy that. See
+You must provide your own configuration for a Sleeper instance to deploy a new one. See
 the [configuration documentation](deployment/instance-configuration.md) for more details. These commands use the basic
-example as a starting point:
+example as a starting point. You can either point at an instance properties file with `--properties-file`, or at a
+directory containing an `instance.properties` file with `--config-dir`:
 
 ```bash
 mkdir scripts/my-instance
 cp example/basic/* scripts/my-instance/
 # Edit all configuration files in the new directory to set your own values
-./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
+
+# Deploy pointing at the instance properties file
+./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> --properties-file ./scripts/my-instance/instance.properties
+
+# Or deploy pointing at the configuration directory (also picks up tables and tags)
+./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> --config-dir ./scripts/my-instance
+```
+
+Here `vpc-id` and `subnet-ids` are the ids of the VPC and subnets that some components of Sleeper will be deployed into.
+Multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
+
+One of `--properties-file` or `--config-dir` must be set, but not both. Add `--paused` to deploy the instance with
+periodic background processes paused. For more information please run:
+
+```bash
+./scripts/deploy/deployNew.sh --help
 ```
 
 #### Upgrade/redeploy existing instance
