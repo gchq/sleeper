@@ -98,6 +98,17 @@ public class AdminClientPropertiesStore {
         return client.createTablePropertiesStore(instanceProperties).streamAllTables();
     }
 
+    private Stream<TableProperties> streamValidTableProperties(InstanceProperties instanceProperties) {
+        return streamTableProperties(instanceProperties)
+                .filter(table -> {
+                    if (table.isValid()) {
+                        return true;
+                    }
+                    LOGGER.warn("Excluding invalid table {} from local configuration", table.get(TABLE_NAME));
+                    return false;
+                });
+    }
+
     public void saveInstanceProperties(InstanceProperties properties) {
         saveInstanceProperties(properties, () -> {
             LOGGER.info("Saving to AWS");
@@ -116,14 +127,14 @@ public class AdminClientPropertiesStore {
     private void saveInstanceProperties(InstanceProperties properties, SaveInstanceProperties saveProperties) {
         try {
             LOGGER.info("Saving to local configuration");
-            client.saveLocalProperties(properties, streamTableProperties(properties));
+            client.saveLocalProperties(properties, streamValidTableProperties(properties));
             saveProperties.save();
         } catch (IOException | RuntimeException | InterruptedException e) {
             String instanceId = properties.get(ID);
             CouldNotSaveInstanceProperties wrapped = new CouldNotSaveInstanceProperties(instanceId, e);
             try {
                 LOGGER.info("Reverting local configuration");
-                client.saveLocalProperties(loadInstanceProperties(instanceId), streamTableProperties(properties));
+                client.saveLocalProperties(loadInstanceProperties(instanceId), streamValidTableProperties(properties));
             } catch (Exception e2) {
                 wrapped.addSuppressed(e2);
             }
