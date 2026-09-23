@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
@@ -33,6 +32,8 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryProcessingConfig;
+import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.InMemoryResultsOutput;
 import sleeper.query.core.rowretrieval.QueryPlanner;
@@ -64,13 +65,15 @@ public class SqsLeafPartitionQueryProcessorTest {
     private final InMemoryQueryTracker queryTracker = new InMemoryQueryTracker(instanceProperties, timePassesAMinuteAtATimeFrom(Instant.parse("2026-09-23T11:30:00Z")));
 
     @Test
-    void shouldRetrieveSingleRow() throws Exception {
+    void shouldRetrieveSingleRow() {
         // Given
         Row row = new Row(Map.of("key", "test"));
         ingest.write(List.of(row));
 
         // When
-        executeQueryByRange(rangeFactory().createRangeCoveringAllValues("key"));
+        executeQuery(queryForTable()
+                .regions(regionsCoveringAllValues("key"))
+                .build());
 
         // Then the row is sent to the results output
         assertThat(resultsOutput.streamPublishedResults()).containsExactly(row);
@@ -83,15 +86,24 @@ public class SqsLeafPartitionQueryProcessorTest {
                 .containsExactly(QueryState.COMPLETED);
     }
 
-    private RangeFactory rangeFactory() {
-        return new RangeFactory(tableProperties.getSchema());
-    }
+    @Test
+    void shouldTrackWhenResultsPublisherConfigIsUnknown() {
+        // Given
+        ingest.write(List.of(new Row(Map.of("key", "test"))));
+        Query query = queryForTable()
+                .regions(regionsCoveringAllValues("key"))
+                .processingConfig(QueryProcessingConfig.builder()
+                        .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, "unknown-destination"))
+                        .build())
+                .build();
 
-    private void executeQueryByRange(Range range) throws Exception {
-        executeQuery(Query.builder()
-                .tableName(tableProperties.get(TABLE_NAME))
-                .regions(List.of(new Region(range)))
-                .build());
+        // When
+        executeQuery(query);
+
+        // Then
+        assertThat(queryTracker.getAllQueries())
+                .extracting(TrackedQuery::getLastKnownState)
+                .containsExactly(QueryState.FAILED);
     }
 
     private void executeQuery(Query query) {
@@ -106,6 +118,19 @@ public class SqsLeafPartitionQueryProcessorTest {
         return new SqsLeafPartitionQueryProcessor(
                 new FixedTablePropertiesProvider(tableProperties),
                 rowRetriever, resultsOutput, ObjectFactory.noUserJars(), queryTracker);
+    }
+
+    private Query.Builder queryForTable() {
+        return Query.builder()
+                .tableName(tableProperties.get(TABLE_NAME));
+    }
+
+    private List<Region> regionsCoveringAllValues(String fieldName) {
+        return List.of(new Region(rangeFactory().createRangeCoveringAllValues(fieldName)));
+    }
+
+    private RangeFactory rangeFactory() {
+        return new RangeFactory(tableProperties.getSchema());
     }
 
 }

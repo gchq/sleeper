@@ -15,8 +15,6 @@
  */
 package sleeper.query.lambda;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -24,7 +22,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
-import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.output.ResultsOutputProvider;
 import sleeper.query.runner.output.NoResultsOutput;
 import sleeper.query.runner.output.S3ResultsOutput;
@@ -32,16 +29,12 @@ import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.output.WebSocketOutput;
 import sleeper.query.runner.output.WebSocketResultsOutput;
 
-import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 public class AwsResultsOutputProvider implements ResultsOutputProvider {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(AwsResultsOutputProvider.class);
 
     private final InstanceProperties instanceProperties;
     private final TableHadoopConfigurationProvider hadoopProvider;
@@ -69,16 +62,7 @@ public class AwsResultsOutputProvider implements ResultsOutputProvider {
         } else if (NO_RESULTS_OUTPUT.equals(destination)) {
             return new NoResultsOutput();
         } else {
-            LOGGER.info("Unknown results publisher from config {}", resultsPublisherConfig);
-            return (q, results) -> {
-                try {
-                    results.close();
-                } catch (Exception e) {
-                    LOGGER.error("Exception closing results of query", e);
-                }
-                return new ResultsOutputInfo(0, Collections.emptyList(),
-                        new IOException("Unknown results publisher from config " + query.getProcessingConfig().getResultsPublisherConfig()));
-            };
+            throw new RuntimeException("Unknown results publisher from config " + resultsPublisherConfig);
         }
     }
 

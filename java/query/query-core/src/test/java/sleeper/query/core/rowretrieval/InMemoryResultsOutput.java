@@ -51,6 +51,10 @@ public class InMemoryResultsOutput implements ResultsOutput, ResultsOutputProvid
 
     @Override
     public ResultsOutput getResultsOutput(TableProperties tableProperties, LeafPartitionQuery query) {
+        Map<String, String> resultsPublisherConfig = query.getProcessingConfig().getResultsPublisherConfig();
+        if (resultsPublisherConfig != null && resultsPublisherConfig.containsKey(DESTINATION)) {
+            throw new RuntimeException("Unknown results publisher from config " + resultsPublisherConfig);
+        }
         return this;
     }
 

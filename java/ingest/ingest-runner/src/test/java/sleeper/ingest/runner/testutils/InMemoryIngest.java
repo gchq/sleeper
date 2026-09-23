@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.runner.testutils;
 
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -27,6 +28,8 @@ import sleeper.ingest.runner.IngestRowsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 
 public class InMemoryIngest {
@@ -46,8 +49,14 @@ public class InMemoryIngest {
         this.sketchesStore = sketchesStore;
     }
 
-    public IngestResult write(List<Row> rows) throws Exception {
-        return new IngestRowsFromIterator(createCoordinator(), new WrappedIterator<>(rows.iterator())).write();
+    public IngestResult write(List<Row> rows) {
+        try {
+            return new IngestRowsFromIterator(createCoordinator(), new WrappedIterator<>(rows.iterator())).write();
+        } catch (IteratorCreationException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public IngestCoordinator<Row> createCoordinator() {
