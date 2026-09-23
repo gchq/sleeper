@@ -42,16 +42,19 @@ import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.core.testutils.SupplierTestHelper.numberedUUID;
+import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedUuidsWithPrefix;
 import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATimeFrom;
 
 public class SqsLeafPartitionQueryProcessorTest {
@@ -63,7 +66,11 @@ public class SqsLeafPartitionQueryProcessorTest {
     private final InMemoryIngest ingest = new InMemoryIngest(instanceProperties, tableProperties, stateStore, rowStore, new InMemorySketchesStore());
     private final InMemoryLeafPartitionRowRetriever rowRetriever = new InMemoryLeafPartitionRowRetriever(rowStore);
     private final InMemoryResultsOutput resultsOutput = new InMemoryResultsOutput();
-    private final InMemoryQueryTracker queryTracker = new InMemoryQueryTracker(instanceProperties, timePassesAMinuteAtATimeFrom(Instant.parse("2026-09-23T11:30:00Z")));
+    private final Instant startTime = Instant.parse("2026-09-23T11:30:00Z");
+    private final Supplier<Instant> timeSupplier = timePassesAMinuteAtATimeFrom(startTime);
+    private final InMemoryQueryTracker queryTracker = new InMemoryQueryTracker(instanceProperties, timeSupplier);
+    private final Supplier<String> queryIdSupplier = supplyNumberedUuidsWithPrefix("query");
+    private final Supplier<String> subQueryIdSupplier = supplyNumberedUuidsWithPrefix("subquery");
 
     @Test
     void shouldRetrieveSingleRow() {
@@ -72,7 +79,7 @@ public class SqsLeafPartitionQueryProcessorTest {
         ingest.write(List.of(row));
 
         // When
-        executeQuery(queryForTable()
+        executeQuery(queryBuilderForTable()
                 .regions(regionsCoveringAllValues("key"))
                 .build());
 
@@ -82,16 +89,18 @@ public class SqsLeafPartitionQueryProcessorTest {
         assertThat(rowRetriever.getIteratorsOpened()).isEqualTo(1);
         assertThat(rowRetriever.getIteratorsClosed()).isEqualTo(1);
         // And the leaf query completion is tracked
-        assertThat(queryTracker.getAllQueries())
-                .extracting(TrackedQuery::getLastKnownState)
-                .containsExactly(QueryState.COMPLETED);
+        assertThat(queryTracker.getAllQueries()).containsExactly(
+                trackedQueryBuilder(1)
+                        .lastKnownState(QueryState.COMPLETED)
+                        .rowCount(1L)
+                        .build());
     }
 
     @Test
     void shouldTrackWhenResultsPublisherConfigIsUnknown() {
         // Given
         ingest.write(List.of(new Row(Map.of("key", "test"))));
-        Query query = queryForTable()
+        Query query = queryBuilderForTable()
                 .regions(regionsCoveringAllValues("key"))
                 .processingConfig(QueryProcessingConfig.builder()
                         .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, "unknown-destination"))
@@ -103,13 +112,17 @@ public class SqsLeafPartitionQueryProcessorTest {
 
         // Then
         assertThat(resultsOutput.streamPublishedResults()).isEmpty();
-        assertThat(queryTracker.getAllQueries())
-                .extracting(TrackedQuery::getLastKnownState, TrackedQuery::getErrorMessage)
-                .containsExactly(tuple(QueryState.FAILED, "Unknown results publisher for destination: unknown-destination"));
+        assertThat(queryTracker.getAllQueries()).containsExactly(
+                trackedQueryBuilder(1)
+                        .lastKnownState(QueryState.FAILED)
+                        .errorMessage("Unknown results publisher for destination: unknown-destination")
+                        .build());
     }
 
     private void executeQuery(Query query) {
-        List<LeafPartitionQuery> subQueries = QueryPlanner.initialiseNow(tableProperties, stateStore).splitIntoLeafPartitionQueries(query);
+        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore, timeSupplier.get(), subQueryIdSupplier);
+        planner.init();
+        List<LeafPartitionQuery> subQueries = planner.splitIntoLeafPartitionQueries(query);
         SqsLeafPartitionQueryProcessor processor = createProcessor();
         for (LeafPartitionQuery subQuery : subQueries) {
             processor.processQuery(subQuery);
@@ -122,8 +135,9 @@ public class SqsLeafPartitionQueryProcessorTest {
                 rowRetriever, resultsOutput, ObjectFactory.noUserJars(), queryTracker);
     }
 
-    private Query.Builder queryForTable() {
+    private Query.Builder queryBuilderForTable() {
         return Query.builder()
+                .queryId(queryIdSupplier.get())
                 .tableName(tableProperties.get(TABLE_NAME));
     }
 
@@ -133,6 +147,15 @@ public class SqsLeafPartitionQueryProcessorTest {
 
     private RangeFactory rangeFactory() {
         return new RangeFactory(tableProperties.getSchema());
+    }
+
+    private TrackedQuery.Builder trackedQueryBuilder(int queryNumber) {
+        Duration timeOffset = Duration.ofMinutes(queryNumber + 1);
+        return TrackedQuery.builder()
+                .queryId(numberedUUID("query", queryNumber))
+                .subQueryId(numberedUUID("subquery", queryNumber))
+                .lastUpdateTime(startTime.plus(timeOffset))
+                .expiryDate(startTime.plus(timeOffset).plus(Duration.ofDays(1)));
     }
 
 }
