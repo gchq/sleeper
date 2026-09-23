@@ -111,6 +111,20 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
 
         @Test
+        void shouldUpdateInstancePropertyWhenTableHasInvalidConfiguration() {
+            // Given
+            createTableInS3WithEmptySchema("invalid-table");
+
+            // When
+            updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
+
+            // Then
+            assertThat(store().loadInstanceProperties(instanceId).get(FARGATE_VERSION))
+                    .isEqualTo("1.2.3");
+            assertThat(loadTablesFromDirectory(instanceProperties, tempDir)).isEmpty();
+        }
+
+        @Test
         void shouldRemoveDeletedTableFromLocalDirectoryWhenInstancePropertyIsUpdated() {
             // Given
             createTableInS3("old-test-table");
@@ -232,6 +246,21 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             assertThat(localTablesWhenCdkDeployed)
                     .extracting(table -> table.get(TABLE_NAME))
                     .containsExactly("test-table");
+        }
+
+        @Test
+        void shouldExcludeInvalidTableWhenDeployingInstancePropertyChange() throws Exception {
+            // Given
+            createTableInS3WithEmptySchema("invalid-table");
+            List<TableProperties> localTablesWhenCdkDeployed = new ArrayList<>();
+            rememberLocalPropertiesWhenCdkDeployed(new AtomicReference<>(), localTablesWhenCdkDeployed);
+
+            // When
+            updateInstancePropertyViaCdk(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
+
+            // Then
+            verifyAnyAppDeployedWithCdk();
+            assertThat(localTablesWhenCdkDeployed).isEmpty();
         }
 
         @Test
