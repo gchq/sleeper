@@ -34,6 +34,9 @@ import java.util.Map;
 
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
+/**
+ * A provider to create outputs to send query results in AWS.
+ */
 public class AwsResultsOutputProvider implements ResultsOutputProvider {
 
     private final InstanceProperties instanceProperties;
