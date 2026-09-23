@@ -26,6 +26,7 @@ import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.ITable;
+import software.amazon.awscdk.services.dynamodb.PointInTimeRecoverySpecification;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
@@ -68,6 +69,7 @@ import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAM
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_RESULTS_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY;
 
 /**
  * Deploys resources to run queries. This consists of lambda {@link Function}s to
@@ -103,6 +105,9 @@ public class QueryStack extends NestedStack {
         Table queryTrackingTable = Table.Builder.create(this, "QueryTrackingTable")
                 .tableName(tableName)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled(instanceProperties.getBoolean(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY))
+                        .build())
                 .timeToLiveAttribute("expiryDate")
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .partitionKey(Attribute.builder()
