@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -103,8 +104,8 @@ public class SqsLeafPartitionQueryProcessorTest {
         // Then
         assertThat(resultsOutput.streamPublishedResults()).isEmpty();
         assertThat(queryTracker.getAllQueries())
-                .extracting(TrackedQuery::getLastKnownState)
-                .containsExactly(QueryState.FAILED);
+                .extracting(TrackedQuery::getLastKnownState, TrackedQuery::getErrorMessage)
+                .containsExactly(tuple(QueryState.FAILED, "Unknown results publisher for destination: unknown-destination"));
     }
 
     private void executeQuery(Query query) {

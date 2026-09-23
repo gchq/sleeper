@@ -15,6 +15,9 @@
  */
 package sleeper.query.core.rowretrieval;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
@@ -35,6 +38,7 @@ import java.util.stream.Stream;
  * A results output to hold query results in memory.
  */
 public class InMemoryResultsOutput implements ResultsOutput, ResultsOutputProvider {
+    private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryResultsOutput.class);
 
     private final Map<String, List<Row>> queryIdToPublishedResults = new HashMap<>();
 
@@ -53,7 +57,8 @@ public class InMemoryResultsOutput implements ResultsOutput, ResultsOutputProvid
     public ResultsOutput getResultsOutput(TableProperties tableProperties, LeafPartitionQuery query) {
         Map<String, String> resultsPublisherConfig = query.getProcessingConfig().getResultsPublisherConfig();
         if (resultsPublisherConfig != null && resultsPublisherConfig.containsKey(DESTINATION)) {
-            throw new RuntimeException("Unknown results publisher from config " + resultsPublisherConfig);
+            LOGGER.error("Unknown results publisher config: {}", resultsPublisherConfig);
+            throw new RuntimeException("Unknown results publisher for destination: " + resultsPublisherConfig.get(DESTINATION));
         }
         return this;
     }

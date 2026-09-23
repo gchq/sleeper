@@ -15,6 +15,8 @@
  */
 package sleeper.query.lambda;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -38,6 +40,7 @@ import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
  * A provider to create outputs to send query results in AWS.
  */
 public class AwsResultsOutputProvider implements ResultsOutputProvider {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsResultsOutputProvider.class);
 
     private final InstanceProperties instanceProperties;
     private final TableHadoopConfigurationProvider hadoopProvider;
@@ -65,7 +68,8 @@ public class AwsResultsOutputProvider implements ResultsOutputProvider {
         } else if (NO_RESULTS_OUTPUT.equals(destination)) {
             return new NoResultsOutput();
         } else {
-            throw new RuntimeException("Unknown results publisher from config " + resultsPublisherConfig);
+            LOGGER.error("Unknown results publisher config: {}", resultsPublisherConfig);
+            throw new RuntimeException("Unknown results publisher for destination: " + destination);
         }
     }
 
