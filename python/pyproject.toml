@@ -15,7 +15,7 @@ dependencies = [
     "boto3-stubs[essential]>=1.43.46,<2.0.0",
     "websockets>=16.1.1,<17.0.0",
     "jproperties>=2.1.2,<3.0.0",
-    "requests>=2.32,<3.0.0",
+    "requests>=2.34.2,<3.0.0",
 ]
 
 classifiers = [
