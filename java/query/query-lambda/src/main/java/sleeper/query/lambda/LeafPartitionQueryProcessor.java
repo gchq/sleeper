@@ -24,6 +24,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.output.ResultsOutputProvider;
@@ -31,6 +32,8 @@ import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
+
+import java.io.IOException;
 
 public class LeafPartitionQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionQueryProcessor.class);
@@ -67,7 +70,7 @@ public class LeafPartitionQueryProcessor {
 
                 query.reportCompleted(queryTrackers, outputInfo);
             }
-        } catch (Exception e) {
+        } catch (IOException | QueryException | RuntimeException e) {
             LOGGER.error("Exception thrown executing subquery {} under query {}", leafPartitionQuery.getSubQueryId(), leafPartitionQuery.getQueryId(), e);
             query.reportFailed(queryTrackers, e);
         }
