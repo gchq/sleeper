@@ -101,6 +101,7 @@ public class SqsLeafPartitionQueryProcessorTest {
         executeQuery(query);
 
         // Then
+        assertThat(resultsOutput.streamPublishedResults()).isEmpty();
         assertThat(queryTracker.getAllQueries())
                 .extracting(TrackedQuery::getLastKnownState)
                 .containsExactly(QueryState.FAILED);
