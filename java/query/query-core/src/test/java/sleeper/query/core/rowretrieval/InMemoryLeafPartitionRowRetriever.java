@@ -28,6 +28,7 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -38,16 +39,20 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetriever, LeafPartitionRowRetrieverProvider {
 
     private final InMemoryRowStore rowStore;
-    private int iteratorsOpened = 0;
-    private int iteratorsClosed = 0;
+    private final Function<Iterator<Row>, CloseableIterator<Row>> iteratorFactory;
 
     public InMemoryLeafPartitionRowRetriever(InMemoryRowStore rowStore) {
+        this(rowStore, WrappedIterator::new);
+    }
+
+    public InMemoryLeafPartitionRowRetriever(InMemoryRowStore rowStore, Function<Iterator<Row>, CloseableIterator<Row>> iteratorFactory) {
         this.rowStore = rowStore;
+        this.iteratorFactory = iteratorFactory;
     }
 
     @Override
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
-        return new TrackingIterator(getRowsOrThrow(leafPartitionQuery.getFiles())
+        return iteratorFactory.apply(getRowsOrThrow(leafPartitionQuery.getFiles())
                 .filter(row -> isRowInRegion(row, leafPartitionQuery, dataReadSchema))
                 .map(row -> mapToReadSchema(row, dataReadSchema))
                 .iterator());
@@ -56,14 +61,6 @@ public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetrie
     @Override
     public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
         return this;
-    }
-
-    public int getIteratorsOpened() {
-        return iteratorsOpened;
-    }
-
-    public int getIteratorsClosed() {
-        return iteratorsClosed;
     }
 
     private Stream<Row> getRowsOrThrow(List<String> files) throws RowRetrievalException {
@@ -101,20 +98,4 @@ public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetrie
         return result;
     }
 
-    /**
-     * Wraps an iterator and tracks whether it was closed.
-     */
-    private class TrackingIterator extends WrappedIterator<Row> {
-
-        TrackingIterator(Iterator<Row> iterator) {
-            super(iterator);
-            iteratorsOpened++;
-        }
-
-        @Override
-        public void close() {
-            iteratorsClosed++;
-        }
-
-    }
 }

@@ -60,17 +60,21 @@ public class SqsLeafPartitionQueryProcessor {
                 leafPartitionQuery.getProcessingConfig().getStatusReportDestinations());
         queryTrackers.add(queryTracker);
 
+        ResultsOutputInfo outputInfo = null;
         try {
             TableProperties tableProperties = query.getTableProperties(tablePropertiesProvider);
             queryTrackers.queryInProgress(leafPartitionQuery);
             try (CloseableIterator<Row> results = getLeafPartitionQueryExecutor(tableProperties).getRows(leafPartitionQuery)) {
-                ResultsOutputInfo outputInfo = resultsOutputProvider.getResultsOutput(tableProperties, leafPartitionQuery).publish(query, results);
-
-                query.reportCompleted(queryTrackers, outputInfo);
+                outputInfo = resultsOutputProvider.getResultsOutput(tableProperties, leafPartitionQuery).publish(query, results);
             }
+            query.reportCompleted(queryTrackers, outputInfo);
         } catch (IOException | QueryException | RuntimeException e) {
             LOGGER.error("Exception thrown executing subquery {} under query {}", leafPartitionQuery.getSubQueryId(), leafPartitionQuery.getQueryId(), e);
-            query.reportFailed(queryTrackers, e);
+            if (outputInfo != null) {
+                query.reportCompleted(queryTrackers, outputInfo.withError(e));
+            } else {
+                query.reportFailed(queryTrackers, e);
+            }
         }
     }
 

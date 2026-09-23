@@ -36,6 +36,10 @@ public class ResultsOutputInfo {
         this(numberOfRows, locations, null);
     }
 
+    public ResultsOutputInfo withError(Exception error) {
+        return new ResultsOutputInfo(rowCount, locations, error);
+    }
+
     public long getRowCount() {
         return rowCount;
     }

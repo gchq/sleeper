@@ -37,6 +37,7 @@ import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.InMemoryResultsOutput;
 import sleeper.query.core.rowretrieval.QueryPlanner;
+import sleeper.query.core.rowretrieval.TrackingIteratorFactory;
 import sleeper.query.core.tracker.InMemoryQueryTracker;
 import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.TrackedQuery;
@@ -64,7 +65,8 @@ public class SqsLeafPartitionQueryProcessorTest {
     private final InMemoryRowStore rowStore = new InMemoryRowStore();
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
     private final InMemoryIngest ingest = new InMemoryIngest(instanceProperties, tableProperties, stateStore, rowStore, new InMemorySketchesStore());
-    private final InMemoryLeafPartitionRowRetriever rowRetriever = new InMemoryLeafPartitionRowRetriever(rowStore);
+    private final TrackingIteratorFactory iteratorTracker = new TrackingIteratorFactory();
+    private final InMemoryLeafPartitionRowRetriever rowRetriever = new InMemoryLeafPartitionRowRetriever(rowStore, iteratorTracker);
     private final InMemoryResultsOutput resultsOutput = new InMemoryResultsOutput();
     private final Instant startTime = Instant.parse("2026-09-23T11:30:00Z");
     private final Supplier<Instant> timeSupplier = timePassesAMinuteAtATimeFrom(startTime);
@@ -86,13 +88,43 @@ public class SqsLeafPartitionQueryProcessorTest {
         // Then the row is sent to the results output
         assertThat(resultsOutput.streamPublishedResults()).containsExactly(row);
         // And the row iterator is closed
-        assertThat(rowRetriever.getIteratorsOpened()).isEqualTo(1);
-        assertThat(rowRetriever.getIteratorsClosed()).isEqualTo(1);
+        assertThat(iteratorTracker.getIteratorsOpened()).isEqualTo(1);
+        assertThat(iteratorTracker.getIteratorsClosed()).isEqualTo(1);
         // And the leaf query completion is tracked
-        assertThat(queryTracker.getAllQueries()).containsExactly(
-                trackedQueryBuilder(1)
+        assertThat(queryTracker.getAllUpdates()).containsExactly(
+                trackedQueryBuilder(1, 1)
+                        .lastKnownState(QueryState.IN_PROGRESS)
+                        .build(),
+                trackedQueryBuilder(1, 2)
                         .lastKnownState(QueryState.COMPLETED)
                         .rowCount(1L)
+                        .build());
+    }
+
+    @Test
+    void shouldTrackWhenIteratorFailsToClose() {
+        // Given
+        Row row = new Row(Map.of("key", "test"));
+        ingest.write(List.of(row));
+        iteratorTracker.setOnClose(() -> {
+            throw new RuntimeException("Iterator failed to close");
+        });
+
+        // When
+        executeQuery(queryBuilderForTable()
+                .regions(regionsCoveringAllValues("key"))
+                .build());
+
+        // Then
+        assertThat(resultsOutput.streamPublishedResults()).containsExactly(row);
+        assertThat(queryTracker.getAllUpdates()).containsExactly(
+                trackedQueryBuilder(1, 1)
+                        .lastKnownState(QueryState.IN_PROGRESS)
+                        .build(),
+                trackedQueryBuilder(1, 2)
+                        .lastKnownState(QueryState.COMPLETED)
+                        .rowCount(1L)
+                        .errorMessage("Iterator failed to close")
                         .build());
     }
 
@@ -112,8 +144,11 @@ public class SqsLeafPartitionQueryProcessorTest {
 
         // Then
         assertThat(resultsOutput.streamPublishedResults()).isEmpty();
-        assertThat(queryTracker.getAllQueries()).containsExactly(
-                trackedQueryBuilder(1)
+        assertThat(queryTracker.getAllUpdates()).containsExactly(
+                trackedQueryBuilder(1, 1)
+                        .lastKnownState(QueryState.IN_PROGRESS)
+                        .build(),
+                trackedQueryBuilder(1, 2)
                         .lastKnownState(QueryState.FAILED)
                         .errorMessage("Unknown results publisher for destination: unknown-destination")
                         .build());
@@ -149,8 +184,8 @@ public class SqsLeafPartitionQueryProcessorTest {
         return new RangeFactory(tableProperties.getSchema());
     }
 
-    private TrackedQuery.Builder trackedQueryBuilder(int queryNumber) {
-        Duration timeOffset = Duration.ofMinutes(queryNumber + 1);
+    private TrackedQuery.Builder trackedQueryBuilder(int queryNumber, int updateNumber) {
+        Duration timeOffset = Duration.ofMinutes(queryNumber + updateNumber - 1);
         return TrackedQuery.builder()
                 .queryId(numberedUUID("query", queryNumber))
                 .subQueryId(numberedUUID("subquery", queryNumber))
