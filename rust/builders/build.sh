@@ -25,6 +25,26 @@ usage() {
   echo "  --image-prefix <prefix> Prefix for image names, defaults to GitHub Container Registry if not set"
 }
 
+# This build creates multiple installs of the Rust and C/C++ toolchains, one per platform.
+# These are tied together via configuration. There's also configuration to build in a custom environment.
+#
+# Here's a list of configuration that needs to apply when we build the builder image:
+#
+# - Rustup configuration to point to a custom install script and distribution/update server.
+# - Which Rust toolchain version to install.
+# - C/C++ toolchain to create sysroot for target platform of the image.
+# - Clang compiler wrappers to use correct sysroot.
+# - Cargo configured to use correct Clang for linking & compiling per target.
+# - Sccache wrapper around correct Clang per target.
+# - Image prefix for a custom publishing environment.
+# - Per-platform Rust flags.
+#
+# Here's a list of configuration that needs to apply during a Rust build, via build-in-docker.sh:
+#
+# - Extra Cargo config to build in a custom environment (should not override any of the other configuration).
+# - Sccache environment variables, some per-platform for cache configuration.
+# - GitHub Actions cache publishing environment variables.
+
 WITH_SCCACHE=false
 IMAGE_PREFIX="ghcr.io/gchq"
 
