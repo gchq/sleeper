@@ -47,6 +47,7 @@ usage() {
 
 WITH_SCCACHE=false
 IMAGE_PREFIX="ghcr.io/gchq"
+DOCKER_OPTIONS=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -64,9 +65,7 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     *)
-      echo "Unrecognised option: $1"
-      usage
-      exit 1
+      DOCKER_OPTIONS+=("$1")
       ;;
   esac
 done
@@ -90,12 +89,12 @@ if [ -n "$(ls -A "$BASE_DIR/certs" 2>/dev/null | grep -v '^README\.md$')" ]; the
   cp -r "$BASE_DIR/certs" certs
   rm -f certs/README.md
 fi
-docker build ${BUILD_ARGS} -t "$BASE_IMAGE" .
+docker build ${BUILD_ARGS} -t "$BASE_IMAGE" "${DOCKER_OPTIONS[@]}" .
 popd
 
 if [[ "$WITH_SCCACHE" == "true" ]]; then
   pushd "$THIS_DIR"/sccache
   # Pass the base image explicitly so this builds on the image we just built, not the default in the Dockerfile
-  docker build --build-arg BASE_IMAGE="$BASE_IMAGE" -t "$SCCACHE_IMAGE" .
+  docker build --build-arg BASE_IMAGE="$BASE_IMAGE" -t "$SCCACHE_IMAGE" "${DOCKER_OPTIONS[@]}" .
   popd
 fi
