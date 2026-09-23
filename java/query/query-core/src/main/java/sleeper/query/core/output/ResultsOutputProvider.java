@@ -18,8 +18,19 @@ package sleeper.query.core.output;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.query.core.model.LeafPartitionQuery;
 
+/**
+ * A provider to determine where to send the results of a query. Detects configuration on the table or query and creates
+ * the output to publish the results.
+ */
 public interface ResultsOutputProvider {
 
+    /**
+     * Retrieves an output to publish the results of a query via the configured method.
+     *
+     * @param  tableProperties the table properties
+     * @param  query           the query
+     * @return                 the output to publish the query results
+     */
     ResultsOutput getResultsOutput(TableProperties tableProperties, LeafPartitionQuery query);
 
 }
