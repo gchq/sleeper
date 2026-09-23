@@ -23,11 +23,6 @@
 set -e
 unset CDPATH
 
-if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <instance-id> <vpc> <csv-list-of-subnets>"
-  exit 1
-fi
-
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
