@@ -40,6 +40,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private final boolean hideUnknownProperties;
     private final boolean printTemplate;
     private final boolean printGroupDetails;
+    private final boolean printGroupHeaders;
 
     private SleeperPropertiesPrettyPrinter(Builder<T> builder) {
         sortedProperties = builder.sortedProperties;
@@ -49,6 +50,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         hideUnknownProperties = builder.hideUnknownProperties;
         printTemplate = builder.printTemplate;
         printGroupDetails = builder.printGroupDetails;
+        printGroupHeaders = builder.printGroupHeaders;
     }
 
     public static Builder<?> builder() {
@@ -98,11 +100,15 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             }
             if (currentGroup == null) {
                 currentGroup = property.getPropertyGroup();
-                printGroupHeader(currentGroup);
+                if (printGroupHeaders) {
+                    printGroupHeader(currentGroup);
+                }
             } else if (!currentGroup.equals(property.getPropertyGroup())) {
                 currentGroup = property.getPropertyGroup();
-                println();
-                printGroupHeader(currentGroup);
+                if (printGroupHeaders) {
+                    println();
+                    printGroupHeader(currentGroup);
+                }
             }
             printProperty(properties, property);
         }
@@ -200,6 +206,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         private boolean hideUnknownProperties;
         private boolean printTemplate;
         private boolean printGroupDetails = true;
+        private boolean printGroupHeaders = true;
 
         private Builder() {
         }
@@ -282,6 +289,17 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
          */
         public Builder<T> printGroupDetails(boolean printGroupDetails) {
             this.printGroupDetails = printGroupDetails;
+            return this;
+        }
+
+        /**
+         * Sets whether to print property group headers.
+         *
+         * @param  printGroupHeaders true to include property group headers, false otherwise
+         * @return                   this builder
+         */
+        public Builder<T> printGroupHeaders(boolean printGroupHeaders) {
+            this.printGroupHeaders = printGroupHeaders;
             return this;
         }
 

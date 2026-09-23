@@ -183,6 +183,13 @@ class GeneratePropertiesTemplatesTest {
         void shouldGenerateEmptyInstanceProperties() {
             assertThat(instancePropertiesFromString(propertiesString)).isEqualTo(new InstanceProperties());
         }
+
+        @Test
+        void shouldOmitPropertyGroupHeaders() {
+            assertThat(propertiesString)
+                    .contains("# sleeper.logging.level=")
+                    .doesNotContain("## ");
+        }
     }
 
     @Nested
