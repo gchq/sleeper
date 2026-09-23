@@ -44,16 +44,14 @@ public class SqsLeafPartitionQueryProcessor {
     private final ObjectFactory objectFactory;
     private final QueryStatusReportListener queryTracker;
 
-    private SqsLeafPartitionQueryProcessor(Builder builder) {
-        tablePropertiesProvider = builder.tablePropertiesProvider;
-        rowRetrieverProvider = builder.rowRetrieverProvider;
-        resultsOutputProvider = builder.resultsOutputProvider;
-        objectFactory = builder.objectFactory;
-        queryTracker = builder.queryTracker;
-    }
-
-    public static Builder builder() {
-        return new Builder();
+    public SqsLeafPartitionQueryProcessor(
+            TablePropertiesProvider tablePropertiesProvider, LeafPartitionRowRetrieverProvider rowRetrieverProvider,
+            ResultsOutputProvider resultsOutputProvider, ObjectFactory objectFactory, QueryStatusReportListener queryTracker) {
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.rowRetrieverProvider = rowRetrieverProvider;
+        this.resultsOutputProvider = resultsOutputProvider;
+        this.objectFactory = objectFactory;
+        this.queryTracker = queryTracker;
     }
 
     public void processQuery(LeafPartitionQuery leafPartitionQuery) {
@@ -80,45 +78,5 @@ public class SqsLeafPartitionQueryProcessor {
         return new LeafPartitionQueryExecutor(
                 objectFactory, tableProperties,
                 rowRetrieverProvider.getRowRetriever(tableProperties));
-    }
-
-    public static final class Builder {
-        private TablePropertiesProvider tablePropertiesProvider;
-        private LeafPartitionRowRetrieverProvider rowRetrieverProvider;
-        private ResultsOutputProvider resultsOutputProvider;
-        private ObjectFactory objectFactory;
-        private QueryStatusReportListener queryTracker;
-
-        private Builder() {
-        }
-
-        public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
-            this.tablePropertiesProvider = tablePropertiesProvider;
-            return this;
-        }
-
-        public Builder rowRetrieverProvider(LeafPartitionRowRetrieverProvider rowRetrieverProvider) {
-            this.rowRetrieverProvider = rowRetrieverProvider;
-            return this;
-        }
-
-        public Builder resultsOutputProvider(ResultsOutputProvider resultsOutputProvider) {
-            this.resultsOutputProvider = resultsOutputProvider;
-            return this;
-        }
-
-        public Builder objectFactory(ObjectFactory objectFactory) {
-            this.objectFactory = objectFactory;
-            return this;
-        }
-
-        public Builder queryTracker(QueryStatusReportListener queryTracker) {
-            this.queryTracker = queryTracker;
-            return this;
-        }
-
-        public SqsLeafPartitionQueryProcessor build() {
-            return new SqsLeafPartitionQueryProcessor(this);
-        }
     }
 }

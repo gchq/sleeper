@@ -103,13 +103,9 @@ public class SqsLeafPartitionQueryProcessorTest {
     }
 
     private SqsLeafPartitionQueryProcessor createProcessor() {
-        return SqsLeafPartitionQueryProcessor.builder()
-                .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
-                .rowRetrieverProvider(rowRetriever)
-                .resultsOutputProvider(resultsOutput)
-                .objectFactory(ObjectFactory.noUserJars())
-                .queryTracker(queryTracker)
-                .build();
+        return new SqsLeafPartitionQueryProcessor(
+                new FixedTablePropertiesProvider(tableProperties),
+                rowRetriever, resultsOutput, ObjectFactory.noUserJars(), queryTracker);
     }
 
 }
