@@ -375,5 +375,15 @@ public class Range {
         public Range createRangeCoveringAllValues(Field field) {
             return createRange(field, PrimitiveType.getMinimum(field.getType()), true, null, false);
         }
+
+        /**
+         * Creates a range that covers all values of a field.
+         *
+         * @param  fieldName the name of the field
+         * @return           the range
+         */
+        public Range createRangeCoveringAllValues(String fieldName) {
+            return createRange(fieldName, PrimitiveType.getMinimum(rowKeyFieldToType.get(fieldName)), true, null, false);
+        }
     }
 }
