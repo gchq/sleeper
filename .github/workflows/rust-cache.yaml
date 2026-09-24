@@ -36,3 +36,7 @@ jobs:
       - name: Build aarch64
         working-directory: ./rust
         run: ./build-in-docker.sh aarch64 --release --verbose
+      - name: Check native library version linking for x86_64
+        run: ./rust/check-native-lib.sh rust/target/x86_64-unknown-linux-gnu/release/libsleeper_df.so x86_64
+      - name: Check native library version linking for aarch64
+        run: ./rust/check-native-lib.sh rust/target/aarch64-unknown-linux-gnu/release/libsleeper_df.so aarch64
