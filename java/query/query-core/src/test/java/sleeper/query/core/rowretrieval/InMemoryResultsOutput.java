@@ -58,7 +58,7 @@ public class InMemoryResultsOutput implements ResultsOutput, ResultsOutputProvid
         Map<String, String> resultsPublisherConfig = query.getProcessingConfig().getResultsPublisherConfig();
         if (resultsPublisherConfig != null && resultsPublisherConfig.containsKey(DESTINATION)) {
             LOGGER.error("Unknown results publisher config: {}", resultsPublisherConfig);
-            throw new RuntimeException("Unknown results publisher for destination: " + resultsPublisherConfig.get(DESTINATION));
+            throw new UnknownResultsPublisherException(resultsPublisherConfig.get(DESTINATION));
         }
         return this;
     }

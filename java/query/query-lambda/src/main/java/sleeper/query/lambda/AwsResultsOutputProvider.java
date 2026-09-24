@@ -25,6 +25,7 @@ import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.output.ResultsOutputProvider;
+import sleeper.query.core.rowretrieval.UnknownResultsPublisherException;
 import sleeper.query.runner.output.NoResultsOutput;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;

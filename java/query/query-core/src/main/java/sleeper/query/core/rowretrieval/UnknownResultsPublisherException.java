@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.lambda;
+package sleeper.query.core.rowretrieval;
 
 /**
  * A failure when a query is set to use a results publisher that we could not recognise.
