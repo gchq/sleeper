@@ -54,10 +54,15 @@ RUN curl --proto '=https' --tlsv1.2 --fail --show-error --silent --output /tmp/r
     && rm -f /tmp/rustup-init.sh \
     && rustup target add aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu --toolchain ${RUST_VERSION}
 
-# Create two sysroots, whichever one matches the host architecture should skip downloading repo metadata
+# Create two sysroots, whichever one matches the host architecture should skip downloading repo metadata.
+# tsflags=noscripts stops RPM running package scriptlets, which it would run chrooted into the sysroot.
+# For the sysroot that doesn't match the host architecture those scriptlets are foreign binaries, so they
+# fail with "Exec format error" unless the host has QEMU binfmt handlers registered. The scriptlets only
+# set up a runnable system (trust stores, ldconfig caches); a sysroot is only used for headers and
+# libraries at compile time, so skipping them keeps the build free of any emulation requirement.
 RUN releasever="$(rpm -q system-release --qf '%{VERSION}')" \
     && dnf --releasever="${releasever}" --installroot=/opt/sysroot/aarch64 --forcearch=aarch64 \
-    --setopt=install_weak_deps=False install -y \
+    --setopt=install_weak_deps=False --setopt=tsflags=noscripts install -y \
     \
     system-release glibc-devel gcc gcc-c++ libstdc++-devel \
     \
@@ -65,7 +70,7 @@ RUN releasever="$(rpm -q system-release --qf '%{VERSION}')" \
 
 RUN releasever="$(rpm -q system-release --qf '%{VERSION}')" \
     && dnf --releasever="${releasever}" --installroot=/opt/sysroot/x86_64 --forcearch=x86_64 \
-    --setopt=install_weak_deps=False install -y \
+    --setopt=install_weak_deps=False --setopt=tsflags=noscripts install -y \
     \
     system-release glibc-devel gcc gcc-c++ libstdc++-devel \
     \
