@@ -66,6 +66,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       DOCKER_OPTIONS+=("$1")
+      shift 1
       ;;
   esac
 done
