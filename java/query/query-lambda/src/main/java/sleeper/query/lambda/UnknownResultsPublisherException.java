@@ -15,6 +15,9 @@
  */
 package sleeper.query.lambda;
 
+/**
+ * A failure when a query is set to use a results publisher that we could not recognise.
+ */
 public class UnknownResultsPublisherException extends RuntimeException {
 
     public UnknownResultsPublisherException(String destination) {
