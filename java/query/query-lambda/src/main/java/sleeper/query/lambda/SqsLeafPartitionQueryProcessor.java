@@ -126,8 +126,15 @@ public class SqsLeafPartitionQueryProcessor {
             return new NoResultsOutput();
         } else {
             LOGGER.info("Unknown results publisher from config {}", resultsPublisherConfig);
-            return (query, results) -> new ResultsOutputInfo(0, Collections.emptyList(),
-                    new IOException("Unknown results publisher from config " + query.getProcessingConfig().getResultsPublisherConfig()));
+            return (query, results) -> {
+                try {
+                    results.close();
+                } catch (Exception e) {
+                    LOGGER.error("Exception closing results of query", e);
+                }
+                return new ResultsOutputInfo(0, Collections.emptyList(),
+                        new IOException("Unknown results publisher from config " + query.getProcessingConfig().getResultsPublisherConfig()));
+            };
         }
     }
 

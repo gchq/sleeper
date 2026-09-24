@@ -84,6 +84,24 @@ Here's an example of an SQS message for an ingest or bulk import job:
 
 Files are submitted to the ingest batcher with the same format, but without the `id` field.
 
+### File paths
+
+Each entry under `files` should be a path in S3 in the format `bucket-name/object-key`, where object-key is either a
+file (ending in `.parquet`) or a directory (for clarity it is recommended to explicitly end the key with a `/`, but
+if it does not end with a `/` then files and subdirectories in `object-key/` will be included). The full rules for
+resolving a path are:
+
+- If an object exists at exactly the provided key, and its name ends in `.parquet`, then that file is included.
+- The path is also treated as a directory. Every `.parquet` file under `bucket-name/object-key/` is included,
+  looking recursively in all subdirectories. A trailing slash is optional. (Note that if there was a file
+  `data/day1.parquet` and a file `data/day1.parquet/file-1.parquet` then both would be included.)
+- Only files whose names end in `.parquet` are included - files whose names do not end in `.parquet` are ignored.
+- A path will not match other files or directories whose names happen to start with the same characters, e.g.
+  `bucket-name/data/day1` will not match files under `bucket-name/data/day10/` or a file named
+  `bucket-name/data/day1-old.parquet`.
+
+If no files are found at one of the paths, the job or request is rejected.
+
 ## Ingest systems
 
 You can find details of the available ingest systems in the following documents:
