@@ -44,6 +44,9 @@ import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRIT
 
 public class DemoDeploymentTemplate {
 
+    private DemoDeploymentTemplate() {
+    }
+
     public static SystemTestProperties createInstanceProperties() {
         SystemTestProperties instanceProperties = new SystemTestProperties();
         instanceProperties.setEnum(INGEST_MODE, SystemTestIngestMode.DIRECT);
