@@ -7,7 +7,7 @@ on:
       - 'java/**'
       # Check generated files are not edited directly
       - 'examples/**'
-      - 'scripts/templates/**'
+      - 'scripts/test/deployAll/*.template'
       - 'docs/deployment/docker-images.md'
       - 'docs/development/system-test-suites.md'
       - 'docs/usage/properties/**'
