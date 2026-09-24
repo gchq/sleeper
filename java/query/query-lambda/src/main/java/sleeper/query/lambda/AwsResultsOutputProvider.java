@@ -69,7 +69,7 @@ public class AwsResultsOutputProvider implements ResultsOutputProvider {
             return new NoResultsOutput();
         } else {
             LOGGER.error("Unknown results publisher config: {}", resultsPublisherConfig);
-            throw new RuntimeException("Unknown results publisher for destination: " + destination);
+            throw new UnknownResultsPublisherException(destination);
         }
     }
 
