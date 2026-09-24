@@ -21,7 +21,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperPropertyValues;
 import sleeper.core.properties.instance.InstanceProperty;
-import sleeper.core.properties.instance.InstancePropertyGroup;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -81,7 +80,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
 
     @Override
     public PropertyGroup getPropertyGroup() {
-        return InstancePropertyGroup.COMMON;
+        return SystemTestProperty.SYSTEM_TEST_GROUP;
     }
 
     @Override

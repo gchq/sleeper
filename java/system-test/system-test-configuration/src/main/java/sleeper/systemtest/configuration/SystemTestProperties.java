@@ -20,10 +20,17 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.InstancePropertyGroup;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
@@ -33,7 +40,8 @@ import static sleeper.core.properties.PropertiesUtils.loadProperties;
  */
 public class SystemTestProperties extends InstanceProperties {
 
-    static final SleeperPropertyIndex<InstanceProperty> PROPERTY_INDEX = createPropertyIndex();
+    static final SleeperPropertyIndex<InstanceProperty> COMBINED_INDEX = createCombinedPropertyIndex();
+    static final List<PropertyGroup> COMBINED_GROUPS = createCombinedGroups();
 
     public SystemTestProperties() {
         super();
@@ -66,19 +74,41 @@ public class SystemTestProperties extends InstanceProperties {
         return loadFromBucket(s3Client, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, instanceId));
     }
 
-    private static SleeperPropertyIndex<InstanceProperty> createPropertyIndex() {
+    private static SleeperPropertyIndex<InstanceProperty> createCombinedPropertyIndex() {
         SleeperPropertyIndex<InstanceProperty> index = new SleeperPropertyIndex<>();
         index.addAll(InstanceProperty.getAll());
         index.addAll(SystemTestProperty.getAll());
         return index;
     }
 
+    private static List<PropertyGroup> createCombinedGroups() {
+        List<PropertyGroup> groups = new ArrayList<>();
+        groups.add(SystemTestProperty.SYSTEM_TEST_GROUP);
+        groups.addAll(InstancePropertyGroup.getAll());
+        return Collections.unmodifiableList(groups);
+    }
+
     @Override
     public SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
-        return PROPERTY_INDEX;
+        return COMBINED_INDEX;
     }
 
     public SystemTestPropertyValues testPropertiesOnly() {
         return this::get;
+    }
+
+    @Override
+    protected Builder<InstanceProperty> prettyPrinterBuilder() {
+        return createPrettyPrinterBuilder();
+    }
+
+    /**
+     * Creates a builder for a printer to be used to display all instance properties.
+     *
+     * @return the pretty printer
+     */
+    public static SleeperPropertiesPrettyPrinter.Builder<InstanceProperty> createPrettyPrinterBuilder() {
+        return SleeperPropertiesPrettyPrinter.builder()
+                .properties(COMBINED_INDEX.getAll(), COMBINED_GROUPS);
     }
 }
