@@ -36,6 +36,14 @@ public class ResultsOutputInfo {
         this(numberOfRows, locations, null);
     }
 
+    /**
+     * Creates a copy of this object that records that an error also happened. This can be used even when a query was
+     * successful, e.g. when the iterator over the results failed to close after the results were successfully
+     * published.
+     *
+     * @param  error the error
+     * @return       the new copy
+     */
     public ResultsOutputInfo withError(Exception error) {
         return new ResultsOutputInfo(rowCount, locations, error);
     }

@@ -22,6 +22,9 @@ import sleeper.core.row.Row;
 import java.util.Iterator;
 import java.util.function.Function;
 
+/**
+ * A factory to convert a test iterator into a CloseableIterator and inject behaviour when it is opened and closed.
+ */
 public class TrackingIteratorFactory implements Function<Iterator<Row>, CloseableIterator<Row>> {
 
     private int iteratorsOpened = 0;
