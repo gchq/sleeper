@@ -98,6 +98,11 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         return editable && !setByCdk;
     }
 
+    @Override
+    public boolean isIncludedInTemplate() {
+        return true;
+    }
+
     public String toString() {
         return propertyName;
     }

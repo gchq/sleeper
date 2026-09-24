@@ -28,26 +28,24 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TableProperty;
+import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
-import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.TAGS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_CORES;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
@@ -281,50 +279,34 @@ class GeneratePropertiesTemplatesTest {
     @Nested
     @DisplayName("Generate instance properties template")
     class GenerateInstancePropertiesTemplate {
-        private final String propertiesString = loadFileAsString("scripts/templates/instanceproperties.template");
+        private final String propertiesString = loadFileAsString("scripts/test/deployAll/system-test-instance.properties.template");
 
         @Test
-        void shouldGenerateEmptyInstanceProperties() {
+        void shouldWriteDemoProperties() {
             // When
-            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
+            SystemTestProperties found = systemTestPropertiesFromString(propertiesString);
 
             // Then
-            assertThat(instanceProperties).isEqualTo(new InstanceProperties());
-        }
-
-        @Test
-        void shouldNotSetValuesForAnyPropertyWithDefault() {
-            // When
-            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
-
-            // Then
-            assertThat(instancePropertiesWithDefaultValues())
-                    .allSatisfy(property -> assertThat(instanceProperties.isSet(property)).isFalse());
+            SystemTestProperties expected = DemoDeploymentTemplate.createInstanceProperties();
+            expected.unset(TAGS); // Tags are in a separate file
+            assertThat(found).isEqualTo(expected);
         }
     }
 
     @Nested
     @DisplayName("Generate table properties template")
     class GenerateTablePropertiesTemplate {
-        private final String propertiesString = loadFileAsString("scripts/templates/tableproperties.template");
+        private final String propertiesString = loadFileAsString("scripts/test/deployAll/table.properties.template");
 
         @Test
-        void shouldGenerateEmptyTablePropertiesWhenLoadedFromTemplate() {
+        void shouldWriteDemoProperties() {
             // When
-            TableProperties tableProperties = tablePropertiesFromString(propertiesString);
+            TableProperties found = tablePropertiesFromString(propertiesString);
 
             // Then
-            assertThat(tableProperties).isEqualTo(new TableProperties(new InstanceProperties()));
-        }
-
-        @Test
-        void shouldNotSetValuesForAnyPropertyWithDefault() {
-            // When
-            TableProperties tableProperties = tablePropertiesFromString(propertiesString);
-
-            // Then
-            assertThat(tablePropertiesWithDefaultValues())
-                    .allSatisfy(property -> assertThat(tableProperties.isSet(property)).isFalse());
+            TableProperties expected = DemoDeploymentTemplate.createTableProperties(new InstanceProperties());
+            expected.unset(SCHEMA); // Schema is in a separate file
+            assertThat(found).isEqualTo(expected);
         }
     }
 
@@ -340,20 +322,11 @@ class GeneratePropertiesTemplatesTest {
         return InstanceProperties.createWithoutValidation(loadProperties(propertiesString));
     }
 
+    private SystemTestProperties systemTestPropertiesFromString(String propertiesString) {
+        return new SystemTestProperties(loadProperties(propertiesString));
+    }
+
     private TableProperties tablePropertiesFromString(String propertiesString) {
         return new TableProperties(new InstanceProperties(), loadProperties(propertiesString));
-    }
-
-    private Stream<InstanceProperty> instancePropertiesWithDefaultValues() {
-        // List of exemptions, where they have a default property but neither it or the default are set
-        List<InstanceProperty> exemptions = List.of(ARTEFACTS_DEPLOYMENT_ID);
-
-        return InstanceProperty.getAll().stream()
-                .filter(property -> (property.getDefaultValue() != null || property.getDefaultProperty() != null) && !exemptions.contains(property));
-    }
-
-    private Stream<TableProperty> tablePropertiesWithDefaultValues() {
-        return TableProperty.getAll().stream()
-                .filter(property -> property.getDefaultValue() != null || property.getDefaultProperty() != null);
     }
 }

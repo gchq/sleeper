@@ -23,8 +23,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TableProperty;
 import sleeper.core.properties.table.TablePropertyGroup;
+import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -35,7 +35,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -60,26 +59,21 @@ import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
  */
 public class GeneratePropertiesTemplates {
 
-    private static final String INSTANCE_PROPERTIES_HEADER = "#################################################################################\n" +
-            "#                           SLEEPER INSTANCE PROPERTIES                         #\n" +
-            "#################################################################################";
-
-    private static final String TABLE_PROPERTIES_HEADER = "#################################################################################\n" +
-            "#                           SLEEPER TABLE PROPERTIES                            #\n" +
-            "#################################################################################";
-
-    private static final String LIGHT_EXAMPLE_EXPLANATION = "#################################################################################\n" +
-            "#                    Properties set below are designed for an                   #\n" +
-            "#                  instance aimed towards reducing running costs                #\n" +
-            "#               and will apply to any bulk import stacks you enable             #\n" +
-            "#################################################################################";
+    private static final SystemTestProperties DEMO_INSTANCE_PROPERTIES = DemoDeploymentTemplate.createInstanceProperties();
+    private static final TableProperties DEMO_TABLE_PROPERTIES = DemoDeploymentTemplate.createTableProperties(DEMO_INSTANCE_PROPERTIES);
 
     private GeneratePropertiesTemplates() {
     }
 
     public static void main(String[] args) throws Exception {
-        createTemplates(Path.of(args[0]));
-        createDocumentation(Path.of(args[0]));
+        Path path;
+        if (args.length < 1) {
+            path = Path.of(".");
+        } else {
+            path = Path.of(args[0]);
+        }
+        createTemplates(path);
+        createDocumentation(path);
     }
 
     /**
@@ -108,11 +102,11 @@ public class GeneratePropertiesTemplates {
         writeFile(lightTemplateDir.resolve("table.properties"),
                 GeneratePropertiesTemplates::writeExampleBasicTableProperties);
 
-        Path scriptsTemplateDir = Files.createDirectories(repositoryRoot.resolve("scripts/templates"));
-        writeFile(scriptsTemplateDir.resolve("instanceproperties.template"),
-                GeneratePropertiesTemplates::writeInstancePropertiesTemplate);
-        writeFile(scriptsTemplateDir.resolve("tableproperties.template"),
-                GeneratePropertiesTemplates::writeTablePropertiesTemplate);
+        Path demoDeploymentDir = Files.createDirectories(repositoryRoot.resolve("scripts/test/deployAll"));
+        writeFile(demoDeploymentDir.resolve("system-test-instance.properties.template"),
+                GeneratePropertiesTemplates::writeInstancePropertiesDemoTemplate);
+        writeFile(demoDeploymentDir.resolve("table.properties.template"),
+                GeneratePropertiesTemplates::writeTablePropertiesDemoTemplate);
     }
 
     private static void createDocumentation(Path path) throws Exception {
@@ -164,19 +158,6 @@ public class GeneratePropertiesTemplates {
     }
 
     /**
-     * Writes the basic instance properties template file to the given writer.
-     * All properties set to default and commented out.
-     *
-     * @param out the writer
-     */
-    @SuppressWarnings("null")
-    public static void writeInstancePropertiesTemplate(Writer out) {
-        InstanceProperties properties = new InstanceProperties();
-        List<InstanceProperty> propertiesByIsSet = properties.getPropertiesIndex().getUserDefined().stream().filter(SleeperProperty::isIncludedInTemplate).toList();
-        writeInstancePropertiesWithHeader(out, properties, propertiesByIsSet, INSTANCE_PROPERTIES_HEADER);
-    }
-
-    /**
      * Writes the light variant of the instance properties template file to the given writer.
      * Various properties set for desired EMR settings with the remainder of the properties set to default value and
      * commented out.
@@ -210,39 +191,43 @@ public class GeneratePropertiesTemplates {
 
         List<InstanceProperty> propertiesByIsSet = instanceProperties.streamNonDefaultEntries().map(entry -> entry.getKey()).toList();
 
-        writeInstancePropertiesWithHeader(out, instanceProperties, propertiesByIsSet, LIGHT_EXAMPLE_EXPLANATION);
-    }
-
-    /**
-     * Writes the basic table properties template file to the given writer.
-     *
-     * @param out the writer
-     */
-    public static void writeTablePropertiesTemplate(Writer out) {
-        writeTablePropertiesWithHeader(out, new TableProperties(new InstanceProperties()), TableProperty.getAll(), TABLE_PROPERTIES_HEADER);
-    }
-
-    private static void writeInstancePropertiesWithHeader(Writer out, InstanceProperties properties, List<InstanceProperty> propertiesSet, String header) {
         PrintWriter writer = new PrintWriter(out);
-        if (header != null) {
-            writer.println(header);
-        }
+        writer.println("""
+                #################################################################################
+                #                    Properties set below are designed for an                   #
+                #                  instance aimed towards reducing running costs                #
+                #               and will apply to any bulk import stacks you enable             #
+                #################################################################################""");
         writer.println();
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                propertiesSet, InstancePropertyGroup.getAll(), writer)
-                .print(properties);
+                propertiesByIsSet, InstancePropertyGroup.getAll(), writer)
+                .print(instanceProperties);
     }
 
-    private static void writeTablePropertiesWithHeader(Writer out, TableProperties properties, List<TableProperty> propertiesSet, String header) {
+    private static void writeInstancePropertiesDemoTemplate(Writer out) {
         PrintWriter writer = new PrintWriter(out);
+        writer.println("""
+                ########################################################################################
+                #                              System Test Properties                                  #
+                ########################################################################################
 
-        if (header != null) {
-            writer.println(header);
-        }
+                # Test runs will use a copy of this file with the same name but without `.template` on the end.
+                # Please do not edit the template. If you do not create the copy it will be created automatically.""");
         writer.println();
-        SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                propertiesSet, TablePropertyGroup.getAll(), writer)
-                .print(properties);
+        SystemTestProperties.createSystemTestPrettyPrinterBuilder()
+                .writer(writer)
+                .hideUnsetProperties(true)
+                .printTemplate(true)
+                .build().print(DEMO_INSTANCE_PROPERTIES);
+    }
+
+    private static void writeTablePropertiesDemoTemplate(Writer out) {
+        PrintWriter writer = new PrintWriter(out);
+        TableProperties.createPrettyPrinterBuilder()
+                .writer(writer)
+                .hideUnsetProperties(true)
+                .printTemplate(true)
+                .build().print(DEMO_TABLE_PROPERTIES);
     }
 
     private static <T extends SleeperProperty> void writeFullPropertiesTemplate(
@@ -258,18 +243,10 @@ public class GeneratePropertiesTemplates {
 
     private static <T extends SleeperProperty> void writeBasicPropertiesTemplate(
             Writer writer, SleeperProperties<T> properties, List<PropertyGroup> propertyGroups) {
-        writePropertiesTemplate(writer, properties, propertyGroups,
-                properties.getPropertiesIndex().getUserDefined().stream()
-                        .filter(property -> property.isIncludedInBasicTemplate()));
-    }
-
-    private static <T extends SleeperProperty> void writePropertiesTemplate(
-            Writer writer,
-            SleeperProperties<T> properties,
-            List<PropertyGroup> propertyGroups,
-            Stream<T> propertyDefinitions) {
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                propertyDefinitions.filter(SleeperProperty::isIncludedInTemplate)
+                properties.getPropertiesIndex().getUserDefined().stream()
+                        .filter(SleeperProperty::isIncludedInBasicTemplate)
+                        .filter(SleeperProperty::isIncludedInTemplate)
                         .collect(Collectors.toList()),
                 propertyGroups, new PrintWriter(writer))
                 .print(properties);

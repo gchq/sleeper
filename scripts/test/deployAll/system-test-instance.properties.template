@@ -5,19 +5,23 @@
 # Test runs will use a copy of this file with the same name but without `.template` on the end.
 # Please do not edit the template. If you do not create the copy it will be created automatically.
 
-# The ingest mode to write random data. This should be either 'direct', 'queue', 'batcher', or 'generate_only'.
+
+## The following properties relate to data generation and testing functionality.
+
+# The ingest mode to write random data. This should be either 'direct', 'queue', 'batcher', or
+# 'generate_only'.
 # Direct means that the data is written directly using an ingest coordinator.
-# Queue means that the data is written to a Parquet file and an ingest job is created. This is posted to the queue
-# configured by the property `sleeper.systemtest.ingest.queue`.
-# Batcher means that the data is written to a Parquet file and posted to the ingest batcher. This will be processed
-# based on the table properties under `sleeper.table.ingest.batcher`. These are defaulted based on instance properties
-# under `sleeper.default.ingest.batcher`.
-# Generate only means that the data is written to a Parquet file in the system test bucket, but the file is not
-# ingested. The ingest will need to be performed manually in a separate step.
+# Queue means that the data is written to a Parquet file and an ingest job is created and posted to an
+# ingest queue. The queue used is set by the property `sleeper.systemtest.ingest.queue`.
+# Batcher means that the data is written to a Parquet file and posted to the ingest batcher. This will
+# be processed based on the table properties under `sleeper.table.ingest.batcher`. These are defaulted
+# based on instance properties under `sleeper.default.ingest.batcher`.
+# Generate only means that the data is written to a Parquet file in the system test bucket, but the
+# file is not ingested. The ingest will need to be performed manually in a separate step.
 sleeper.systemtest.ingest.mode=direct
 
 # Which queue to use when using the 'queue' ingest mode.
-# Valid values are: [standard_ingest, bulk_import_emr, bulk_import_persistent_emr, bulk_import_eks,
+# Valid values: [standard_ingest, bulk_import_emr, bulk_import_persistent_emr, bulk_import_eks,
 # bulk_import_emr_serverless]
 sleeper.systemtest.ingest.queue=standard_ingest
 
@@ -30,26 +34,39 @@ sleeper.systemtest.ingests.per.writer=1
 # The number of random rows that each ingest should write
 sleeper.systemtest.rows.per.ingest=40000000
 
-########################################################################################
-#                             Sleeper Instance Properties                              #
-########################################################################################
 
-# Logging level for sleeper classes
-sleeper.logging.level=debug
+## The following instance properties are commonly used throughout Sleeper.
 
-# The optional stacks to deploy.
-sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,IngestBatcherStack,PartitionSplittingStack,QueryStack,WebSocketQueryStack,AthenaStack,EmrBulkImportStack,EmrServerlessBulkImportStack,EmrStudioStack,DashboardStack,TableMetricsStack,RestApiStack
-
-# Whether to keep the sleeper table bucket, Dynamo tables related to tables and query results bucket or not.
+# Whether to keep the Sleeper table bucket, Dynamo tables, query results bucket, etc., when the
+# instance is destroyed.
 sleeper.retain.infra.after.destroy=false
 
-# Whether to keep the sleeper log grops or not.
+# Whether to keep the Sleeper log groups when the instance is destroyed.
 sleeper.retain.logs.after.destroy=true
 
-# How often partition splitting should happen
-# This has been reduced to 2 minutes for testing purposes
+# The optional stacks to deploy. Not case sensitive.
+# Valid values: [IngestStack, IngestBatcherStack, EmrServerlessBulkImportStack, EmrBulkImportStack,
+# PersistentEmrBulkImportStack, EksBulkImportStack, EmrStudioStack, BulkExportStack, QueryStack,
+# WebSocketQueryStack, AthenaStack, KeepLambdaWarmStack, CompactionStack, GarbageCollectorStack,
+# PartitionSplittingStack, RestApiStack, DashboardStack, TableMetricsStack]
+sleeper.optional.stacks=compactionstack,garbagecollectorstack,ingeststack,ingestbatcherstack,partitionsplittingstack,querystack,websocketquerystack,athenastack,emrbulkimportstack,emrserverlessbulkimportstack,emrstudiostack,dashboardstack,tablemetricsstack,restapistack
+
+
+## The following instance properties relate to the splitting of partitions.
+
+# The frequency in minutes with which the lambda runs to find partitions that need splitting and send
+# jobs to the splitting lambda.
 sleeper.partition.splitting.period.minutes=2
 
-# How often the garbage collector should run
-# This has been reduced to 5 minutes for testing purposes
-sleeper.gc.period.minutes=5
+
+## The following instance properties relate to garbage collection.
+
+# The frequency in minutes with which the garbage collector lambda is run.
+sleeper.gc.period.minutes=2
+
+
+## The following instance properties relate to logging.
+
+# The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is
+# always set to INFO.
+sleeper.logging.level=debug

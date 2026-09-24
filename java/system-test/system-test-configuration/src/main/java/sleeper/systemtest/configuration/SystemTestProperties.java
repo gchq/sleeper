@@ -99,15 +99,15 @@ public class SystemTestProperties extends InstanceProperties {
 
     @Override
     protected Builder<InstanceProperty> prettyPrinterBuilder() {
-        return createPrettyPrinterBuilder();
+        return createSystemTestPrettyPrinterBuilder();
     }
 
     /**
-     * Creates a builder for a printer to be used to display all instance properties.
+     * Creates a builder for a printer to be used to display all system test and instance properties.
      *
      * @return the pretty printer
      */
-    public static SleeperPropertiesPrettyPrinter.Builder<InstanceProperty> createPrettyPrinterBuilder() {
+    public static SleeperPropertiesPrettyPrinter.Builder<InstanceProperty> createSystemTestPrettyPrinterBuilder() {
         return SleeperPropertiesPrettyPrinter.builder()
                 .properties(COMBINED_INDEX.getAll(), COMBINED_GROUPS);
     }
