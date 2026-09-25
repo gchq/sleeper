@@ -67,7 +67,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 
-class GenerateConfigExamplesTest {
+class GenerateConfigExamplesIT {
 
     @TempDir
     private static Path tempDir;
