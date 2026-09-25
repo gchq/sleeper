@@ -36,23 +36,29 @@ See [publishing artefacts](publishing.md) for the full publish flow.
 
 ## Rust build
 
-The Rust components are built inside Docker containers via `rust/build-in-docker.sh` (this script is called in-directly from Maven during a normal Sleeper build process), with the builder images themselves produced by `rust/builders/buildAll.sh` (or `buildAllSccache.sh`). The configuration points below affect either the building of those builder images or how the Rust workload runs inside them.
+The Rust components are built inside Docker containers via `rust/build-in-docker.sh` (this script is called in-directly from Maven during a normal Sleeper build process). The builder image itself is produced by `rust/builders/build.sh`. The configuration points below affect either the building of the builder image or how the Rust workload runs inside it.
+
+The `rust/builders/build.sh` script accepts a couple of options:
+
+- `--with-sccache` also builds a second image that includes `sccache` for use in CI/CD.
+- `--image-prefix <prefix>` replaces `ghcr.io/gchq` in the built image name(s) with an alternative prefix.
 
 The variables below should be set via environment variables as shown.
 
-### `RUSTUP_DIST_SERVER` and `RUSTUP_UPDATE_ROOT`
+### `RUSTUP_INIT_URL`, `RUSTUP_DIST_SERVER`, `RUSTUP_UPDATE_ROOT`
 
 Override the upstream servers used by `rustup` when installing the Rust toolchain into the builder images.
 
 Example:
 
 ```bash
+export RUSTUP_INIT_URL=https://sh.rustup.internal.example.com
 export RUSTUP_DIST_SERVER=https://rustup.internal.example.com
 export RUSTUP_UPDATE_ROOT=https://rustup.internal.example.com/rustup
-./rust/builders/buildAll.sh
+./rust/builders/build.sh
 ```
 
-Either variable can be set independently. If both are unset, the builder images are built against the public rustup servers.
+Any variable can be set independently. If all are unset, the builder images are built against the public rustup servers.
 
 ### `EXTRA_CARGO_CONFIG`
 
@@ -88,16 +94,16 @@ Useful when you have built the builder image locally and do not want it overwrit
 Example:
 
 ```bash
-./rust/builders/buildAll.sh                # builds and tags the image locally
+./rust/builders/build.sh            # builds and tags the images locally
 export SKIP_DOCKER_PULL=true
-./rust/build-in-docker.sh x86_64           # uses the local image, no pull
+./rust/build-in-docker.sh x86_64    # uses the local image, no pull
 ```
 
 ### `certs/` directory
 
 Drop PEM-encoded CA certificate files into the `certs/` directory at the repository root if the Rust builder image needs to trust a private certificate authority. Any file extension may be used — `.crt`, `.pem`, `.cer`, etc.
 
-Files placed here (other than the placeholder `README.md`) are picked up by `rust/builders/buildAll.sh` and `rust/builders/buildAllSccache.sh` and installed as trusted CA certificates **inside the builder container**. Nothing is installed on the host.
+Files placed here (other than the placeholder `README.md`) are picked up by `rust/builders/build.sh` and installed as trusted CA certificates **inside the builder container**. Nothing is installed on the host.
 
 If `certs/` only contains the placeholder `README.md`, the builder images are built without any custom CA trust changes.
 
@@ -105,5 +111,5 @@ Example:
 
 ```bash
 cp my-corporate-root-ca.crt certs/
-./rust/builders/buildAll.sh
+./rust/builders/build.sh
 ```

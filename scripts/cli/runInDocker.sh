@@ -34,7 +34,7 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 RUNNER_PATH="$THIS_DIR/runner"
 HOME_RUNNER_PATH="$HOME/.sleeper/runner"
 if [ ! -f "$RUNNER_PATH/Dockerfile" ]; then
-    RUNNER_PATH="$HOME_RUNNER_PATH"
+  RUNNER_PATH="$HOME_RUNNER_PATH"
 fi
 
 DOCKER_TOOLS_CONFIG_DIR="$HOME/.sleeper/docker-tools"
@@ -58,6 +58,7 @@ set_registry() {
 
 # Allow using the version of Sleeper in a local repository checkout, instead of always pulling latest
 USE_LOCAL_VERSION_CONFIG_PATH="$DOCKER_TOOLS_CONFIG_DIR/use-local-version"
+ISOLATE_MVN_CONFIG_PATH="$DOCKER_TOOLS_CONFIG_DIR/isolate-mvn"
 LOCAL_REPO_CONFIG_PATH="$HOME/.sleeper/local-repo"
 
 get_version_tag() {
@@ -73,6 +74,14 @@ get_version_tag() {
   fi
 }
 
+get_isolate_mvn() {
+  if [ ! -f "$ISOLATE_MVN_CONFIG_PATH" ]; then
+    echo "false"
+  else
+    cat "$ISOLATE_MVN_CONFIG_PATH"
+  fi
+}
+
 set_use_local_version() {
   if [ "$1" == "true" ] && [ ! -f "$LOCAL_REPO_CONFIG_PATH" ]; then
     echo "Error: the local version requires the CLI to have been installed with --useLocalRepo," >&2
@@ -82,6 +91,12 @@ set_use_local_version() {
   mkdir -p "$DOCKER_TOOLS_CONFIG_DIR"
   echo "$1" > "$USE_LOCAL_VERSION_CONFIG_PATH"
   echo "Use local version set to: $1"
+}
+
+set_isolate_mvn() {
+  mkdir -p "$DOCKER_TOOLS_CONFIG_DIR"
+  echo "$1" > "$ISOLATE_MVN_CONFIG_PATH"
+  echo "Isolate Maven set to: $1"
 }
 
 # Report the checkout an install is tied to, so any mismatch with the images being pulled is visible
@@ -171,12 +186,18 @@ run_in_environment_docker() {
 run_in_builder_docker() {
   build_temp_runner_image sleeper-builder:current
   mkdir -p "$HOME/.sleeper/builder"
-  mkdir -p "$HOME/.m2"
+  local BUILDER_ARGS=(
+    -v "$HOME/.sleeper/builder:/sleeper-builder"
+    -e HOST_MOUNT_PATH="$HOME/.sleeper/builder"
+    -e CONTAINER_MOUNT_PATH=/sleeper-builder
+  )
+  local ISOLATE_MVN=$(get_isolate_mvn)
+  if [ "$ISOLATE_MVN" == "false" ]; then
+    mkdir -p "$HOME/.m2"
+    BUILDER_ARGS+=(-v "$HOME/.m2:$HOME_IN_IMAGE/.m2")
+  fi
   run_in_docker \
-    -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
-    -v "$HOME/.sleeper/builder:/sleeper-builder" \
-    -e HOST_MOUNT_PATH="$HOME/.sleeper/builder" \
-    -e CONTAINER_MOUNT_PATH=/sleeper-builder \
+    "${BUILDER_ARGS[@]}" \
     "$TEMP_RUNNER_IMAGE" "$@"
 }
 
@@ -187,9 +208,9 @@ get_version() {
 pull_docker_images() {
 
   mkdir -p "$HOME_RUNNER_PATH"
-  if [ -f "$HOME/.sleeper/local-repo" ]; then
+  if [ -f "$LOCAL_REPO_CONFIG_PATH" ]; then
     echo "CLI was previously installed from a local repo. Copying CLI runner Dockerfile from there."
-    LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
+    LOCAL_REPO=$(<"$LOCAL_REPO_CONFIG_PATH")
     cp "$LOCAL_REPO/scripts/cli/runner/Dockerfile" $HOME_RUNNER_PATH
   else
     echo "Downloading CLI runner Dockerfile"
@@ -276,9 +297,9 @@ upgrade_cli() {
   local TEMP_DIR=$(mktemp -d)
   TEMP_PATH="$TEMP_DIR/sleeper"
 
-  if [ -f "$HOME/.sleeper/local-repo" ]; then
+  if [ -f "$LOCAL_REPO_CONFIG_PATH" ]; then
     echo "Sleeper Docker tools CLI was previously installed from a local repository, updating from there"
-    LOCAL_REPO=$(<"$HOME/.sleeper/local-repo")
+    LOCAL_REPO=$(<"$LOCAL_REPO_CONFIG_PATH")
     echo_local_repo_checkout "$LOCAL_REPO"
     SCRIPT_PATH="$LOCAL_REPO/scripts/cli/runInDocker.sh"
   else
@@ -343,6 +364,12 @@ elif [ "$COMMAND" == "cli" ]; then
       exit 1
     fi
     set_use_local_version "$1"
+  elif [ "$SUBCOMMAND" == "set-isolate-mvn" ]; then
+    if [ "$#" -lt 1 ]; then
+      echo "Usage: sleeper cli set-isolate-mvn <true|false>"
+      exit 1
+    fi
+    set_isolate_mvn "$1"
   else
     echo "Command not found: cli $SUBCOMMAND"
     show_usage
@@ -373,6 +400,10 @@ elif [ "$COMMAND" == "help" ]; then
   echo
   echo "cli pull-images"
   echo "Retrieves the latest version of the Docker images."
+  echo
+  echo "cli set-isolate-mvn <true|false>"
+  echo "By default, the host's local Maven repository will be mounted into builder containers. If this is set to true,"
+  echo "that will not happen."
   echo
   echo "version"
   echo "Prints the version of Sleeper that was used to build the Docker images currently being used. This will be a"
