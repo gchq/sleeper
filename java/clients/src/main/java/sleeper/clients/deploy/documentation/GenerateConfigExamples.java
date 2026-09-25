@@ -99,6 +99,8 @@ public class GenerateConfigExamples {
                 DemoDeploymentTemplates::writeTagsTemplate);
         writeFile(demoDeploymentDir.resolve("table.properties.template"),
                 DemoDeploymentTemplates::writeTablePropertiesTemplate);
+        writeFile(demoDeploymentDir.resolve("schema.json.template"),
+                DemoDeploymentTemplates::writeSchemaTemplate);
     }
 
     private static <T extends SleeperProperty> void writeFullPropertiesTemplate(

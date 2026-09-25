@@ -1,5 +1,5 @@
 {
-  "rowKeyFields": [ 
+  "rowKeyFields": [
     {
       "name": "key",
       "type": "StringType"

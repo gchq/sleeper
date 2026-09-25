@@ -30,6 +30,8 @@ import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.IOException;
@@ -316,6 +318,16 @@ class GenerateConfigExamplesTest {
             expected.unset(SCHEMA); // Schema is in a separate file
             assertThat(found).isEqualTo(expected);
         }
+
+        @Test
+        void shouldWriteSchema() {
+            // When
+            Schema found = schemaFromFile(demoDir.resolve("schema.json.template"));
+
+            // Then
+            TableProperties expected = DemoDeploymentTemplates.createTableProperties(new InstanceProperties());
+            assertThat(found).isEqualTo(expected.getSchema());
+        }
     }
 
     private String loadFileAsString(String path) {
@@ -332,5 +344,13 @@ class GenerateConfigExamplesTest {
 
     private TableProperties tablePropertiesFromString(String propertiesString) {
         return new TableProperties(new InstanceProperties(), loadProperties(propertiesString));
+    }
+
+    private Schema schemaFromFile(Path file) {
+        try {
+            return new SchemaSerDe().fromJson(Files.readString(file));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

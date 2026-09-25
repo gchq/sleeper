@@ -21,6 +21,7 @@ import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.configuration.SystemTestIngestMode;
@@ -87,6 +88,11 @@ public class DemoDeploymentTemplates {
                 .hideUnsetProperties(true)
                 .printTemplate(true)
                 .build().print(TABLE_PROPERTIES);
+    }
+
+    public static void writeSchemaTemplate(Writer out) {
+        String json = new SchemaSerDe().toJson(TABLE_PROPERTIES.getSchema(), true);
+        new PrintWriter(out).println(json);
     }
 
     public static SystemTestProperties createInstanceProperties() {
