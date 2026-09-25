@@ -29,8 +29,10 @@ import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
+import java.util.Set;
 
 import static java.util.stream.Collectors.joining;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -98,32 +100,29 @@ public class DemoDeploymentTemplates {
 
     public static SystemTestProperties createInstanceProperties() {
         SystemTestProperties instanceProperties = new SystemTestProperties();
+
+        // System test properties
         instanceProperties.setEnum(INGEST_MODE, SystemTestIngestMode.DIRECT);
         instanceProperties.setEnum(INGEST_QUEUE, IngestQueue.STANDARD_INGEST);
         instanceProperties.setNumber(NUMBER_OF_WRITERS, 11);
         instanceProperties.setNumber(NUMBER_OF_INGESTS_PER_WRITER, 1);
         instanceProperties.setNumber(NUMBER_OF_ROWS_PER_INGEST, 40_000_000);
-        instanceProperties.set(LOGGING_LEVEL, "debug");
-        instanceProperties.set(OPTIONAL_STACKS, Stream.of(
-                OptionalStack.CompactionStack,
-                OptionalStack.GarbageCollectorStack,
-                OptionalStack.IngestStack,
-                OptionalStack.IngestBatcherStack,
-                OptionalStack.PartitionSplittingStack,
-                OptionalStack.QueryStack,
+
+        // Instance properties
+        Set<OptionalStack> optionalStacks = new LinkedHashSet<>();
+        optionalStacks.addAll(OptionalStack.DEFAULT_STACKS);
+        optionalStacks.addAll(List.of(
                 OptionalStack.WebSocketQueryStack,
-                OptionalStack.AthenaStack,
                 OptionalStack.EmrBulkImportStack,
-                OptionalStack.EmrServerlessBulkImportStack,
-                OptionalStack.EmrStudioStack,
-                OptionalStack.DashboardStack,
-                OptionalStack.TableMetricsStack,
-                OptionalStack.RestApiStack)
-                .map(OptionalStack::toString).collect(joining(",")));
+                OptionalStack.AthenaStack,
+                OptionalStack.RestApiStack));
+        instanceProperties.set(OPTIONAL_STACKS, optionalStacks.stream().map(OptionalStack::toString).collect(joining(",")));
         instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         instanceProperties.set(RETAIN_LOGS_AFTER_DESTROY, "true");
         instanceProperties.setNumber(PARTITION_SPLITTING_TRIGGER_PERIOD_IN_MINUTES, 2);
         instanceProperties.setNumber(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES, 2);
+        instanceProperties.set(LOGGING_LEVEL, "debug");
+
         instanceProperties.setTags(Map.of(
                 "Description", "Sleeper demonstration instance",
                 "Project", "sleeper-demo",
