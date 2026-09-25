@@ -127,7 +127,8 @@ If you've built the tools locally and want to apply local changes to the scripts
 ```
 
 The `--useLocalOnce` flag will stop it from pulling Docker images from the remote registry, and will install the CLI
-script from the local repository. Further calls to upgrade the CLI will retrieve it from GitHub.
+script from the local repository. Further calls to upgrade the CLI will retrieve it as previously configured, from
+GitHub by default.
 
 ### Publishing artefacts
 
