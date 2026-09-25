@@ -58,6 +58,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class DeployNewInstanceIT {
+
     InstanceProperties instanceProperties = new InstanceProperties();
     Schema schema = createSchemaWithKey("key");
     InMemoryTableIndex tableIndex = new InMemoryTableIndex();
@@ -107,7 +108,6 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstanceWhenUsingConfigDir() throws Exception {
             // Given
-            instanceProperties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
             writeInstancePropertiesFile();
             TableProperties tableProperties = new TableProperties(instanceProperties);
             tableProperties.set(TABLE_NAME, "test-table");
@@ -119,12 +119,11 @@ public class DeployNewInstanceIT {
                     "my-instance", "test-vpc", "test-subnet",
                     "--config-dir", configDir.toString());
 
-            // Then CDK is invoked before AddTableClient runs — tables have no ID in the CDK request
+            // Then CDK is invoked before AddTableClient runs so tables have no ID in the CDK request
             InstanceProperties expected = new InstanceProperties();
             expected.set(ID, "my-instance");
             expected.set(VPC_ID, "test-vpc");
             expected.set(SUBNETS, "test-subnet");
-            expected.set(RETAIN_LOGS_AFTER_DESTROY, "false");
             TableProperties expectedTableForCdk = new TableProperties(expected);
             expectedTableForCdk.set(TABLE_NAME, "test-table");
             expectedTableForCdk.setSchema(createSchemaWithKey("key"));
@@ -140,7 +139,6 @@ public class DeployNewInstanceIT {
                     .build());
             // AddTableClient runs after CDK and assigns TABLE_ID using the reloaded deployed properties
             InstanceProperties expectedDeployedProperties = new InstanceProperties();
-            expectedDeployedProperties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
             expectedDeployedProperties.set(ID, "my-instance");
             expectedDeployedProperties.set(VPC_ID, "test-vpc");
             expectedDeployedProperties.set(SUBNETS, "test-subnet");

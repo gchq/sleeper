@@ -16,6 +16,7 @@
 package sleeper.cdk.stack.compaction;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.autoscaling.AutoScalingGroup;
@@ -83,6 +84,8 @@ public class CompactionOnEc2Resources {
     private final InstanceProperties instanceProperties;
     private final Stack stack;
     private final SleeperCoreStacks coreStacks;
+    private AutoScalingGroup ec2ScalingGroup;
+    private AsgCapacityProvider ec2CapacityProvider;
 
     public CompactionOnEc2Resources(
             InstanceProperties instanceProperties, Stack stack, SleeperCoreStacks coreStacks) {
@@ -188,6 +191,27 @@ public class CompactionOnEc2Resources {
                         .build());
 
         instanceProperties.set(COMPACTION_AUTO_SCALING_GROUP, ec2scalingGroup.getAutoScalingGroupName());
+
+        ec2ScalingGroup = ec2scalingGroup;
+        ec2CapacityProvider = ec2Provider;
+    }
+
+    /**
+     * Ensures ECS tasks are stopped before the EC2 Auto Scaling Group and its capacity provider are deleted. The
+     * custom termination policy on the Auto Scaling Group only terminates instances that are not running any tasks,
+     * so if CloudFormation attempts to scale down and delete the Auto Scaling Group while tasks are still running it
+     * will never succeed.
+     * <p>
+     * CloudFormation deletes resources in the reverse of the order implied by their dependencies, so the custom
+     * resource must depend on the Auto Scaling Group in order to be deleted first. Adding the dependency the other
+     * way round would both delete the Auto Scaling Group first, and create a circular dependency, as the custom
+     * resource already depends on the ECS cluster which in turn depends on the capacity provider.
+     *
+     * @param autoStopEcsClusterTasks the custom resource that stops ECS tasks when it is deleted
+     */
+    public void stopTasksBeforeDeletingScalingGroup(CustomResource autoStopEcsClusterTasks) {
+        autoStopEcsClusterTasks.getNode().addDependency(ec2ScalingGroup);
+        autoStopEcsClusterTasks.getNode().addDependency(ec2CapacityProvider);
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")

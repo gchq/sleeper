@@ -77,6 +77,7 @@ copyFolderForParallelRun() {
     pushd $REPO_PARENT_DIR
     sudo rm -rf $COPY_DIR
     mkdir $COPY_DIR
+    # Rust build output is excluded as the suites all run with -Drust.skip, and it dominates the size of the repository
     sudo rsync -a --exclude=".*" sleeper/ $COPY_DIR
     # A Python virtual environment includes an absolute path reference to itself, so update it
     sudo "$SCRIPTS_DIR/functions/run/sedInPlace.sh" \
