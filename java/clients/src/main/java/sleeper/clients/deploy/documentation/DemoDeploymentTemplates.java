@@ -26,6 +26,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.configuration.SystemTestIngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 
@@ -42,9 +44,41 @@ import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_INGE
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_ROWS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 
-public class DemoDeploymentTemplate {
+/**
+ * Generates the default configuration for a demo deployment.
+ */
+public class DemoDeploymentTemplates {
 
-    private DemoDeploymentTemplate() {
+    private DemoDeploymentTemplates() {
+    }
+
+    private static final SystemTestProperties INSTANCE_PROPERTIES = createInstanceProperties();
+    private static final TableProperties TABLE_PROPERTIES = createTableProperties(INSTANCE_PROPERTIES);
+
+    public static void writeInstancePropertiesDemoTemplate(Writer out) {
+        PrintWriter writer = new PrintWriter(out);
+        writer.println("""
+                ########################################################################################
+                #                              System Test Properties                                  #
+                ########################################################################################
+
+                # Test runs will use a copy of this file with the same name but without `.template` on the end.
+                # Please do not edit the template. If you do not create the copy it will be created automatically.""");
+        writer.println();
+        SystemTestProperties.createSystemTestPrettyPrinterBuilder()
+                .writer(writer)
+                .hideUnsetProperties(true)
+                .printTemplate(true)
+                .build().print(INSTANCE_PROPERTIES);
+    }
+
+    public static void writeTablePropertiesDemoTemplate(Writer out) {
+        PrintWriter writer = new PrintWriter(out);
+        TableProperties.createPrettyPrinterBuilder()
+                .writer(writer)
+                .hideUnsetProperties(true)
+                .printTemplate(true)
+                .build().print(TABLE_PROPERTIES);
     }
 
     public static SystemTestProperties createInstanceProperties() {

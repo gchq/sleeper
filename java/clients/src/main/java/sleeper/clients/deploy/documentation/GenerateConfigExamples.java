@@ -23,7 +23,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertyGroup;
-import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -36,30 +35,11 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
-import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_CORES;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES;
-import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
-import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
 
 /**
  * Generates example configurations to deploy a Sleeper instance and/or tables.
  */
 public class GenerateConfigExamples {
-
-    private static final SystemTestProperties DEMO_INSTANCE_PROPERTIES = DemoDeploymentTemplate.createInstanceProperties();
-    private static final TableProperties DEMO_TABLE_PROPERTIES = DemoDeploymentTemplate.createTableProperties(DEMO_INSTANCE_PROPERTIES);
 
     private GenerateConfigExamples() {
     }
@@ -105,8 +85,7 @@ public class GenerateConfigExamples {
 
     private static void writeLightExample(Path lightExampleDir) throws IOException {
         writeFile(lightExampleDir.resolve("instance.properties"),
-                writer -> writeExampleLightInstanceProperties(writer,
-                        createLightInstanceProperties()));
+                LightExampleConfig::writeExampleLightInstanceProperties);
         writeFile(lightExampleDir.resolve("table.properties"),
                 writer -> writeBasicPropertiesTemplate(writer,
                         new TableProperties(new InstanceProperties()),
@@ -115,77 +94,9 @@ public class GenerateConfigExamples {
 
     private static void writeDemoDeploymentTemplates(Path demoDeploymentDir) throws IOException {
         writeFile(demoDeploymentDir.resolve("system-test-instance.properties.template"),
-                GenerateConfigExamples::writeInstancePropertiesDemoTemplate);
+                DemoDeploymentTemplates::writeInstancePropertiesDemoTemplate);
         writeFile(demoDeploymentDir.resolve("table.properties.template"),
-                GenerateConfigExamples::writeTablePropertiesDemoTemplate);
-    }
-
-    private static void writeExampleLightInstanceProperties(Writer out, InstanceProperties instanceProperties) {
-        PrintWriter writer = new PrintWriter(out);
-        writer.println("""
-                #################################################################################
-                #                    Properties set below are designed for an                   #
-                #                  instance aimed towards reducing running costs                #
-                #               and will apply to any bulk import stacks you enable             #
-                #################################################################################""");
-        writer.println();
-        InstanceProperties.createPrettyPrinterBuilder().writer(writer)
-                .printTemplate(true)
-                .hideUnsetProperties(true)
-                .build().print(instanceProperties);
-    }
-
-    private static InstanceProperties createLightInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        // Emr Serverless properties
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES, "2");
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY, "8G");
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK, "60G");
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES, "2");
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES, "2");
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY, "8G");
-
-        // EKS properties
-        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES, "2");
-        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY, "8G");
-        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE, "60Gi");
-        instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES, "2");
-        instanceProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_CORES, "2");
-        instanceProperties.set(BULK_IMPORT_EKS_SPARK_DRIVER_MEMORY, "8G");
-
-        // Default table values
-        instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8");
-        instanceProperties.set(DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS, "1200");
-
-        // Stack
-        instanceProperties.set(OPTIONAL_STACKS, DEFAULT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
-        return instanceProperties;
-    }
-
-    private static void writeInstancePropertiesDemoTemplate(Writer out) {
-        PrintWriter writer = new PrintWriter(out);
-        writer.println("""
-                ########################################################################################
-                #                              System Test Properties                                  #
-                ########################################################################################
-
-                # Test runs will use a copy of this file with the same name but without `.template` on the end.
-                # Please do not edit the template. If you do not create the copy it will be created automatically.""");
-        writer.println();
-        SystemTestProperties.createSystemTestPrettyPrinterBuilder()
-                .writer(writer)
-                .hideUnsetProperties(true)
-                .printTemplate(true)
-                .build().print(DEMO_INSTANCE_PROPERTIES);
-    }
-
-    private static void writeTablePropertiesDemoTemplate(Writer out) {
-        PrintWriter writer = new PrintWriter(out);
-        TableProperties.createPrettyPrinterBuilder()
-                .writer(writer)
-                .hideUnsetProperties(true)
-                .printTemplate(true)
-                .build().print(DEMO_TABLE_PROPERTIES);
+                DemoDeploymentTemplates::writeTablePropertiesDemoTemplate);
     }
 
     private static <T extends SleeperProperty> void writeFullPropertiesTemplate(

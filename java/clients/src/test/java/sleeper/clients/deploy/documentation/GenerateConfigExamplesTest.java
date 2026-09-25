@@ -287,7 +287,7 @@ class GenerateConfigExamplesTest {
             SystemTestProperties found = systemTestPropertiesFromString(propertiesString);
 
             // Then
-            SystemTestProperties expected = DemoDeploymentTemplate.createInstanceProperties();
+            SystemTestProperties expected = DemoDeploymentTemplates.createInstanceProperties();
             expected.unset(TAGS); // Tags are in a separate file
             assertThat(found).isEqualTo(expected);
         }
@@ -299,7 +299,7 @@ class GenerateConfigExamplesTest {
             TableProperties found = tablePropertiesFromString(propertiesString);
 
             // Then
-            TableProperties expected = DemoDeploymentTemplate.createTableProperties(new InstanceProperties());
+            TableProperties expected = DemoDeploymentTemplates.createTableProperties(new InstanceProperties());
             expected.unset(SCHEMA); // Schema is in a separate file
             assertThat(found).isEqualTo(expected);
         }
