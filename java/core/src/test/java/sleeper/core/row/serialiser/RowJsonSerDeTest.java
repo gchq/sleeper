@@ -15,6 +15,8 @@
  */
 package sleeper.core.row.serialiser;
 
+import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Row;
@@ -50,10 +52,12 @@ public class RowJsonSerDeTest {
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
+        String json = jsonSerDe.toJson(row, true);
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
         assertThat(deserialised).isEqualTo(row);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
@@ -71,10 +75,12 @@ public class RowJsonSerDeTest {
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
+        String json = jsonSerDe.toJson(row, true);
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
         assertThat(deserialised).isEqualTo(row);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
@@ -92,10 +98,12 @@ public class RowJsonSerDeTest {
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
+        String json = jsonSerDe.toJson(row, true);
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
         assertThat(deserialised).isEqualTo(row);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
@@ -117,10 +125,12 @@ public class RowJsonSerDeTest {
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
+        String json = jsonSerDe.toJson(row, true);
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
         assertThat(deserialised).isEqualTo(row);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
@@ -136,11 +146,13 @@ public class RowJsonSerDeTest {
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
+        String json = jsonSerDe.toJson(row, true);
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
         assertThat(deserialised).isEqualTo(row);
         assertThat(deserialised.get("value")).isNull();
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
@@ -156,11 +168,13 @@ public class RowJsonSerDeTest {
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
+        String json = jsonSerDe.toJson(row, true);
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
         assertThat(deserialised).isEqualTo(row);
         assertThat(deserialised.get("value")).isNull();
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
@@ -176,11 +190,13 @@ public class RowJsonSerDeTest {
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
+        String json = jsonSerDe.toJson(row, true);
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
         assertThat(deserialised).isEqualTo(row);
         assertThat(deserialised.get("value")).isNull();
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
@@ -196,11 +212,13 @@ public class RowJsonSerDeTest {
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
+        String json = jsonSerDe.toJson(row, true);
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
         assertThat(deserialised).isEqualTo(row);
         assertThat(deserialised.get("value")).isNull();
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
@@ -216,11 +234,13 @@ public class RowJsonSerDeTest {
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
+        String json = jsonSerDe.toJson(row, true);
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
         assertThat(deserialised).isEqualTo(row);
         assertThat(deserialised.get("value")).isNull();
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
@@ -236,10 +256,12 @@ public class RowJsonSerDeTest {
         RowJsonSerDe jsonSerDe = new RowJsonSerDe(schema);
 
         // When
+        String json = jsonSerDe.toJson(row, true);
         Row deserialised = jsonSerDe.fromJson(jsonSerDe.toJson(row));
 
         // Then
         assertThat(deserialised).isEqualTo(row);
         assertThat(deserialised.get("value")).isNull();
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 }
