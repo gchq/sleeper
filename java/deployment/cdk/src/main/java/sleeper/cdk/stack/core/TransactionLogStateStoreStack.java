@@ -20,6 +20,7 @@ import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.ITable;
+import software.amazon.awscdk.services.dynamodb.PointInTimeRecoverySpecification;
 import software.amazon.awscdk.services.dynamodb.StreamViewType;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
@@ -36,6 +37,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY;
 
 public class TransactionLogStateStoreStack extends NestedStack {
     private final Table partitionsLogTable;
@@ -65,6 +67,9 @@ public class TransactionLogStateStoreStack extends NestedStack {
                 .tableName(String.join("-", "sleeper", instanceProperties.get(ID), name))
                 .removalPolicy(removalPolicy(instanceProperties))
                 .billingMode(BillingMode.PAY_PER_REQUEST)
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled(instanceProperties.getBoolean(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY))
+                        .build())
                 .partitionKey(Attribute.builder()
                         .name(DynamoDBTransactionLogStateStore.TABLE_ID)
                         .type(AttributeType.STRING)
@@ -83,6 +88,9 @@ public class TransactionLogStateStoreStack extends NestedStack {
                 .tableName(String.join("-", "sleeper", instanceProperties.get(ID), name))
                 .removalPolicy(removalPolicy(instanceProperties))
                 .billingMode(BillingMode.PAY_PER_REQUEST)
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled(instanceProperties.getBoolean(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY))
+                        .build())
                 .partitionKey(Attribute.builder()
                         .name(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID)
                         .type(AttributeType.STRING)
@@ -96,6 +104,9 @@ public class TransactionLogStateStoreStack extends NestedStack {
                 .tableName(String.join("-", "sleeper", instanceProperties.get(ID), name))
                 .removalPolicy(removalPolicy(instanceProperties))
                 .billingMode(BillingMode.PAY_PER_REQUEST)
+                .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
+                        .pointInTimeRecoveryEnabled(instanceProperties.getBoolean(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY))
+                        .build())
                 .partitionKey(Attribute.builder()
                         .name(DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID_AND_SNAPSHOT_TYPE)
                         .type(AttributeType.STRING)

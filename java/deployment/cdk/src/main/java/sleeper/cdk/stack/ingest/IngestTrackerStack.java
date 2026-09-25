@@ -40,6 +40,7 @@ import java.util.Optional;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY;
 
 public class IngestTrackerStack extends NestedStack implements IngestTrackerResources {
     private final Table updatesTable;
@@ -68,7 +69,7 @@ public class IngestTrackerStack extends NestedStack implements IngestTrackerReso
                         .build())
                 .timeToLiveAttribute(DynamoDBIngestJobTracker.EXPIRY_DATE)
                 .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
-                        .pointInTimeRecoveryEnabled(false)
+                        .pointInTimeRecoveryEnabled(instanceProperties.getBoolean(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY))
                         .build())
                 .build();
 
@@ -83,7 +84,7 @@ public class IngestTrackerStack extends NestedStack implements IngestTrackerReso
                         .build())
                 .timeToLiveAttribute(DynamoDBIngestJobTracker.EXPIRY_DATE)
                 .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
-                        .pointInTimeRecoveryEnabled(false)
+                        .pointInTimeRecoveryEnabled(instanceProperties.getBoolean(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY))
                         .build())
                 .build();
 
@@ -112,7 +113,7 @@ public class IngestTrackerStack extends NestedStack implements IngestTrackerReso
                         .build())
                 .timeToLiveAttribute(DynamoDBIngestTaskStatusFormat.EXPIRY_DATE)
                 .pointInTimeRecoverySpecification(PointInTimeRecoverySpecification.builder()
-                        .pointInTimeRecoveryEnabled(false)
+                        .pointInTimeRecoveryEnabled(instanceProperties.getBoolean(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY))
                         .build())
                 .build();
 
