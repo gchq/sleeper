@@ -29,9 +29,10 @@ import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.joining;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
@@ -103,7 +104,7 @@ public class DemoDeploymentTemplates {
         instanceProperties.setNumber(NUMBER_OF_INGESTS_PER_WRITER, 1);
         instanceProperties.setNumber(NUMBER_OF_ROWS_PER_INGEST, 40_000_000);
         instanceProperties.set(LOGGING_LEVEL, "debug");
-        instanceProperties.setEnumList(OPTIONAL_STACKS, List.of(
+        instanceProperties.set(OPTIONAL_STACKS, Stream.of(
                 OptionalStack.CompactionStack,
                 OptionalStack.GarbageCollectorStack,
                 OptionalStack.IngestStack,
@@ -117,7 +118,8 @@ public class DemoDeploymentTemplates {
                 OptionalStack.EmrStudioStack,
                 OptionalStack.DashboardStack,
                 OptionalStack.TableMetricsStack,
-                OptionalStack.RestApiStack));
+                OptionalStack.RestApiStack)
+                .map(OptionalStack::toString).collect(joining(",")));
         instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         instanceProperties.set(RETAIN_LOGS_AFTER_DESTROY, "true");
         instanceProperties.setNumber(PARTITION_SPLITTING_TRIGGER_PERIOD_IN_MINUTES, 2);

@@ -49,7 +49,7 @@ sleeper.retain.logs.after.destroy=true
 # PersistentEmrBulkImportStack, EksBulkImportStack, EmrStudioStack, BulkExportStack, QueryStack,
 # WebSocketQueryStack, AthenaStack, KeepLambdaWarmStack, CompactionStack, GarbageCollectorStack,
 # PartitionSplittingStack, RestApiStack, DashboardStack, TableMetricsStack]
-sleeper.optional.stacks=compactionstack,garbagecollectorstack,ingeststack,ingestbatcherstack,partitionsplittingstack,querystack,websocketquerystack,athenastack,emrbulkimportstack,emrserverlessbulkimportstack,emrstudiostack,dashboardstack,tablemetricsstack,restapistack
+sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,IngestBatcherStack,PartitionSplittingStack,QueryStack,WebSocketQueryStack,AthenaStack,EmrBulkImportStack,EmrServerlessBulkImportStack,EmrStudioStack,DashboardStack,TableMetricsStack,RestApiStack
 
 
 ## The following instance properties relate to the splitting of partitions.
