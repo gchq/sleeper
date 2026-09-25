@@ -20,7 +20,6 @@ import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertyGroup;
@@ -84,23 +83,34 @@ public class GenerateConfigExamples {
 
     private static void writeFullExample(Path fullExampleDir) throws IOException {
         writeFile(fullExampleDir.resolve("instance.properties"),
-                GenerateConfigExamples::writeExampleFullInstanceProperties);
+                writer -> writeFullPropertiesTemplate(writer,
+                        new InstanceProperties(),
+                        InstancePropertyGroup.getAll()));
         writeFile(fullExampleDir.resolve("table.properties"),
-                GenerateConfigExamples::writeExampleFullTableProperties);
+                writer -> writeFullPropertiesTemplate(writer,
+                        new TableProperties(new InstanceProperties()),
+                        TablePropertyGroup.getAll()));
     }
 
     private static void writeBasicExample(Path basicExampleDir) throws IOException {
         writeFile(basicExampleDir.resolve("instance.properties"),
-                GenerateConfigExamples::writeExampleBasicInstanceProperties);
+                writer -> writeBasicPropertiesTemplate(writer,
+                        new InstanceProperties(),
+                        InstancePropertyGroup.getAll()));
         writeFile(basicExampleDir.resolve("table.properties"),
-                GenerateConfigExamples::writeExampleBasicTableProperties);
+                writer -> writeBasicPropertiesTemplate(writer,
+                        new TableProperties(new InstanceProperties()),
+                        TablePropertyGroup.getAll()));
     }
 
     private static void writeLightExample(Path lightExampleDir) throws IOException {
         writeFile(lightExampleDir.resolve("instance.properties"),
-                GenerateConfigExamples::writeExampleLightInstanceProperties);
+                writer -> writeExampleLightInstanceProperties(writer,
+                        createLightInstanceProperties()));
         writeFile(lightExampleDir.resolve("table.properties"),
-                GenerateConfigExamples::writeExampleBasicTableProperties);
+                writer -> writeBasicPropertiesTemplate(writer,
+                        new TableProperties(new InstanceProperties()),
+                        TablePropertyGroup.getAll()));
     }
 
     private static void writeDemoDeploymentTemplates(Path demoDeploymentDir) throws IOException {
@@ -110,31 +120,22 @@ public class GenerateConfigExamples {
                 GenerateConfigExamples::writeTablePropertiesDemoTemplate);
     }
 
-    private static void writeExampleFullInstanceProperties(Writer writer) {
-        InstanceProperties properties = new InstanceProperties();
-
-        writeFullPropertiesTemplate(writer, properties, InstancePropertyGroup.getAll());
+    private static void writeExampleLightInstanceProperties(Writer out, InstanceProperties instanceProperties) {
+        PrintWriter writer = new PrintWriter(out);
+        writer.println("""
+                #################################################################################
+                #                    Properties set below are designed for an                   #
+                #                  instance aimed towards reducing running costs                #
+                #               and will apply to any bulk import stacks you enable             #
+                #################################################################################""");
+        writer.println();
+        InstanceProperties.createPrettyPrinterBuilder().writer(writer)
+                .printTemplate(true)
+                .hideUnsetProperties(true)
+                .build().print(instanceProperties);
     }
 
-    private static void writeExampleFullTableProperties(Writer writer) {
-        TableProperties properties = new TableProperties(new InstanceProperties());
-
-        writeFullPropertiesTemplate(writer, properties, TablePropertyGroup.getAll());
-    }
-
-    private static void writeExampleBasicInstanceProperties(Writer writer) {
-        writeBasicPropertiesTemplate(writer,
-                new InstanceProperties(),
-                InstancePropertyGroup.getAll());
-    }
-
-    private static void writeExampleBasicTableProperties(Writer writer) {
-        writeBasicPropertiesTemplate(writer,
-                new TableProperties(new InstanceProperties()),
-                TablePropertyGroup.getAll());
-    }
-
-    private static void writeExampleLightInstanceProperties(Writer out) {
+    private static InstanceProperties createLightInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         // Emr Serverless properties
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES, "2");
@@ -158,20 +159,7 @@ public class GenerateConfigExamples {
 
         // Stack
         instanceProperties.set(OPTIONAL_STACKS, DEFAULT_STACKS.stream().map(stack -> stack.name()).collect(Collectors.joining(",")));
-
-        List<InstanceProperty> propertiesByIsSet = instanceProperties.streamNonDefaultEntries().map(entry -> entry.getKey()).toList();
-
-        PrintWriter writer = new PrintWriter(out);
-        writer.println("""
-                #################################################################################
-                #                    Properties set below are designed for an                   #
-                #                  instance aimed towards reducing running costs                #
-                #               and will apply to any bulk import stacks you enable             #
-                #################################################################################""");
-        writer.println();
-        SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
-                propertiesByIsSet, InstancePropertyGroup.getAll(), writer)
-                .print(instanceProperties);
+        return instanceProperties;
     }
 
     private static void writeInstancePropertiesDemoTemplate(Writer out) {
