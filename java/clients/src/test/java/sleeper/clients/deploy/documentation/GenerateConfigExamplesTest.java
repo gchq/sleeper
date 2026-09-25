@@ -277,13 +277,13 @@ class GenerateConfigExamplesTest {
     }
 
     @Nested
-    @DisplayName("Generate demo deployment instance properties")
-    class GenerateDemoDeploymentInstanceProperties {
-        private final String propertiesString = loadFileAsString("scripts/test/deployAll/system-test-instance.properties.template");
+    @DisplayName("Generate demo deployment configuration templates")
+    class GenerateDemoDeploymentConfigTemplates {
 
         @Test
-        void shouldWriteDemoProperties() {
+        void shouldWriteInstanceProperties() {
             // When
+            String propertiesString = loadFileAsString("scripts/test/deployAll/system-test-instance.properties.template");
             SystemTestProperties found = systemTestPropertiesFromString(propertiesString);
 
             // Then
@@ -291,16 +291,11 @@ class GenerateConfigExamplesTest {
             expected.unset(TAGS); // Tags are in a separate file
             assertThat(found).isEqualTo(expected);
         }
-    }
-
-    @Nested
-    @DisplayName("Generate demo deployment table properties")
-    class GenerateDemoDeploymentTableProperties {
-        private final String propertiesString = loadFileAsString("scripts/test/deployAll/table.properties.template");
 
         @Test
-        void shouldWriteDemoProperties() {
+        void shouldWriteTableProperties() {
             // When
+            String propertiesString = loadFileAsString("scripts/test/deployAll/table.properties.template");
             TableProperties found = tablePropertiesFromString(propertiesString);
 
             // Then
