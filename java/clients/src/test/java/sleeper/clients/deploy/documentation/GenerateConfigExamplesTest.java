@@ -16,6 +16,7 @@
 package sleeper.clients.deploy.documentation;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -280,11 +282,13 @@ class GenerateConfigExamplesTest {
     @DisplayName("Generate demo deployment configuration templates")
     class GenerateDemoDeploymentConfigTemplates {
 
+        Path demoDir = tempDir.resolve("scripts/test/deployAll");
+
         @Test
         void shouldWriteInstanceProperties() {
             // When
-            String propertiesString = loadFileAsString("scripts/test/deployAll/system-test-instance.properties.template");
-            SystemTestProperties found = systemTestPropertiesFromString(propertiesString);
+            SystemTestProperties found = new SystemTestProperties(loadProperties(
+                    demoDir.resolve("system-test-instance.properties.template")));
 
             // Then
             SystemTestProperties expected = DemoDeploymentTemplates.createInstanceProperties();
@@ -293,10 +297,21 @@ class GenerateConfigExamplesTest {
         }
 
         @Test
+        @Disabled("TODO")
+        void shouldWriteTags() {
+            // When
+            Properties found = loadProperties(demoDir.resolve("tags.properties.template"));
+
+            // Then
+            SystemTestProperties expected = DemoDeploymentTemplates.createInstanceProperties();
+            assertThat(found).isEqualTo(expected.getTagsProperties());
+        }
+
+        @Test
         void shouldWriteTableProperties() {
             // When
-            String propertiesString = loadFileAsString("scripts/test/deployAll/table.properties.template");
-            TableProperties found = tablePropertiesFromString(propertiesString);
+            TableProperties found = new TableProperties(new InstanceProperties(), loadProperties(
+                    demoDir.resolve("table.properties.template")));
 
             // Then
             TableProperties expected = DemoDeploymentTemplates.createTableProperties(new InstanceProperties());
@@ -315,10 +330,6 @@ class GenerateConfigExamplesTest {
 
     private InstanceProperties instancePropertiesFromString(String propertiesString) {
         return InstanceProperties.createWithoutValidation(loadProperties(propertiesString));
-    }
-
-    private SystemTestProperties systemTestPropertiesFromString(String propertiesString) {
-        return new SystemTestProperties(loadProperties(propertiesString));
     }
 
     private TableProperties tablePropertiesFromString(String propertiesString) {

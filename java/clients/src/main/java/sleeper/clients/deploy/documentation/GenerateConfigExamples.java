@@ -94,9 +94,11 @@ public class GenerateConfigExamples {
 
     private static void writeDemoDeploymentTemplates(Path demoDeploymentDir) throws IOException {
         writeFile(demoDeploymentDir.resolve("system-test-instance.properties.template"),
-                DemoDeploymentTemplates::writeInstancePropertiesDemoTemplate);
+                DemoDeploymentTemplates::writeInstancePropertiesTemplate);
+        writeFile(demoDeploymentDir.resolve("tags.properties.template"),
+                DemoDeploymentTemplates::writeTagsTemplate);
         writeFile(demoDeploymentDir.resolve("table.properties.template"),
-                DemoDeploymentTemplates::writeTablePropertiesDemoTemplate);
+                DemoDeploymentTemplates::writeTablePropertiesTemplate);
     }
 
     private static <T extends SleeperProperty> void writeFullPropertiesTemplate(

@@ -55,7 +55,7 @@ public class DemoDeploymentTemplates {
     private static final SystemTestProperties INSTANCE_PROPERTIES = createInstanceProperties();
     private static final TableProperties TABLE_PROPERTIES = createTableProperties(INSTANCE_PROPERTIES);
 
-    public static void writeInstancePropertiesDemoTemplate(Writer out) {
+    public static void writeInstancePropertiesTemplate(Writer out) {
         PrintWriter writer = new PrintWriter(out);
         writer.println("""
                 ########################################################################################
@@ -72,7 +72,11 @@ public class DemoDeploymentTemplates {
                 .build().print(INSTANCE_PROPERTIES);
     }
 
-    public static void writeTablePropertiesDemoTemplate(Writer out) {
+    public static void writeTagsTemplate(Writer out) {
+        // TODO
+    }
+
+    public static void writeTablePropertiesTemplate(Writer out) {
         PrintWriter writer = new PrintWriter(out);
         TableProperties.createPrettyPrinterBuilder()
                 .writer(writer)
