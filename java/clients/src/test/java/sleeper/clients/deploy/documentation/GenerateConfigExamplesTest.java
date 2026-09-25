@@ -277,8 +277,8 @@ class GenerateConfigExamplesTest {
     }
 
     @Nested
-    @DisplayName("Generate instance properties template")
-    class GenerateInstancePropertiesTemplate {
+    @DisplayName("Generate demo deployment instance properties")
+    class GenerateDemoDeploymentInstanceProperties {
         private final String propertiesString = loadFileAsString("scripts/test/deployAll/system-test-instance.properties.template");
 
         @Test
@@ -294,8 +294,8 @@ class GenerateConfigExamplesTest {
     }
 
     @Nested
-    @DisplayName("Generate table properties template")
-    class GenerateTablePropertiesTemplate {
+    @DisplayName("Generate demo deployment table properties")
+    class GenerateDemoDeploymentTableProperties {
         private final String propertiesString = loadFileAsString("scripts/test/deployAll/table.properties.template");
 
         @Test
