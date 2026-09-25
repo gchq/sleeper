@@ -5,15 +5,20 @@ In the `/scripts/dev` folder are some scripts that can assist you while working 
 #### `buildDockerImage.sh`
 
 This will build a single Docker image, and can be used to prepare for execution of the local Docker image tests, e.g.
-`QueryLambdaDockerImageST`. You can run it like this:
+`QueryLambdaDockerImageST`. Build the Sleeper project first so the generated scripts and JARs required by the image are
+available, then run the image build:
 
 ```bash
+./scripts/build/build.sh
 ./scripts/dev/buildDockerImage.sh query-lambda test
 ```
 
 The first parameter is the name of the image, as listed in the documentation
 of [Docker images](../deployment/docker-images.md). The second parameter is the tag, usually "test" for an automated
 Docker image test.
+
+For the compaction image, `scripts/test/docker/buildTestCompactionDockerImage.sh` performs the required project build,
+builds the image, and runs `CompactionTaskDockerImageST` in one command.
 
 #### `checkNotices.sh`
 
