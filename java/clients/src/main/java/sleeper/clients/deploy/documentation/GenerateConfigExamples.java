@@ -66,16 +66,16 @@ public class GenerateConfigExamples {
     }
 
     public static void main(String[] args) throws Exception {
-        createTemplates(args.length < 1 ? Path.of(".") : Path.of(args[0]));
+        writeFiles(args.length < 1 ? Path.of(".") : Path.of(args[0]));
     }
 
     /**
-     * Generates and writes all template files.
+     * Generates and writes all example files.
      *
      * @param  repositoryRoot the root directory of the Sleeper repository
      * @throws IOException    if any files could not be written
      */
-    public static void createTemplates(Path repositoryRoot) throws IOException {
+    public static void writeFiles(Path repositoryRoot) throws IOException {
         writeFullExample(Files.createDirectories(repositoryRoot.resolve("example/full")));
         writeBasicExample(Files.createDirectories(repositoryRoot.resolve("example/basic")));
         writeLightExample(Files.createDirectories(repositoryRoot.resolve("example/light")));

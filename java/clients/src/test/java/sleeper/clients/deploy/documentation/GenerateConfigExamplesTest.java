@@ -71,7 +71,7 @@ class GenerateConfigExamplesTest {
 
     @BeforeAll
     static void setUp() throws Exception {
-        GenerateConfigExamples.createTemplates(tempDir);
+        GenerateConfigExamples.writeFiles(tempDir);
     }
 
     static class SystemDefinedInstanceProperties implements ArgumentsProvider {
