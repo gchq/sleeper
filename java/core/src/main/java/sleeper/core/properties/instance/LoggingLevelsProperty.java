@@ -25,24 +25,29 @@ import java.util.List;
  */
 public interface LoggingLevelsProperty {
     UserDefinedInstanceProperty LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level")
-            .description("The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is always set to INFO.")
+            .description("The logging level for Sleeper classes. This overrides the corresponding Log4j setting, except for MetricsLogger which is always INFO.")
+            .defaultValue("INFO")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .includedInBasicTemplate(true)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty APACHE_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.apache.level")
-            .description("The logging level for Apache logs that are not Parquet.")
+            .description("The logging level for Apache libraries other than Parquet. This overrides the corresponding Log4j setting.")
+            .defaultValue("INFO")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty PARQUET_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.parquet.level")
-            .description("The logging level for Parquet logs.")
+            .description("The logging level for Apache Parquet. This overrides the corresponding Log4j setting.")
+            .defaultValue("WARN")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty AWS_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.aws.level")
-            .description("The logging level for AWS logs.")
+            .description("The logging level for AWS SDK libraries. This overrides the corresponding Log4j setting.")
+            .defaultValue("INFO")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ROOT_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.root.level")
-            .description("The logging level for everything else.")
+            .description("The root logging level for messages not covered by a more specific category. This overrides the corresponding Log4j setting.")
+            .defaultValue("INFO")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RUST_BACKTRACE = Index.propertyBuilder("sleeper.logging.backtrace")
