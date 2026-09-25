@@ -55,12 +55,14 @@ one jar.
 See the [deployment guide](../deployment-guide.md). We have support for deploying Sleeper either with scripts, or with
 the CDK directly, either with your own CDK app or with ours in the CDK CLI.
 
-Our scripts take an instance ID, VPC ID, subnet IDs, and optional parameters to point it to an instance configuration
-and whether to deploy the instance paused.
+Our scripts take an instance ID, VPC ID, subnet IDs, and options to point it to an instance configuration, either as a
+single properties file with `--properties-file`, or as a configuration directory with `--config-dir`. Using
+`--properties-file` deploys the instance with no tables, while `--config-dir` also scans the directory for table
+properties, tags and schemas so that tables can be deployed along with the instance. The `scripts/deploy/deployNew.sh`
+script requires one of these options to be set, so a caller must always provide their own instance configuration.
 
-The `scripts/deploy/deployNew.sh` script can run without an instance configuration, in which case it builds a
-configuration from the `scripts/templates` folder. This sets most properties explicitly to their default values, which
-may or may not be desirable, as this way we can't expect values to change when we change the defaults.
+There is also an optional `--paused` flag to deploy the instance with periodic background processes paused. Run
+`scripts/deploy/deployNew.sh --help` for the full command line usage.
 
 Next, the S3 jars bucket and ECR repositories for Docker images are created as their own CDK app. This is called the
 artefacts deployment, and it has a deployment ID which is the same as the Sleeper instance ID by default. This allows
