@@ -73,7 +73,11 @@ public class DemoDeploymentTemplates {
     }
 
     public static void writeTagsTemplate(Writer out) {
-        // TODO
+        PrintWriter writer = new PrintWriter(out);
+        Map<String, String> tags = INSTANCE_PROPERTIES.getTags();
+        tags.keySet().stream().sorted()
+                .map(key -> key + "=" + tags.get(key))
+                .forEach(writer::println);
     }
 
     public static void writeTablePropertiesTemplate(Writer out) {
