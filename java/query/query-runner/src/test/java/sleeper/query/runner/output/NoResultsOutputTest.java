@@ -18,12 +18,14 @@ package sleeper.query.runner.output;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.row.Row;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.output.ResultsOutputLocation;
 
-import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,57 +39,17 @@ public class NoResultsOutputTest {
             .build());
 
     @Test
-    void shouldCloseResultsWithoutPublishingThem() {
-        // Given
-        CloseTrackingIterator results = new CloseTrackingIterator(null);
-
+    void shouldReportNoResults() {
         // When
-        ResultsOutputInfo outputInfo = new NoResultsOutput().publish(query, results);
+        ResultsOutputInfo outputInfo = new NoResultsOutput().publish(query, emptyIterator());
 
         // Then
-        assertThat(results.closed).isTrue();
         assertThat(outputInfo.getRowCount()).isZero();
         assertThat(outputInfo.getError()).isNull();
+        assertThat(outputInfo.getLocations()).containsExactly(new ResultsOutputLocation("destination", "NoResultsOutput"));
     }
 
-    @Test
-    void shouldReportErrorWhenResultsFailToClose() {
-        // Given
-        IOException failure = new IOException("Failed to close");
-        CloseTrackingIterator results = new CloseTrackingIterator(failure);
-
-        // When
-        ResultsOutputInfo outputInfo = new NoResultsOutput().publish(query, results);
-
-        // Then
-        assertThat(outputInfo.getRowCount()).isZero();
-        assertThat(outputInfo.getError()).isSameAs(failure);
-    }
-
-    private static class CloseTrackingIterator implements CloseableIterator<Row> {
-        private final IOException failOnClose;
-        private boolean closed = false;
-
-        CloseTrackingIterator(IOException failOnClose) {
-            this.failOnClose = failOnClose;
-        }
-
-        @Override
-        public boolean hasNext() {
-            throw new IllegalStateException("Results should not be read");
-        }
-
-        @Override
-        public Row next() {
-            throw new IllegalStateException("Results should not be read");
-        }
-
-        @Override
-        public void close() throws IOException {
-            closed = true;
-            if (failOnClose != null) {
-                throw failOnClose;
-            }
-        }
+    private CloseableIterator<Row> emptyIterator() {
+        return new WrappedIterator<Row>(Collections.emptyIterator());
     }
 }

@@ -63,12 +63,6 @@ public class WebSocketResultsOutput implements ResultsOutput {
             return new ResultsOutputInfo(rowsSent, outputLocations);
         } catch (QueryWebSocketRowsException e) {
             return new ResultsOutputInfo(e.getRowsSent(), outputLocations, e.getCause());
-        } finally {
-            try {
-                results.close();
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
         }
     }
 }

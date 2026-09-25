@@ -25,8 +25,10 @@ import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.LeafPartitionQuery;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -37,14 +39,20 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetriever, LeafPartitionRowRetrieverProvider {
 
     private final InMemoryRowStore rowStore;
+    private final Function<Iterator<Row>, CloseableIterator<Row>> iteratorFactory;
 
     public InMemoryLeafPartitionRowRetriever(InMemoryRowStore rowStore) {
+        this(rowStore, WrappedIterator::new);
+    }
+
+    public InMemoryLeafPartitionRowRetriever(InMemoryRowStore rowStore, Function<Iterator<Row>, CloseableIterator<Row>> iteratorFactory) {
         this.rowStore = rowStore;
+        this.iteratorFactory = iteratorFactory;
     }
 
     @Override
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
-        return new WrappedIterator<>(getRowsOrThrow(leafPartitionQuery.getFiles())
+        return iteratorFactory.apply(getRowsOrThrow(leafPartitionQuery.getFiles())
                 .filter(row -> isRowInRegion(row, leafPartitionQuery, dataReadSchema))
                 .map(row -> mapToReadSchema(row, dataReadSchema))
                 .iterator());
@@ -89,4 +97,5 @@ public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetrie
         }
         return result;
     }
+
 }

@@ -102,12 +102,6 @@ public class S3ResultsOutput implements ResultsOutput {
         } catch (RuntimeException | IOException e) {
             LOGGER.error("Exception writing results to S3", e);
             return new ResultsOutputInfo(count, Collections.singletonList(outputLocation), e);
-        } finally {
-            try {
-                results.close();
-            } catch (IOException e) {
-                LOGGER.error("IOException closing results of query", e);
-            }
         }
     }
 
