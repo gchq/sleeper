@@ -118,25 +118,16 @@ that way already, or overwrite `$HOME/.local/bin/sleeper` with the contents of `
 
 Installing is a separate step from building. You can run the install script from this repository, and it will install
 the CLI exactly as described in [Sleeper Docker tools](deployment/docker-tools.md), downloading the `sleeper` command
-from GitHub:
+from GitHub.
+
+If you've built the tools locally and want to apply local changes to the scripts as well, use this:
 
 ```bash
-./scripts/cli/install.sh
+./scripts/cli/install.sh --useLocalOnce
 ```
 
-If you want to install the CLI from this repository instead, pass `--useLocalRepo`. This installs the `sleeper` command
-from `scripts/cli/runInDocker.sh` here, and `sleeper cli upgrade` will then take updates from this checkout rather than
-from GitHub:
-
-```bash
-./scripts/cli/install.sh --useLocalRepo
-```
-
-Note that the Docker images are still pulled from a registry either way, so they will be built from the `develop`
-branch rather than from the code you have checked out. If you need images that match your checkout, build them as
-above and don't install afterwards. Installing pulls the Docker images from a registry and re-tags them with the same
-local tags used by `buildAll.sh` above, so **if you've just built the tools locally, running the install script
-afterwards will overwrite those images with the ones from the registry**.
+The `--useLocalOnce` flag will stop it from pulling Docker images from the remote registry, and will install the CLI
+script from the local repository. Further calls to upgrade the CLI will retrieve it from GitHub.
 
 ### Publishing artefacts
 

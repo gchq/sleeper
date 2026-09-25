@@ -18,12 +18,15 @@ unset CDPATH
 
 REGISTRY=""
 USE_LOCAL_REPO=false
+SET_LOCAL_REPO=false
 USE_LOCAL_VERSION=false
+PULL_IMAGES=true
 while [[ "$#" -gt 0 ]]; do
   case $1 in
     --registry) REGISTRY="$2"; shift 2 ;;
-    --useLocalRepo) USE_LOCAL_REPO=true; shift 1 ;;
+    --useLocalRepo) USE_LOCAL_REPO=true; SET_LOCAL_REPO=true; shift 1 ;;
     --useLocalVersion) USE_LOCAL_VERSION=true; shift 1 ;;
+    --useLocalOnce) PULL_IMAGES=false; USE_LOCAL_REPO=true; SET_LOCAL_REPO=false; shift 1 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -34,7 +37,7 @@ LOCAL_SCRIPT="$THIS_DIR/runInDocker.sh"
 REGISTRY_CONFIG_PATH="$HOME/.sleeper/docker-tools/registry"
 
 # Fail before changing anything if the options can't be satisfied
-if [ "$USE_LOCAL_VERSION" == "true" ] && [ "$USE_LOCAL_REPO" != "true" ]; then
+if [ "$USE_LOCAL_VERSION" == "true" ] && [ "$SET_LOCAL_REPO" != "true" ]; then
   echo "Error: --useLocalVersion requires --useLocalRepo," >&2
   echo "as the version is read from the repository's java/pom.xml." >&2
   exit 1
@@ -57,9 +60,11 @@ TEMP_PATH="$TEMP_DIR/sleeper"
 if [ "$USE_LOCAL_REPO" == "true" ]; then
   echo "Installing the Sleeper Docker tools CLI from this repository"
   SCRIPT_PATH="$LOCAL_SCRIPT"
-  echo "Saving local repo path to ~/.sleeper/local-repo"
-  mkdir -p "$HOME/.sleeper"
-  echo $(cd "$THIS_DIR" && cd ../.. && pwd) > ~/.sleeper/local-repo
+  if [ "$SET_LOCAL_REPO" == "true" ]; then
+    echo "Saving local repo path to ~/.sleeper/local-repo"
+    mkdir -p "$HOME/.sleeper"
+    echo $(cd "$THIS_DIR" && cd ../.. && pwd) > ~/.sleeper/local-repo
+  fi
 else
   if [ -f "$HOME/.sleeper/local-repo" ]; then
     echo "Clearing local repo path from any previous installation"
@@ -77,10 +82,14 @@ chmod a+x "$SCRIPT_PATH"
 if [ -n "$REGISTRY" ]; then
   "$SCRIPT_PATH" cli set-registry "$REGISTRY"
 fi
+
 # Always set explicitly, so re-running without the flag resets to pulling latest
 "$SCRIPT_PATH" cli set-use-local-version "$USE_LOCAL_VERSION"
-"$SCRIPT_PATH" cli pull-images
-echo "Downloaded Docker images"
+
+if [ "$PULL_IMAGES" == "true" ]; then
+  "$SCRIPT_PATH" cli pull-images
+  echo "Downloaded Docker images"
+fi
 
 EXECUTABLE_DIR="$HOME/.local/bin"
 mkdir -p "$EXECUTABLE_DIR"
