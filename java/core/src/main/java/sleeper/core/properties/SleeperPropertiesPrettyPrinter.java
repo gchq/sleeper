@@ -96,6 +96,9 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
             if (hideUnsetProperties && !properties.isSet(property)) {
                 continue;
             }
+            if (printTemplate && !property.isIncludedInTemplate()) {
+                continue;
+            }
             if (currentGroup == null) {
                 currentGroup = property.getPropertyGroup();
                 printGroupHeader(currentGroup);

@@ -18,6 +18,7 @@ package sleeper.systemtest.configuration;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.EnumUtils;
 
+import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.model.IngestQueue;
@@ -31,6 +32,9 @@ import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEn
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface SystemTestProperty extends InstanceProperty {
     int SYSTEM_TEST_ID_MAX_LEN = 13;
+    PropertyGroup SYSTEM_TEST_GROUP = PropertyGroup.group("System Test")
+            .description("The following properties relate to data generation and testing functionality.")
+            .build();
     SystemTestProperty SYSTEM_TEST_ID = Index.propertyBuilder("sleeper.systemtest.standalone.id")
             .description("The id of the deployment, if deploying standalone. This is also used as a base to generate " +
                     "Sleeper instance IDs, so must be short enough to leave room to define multiple instances.")
