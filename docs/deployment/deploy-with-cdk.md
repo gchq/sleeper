@@ -186,3 +186,17 @@ These other context variables will be defaulted or read from the configuration i
 For `SleeperArtefactsCdkApp`, `-c id=<id>` will set the artefacts deployment ID. You can also
 set `-c deploy=<all/jars/images>` to choose which repositories you want to create. This defaults to `all`,
 and should be left as the default when deploying a Sleeper instance against the artefacts.
+
+### Artefact cleanup logs
+
+The artefacts stack manages the log group for the function that empties the jars bucket
+on stack deletion. Log events do not expire and the group is retained by default. Pass `-c retainLogsAfterDestroy=false`
+to `SleeperArtefactsCdkApp` to delete this group with the stack. This setting does not
+change deletion of the jars or the bucket.
+
+Scripted instance deployments pass `sleeper.retain.logs.after.destroy` to the artefacts
+stack when they create or update it. A separately managed artefacts deployment must set
+its own CDK context value. Image-only artefacts deployments have no jars cleanup group.
+
+On upgrade, the function uses a new, CloudFormation-managed log group. Older log groups
+created automatically by Lambda remain unmanaged and are not deleted by this setting.

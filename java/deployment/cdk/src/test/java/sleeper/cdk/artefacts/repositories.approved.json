@@ -156,11 +156,21 @@
                   " S3 bucket."
                 ]
               ]
+            },
+            "LoggingConfig": {
+              "LogGroup": {
+                "Ref": "CustomS3AutoDeleteObjectsCustomResourceProviderLogGroup99DE39BE"
+              }
             }
           },
           "DependsOn": [
             "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
           ]
+        },
+        "CustomS3AutoDeleteObjectsCustomResourceProviderLogGroup99DE39BE": {
+          "Type": "AWS::Logs::LogGroup",
+          "UpdateReplacePolicy": "Retain",
+          "DeletionPolicy": "Retain"
         },
         "Repositoryathenalambda37B1EEB6": {
           "Type": "AWS::ECR::Repository",
