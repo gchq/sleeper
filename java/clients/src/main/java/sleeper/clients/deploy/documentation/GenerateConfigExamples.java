@@ -55,14 +55,14 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
 
 /**
- * Generates template files to be filled in when deploying an instance of Sleeper, or creating tables.
+ * Generates example configurations to deploy a Sleeper instance and/or tables.
  */
-public class GeneratePropertiesTemplates {
+public class GenerateConfigExamples {
 
     private static final SystemTestProperties DEMO_INSTANCE_PROPERTIES = DemoDeploymentTemplate.createInstanceProperties();
     private static final TableProperties DEMO_TABLE_PROPERTIES = DemoDeploymentTemplate.createTableProperties(DEMO_INSTANCE_PROPERTIES);
 
-    private GeneratePropertiesTemplates() {
+    private GenerateConfigExamples() {
     }
 
     public static void main(String[] args) throws Exception {
@@ -76,30 +76,38 @@ public class GeneratePropertiesTemplates {
      * @throws IOException    if any files could not be written
      */
     public static void createTemplates(Path repositoryRoot) throws IOException {
+        writeFullExample(Files.createDirectories(repositoryRoot.resolve("example/full")));
+        writeBasicExample(Files.createDirectories(repositoryRoot.resolve("example/basic")));
+        writeLightExample(Files.createDirectories(repositoryRoot.resolve("example/light")));
+        writeDemoDeploymentTemplates(Files.createDirectories(repositoryRoot.resolve("scripts/test/deployAll")));
+    }
 
-        Path fullExampleDir = Files.createDirectories(repositoryRoot.resolve("example/full"));
+    private static void writeFullExample(Path fullExampleDir) throws IOException {
         writeFile(fullExampleDir.resolve("instance.properties"),
-                GeneratePropertiesTemplates::writeExampleFullInstanceProperties);
+                GenerateConfigExamples::writeExampleFullInstanceProperties);
         writeFile(fullExampleDir.resolve("table.properties"),
-                GeneratePropertiesTemplates::writeExampleFullTableProperties);
+                GenerateConfigExamples::writeExampleFullTableProperties);
+    }
 
-        Path basicExampleDir = Files.createDirectories(repositoryRoot.resolve("example/basic"));
+    private static void writeBasicExample(Path basicExampleDir) throws IOException {
         writeFile(basicExampleDir.resolve("instance.properties"),
-                GeneratePropertiesTemplates::writeExampleBasicInstanceProperties);
+                GenerateConfigExamples::writeExampleBasicInstanceProperties);
         writeFile(basicExampleDir.resolve("table.properties"),
-                GeneratePropertiesTemplates::writeExampleBasicTableProperties);
+                GenerateConfigExamples::writeExampleBasicTableProperties);
+    }
 
-        Path lightTemplateDir = Files.createDirectories(repositoryRoot.resolve("example/light"));
-        writeFile(lightTemplateDir.resolve("instance.properties"),
-                GeneratePropertiesTemplates::writeExampleLightInstanceProperties);
-        writeFile(lightTemplateDir.resolve("table.properties"),
-                GeneratePropertiesTemplates::writeExampleBasicTableProperties);
+    private static void writeLightExample(Path lightExampleDir) throws IOException {
+        writeFile(lightExampleDir.resolve("instance.properties"),
+                GenerateConfigExamples::writeExampleLightInstanceProperties);
+        writeFile(lightExampleDir.resolve("table.properties"),
+                GenerateConfigExamples::writeExampleBasicTableProperties);
+    }
 
-        Path demoDeploymentDir = Files.createDirectories(repositoryRoot.resolve("scripts/test/deployAll"));
+    private static void writeDemoDeploymentTemplates(Path demoDeploymentDir) throws IOException {
         writeFile(demoDeploymentDir.resolve("system-test-instance.properties.template"),
-                GeneratePropertiesTemplates::writeInstancePropertiesDemoTemplate);
+                GenerateConfigExamples::writeInstancePropertiesDemoTemplate);
         writeFile(demoDeploymentDir.resolve("table.properties.template"),
-                GeneratePropertiesTemplates::writeTablePropertiesDemoTemplate);
+                GenerateConfigExamples::writeTablePropertiesDemoTemplate);
     }
 
     private static void writeExampleFullInstanceProperties(Writer writer) {

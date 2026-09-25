@@ -24,7 +24,7 @@ public class GenerateDocumentationAndTemplates {
 
     public static void main(String[] args) throws Exception {
         Path root = args.length < 1 ? Path.of(".") : Path.of(args[0]);
-        GeneratePropertiesTemplates.createTemplates(root);
+        GenerateConfigExamples.createTemplates(root);
         GeneratePropertiesDocumentation.generateDocumentation(root);
         GenerateDockerImageDocumentation.generateDocumentation(root);
     }

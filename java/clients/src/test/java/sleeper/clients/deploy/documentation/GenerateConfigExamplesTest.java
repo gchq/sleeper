@@ -64,14 +64,14 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 
-class GeneratePropertiesTemplatesTest {
+class GenerateConfigExamplesTest {
 
     @TempDir
     private static Path tempDir;
 
     @BeforeAll
     static void setUp() throws Exception {
-        GeneratePropertiesTemplates.createTemplates(tempDir);
+        GenerateConfigExamples.createTemplates(tempDir);
     }
 
     static class SystemDefinedInstanceProperties implements ArgumentsProvider {
