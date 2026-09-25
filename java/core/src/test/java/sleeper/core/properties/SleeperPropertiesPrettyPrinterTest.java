@@ -306,6 +306,18 @@ class SleeperPropertiesPrettyPrinterTest {
             assertThat(output).contains("\n\n" +
                     "## The following instance properties relate to standard ingest");
         }
+
+        @Test
+        void shouldOmitAllGroupHeadersWhenConfigured() {
+            String outputWithoutHeaders = print(
+                    InstanceProperties.createPrettyPrinterBuilder().printGroupHeaders(false),
+                    new InstanceProperties());
+
+            assertThat(outputWithoutHeaders)
+                    .contains("sleeper.id=")
+                    .contains("sleeper.default.table.ingest.row.batch.type=")
+                    .doesNotContain("## ");
+        }
     }
 
     @Nested

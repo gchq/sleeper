@@ -147,9 +147,16 @@ public class GeneratePropertiesTemplates {
      * @param writer the writer
      */
     public static void writeExampleBasicInstanceProperties(Writer writer) {
-        writeBasicPropertiesTemplate(writer,
-                new InstanceProperties(),
-                InstancePropertyGroup.getAll());
+        InstanceProperties properties = new InstanceProperties();
+        List<InstanceProperty> basicProperties = properties.getPropertiesIndex().getUserDefined().stream()
+                .filter(SleeperProperty::isIncludedInBasicTemplate)
+                .filter(SleeperProperty::isIncludedInTemplate)
+                .toList();
+        SleeperPropertiesPrettyPrinter.builderForPropertiesTemplate(
+                basicProperties, InstancePropertyGroup.getAll(), new PrintWriter(writer))
+                .printGroupHeaders(false)
+                .build()
+                .print(properties);
     }
 
     /**
