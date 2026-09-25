@@ -40,7 +40,11 @@ public class GenerateDockerImageDocumentation {
     }
 
     public static void main(String[] args) throws IOException {
-        Path path = Path.of(args[0]).resolve("docs/deployment/docker-images.md");
+        generateDocumentation(args.length < 1 ? Path.of(".") : Path.of(args[0]));
+    }
+
+    public static void generateDocumentation(Path root) throws IOException {
+        Path path = root.resolve("docs/deployment/docker-images.md");
         String template = getResourceAsString("docker-images.template.md");
         String dockerDeploymentTable = tableToString(createDockerDeploymentTableWriter(DockerDeployment.all()));
         String lambdaTable = tableToString(createLambdaJarTableWriter(LambdaJar.all()));

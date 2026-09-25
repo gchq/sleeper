@@ -23,14 +23,9 @@ pushd "${PROJECT_ROOT}/java"
 echo "Compiling..."
 mvn clean install -Pquick,skipShade -q -pl clients,system-test/system-test-suite -am -Drust.skip
 
-echo "Regenerating templates..."
+echo "Regenerating documentation and templates..."
 mvn exec:java -q -pl clients \
-  -Dexec.mainClass="sleeper.clients.deploy.documentation.GeneratePropertiesTemplates" \
-  -Dexec.args="$PROJECT_ROOT"
-
-echo "Regenerating deployment images..."
-mvn exec:java -e -q -pl clients \
-  -Dexec.mainClass="sleeper.clients.deploy.documentation.GenerateDockerImageDocumentation" \
+  -Dexec.mainClass="sleeper.clients.deploy.documentation.GenerateDocumentationAndTemplates" \
   -Dexec.args="$PROJECT_ROOT"
 
 echo "Regenerating system test suite documentation..."

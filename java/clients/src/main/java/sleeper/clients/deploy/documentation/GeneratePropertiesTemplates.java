@@ -66,14 +66,7 @@ public class GeneratePropertiesTemplates {
     }
 
     public static void main(String[] args) throws Exception {
-        Path path;
-        if (args.length < 1) {
-            path = Path.of(".");
-        } else {
-            path = Path.of(args[0]);
-        }
-        createTemplates(path);
-        createDocumentation(path);
+        createTemplates(args.length < 1 ? Path.of(".") : Path.of(args[0]));
     }
 
     /**
@@ -109,62 +102,31 @@ public class GeneratePropertiesTemplates {
                 GeneratePropertiesTemplates::writeTablePropertiesDemoTemplate);
     }
 
-    private static void createDocumentation(Path path) throws Exception {
-        GeneratePropertiesDocumentation.generateDocumentation(path);
-    }
-
-    /**
-     * Writes the full instance properties example file to the given writer.
-     *
-     * @param writer the writer
-     */
-    public static void writeExampleFullInstanceProperties(Writer writer) {
+    private static void writeExampleFullInstanceProperties(Writer writer) {
         InstanceProperties properties = new InstanceProperties();
 
         writeFullPropertiesTemplate(writer, properties, InstancePropertyGroup.getAll());
     }
 
-    /**
-     * Writes the full table properties example file to the given writer.
-     *
-     * @param writer the writer
-     */
-    public static void writeExampleFullTableProperties(Writer writer) {
+    private static void writeExampleFullTableProperties(Writer writer) {
         TableProperties properties = new TableProperties(new InstanceProperties());
 
         writeFullPropertiesTemplate(writer, properties, TablePropertyGroup.getAll());
     }
 
-    /**
-     * Writes the basic instance properties example file to the given writer.
-     *
-     * @param writer the writer
-     */
-    public static void writeExampleBasicInstanceProperties(Writer writer) {
+    private static void writeExampleBasicInstanceProperties(Writer writer) {
         writeBasicPropertiesTemplate(writer,
                 new InstanceProperties(),
                 InstancePropertyGroup.getAll());
     }
 
-    /**
-     * Writes the basic table properties example file to the given writer.
-     *
-     * @param writer the writer
-     */
-    public static void writeExampleBasicTableProperties(Writer writer) {
+    private static void writeExampleBasicTableProperties(Writer writer) {
         writeBasicPropertiesTemplate(writer,
                 new TableProperties(new InstanceProperties()),
                 TablePropertyGroup.getAll());
     }
 
-    /**
-     * Writes the light variant of the instance properties template file to the given writer.
-     * Various properties set for desired EMR settings with the remainder of the properties set to default value and
-     * commented out.
-     *
-     * @param out the writer
-     */
-    public static void writeExampleLightInstanceProperties(Writer out) {
+    private static void writeExampleLightInstanceProperties(Writer out) {
         InstanceProperties instanceProperties = new InstanceProperties();
         // Emr Serverless properties
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES, "2");
