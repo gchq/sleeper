@@ -97,12 +97,6 @@ public class SQSResultsOutput implements ResultsOutput {
         } catch (Exception e) {
             LOGGER.error("Exception sending results to SQS", e);
             return new ResultsOutputInfo(count, Collections.singletonList(this.outputLocation), e);
-        } finally {
-            try {
-                results.close();
-            } catch (Exception e) {
-                LOGGER.error("Exception closing results of query", e);
-            }
         }
 
         return new ResultsOutputInfo(count, Collections.singletonList(this.outputLocation));

@@ -46,7 +46,7 @@ public class JobQueryPrompt {
         } else if ("u".equalsIgnoreCase(type)) {
             return new UnfinishedJobsQuery();
         } else if ("d".equalsIgnoreCase(type)) {
-            String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
+            String jobIds = in.promptLine("Enter job IDs to get detailed information about, separated by commas: ");
             return DetailedJobsQuery.fromParameters(jobIds);
         } else if ("r".equalsIgnoreCase(type)) {
             return RangeJobsQuery.prompt(in, clock);

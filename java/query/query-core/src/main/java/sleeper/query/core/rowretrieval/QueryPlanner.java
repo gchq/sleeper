@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
@@ -48,19 +49,21 @@ public class QueryPlanner {
 
     private final TableProperties tableProperties;
     private final StateStore stateStore;
+    private final Supplier<String> subQueryIdSupplier;
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
     private Instant nextInitialiseTime;
 
     public QueryPlanner(TableProperties tableProperties, StateStore stateStore) {
-        this(tableProperties, stateStore, Instant.now());
+        this(tableProperties, stateStore, Instant.now(), () -> UUID.randomUUID().toString());
     }
 
-    public QueryPlanner(TableProperties tableProperties, StateStore stateStore, Instant timeNow) {
+    public QueryPlanner(TableProperties tableProperties, StateStore stateStore, Instant timeNow, Supplier<String> subQueryIdSupplier) {
         this.tableProperties = tableProperties;
         this.stateStore = stateStore;
         this.nextInitialiseTime = timeNow;
+        this.subQueryIdSupplier = subQueryIdSupplier;
     }
 
     /**
@@ -184,7 +187,7 @@ public class QueryPlanner {
             LeafPartitionQuery leafQuery = LeafPartitionQuery.builder()
                     .parentQuery(query)
                     .tableId(tableProperties.get(TABLE_ID))
-                    .subQueryId(UUID.randomUUID().toString())
+                    .subQueryId(subQueryIdSupplier.get())
                     .regions(regions)
                     .leafPartitionId(partition.getId())
                     .partitionRegion(partition.getRegion())
