@@ -127,7 +127,7 @@
         <roaringbitmap.version>1.6.23</roaringbitmap.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.6.3</logback.version>
+        <logback.version>1.6.4</logback.version>
         <!--
         Spark declares an old version of Log4J with vulnerabilities. We exclude some of the Log4J dependencies as we use
         SLF4J, but we can't exclude them from EMR.
@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.55.1</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.55.5</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         It's not compatible with the latest version, so we match the version that it provides.
@@ -181,10 +181,10 @@
         <httpclient5.version>5.6.4</httpclient5.version>
         <httpcore5.version>5.4.4</httpcore5.version>
         <jaxb.version>2.3.1</jaxb.version>
-        <jline.version>4.4.5</jline.version>
+        <jline.version>4.4.6</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-18</zstd-jni.version>
+        <zstd-jni.version>1.5.7-20</zstd-jni.version>
         <airlift.units.version>1.10</airlift.units.version>
         <airlift.slice.version>2.3</airlift.slice.version>
         <!-- Trino and its dependencies declare different versions of Airlift. -->
@@ -209,7 +209,7 @@
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
         <jsii.version>1.140.0</jsii.version>
         <gson.version>2.14.0</gson.version>
-        <slf4j.version>2.0.19</slf4j.version>
+        <slf4j.version>2.0.20</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <aspectj.version>1.9.25.1</aspectj.version>
         <pty4j.version>0.13.13</pty4j.version>
@@ -246,7 +246,7 @@
         <!-- Testing -->
         <junit.version>5.14.4</junit.version>
         <junit.platform.version>1.14.4</junit.platform.version>
-        <mockito.version>5.23.0</mockito.version>
+        <mockito.version>5.24.0</mockito.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
         <handlebars.version>4.5.5</handlebars.version>
