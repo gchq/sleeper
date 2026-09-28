@@ -15,21 +15,10 @@
  */
 package sleeper.core.util.cli;
 
-import java.util.Objects;
-
 /**
  * An option that may be set on the command line. Used with {@link CommandArguments}.
- *
- * @param longName  the name for when the option is set like "--longName"
- * @param shortName the character for when the option is set like "-a", or null if this should not be allowed
- * @param numArgs   the number of arguments that must be passed after this option
  */
-public record CommandOption(String longName, Character shortName, NumArgs numArgs) {
-
-    public CommandOption {
-        Objects.requireNonNull(longName, "longName must not be null");
-        Objects.requireNonNull(numArgs, "numArgs must not be null");
-    }
+public interface CommandOption {
 
     /**
      * Creates an option that must be set as a long flag, with no arguments.
@@ -38,7 +27,7 @@ public record CommandOption(String longName, Character shortName, NumArgs numArg
      * @return      the option
      */
     public static CommandOption longFlag(String name) {
-        return new CommandOption(name, null, NumArgs.NONE);
+        return new CommandOptionImpl(name, null, NumArgs.NONE);
     }
 
     /**
@@ -49,7 +38,7 @@ public record CommandOption(String longName, Character shortName, NumArgs numArg
      * @return      the option
      */
     public static CommandOption longOption(String name) {
-        return new CommandOption(name, null, NumArgs.ONE);
+        return new CommandOptionImpl(name, null, NumArgs.ONE);
     }
 
     /**
@@ -60,7 +49,7 @@ public record CommandOption(String longName, Character shortName, NumArgs numArg
      * @return           the option
      */
     public static CommandOption shortFlag(char character, String name) {
-        return new CommandOption(name, character, NumArgs.NONE);
+        return new CommandOptionImpl(name, character, NumArgs.NONE);
     }
 
     /**
@@ -71,11 +60,37 @@ public record CommandOption(String longName, Character shortName, NumArgs numArg
      * @return           the option
      */
     public static CommandOption shortOption(char character, String name) {
-        return new CommandOption(name, character, NumArgs.ONE);
+        return new CommandOptionImpl(name, character, NumArgs.ONE);
     }
 
-    public boolean isFlag() {
-        return numArgs == NumArgs.NONE;
+    /**
+     * Returns the long name, where the option can be set with `--name`.
+     *
+     * @return the long name
+     */
+    String longName();
+
+    /**
+     * Returns the short name, where the option can be set with `-n`, or null if it cannot.
+     *
+     * @return the short name, or null if there is none
+     */
+    Character shortName();
+
+    /**
+     * Returns the number of arguments that the option can take.
+     *
+     * @return the number of arguments
+     */
+    NumArgs numArgs();
+
+    /**
+     * Returns true if this is a flag that takes no arguments.
+     *
+     * @return whether this is a flag or not
+     */
+    default boolean isFlag() {
+        return numArgs() == NumArgs.NONE;
     }
 
     /**
