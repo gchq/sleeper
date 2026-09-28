@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class CommandArgumentsHelpTest extends CommandArgumentsTestBase {
 
     @Nested
-    @DisplayName("Help text")
-    class HelpText {
+    @DisplayName("Help summary")
+    class HelpSummary {
 
         @Test
         void shouldShowBasicUsage() {
