@@ -15,9 +15,6 @@
  */
 package sleeper.query.runner.output;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
@@ -29,8 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NoResultsOutput implements ResultsOutput {
-    private static final Logger LOGGER = LoggerFactory.getLogger(NoResultsOutput.class);
-
     public static final String NO_RESULTS_OUTPUT = "NoResultsOutput";
 
     private final List<ResultsOutputLocation> outputLocations = new ArrayList<>();
@@ -40,14 +35,7 @@ public class NoResultsOutput implements ResultsOutput {
     }
 
     @Override
-    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query,
-            CloseableIterator<Row> results) {
-        try {
-            results.close();
-        } catch (Exception e) {
-            LOGGER.error("Exception closing results of query", e);
-            return new ResultsOutputInfo(0, outputLocations, e);
-        }
+    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Row> results) {
         return new ResultsOutputInfo(0, outputLocations);
     }
 }

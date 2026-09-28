@@ -156,6 +156,11 @@
             <artifactId>container-images</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>system-test-configuration</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
 
         <!-- Test dependencies -->
         <dependency>
