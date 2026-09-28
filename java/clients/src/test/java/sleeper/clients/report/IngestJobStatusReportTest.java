@@ -21,8 +21,13 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.report.IngestJobStatusReport.Arguments;
 import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
+import sleeper.clients.report.job.query.AllJobsQuery;
+import sleeper.clients.report.job.query.DetailedJobsQuery;
+import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.RangeJobsQuery;
+import sleeper.clients.report.job.query.RejectedJobsQuery;
+import sleeper.clients.report.job.query.UnfinishedJobsQuery;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
@@ -32,14 +37,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Scanner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class IngestJobStatusReportTest {
 
@@ -227,164 +229,115 @@ public class IngestJobStatusReportTest {
     }
 
     /**
-     * Checks that the arguments produce a query that asks the job tracker the right question. Drives the whole path
-     * from the command line, so that the query type, the query parameters and the query are all covered together.
+     * Checks that the arguments produce a query that asks the job tracker the right question. Asserts directly on the
+     * query object, so that the query type and parameters are all covered together.
      */
     @Nested
     class JobQueryCreation {
 
-        private static final String TABLE_ID = "test-table-id";
-
-        private final IngestJobTracker tracker = mock(IngestJobTracker.class);
-
         @Test
         void shouldQueryAllJobs() {
-            // When
-            runQueryFromArguments("all-job-instance", "all-job-table", "--all");
-
-            // Then
-            verify(tracker).getAllJobs(TABLE_ID);
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("all-job-instance", "all-job-table", "--all"))
+                    .isInstanceOf(AllJobsQuery.class);
         }
 
         @Test
         void shouldQueryAllJobsWithShortFlag() {
-            // When
-            runQueryFromArguments("all-job-instance", "all-job-table", "-a");
-
-            // Then
-            verify(tracker).getAllJobs(TABLE_ID);
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("all-job-instance", "all-job-table", "-a"))
+                    .isInstanceOf(AllJobsQuery.class);
         }
 
         @Test
         void shouldQueryUnfinishedJobs() {
-            // When
-            runQueryFromArguments("unfinished-job-instance", "unfinished-job-table", "--unfinished");
-
-            // Then
-            verify(tracker).getUnfinishedJobs(TABLE_ID);
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("unfinished-job-instance", "unfinished-job-table", "--unfinished"))
+                    .isInstanceOf(UnfinishedJobsQuery.class);
         }
 
         @Test
         void shouldQueryUnfinishedJobsWithShortFlag() {
-            // When
-            runQueryFromArguments("unfinished-job-instance", "unfinished-job-table", "-u");
-
-            // Then
-            verify(tracker).getUnfinishedJobs(TABLE_ID);
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("unfinished-job-instance", "unfinished-job-table", "-u"))
+                    .isInstanceOf(UnfinishedJobsQuery.class);
         }
 
         @Test
         void shouldQueryRejectedJobs() {
-            // When
-            runQueryFromArguments("rejected-job-instance", "rejected-job-table", "--rejected");
-
-            // Then
-            verify(tracker).getInvalidJobs();
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "--rejected"))
+                    .isInstanceOf(RejectedJobsQuery.class);
         }
 
         @Test
         void shouldQueryRejectedJobsWithShortFlag() {
-            // When
-            runQueryFromArguments("rejected-job-instance", "rejected-job-table", "-n");
-
-            // Then
-            verify(tracker).getInvalidJobs();
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "-n"))
+                    .isInstanceOf(RejectedJobsQuery.class);
         }
 
         @Test
         void shouldQueryJobWithGivenId() {
-            // When
-            runQueryFromArguments("detailed-job-instance", "detailed-job-table", "--detailed", "6545");
-
-            // Then
-            verify(tracker).getJob("6545");
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "--detailed", "6545"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new DetailedJobsQuery(List.of("6545")));
         }
 
         @Test
         void shouldQueryDetailedJobWithShortFlag() {
-            // When
-            runQueryFromArguments("detailed-job-instance", "detailed-job-table", "-d", "23");
-
-            // Then
-            verify(tracker).getJob("23");
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d", "23"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new DetailedJobsQuery(List.of("23")));
         }
 
         @Test
         void shouldQueryDetailedJobWithIdAttachedToShortOption() {
-            // When
-            runQueryFromArguments("detailed-job-instance", "detailed-job-table", "-d23");
-
-            // Then
-            verify(tracker).getJob("23");
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d23"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new DetailedJobsQuery(List.of("23")));
         }
 
         @Test
         void shouldQueryJobWithIdThatLooksLikeAnOption() {
-            // When
-            runQueryFromArguments("detailed-job-instance", "detailed-job-table", "-d", "-a");
-
-            // Then
-            verify(tracker).getJob("-a");
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d", "-a"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new DetailedJobsQuery(List.of("-a")));
         }
 
         @Test
         void shouldQueryEachJobWhenSeveralIdsGivenSeparatedByCommas() {
-            // When
-            runQueryFromArguments("detailed-job-instance", "detailed-job-table", "--detailed", "6545,8102");
-
-            // Then
-            verify(tracker).getJob("6545");
-            verify(tracker).getJob("8102");
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "--detailed", "6545,8102"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new DetailedJobsQuery(List.of("6545", "8102")));
         }
 
         @Test
         void shouldQueryJobsInGivenPeriod() {
-            // When
-            runQueryFromArguments("range-job-instance", "range-job-table",
-                    "--range", "--start-time", "20201010093000", "--end-time", "20211008150000");
-
-            // Then
-            verify(tracker).getJobsInTimePeriod(TABLE_ID,
-                    Instant.parse("2020-10-10T09:30:00Z"), Instant.parse("2021-10-08T15:00:00Z"));
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("range-job-instance", "range-job-table",
+                    "--range", "--start-time", "20201010093000", "--end-time", "20211008150000"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RangeJobsQuery(
+                            Instant.parse("2020-10-10T09:30:00Z"), Instant.parse("2021-10-08T15:00:00Z")));
         }
 
         @Test
         void shouldQueryJobsInGivenPeriodWhenOnlyTimeFlagsGiven() {
-            // When
-            runQueryFromArguments("range-job-instance", "range-job-table",
-                    "--start-time", "20201114120101", "--end-time", "20210407150000");
-
-            // Then
-            verify(tracker).getJobsInTimePeriod(TABLE_ID,
-                    Instant.parse("2020-11-14T12:01:01Z"), Instant.parse("2021-04-07T15:00:00Z"));
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArguments("range-job-instance", "range-job-table",
+                    "--start-time", "20201114120101", "--end-time", "20210407150000"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RangeJobsQuery(
+                            Instant.parse("2020-11-14T12:01:01Z"), Instant.parse("2021-04-07T15:00:00Z")));
         }
 
         @Test
         void shouldQueryJobsInLastFourHoursWhenRangeSetWithNoTimes() {
             // Given
             Instant now = Instant.parse("2024-05-01T12:00:00Z");
-
-            // When
-            runQueryFromArgumentsAtTime(now, "range-default-instance", "range-default-table", "-r");
-            runQueryFromArgumentsAtTime(now, "range-default-instance", "range-default-table", "--range");
+            RangeJobsQuery expectedQuery = new RangeJobsQuery(
+                    Instant.parse("2024-05-01T08:00:00Z"), now);
 
             // Then
-            verify(tracker, times(2)).getJobsInTimePeriod(TABLE_ID,
-                    Instant.parse("2024-05-01T08:00:00Z"), now);
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArgumentsAtTime(now, "range-default-instance", "range-default-table", "-r"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(expectedQuery);
+            assertThat(queryFromArgumentsAtTime(now, "range-default-instance", "range-default-table", "--range"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(expectedQuery);
         }
 
         @Test
@@ -392,47 +345,35 @@ public class IngestJobStatusReportTest {
             // Given
             Instant now = Instant.parse("2024-05-01T12:00:00Z");
 
-            // When
-            runQueryFromArgumentsAtTime(now, "range-instance", "range-table", "--range=true");
-
             // Then
-            verify(tracker).getJobsInTimePeriod(TABLE_ID,
-                    Instant.parse("2024-05-01T08:00:00Z"), now);
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArgumentsAtTime(now, "range-instance", "range-table", "--range=true"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RangeJobsQuery(
+                            Instant.parse("2024-05-01T08:00:00Z"), now));
         }
 
         @Test
         void shouldPromptForQueryTypeWhenNoFlagSet() {
-            // When
-            runQueryFromArgumentsWithInput("a\n", "prompt-instance", "prompt-table");
-
-            // Then
-            verify(tracker).getAllJobs(TABLE_ID);
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArgumentsWithInput("a\n", "prompt-instance", "prompt-table"))
+                    .isInstanceOf(AllJobsQuery.class);
         }
 
         @Test
         void shouldPromptForQueryTypeWhenRangeFlagSetToFalse() {
-            // When
-            runQueryFromArgumentsWithInput("a\n", "range-instance", "range-table", "--range=false");
-
-            // Then
-            verify(tracker).getAllJobs(TABLE_ID);
-            verifyNoMoreInteractions(tracker);
+            assertThat(queryFromArgumentsWithInput("a\n", "range-instance", "range-table", "--range=false"))
+                    .isInstanceOf(AllJobsQuery.class);
         }
 
-        private void runQueryFromArguments(String... args) {
-            runQueryFromArgumentsAtTime(Instant.now(), args);
+        private JobQuery queryFromArguments(String... args) {
+            return queryFromArgumentsAtTime(Instant.now(), args);
         }
 
-        private void runQueryFromArgumentsAtTime(Instant now, String... args) {
-            readArgumentsAtTime(now, ConsoleInput.stdIn(), args)
-                    .query().run(tracker, TABLE_ID);
+        private JobQuery queryFromArgumentsAtTime(Instant now, String... args) {
+            return readArgumentsAtTime(now, ConsoleInput.stdIn(), args).query();
         }
 
-        private void runQueryFromArgumentsWithInput(String input, String... args) {
-            readArgumentsAtTime(Instant.now(), consoleInputFrom(input), args)
-                    .query().run(tracker, TABLE_ID);
+        private JobQuery queryFromArgumentsWithInput(String input, String... args) {
+            return readArgumentsAtTime(Instant.now(), consoleInputFrom(input), args).query();
         }
     }
 
