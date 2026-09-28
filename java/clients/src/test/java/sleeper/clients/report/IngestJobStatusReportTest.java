@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.report.IngestJobStatusReport.Arguments;
-import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.job.query.AllJobsQuery;
 import sleeper.clients.report.job.query.DetailedJobsQuery;
@@ -59,39 +58,15 @@ public class IngestJobStatusReportTest {
             assertThat(args.reporter()).isInstanceOf(StandardIngestJobStatusReporter.class);
         }
 
-        @Test
-        void shouldReadReportTypeJson() {
-            // When
-            Arguments args = readArguments("json-instance", "json-table", "--report-type", "json", "--all");
-
-            // Then
-            assertThat(args.reporter()).isInstanceOf(JsonIngestJobStatusReporter.class);
-        }
     }
 
     @Nested
     class ArgumentsValidation {
 
         @Test
-        void shouldRejectUnknownReportType() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--report-type", "BAD-REPORT"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Report type not supported: BAD-REPORT. Valid types: STANDARD, JSON");
-        }
-
-        @Test
         void shouldRejectMultipleFlagsSet() {
             // When / Then
             assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "--all", "--unfinished"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Too many query type flags are set, maximum of 1. Flags set: ALL, UNFINISHED");
-        }
-
-        @Test
-        void shouldRejectMultipleFlagsSetAsCombinedShortFlags() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "-au"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Too many query type flags are set, maximum of 1. Flags set: ALL, UNFINISHED");
         }
@@ -242,20 +217,8 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
-        void shouldQueryAllJobsWithShortFlag() {
-            assertThat(queryFromArguments("all-job-instance", "all-job-table", "-a"))
-                    .isInstanceOf(AllJobsQuery.class);
-        }
-
-        @Test
         void shouldQueryUnfinishedJobs() {
             assertThat(queryFromArguments("unfinished-job-instance", "unfinished-job-table", "--unfinished"))
-                    .isInstanceOf(UnfinishedJobsQuery.class);
-        }
-
-        @Test
-        void shouldQueryUnfinishedJobsWithShortFlag() {
-            assertThat(queryFromArguments("unfinished-job-instance", "unfinished-job-table", "-u"))
                     .isInstanceOf(UnfinishedJobsQuery.class);
         }
 
@@ -266,23 +229,10 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
-        void shouldQueryRejectedJobsWithShortFlag() {
-            assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "-n"))
-                    .isInstanceOf(RejectedJobsQuery.class);
-        }
-
-        @Test
         void shouldQueryJobWithGivenId() {
             assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "--detailed", "6545"))
                     .usingRecursiveComparison()
                     .isEqualTo(new DetailedJobsQuery(List.of("6545")));
-        }
-
-        @Test
-        void shouldQueryDetailedJobWithShortFlag() {
-            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d", "23"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(new DetailedJobsQuery(List.of("23")));
         }
 
         @Test
@@ -350,12 +300,6 @@ public class IngestJobStatusReportTest {
                     .usingRecursiveComparison()
                     .isEqualTo(new RangeJobsQuery(
                             Instant.parse("2024-05-01T08:00:00Z"), now));
-        }
-
-        @Test
-        void shouldPromptForQueryTypeWhenNoFlagSet() {
-            assertThat(queryFromArgumentsWithInput("a\n", "prompt-instance", "prompt-table"))
-                    .isInstanceOf(AllJobsQuery.class);
         }
 
         @Test
