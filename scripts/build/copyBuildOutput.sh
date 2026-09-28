@@ -21,8 +21,9 @@ MAVEN_DIR="$BASE_DIR/java"
 SCRIPTS_DIR="$BASE_DIR/scripts"
 JARS_DIR="$SCRIPTS_DIR/jars"
 DOCKER_DIR="$SCRIPTS_DIR/docker"
-VERSION_FILE="$SCRIPTS_DIR/templates/version.txt"
-DEPLOY_CONFIG_FILE="$SCRIPTS_DIR/templates/deployConfig.json"
+TEMPLATES_DIR="$SCRIPTS_DIR/templates"
+VERSION_FILE="$TEMPLATES_DIR/version.txt"
+DEPLOY_CONFIG_FILE="$TEMPLATES_DIR/deployConfig.json"
 
 pushd "$MAVEN_DIR"
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
@@ -30,6 +31,7 @@ SCRIPTS_DISTRIBUTION_DIR="$MAVEN_DIR/distribution/target/distribution-$VERSION-b
 
 mkdir -p "$JARS_DIR"
 mkdir -p "$DOCKER_DIR"
+mkdir -p "$TEMPLATES_DIR"
 rm -rf "${JARS_DIR:?}"/*
 rm -rf "${DOCKER_DIR:?}"/*
 cp  "$SCRIPTS_DISTRIBUTION_DIR/jars"/* "$JARS_DIR"
