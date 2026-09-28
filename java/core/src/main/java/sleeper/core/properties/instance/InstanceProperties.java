@@ -26,6 +26,7 @@ import sleeper.core.properties.model.PersistentEMRManagedScalingBounds;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -149,10 +150,14 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
      *
      * @return the properties file as a string
      */
-    public String getTagsPropertiesAsString() throws IOException {
+    public String getTagsPropertiesAsString() {
         StringWriter stringWriter = new StringWriter();
         Properties tagsProperties = getTagsProperties();
-        tagsProperties.store(stringWriter, "");
+        try {
+            tagsProperties.store(stringWriter, "");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return stringWriter.toString();
     }
 

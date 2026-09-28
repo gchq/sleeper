@@ -31,7 +31,6 @@ import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.model.LambdaDeployType;
 
 import java.nio.file.Path;
@@ -126,7 +125,7 @@ public class SystemTestStandaloneProperties
     @Override
     protected Builder<SystemTestProperty> prettyPrinterBuilder() {
         return SleeperPropertiesPrettyPrinter.builder()
-                .properties(SystemTestProperty.getAll(), List.of(InstancePropertyGroup.COMMON));
+                .properties(SystemTestProperty.getAll(), List.of(SystemTestProperty.SYSTEM_TEST_GROUP));
     }
 
     public InstanceProperties toInstancePropertiesForCdkUtils() {
