@@ -35,6 +35,13 @@ public class CommandOption {
         helpText = builder.helpText;
     }
 
+    /**
+     * Creates a builder for a command option with a given long name, to be set like "--name". Defaults to a
+     * flag with no arguments. Further functionality can be set on the builder.
+     *
+     * @param  longName the long name
+     * @return          the builder
+     */
     public static Builder withLongName(String longName) {
         return new Builder().longName(longName);
     }
@@ -152,6 +159,9 @@ public class CommandOption {
         NONE, ONE
     }
 
+    /**
+     * A builder to create a command line option.
+     */
     public static class Builder {
 
         private String longName;
@@ -162,21 +172,45 @@ public class CommandOption {
         private Builder() {
         }
 
+        /**
+         * Sets the long name to set the option like "--name".
+         *
+         * @param  longName the long name
+         * @return          this builder, for method chaining
+         */
         public Builder longName(String longName) {
             this.longName = longName;
             return this;
         }
 
+        /**
+         * Sets the short name to set the option like "-n".
+         *
+         * @param  shortName the short name
+         * @return           this builder, for method chaining
+         */
         public Builder shortName(Character shortName) {
             this.shortName = shortName;
             return this;
         }
 
+        /**
+         * Sets the number of arguments the option can take.
+         *
+         * @param  numArgs the number of arguments
+         * @return         this builder, for method chaining
+         */
         public Builder numArgs(NumArgs numArgs) {
             this.numArgs = numArgs;
             return this;
         }
 
+        /**
+         * Sets the help text for the option.
+         *
+         * @param  helpText the help text
+         * @return          this builder, for method chaining
+         */
         public Builder helpText(String helpText) {
             this.helpText = helpText;
             return this;
