@@ -21,15 +21,18 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.report.IngestJobStatusReport.Arguments;
 import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
-import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
+import java.io.ByteArrayInputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Scanner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -57,28 +60,10 @@ public class IngestJobStatusReportTest {
         @Test
         void shouldReadReportTypeJson() {
             // When
-            Arguments args = readArguments("json-instance", "json-table", "--report-type", "json");
+            Arguments args = readArguments("json-instance", "json-table", "--report-type", "json", "--all");
 
             // Then
             assertThat(args.reporter()).isInstanceOf(JsonIngestJobStatusReporter.class);
-        }
-
-        @Test
-        void shouldReadQueryTypePromptWhenRangeFlagSetToFalse() {
-            // When
-            Arguments args = readArguments("range-instance", "range-table", "--range=false");
-
-            // Then
-            assertThat(args.queryType()).isEqualTo(JobQuery.Type.PROMPT);
-        }
-
-        @Test
-        void shouldReturnPromptQueryTypeWhenNoFlagSet() {
-            // When
-            Arguments args = readArguments("prompt-instance", "prompt-table");
-
-            // Then
-            assertThat(args.queryType()).isEqualTo(JobQuery.Type.PROMPT);
         }
     }
 
@@ -416,19 +401,54 @@ public class IngestJobStatusReportTest {
             verifyNoMoreInteractions(tracker);
         }
 
+        @Test
+        void shouldPromptForQueryTypeWhenNoFlagSet() {
+            // When
+            runQueryFromArgumentsWithInput("a\n", "prompt-instance", "prompt-table");
+
+            // Then
+            verify(tracker).getAllJobs(TABLE_ID);
+            verifyNoMoreInteractions(tracker);
+        }
+
+        @Test
+        void shouldPromptForQueryTypeWhenRangeFlagSetToFalse() {
+            // When
+            runQueryFromArgumentsWithInput("a\n", "range-instance", "range-table", "--range=false");
+
+            // Then
+            verify(tracker).getAllJobs(TABLE_ID);
+            verifyNoMoreInteractions(tracker);
+        }
+
         private void runQueryFromArguments(String... args) {
             runQueryFromArgumentsAtTime(Instant.now(), args);
         }
 
         private void runQueryFromArgumentsAtTime(Instant now, String... args) {
-            Arguments arguments = readArguments(args);
-            IngestJobStatusReport.createQuery(arguments, Clock.fixed(now, ZoneId.of("UTC")), ConsoleInput.stdIn())
-                    .run(tracker, TABLE_ID);
+            readArgumentsAtTime(now, ConsoleInput.stdIn(), args)
+                    .query().run(tracker, TABLE_ID);
+        }
+
+        private void runQueryFromArgumentsWithInput(String input, String... args) {
+            readArgumentsAtTime(Instant.now(), consoleInputFrom(input), args)
+                    .query().run(tracker, TABLE_ID);
         }
     }
 
     private static Arguments readArguments(String... args) {
-        return IngestJobStatusReport.readArguments(CommandArgumentReader.parse(IngestJobStatusReport.USAGE, args));
+        return readArgumentsAtTime(Instant.now(), ConsoleInput.stdIn(), args);
+    }
+
+    private static Arguments readArgumentsAtTime(Instant now, ConsoleInput input, String... args) {
+        return IngestJobStatusReport.readArguments(
+                CommandArgumentReader.parse(IngestJobStatusReport.USAGE, args),
+                Clock.fixed(now, ZoneId.of("UTC")), input);
+    }
+
+    private static ConsoleInput consoleInputFrom(String input) {
+        return new ConsoleInput(null, new PrintStream(System.out),
+                new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8))));
     }
 
 }

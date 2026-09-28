@@ -119,7 +119,8 @@ public class IngestJobStatusReport {
     }
 
     public static void main(String[] args) {
-        Arguments reportArgs = CommandArguments.parseAndValidateOrExit(USAGE, args, IngestJobStatusReport::readArguments);
+        Arguments reportArgs = CommandArguments.parseAndValidateOrExit(USAGE, args,
+                cmdArgs -> readArguments(cmdArgs, Clock.systemUTC(), ConsoleInput.stdIn()));
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
@@ -132,8 +133,7 @@ public class IngestJobStatusReport {
             TableStatus table = tableIndex.getTableByName(reportArgs.tableName())
                     .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + reportArgs.tableName()));
             IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-            JobQuery query = createQuery(reportArgs, Clock.systemUTC(), ConsoleInput.stdIn());
-            new IngestJobStatusReport(tracker, table, query, reportArgs.reporter(),
+            new IngestJobStatusReport(tracker, table, reportArgs.query(), reportArgs.reporter(),
                     QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
                     PersistentEmrStepCount.byStatus(instanceProperties, emrClient)).run();
         }
@@ -185,12 +185,14 @@ public class IngestJobStatusReport {
             .build();
 
     /**
-     * Reads the arguments from the command line.
+     * Reads the arguments from the command line and builds the query.
      *
      * @param  arguments the parsed command line arguments
+     * @param  clock     a clock to get the current time, to read relative time ranges
+     * @param  input     the console input, to prompt for further parameters
      * @return           the arguments
      */
-    public static Arguments readArguments(CommandArguments arguments) {
+    public static Arguments readArguments(CommandArguments arguments, Clock clock, ConsoleInput input) {
         JobQuery.Type jobType = determineQueryType(arguments);
         String jobId = null;
         Instant startTime = null;
@@ -198,8 +200,6 @@ public class IngestJobStatusReport {
 
         switch (jobType) {
             case DETAILED:
-                // The query type is only DETAILED when this option was set, and the option always takes a value.
-                // The value can still be empty if it was set like "--detailed=", which would report on no jobs.
                 jobId = arguments.getString("detailed");
                 if (jobId.isEmpty()) {
                     throw new CommandArgumentsException("Expected a value for option: detailed");
@@ -232,13 +232,23 @@ public class IngestJobStatusReport {
             throw new CommandArgumentsException("Range time flags, start-time and end-time are not valid for following query type: " + jobType);
         }
 
+        IngestJobStatusReporter reporter = REPORT_TYPE.read(arguments);
+
+        JobQuery query;
+        if (jobType == JobQuery.Type.RANGE) {
+            if (startTime == null) {
+                query = RangeJobsQuery.forDefaultPeriod(clock);
+            } else {
+                query = new RangeJobsQuery(startTime, endTime);
+            }
+        } else {
+            query = queryfromParametersOrPrompt(jobType, jobId, clock, input);
+        }
+
         return new Arguments(arguments.getString("instance-id"),
                 arguments.getString("table-name"),
-                REPORT_TYPE.read(arguments),
-                jobType,
-                jobId,
-                startTime,
-                endTime);
+                reporter,
+                query);
     }
 
     /**
@@ -296,38 +306,13 @@ public class IngestJobStatusReport {
     }
 
     /**
-     * Creates the query for the jobs to report on. The times for a range are read when the arguments are validated,
-     * so the range is built directly rather than passing the times as parameters to be read again.
-     *
-     * @param  args  the arguments read from the command line
-     * @param  clock a clock to get the current time, to read relative time ranges
-     * @param  input the console input, to prompt for further parameters
-     * @return       the query
-     */
-    public static JobQuery createQuery(Arguments args, Clock clock, ConsoleInput input) {
-        switch (args.queryType()) {
-            case RANGE:
-                if (args.startTime() == null) {
-                    return RangeJobsQuery.forDefaultPeriod(clock);
-                }
-                return new RangeJobsQuery(args.startTime(), args.endTime());
-            default:
-                return queryfromParametersOrPrompt(args.queryType(), args.jobId(), clock, input);
-        }
-    }
-
-    /**
      * Holds the arguments for the ingest job status report command.
      *
      * @param instanceId the Sleeper instance ID
      * @param tableName  the table name
      * @param reporter   the reporter format, either STANDARD or JSON
-     * @param queryType  the type of query to execute for the ingest report
-     * @param jobId      optional job IDs separated by commas for the detailed query
-     * @param startTime  optional start time for range query
-     * @param endTime    optional end time for range query
+     * @param query      the query to execute for the ingest report
      */
-    public record Arguments(String instanceId, String tableName, IngestJobStatusReporter reporter, JobQuery.Type queryType,
-            String jobId, Instant startTime, Instant endTime) {
+    public record Arguments(String instanceId, String tableName, IngestJobStatusReporter reporter, JobQuery query) {
     }
 }
