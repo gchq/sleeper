@@ -1,5 +1,5 @@
-Description=Sleeper Instance
-Project=myproject
+ApplicationID=SLEEPER
+Description=Sleeper demonstration instance
 Environment=DEV
 Product=Sleeper
-ApplicationID=SLEEPER
+Project=sleeper-demo
