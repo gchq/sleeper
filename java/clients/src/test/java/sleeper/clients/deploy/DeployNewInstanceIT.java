@@ -108,6 +108,7 @@ public class DeployNewInstanceIT {
         @Test
         void shouldDeployNewInstanceWhenUsingConfigDir() throws Exception {
             // Given
+            instanceProperties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
             writeInstancePropertiesFile();
             TableProperties tableProperties = new TableProperties(instanceProperties);
             tableProperties.set(TABLE_NAME, "test-table");
@@ -124,6 +125,7 @@ public class DeployNewInstanceIT {
             expected.set(ID, "my-instance");
             expected.set(VPC_ID, "test-vpc");
             expected.set(SUBNETS, "test-subnet");
+            expected.set(RETAIN_LOGS_AFTER_DESTROY, "false");
             TableProperties expectedTableForCdk = new TableProperties(expected);
             expectedTableForCdk.set(TABLE_NAME, "test-table");
             expectedTableForCdk.setSchema(createSchemaWithKey("key"));
@@ -139,6 +141,7 @@ public class DeployNewInstanceIT {
                     .build());
             // AddTableClient runs after CDK and assigns TABLE_ID using the reloaded deployed properties
             InstanceProperties expectedDeployedProperties = new InstanceProperties();
+            expectedDeployedProperties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
             expectedDeployedProperties.set(ID, "my-instance");
             expectedDeployedProperties.set(VPC_ID, "test-vpc");
             expectedDeployedProperties.set(SUBNETS, "test-subnet");
