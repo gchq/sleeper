@@ -20,14 +20,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class CommandArgumentsTest {
-
-    CommandLineUsage.Builder builder = CommandLineUsage.builder();
+public class CommandArgumentsTest extends CommandArgumentsTestBase {
 
     @Nested
     @DisplayName("Positional arguments")
@@ -797,41 +793,5 @@ public class CommandArgumentsTest {
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected argument was not supplied by the system");
         }
-    }
-
-    private void setPositionalArguments(String... names) {
-        builder.positionalArguments(List.of(names));
-    }
-
-    private void setSystemArguments(String... names) {
-        builder.systemArguments(List.of(names));
-    }
-
-    private void setOptions(CommandOption... options) {
-        builder.options(List.of(options));
-    }
-
-    private void setHelpSummary(String helpSummary) {
-        builder.helpSummary(helpSummary);
-    }
-
-    private void setPassThroughExtraArguments(boolean setPassThroughExtraArguments) {
-        builder.passThroughExtraArguments(setPassThroughExtraArguments);
-    }
-
-    private CommandArguments parse(String... args) {
-        return CommandArgumentReader.parse(usage(), args);
-    }
-
-    private String usageMessage() {
-        return usage().createUsageMessage();
-    }
-
-    private String helpText() {
-        return usage().createHelpText();
-    }
-
-    private CommandLineUsage usage() {
-        return builder.build();
     }
 }
