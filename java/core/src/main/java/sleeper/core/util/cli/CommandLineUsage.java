@@ -43,7 +43,7 @@ public class CommandLineUsage {
         helpSummary = builder.helpSummary;
         Optional.ofNullable(builder.options).ifPresent(options::addAll);
         optionByLongName = options.stream().collect(toMap(CommandOption::longName, Function.identity()));
-        optionByShortName = options.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
+        optionByShortName = options.stream().filter(CommandOption::hasShortName).collect(toMap(CommandOption::shortNameOrNull, Function.identity()));
         passThroughExtraArguments = builder.passThroughExtraArguments;
     }
 

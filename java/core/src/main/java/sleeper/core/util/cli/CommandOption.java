@@ -92,12 +92,30 @@ public class CommandOption {
     }
 
     /**
+     * Returns the short name, if the option can be set with a short name like `-n`.
+     *
+     * @return the short name, if the option has one
+     */
+    public Optional<Character> shortName() {
+        return Optional.ofNullable(shortName);
+    }
+
+    /**
      * Returns the short name, where the option can be set with `-n`, or null if it cannot.
      *
      * @return the short name, or null if there is none
      */
-    public Character shortName() {
+    public Character shortNameOrNull() {
         return shortName;
+    }
+
+    /**
+     * Returns whether the option can be set with a short name like `-n`.
+     *
+     * @return true if the option has a short name
+     */
+    public boolean hasShortName() {
+        return shortName != null;
     }
 
     /**
