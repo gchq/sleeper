@@ -78,6 +78,96 @@ public class CommandArgumentsHelpTest extends CommandArgumentsTestBase {
     }
 
     @Nested
+    @DisplayName("Help text per option")
+    class HelpPerOption {
+
+        @Test
+        void shouldSetHelpTextForLongOption() {
+            // Given
+            setOptions(CommandOption.withLongName("test").helpText("A test option.").build());
+
+            // When / Then
+            assertThat(helpText()).isEqualTo("""
+                    Available options: --help, --test
+
+                    --test
+                    A test option.""");
+        }
+
+        @Test
+        void shouldSetHelpTextForShortOption() {
+            // Given
+            setOptions(CommandOption.withLongName("test").shortName('t').helpText("A test option.").build());
+
+            // When / Then
+            assertThat(helpText()).isEqualTo("""
+                    Available options: --help, --test
+
+                    --test, -t
+                    A test option.""");
+        }
+
+        @Test
+        void shouldSetHelpTextForMultipleOptions() {
+            // Given
+            setOptions(
+                    CommandOption.withLongName("first").helpText("First option.").build(),
+                    CommandOption.withLongName("second").helpText("Second option.").build(),
+                    CommandOption.withLongName("third").helpText("Third option.").build());
+
+            // When / Then
+            assertThat(helpText()).isEqualTo("""
+                    Available options: --help, --first, --second, --third
+
+                    --first
+                    First option.
+
+                    --second
+                    Second option.
+
+                    --third
+                    Third option.""");
+        }
+
+        @Test
+        void shouldShowHelpSummaryAndOption() {
+            // Given
+            setHelpSummary("This is a test command.");
+            setOptions(
+                    CommandOption.withLongName("option").helpText("A test option.").build());
+
+            // When / Then
+            assertThat(helpText()).isEqualTo("""
+                    Available options: --help, --option
+
+                    This is a test command.
+
+                    --option
+                    A test option.""");
+        }
+
+        @Test
+        void shouldShowMultilineHelpSummaryAndOption() {
+            // Given
+            setHelpSummary("This is a test command.\n\nIt has some extra help text.");
+            setOptions(
+                    CommandOption.withLongName("option").helpText("A test option.\nIt has some more information.").build());
+
+            // When / Then
+            assertThat(helpText()).isEqualTo("""
+                    Available options: --help, --option
+
+                    This is a test command.
+
+                    It has some extra help text.
+
+                    --option
+                    A test option.
+                    It has some more information.""");
+        }
+    }
+
+    @Nested
     @DisplayName("Usage message")
     class UsageMessage {
 

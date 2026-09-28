@@ -151,7 +151,26 @@ public class CommandLineUsage {
         if (helpSummary != null) {
             parts.add(helpSummary);
         }
-        return String.join("\n\n", parts);
+        String optionsHelp = createOptionsHelpText();
+        if (!optionsHelp.isEmpty()) {
+            parts.add(optionsHelp);
+        }
+        return String.join(System.lineSeparator() + System.lineSeparator(), parts);
+    }
+
+    private String createOptionsHelpText() {
+        return options.stream()
+                .flatMap(option -> option.helpText()
+                        .map(text -> createOptionHelpTextHeader(option) + System.lineSeparator() + text)
+                        .stream())
+                .collect(joining(System.lineSeparator() + System.lineSeparator()));
+    }
+
+    private String createOptionHelpTextHeader(CommandOption option) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("--").append(option.longName());
+        option.shortName().ifPresent(shortName -> builder.append(", -").append(shortName));
+        return builder.toString();
     }
 
     /**
