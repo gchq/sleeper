@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.report.arguments.ReportTypeArgument;
 import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.IngestQueueMessages;
 import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;

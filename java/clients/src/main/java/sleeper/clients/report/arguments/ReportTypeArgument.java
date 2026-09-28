@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.report;
+package sleeper.clients.report.arguments;
 
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
