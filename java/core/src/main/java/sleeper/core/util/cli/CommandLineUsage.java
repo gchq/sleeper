@@ -170,6 +170,7 @@ public class CommandLineUsage {
         StringBuilder builder = new StringBuilder();
         builder.append("--").append(option.longName());
         option.shortName().ifPresent(shortName -> builder.append(", -").append(shortName));
+        option.argsHelpText().ifPresent(text -> builder.append(" ").append(text));
         return builder.toString();
     }
 

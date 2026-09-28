@@ -19,7 +19,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.util.cli.CommandOption.NumArgs;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class CommandArgumentsHelpTest extends CommandArgumentsTestBase {
 
@@ -74,6 +77,32 @@ public class CommandArgumentsHelpTest extends CommandArgumentsTestBase {
 
             // Then
             assertThat(arguments.isFlagSet("help")).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("Usage message")
+    class UsageMessage {
+
+        @Test
+        void shouldDisplayPositionalParameters() {
+            // Given
+            setPositionalArguments("first thing", "next", "last one");
+
+            // When / Then
+            assertThat(usageMessage()).isEqualTo("""
+                    Usage: <first thing> <next> <last one>
+                    Available options: --help""");
+        }
+
+        @Test
+        void shouldDisplayAvailableOptions() {
+            // Given
+            setOptions(CommandOption.longFlag("test"), CommandOption.shortOption('o', "other"));
+
+            // When / Then
+            assertThat(usageMessage()).isEqualTo("""
+                    Available options: --help, --test, --other""");
         }
     }
 
@@ -165,31 +194,55 @@ public class CommandArgumentsHelpTest extends CommandArgumentsTestBase {
                     A test option.
                     It has some more information.""");
         }
-    }
-
-    @Nested
-    @DisplayName("Usage message")
-    class UsageMessage {
 
         @Test
-        void shouldDisplayPositionalParameters() {
+        void shouldSetHelpTextForOptionWithArgument() {
             // Given
-            setPositionalArguments("first thing", "next", "last one");
+            setOptions(CommandOption.withLongName("option")
+                    .numArgs(NumArgs.ONE)
+                    .argsHelpText("<value>")
+                    .helpText("A test option.")
+                    .build());
 
             // When / Then
-            assertThat(usageMessage()).isEqualTo("""
-                    Usage: <first thing> <next> <last one>
-                    Available options: --help""");
+            assertThat(helpText()).isEqualTo("""
+                    Available options: --help, --option
+
+                    --option <value>
+                    A test option.""");
         }
 
         @Test
-        void shouldDisplayAvailableOptions() {
+        void shouldFailToSetHelpTextWithoutNamedArgument() {
             // Given
-            setOptions(CommandOption.longFlag("test"), CommandOption.shortOption('o', "other"));
+            CommandOption.Builder builder = CommandOption.withLongName("option").helpText("A test option.").numArgs(NumArgs.ONE);
 
             // When / Then
-            assertThat(usageMessage()).isEqualTo("""
-                    Available options: --help, --test, --other""");
+            assertThatThrownBy(builder::build)
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("argsHelpText must be set when helpText is set for an option with arguments");
+        }
+
+        @Test
+        void shouldFailToSetArgsHelpTextWithoutHelpText() {
+            // Given
+            CommandOption.Builder builder = CommandOption.withLongName("option").argsHelpText("<value>").numArgs(NumArgs.ONE);
+
+            // When / Then
+            assertThatThrownBy(builder::build)
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("helpText must be set when argsHelpText is set");
+        }
+
+        @Test
+        void shouldFailToSetArgsHelpTextWithoutAllowingAnyArguments() {
+            // Given
+            CommandOption.Builder builder = CommandOption.withLongName("option").helpText("A test option.").argsHelpText("<value>");
+
+            // When / Then
+            assertThatThrownBy(builder::build)
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("cannot set argsHelpText for an option taking no arguments");
         }
     }
 }

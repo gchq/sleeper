@@ -27,12 +27,23 @@ public class CommandOption {
     private final Character shortName;
     private final NumArgs numArgs;
     private final String helpText;
+    private final String argsHelpText;
 
     private CommandOption(Builder builder) {
         longName = Objects.requireNonNull(builder.longName, "longName must not be null");
         shortName = builder.shortName;
         numArgs = Objects.requireNonNull(builder.numArgs, "numArgs must not be null");
         helpText = builder.helpText;
+        argsHelpText = builder.argsHelpText;
+        if (helpText != null && numArgs != NumArgs.NONE) {
+            Objects.requireNonNull(argsHelpText, "argsHelpText must be set when helpText is set for an option with arguments");
+        }
+        if (argsHelpText != null) {
+            Objects.requireNonNull(helpText, "helpText must be set when argsHelpText is set");
+            if (numArgs == NumArgs.NONE) {
+                throw new IllegalArgumentException("cannot set argsHelpText for an option taking no arguments");
+            }
+        }
     }
 
     /**
@@ -153,6 +164,16 @@ public class CommandOption {
     }
 
     /**
+     * Returns the text to display the option's arguments in help text, if there is any. For example, "<value>"
+     * will be shown as "--option <value>" for an option "--option".
+     *
+     * @return the text to display the option's arguments in help text
+     */
+    public Optional<String> argsHelpText() {
+        return Optional.ofNullable(argsHelpText);
+    }
+
+    /**
      * How many arguments a command line option can take.
      */
     public enum NumArgs {
@@ -168,6 +189,7 @@ public class CommandOption {
         private Character shortName;
         private NumArgs numArgs = NumArgs.NONE;
         private String helpText;
+        private String argsHelpText;
 
         private Builder() {
         }
@@ -213,6 +235,18 @@ public class CommandOption {
          */
         public Builder helpText(String helpText) {
             this.helpText = helpText;
+            return this;
+        }
+
+        /**
+         * Sets the help text for the arguments to this option. For example, longName "option" and argsHelpText
+         * "<value>" will be displayed like "--option <value>".
+         *
+         * @param  argsHelpText the help text
+         * @return              this builder, for method chaining
+         */
+        public Builder argsHelpText(String argsHelpText) {
+            this.argsHelpText = argsHelpText;
             return this;
         }
 
