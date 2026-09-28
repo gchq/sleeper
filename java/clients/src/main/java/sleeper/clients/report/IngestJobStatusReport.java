@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.report.arguments.JobTrackerReportOptions;
 import sleeper.clients.report.arguments.ReportTypeArgument;
 import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.IngestQueueMessages;
@@ -41,7 +42,6 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
-import sleeper.core.util.cli.CommandOption;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 
 import java.time.Clock;
@@ -142,15 +142,7 @@ public class IngestJobStatusReport {
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
             .positionalArguments(List.of("instance-id", "table-name"))
-            .options(List.of(
-                    CommandOption.shortFlag('a', "all"),
-                    CommandOption.shortOption('d', "detailed"),
-                    CommandOption.longOption("end-time"),
-                    CommandOption.shortFlag('r', "range"),
-                    CommandOption.shortFlag('n', "rejected"),
-                    ReportTypeArgument.option(),
-                    CommandOption.longOption("start-time"),
-                    CommandOption.shortFlag('u', "unfinished")))
+            .options(JobTrackerReportOptions.forIngest())
             .helpSummary("" +
                     "A report on ingest jobs within a Sleeper instance.\n" +
                     "\n" +
