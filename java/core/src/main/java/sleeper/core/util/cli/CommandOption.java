@@ -164,8 +164,8 @@ public class CommandOption {
     }
 
     /**
-     * Returns the text to display the option's arguments in help text, if there is any. For example, "<value>"
-     * will be shown as "--option <value>" for an option "--option".
+     * Returns the text to display the option's arguments in help text, if there is any. For example, {@code <value>}
+     * will be shown as {@code --option <value>} for an option with long name {@code option}.
      *
      * @return the text to display the option's arguments in help text
      */
