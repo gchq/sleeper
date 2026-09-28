@@ -29,12 +29,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Create a non-root user for images built from this one to run as. The IDs are set explicitly so they
 # don't shift if a later base image adds system users of its own. 28157 chosen randomly between 1000 and 32767.
-# /mnt/scratch is pre-created and owned by Sleeper because ECS ingest tasks use it as a local working
-# directory (see ECSIngestTaskRunner).
 RUN groupadd --system --gid 28157 sleeper \
-    && useradd --system --uid 28157 --gid sleeper --no-create-home sleeper \
-    && mkdir -p /mnt/scratch \
-    && chown sleeper:sleeper /mnt/scratch
+    && useradd --system --uid 28157 --gid sleeper --no-create-home sleeper
 
 # The sleeper user has no home directory and can't write to /, so point both at /tmp. Otherwise
 # anything writing to either fails, which is easy to miss as it's usually not fatal.

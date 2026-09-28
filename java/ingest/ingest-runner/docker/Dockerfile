@@ -14,6 +14,10 @@
 ARG BASE_IMAGE=sleeper-base:current
 FROM ${BASE_IMAGE}
 
+USER root
+RUN mkdir -p /mnt/scratch && chown sleeper:sleeper /mnt/scratch
+USER sleeper
+
 COPY ingest.jar /ingest.jar
 COPY run.sh /run.sh
 
