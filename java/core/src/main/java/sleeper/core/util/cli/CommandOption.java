@@ -239,8 +239,8 @@ public class CommandOption {
         }
 
         /**
-         * Sets the help text for the arguments to this option. For example, longName "option" and argsHelpText
-         * "<value>" will be displayed like "--option <value>".
+         * Sets the help text for the arguments to this option. For example, longName {@code option} and argsHelpText
+         * {@code <value>} will be displayed like {@code --option <value>}.
          *
          * @param  argsHelpText the help text
          * @return              this builder, for method chaining
