@@ -15,10 +15,29 @@
  */
 package sleeper.core.util.cli;
 
+import java.util.Objects;
+import java.util.Optional;
+
 /**
  * An option that may be set on the command line. Used with {@link CommandArguments}.
  */
-public interface CommandOption {
+public class CommandOption {
+
+    private final String longName;
+    private final Character shortName;
+    private final NumArgs numArgs;
+    private final String helpText;
+
+    private CommandOption(Builder builder) {
+        longName = Objects.requireNonNull(builder.longName, "longName must not be null");
+        shortName = builder.shortName;
+        numArgs = Objects.requireNonNull(builder.numArgs, "numArgs must not be null");
+        helpText = builder.helpText;
+    }
+
+    public static Builder withLongName(String longName) {
+        return new Builder().longName(longName);
+    }
 
     /**
      * Creates an option that must be set as a long flag, with no arguments.
@@ -27,7 +46,7 @@ public interface CommandOption {
      * @return      the option
      */
     public static CommandOption longFlag(String name) {
-        return new CommandOptionImpl(name, null, NumArgs.NONE);
+        return withLongName(name).build();
     }
 
     /**
@@ -38,7 +57,7 @@ public interface CommandOption {
      * @return      the option
      */
     public static CommandOption longOption(String name) {
-        return new CommandOptionImpl(name, null, NumArgs.ONE);
+        return withLongName(name).numArgs(NumArgs.ONE).build();
     }
 
     /**
@@ -49,7 +68,7 @@ public interface CommandOption {
      * @return           the option
      */
     public static CommandOption shortFlag(char character, String name) {
-        return new CommandOptionImpl(name, character, NumArgs.NONE);
+        return withLongName(name).shortName(character).build();
     }
 
     /**
@@ -60,7 +79,7 @@ public interface CommandOption {
      * @return           the option
      */
     public static CommandOption shortOption(char character, String name) {
-        return new CommandOptionImpl(name, character, NumArgs.ONE);
+        return withLongName(name).shortName(character).numArgs(NumArgs.ONE).build();
     }
 
     /**
@@ -68,29 +87,44 @@ public interface CommandOption {
      *
      * @return the long name
      */
-    String longName();
+    public String longName() {
+        return longName;
+    }
 
     /**
      * Returns the short name, where the option can be set with `-n`, or null if it cannot.
      *
      * @return the short name, or null if there is none
      */
-    Character shortName();
+    public Character shortName() {
+        return shortName;
+    }
 
     /**
      * Returns the number of arguments that the option can take.
      *
      * @return the number of arguments
      */
-    NumArgs numArgs();
+    public NumArgs numArgs() {
+        return numArgs;
+    }
 
     /**
      * Returns true if this is a flag that takes no arguments.
      *
      * @return whether this is a flag or not
      */
-    default boolean isFlag() {
-        return numArgs() == NumArgs.NONE;
+    public boolean isFlag() {
+        return numArgs == NumArgs.NONE;
+    }
+
+    /**
+     * Returns the help text, if there is any.
+     *
+     * @return the help text
+     */
+    public Optional<String> helpText() {
+        return Optional.ofNullable(helpText);
     }
 
     /**
@@ -98,5 +132,41 @@ public interface CommandOption {
      */
     public enum NumArgs {
         NONE, ONE
+    }
+
+    public static class Builder {
+
+        private String longName;
+        private Character shortName;
+        private NumArgs numArgs = NumArgs.NONE;
+        private String helpText;
+
+        private Builder() {
+        }
+
+        public Builder longName(String longName) {
+            this.longName = longName;
+            return this;
+        }
+
+        public Builder shortName(Character shortName) {
+            this.shortName = shortName;
+            return this;
+        }
+
+        public Builder numArgs(NumArgs numArgs) {
+            this.numArgs = numArgs;
+            return this;
+        }
+
+        public Builder helpText(String helpText) {
+            this.helpText = helpText;
+            return this;
+        }
+
+        public CommandOption build() {
+            return new CommandOption(this);
+        }
+
     }
 }
