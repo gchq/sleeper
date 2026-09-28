@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 public class JobQueryPromptTest extends JobQueryTestBase {
 
     private static final String QUERY_TYPE_PROMPT = "All (a), Detailed (d), range (r), or unfinished (u) query? \n";
-    private static final String DETAILED_JOB_ID_PROMPT = "Enter jobId to get detailed information about: \n";
+    private static final String DETAILED_JOB_ID_PROMPT = "Enter job IDs to get detailed information about, separated by commas: \n";
     private static final String RANGE_START_PROMPT = "Enter range start in format yyyyMMddHHmmss (default is 4 hours ago): \n";
     private static final String RANGE_END_PROMPT = "Enter range end in format yyyyMMddHHmmss (default is now): \n";
 
