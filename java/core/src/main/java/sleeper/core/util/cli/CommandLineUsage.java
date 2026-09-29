@@ -43,7 +43,7 @@ public class CommandLineUsage {
         helpSummary = builder.helpSummary;
         Optional.ofNullable(builder.options).ifPresent(options::addAll);
         optionByLongName = options.stream().collect(toMap(CommandOption::longName, Function.identity()));
-        optionByShortName = options.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
+        optionByShortName = options.stream().filter(CommandOption::hasShortName).collect(toMap(CommandOption::shortNameOrNull, Function.identity()));
         passThroughExtraArguments = builder.passThroughExtraArguments;
     }
 
@@ -151,7 +151,27 @@ public class CommandLineUsage {
         if (helpSummary != null) {
             parts.add(helpSummary);
         }
-        return String.join("\n\n", parts);
+        String optionsHelp = createOptionsHelpText();
+        if (!optionsHelp.isEmpty()) {
+            parts.add(optionsHelp);
+        }
+        return String.join(System.lineSeparator() + System.lineSeparator(), parts);
+    }
+
+    private String createOptionsHelpText() {
+        return options.stream()
+                .flatMap(option -> option.helpText()
+                        .map(text -> createOptionHelpTextHeader(option) + System.lineSeparator() + text)
+                        .stream())
+                .collect(joining(System.lineSeparator() + System.lineSeparator()));
+    }
+
+    private String createOptionHelpTextHeader(CommandOption option) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("--").append(option.longName());
+        option.shortName().ifPresent(shortName -> builder.append(", -").append(shortName));
+        option.argsHelpText().ifPresent(text -> builder.append(" ").append(text));
+        return builder.toString();
     }
 
     /**
