@@ -19,13 +19,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
 import software.amazon.awssdk.services.dynamodb.model.Condition;
+import software.amazon.awssdk.services.dynamodb.model.PutRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 import software.amazon.awssdk.services.dynamodb.paginators.QueryIterable;
 import software.amazon.awssdk.services.dynamodb.paginators.ScanIterable;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
+import sleeper.core.util.SplitIntoBatches;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
@@ -51,6 +57,9 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBQueryTracker.class);
 
     public static final String DESTINATION = "DYNAMODB";
+    public static final WaitRange UNPROCESSED_WRITES_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(1, 30);
+    private static final int DYNAMO_MAX_BATCH_WRITE_SIZE = 25;
+    private static final int MAX_ATTEMPTS_PER_BATCH_WRITE = 10;
     public static final String NON_NESTED_QUERY_PLACEHOLDER = DynamoDBQueryTrackerEntry.NON_NESTED_QUERY_PLACEHOLDER;
     public static final String QUERY_ID = DynamoDBQueryTrackerEntry.QUERY_ID;
     public static final String SUB_QUERY_ID = DynamoDBQueryTrackerEntry.SUB_QUERY_ID;
@@ -59,11 +68,17 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     private final DynamoDbClient dynamoClient;
     private final String trackerTableName;
     private final long queryTrackerTTL;
+    private final ExponentialBackoffWithJitter unprocessedWritesBackoff;
 
     public DynamoDBQueryTracker(InstanceProperties instanceProperties, DynamoDbClient dynamoClient) {
+        this(instanceProperties, dynamoClient, new ExponentialBackoffWithJitter(UNPROCESSED_WRITES_WAIT_RANGE));
+    }
+
+    public DynamoDBQueryTracker(InstanceProperties instanceProperties, DynamoDbClient dynamoClient, ExponentialBackoffWithJitter unprocessedWritesBackoff) {
         this.trackerTableName = instanceProperties.get(QUERY_TRACKER_TABLE_NAME);
         this.queryTrackerTTL = instanceProperties.getLong(QUERY_TRACKER_ITEM_TTL_IN_DAYS);
         this.dynamoClient = dynamoClient;
+        this.unprocessedWritesBackoff = unprocessedWritesBackoff;
     }
 
     public DynamoDBQueryTracker(Map<String, String> destinationConfig) {
@@ -71,6 +86,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
         String ttl = destinationConfig.get(QUERY_TRACKER_ITEM_TTL_IN_DAYS.getPropertyName());
         this.queryTrackerTTL = Long.parseLong(ttl != null ? ttl : QUERY_TRACKER_ITEM_TTL_IN_DAYS.getDefaultValue());
         this.dynamoClient = DynamoDbClient.create();
+        this.unprocessedWritesBackoff = new ExponentialBackoffWithJitter(UNPROCESSED_WRITES_WAIT_RANGE);
     }
 
     @Override
@@ -154,8 +170,38 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
     @Override
     public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
-        subQueries.forEach(subQuery -> updateState(
-                DynamoDBQueryTrackerEntry.withLeafQuery(subQuery).state(QueryState.QUEUED).build()));
+        SplitIntoBatches.splitListIntoBatchesOf(DYNAMO_MAX_BATCH_WRITE_SIZE, subQueries)
+                .forEach(this::putQueuedSubQueries);
+    }
+
+    private void putQueuedSubQueries(List<LeafPartitionQuery> subQueries) {
+        Map<String, List<WriteRequest>> writesByTable = Map.of(trackerTableName, subQueries.stream()
+                .map(subQuery -> DynamoDBQueryTrackerEntry.withLeafQuery(subQuery).state(QueryState.QUEUED).build())
+                .map(entry -> WriteRequest.builder()
+                        .putRequest(PutRequest.builder()
+                                .item(entry.getItem(queryTrackerTTL))
+                                .build())
+                        .build())
+                .toList());
+        try {
+            for (int attempt = 1; !writesByTable.isEmpty(); attempt++) {
+                if (attempt > MAX_ATTEMPTS_PER_BATCH_WRITE) {
+                    throw new RuntimeException("Failed to track creation of sub-queries, too many unprocessed writes " +
+                            "after " + MAX_ATTEMPTS_PER_BATCH_WRITE + " attempts");
+                }
+                unprocessedWritesBackoff.waitBeforeAttempt(attempt);
+                Map<String, List<WriteRequest>> requestItems = writesByTable;
+                BatchWriteItemResponse response = dynamoClient.batchWriteItem(request -> request.requestItems(requestItems));
+                writesByTable = response.unprocessedItems();
+                if (!writesByTable.isEmpty()) {
+                    LOGGER.warn("Found {} unprocessed writes tracking creation of sub-queries, retrying",
+                            writesByTable.values().stream().mapToInt(List::size).sum());
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted retrying unprocessed writes tracking creation of sub-queries", e);
+        }
     }
 
     @Override
