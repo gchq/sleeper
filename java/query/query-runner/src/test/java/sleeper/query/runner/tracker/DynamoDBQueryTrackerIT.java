@@ -19,7 +19,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.range.Range;
@@ -28,6 +32,8 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ThreadSleepTestHelper;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
@@ -35,16 +41,21 @@ import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.TrackedQuery;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.testutils.JitterTestHelper.constantJitterFraction;
 import static sleeper.query.core.tracker.QueryState.COMPLETED;
 import static sleeper.query.core.tracker.QueryState.FAILED;
 import static sleeper.query.core.tracker.QueryState.IN_PROGRESS;
@@ -194,6 +205,158 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(35));
         assertThat(queryTracker().getStatus("parent", "my-id").getRowCount()).isEqualTo(Long.valueOf(10));
         assertThat(queryTracker().getStatus("parent", "my-other-id").getRowCount()).isEqualTo(Long.valueOf(25));
+    }
+
+    @Test
+    public void shouldTrackCreationOfSubQueries() throws QueryTrackerException {
+        // Given
+        Query parent = createQueryWithId("parent");
+        queryTracker().queryInProgress(parent);
+
+        // When
+        queryTracker().subQueriesCreated(parent, List.of(
+                createSubQueryWithId("parent", "sub-1"),
+                createSubQueryWithId("parent", "sub-2")));
+
+        // Then
+        assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(IN_PROGRESS);
+        assertThat(queryTracker().getStatus("parent", "sub-1").getLastKnownState()).isEqualTo(QUEUED);
+        assertThat(queryTracker().getStatus("parent", "sub-2").getLastKnownState()).isEqualTo(QUEUED);
+    }
+
+    @Test
+    public void shouldTrackCreationOfMoreSubQueriesThanFitInOneBatchWrite() {
+        // Given
+        Query parent = createQueryWithId("parent");
+        queryTracker().queryInProgress(parent);
+        List<LeafPartitionQuery> subQueries = IntStream.rangeClosed(1, 30)
+                .mapToObj(i -> createSubQueryWithId("parent", "sub-" + i))
+                .toList();
+
+        // When
+        queryTracker().subQueriesCreated(parent, subQueries);
+
+        // Then
+        assertThat(queryTracker().getQueriesWithState(QUEUED))
+                .extracting(TrackedQuery::getSubQueryId)
+                .containsExactlyInAnyOrderElementsOf(subQueries.stream()
+                        .map(LeafPartitionQuery::getSubQueryId)
+                        .toList());
+    }
+
+    @Nested
+    @DisplayName("Retry unprocessed batch writes")
+    class RetryUnprocessedBatchWrites {
+        List<BatchWriteItemRequest> batchWriteRequests = new ArrayList<>();
+        List<Duration> foundWaits = new ArrayList<>();
+
+        @Test
+        void shouldRetryWritesLeftUnprocessedByFirstBatchWrite() {
+            // Given the first batch write only processes one write, leaving the other two unprocessed
+            DynamoDBQueryTracker tracker = trackerWithClient(leaveWritesUnprocessedOnFirstCall(2));
+            Query parent = createQueryWithId("parent");
+            List<LeafPartitionQuery> subQueries = List.of(
+                    createSubQueryWithId("parent", "sub-1"),
+                    createSubQueryWithId("parent", "sub-2"),
+                    createSubQueryWithId("parent", "sub-3"));
+
+            // When
+            tracker.subQueriesCreated(parent, subQueries);
+
+            // Then all sub-queries are tracked
+            assertThat(queryTracker().getQueriesWithState(QUEUED))
+                    .extracting(TrackedQuery::getSubQueryId)
+                    .containsExactlyInAnyOrder("sub-1", "sub-2", "sub-3");
+            // And only the unprocessed writes were retried
+            assertThat(batchWriteRequests)
+                    .extracting(this::countWrites)
+                    .containsExactly(3, 2);
+            // And the retry waited with backoff
+            assertThat(foundWaits).containsExactly(Duration.ofMillis(500));
+        }
+
+        @Test
+        void shouldFailWhenWritesAreStillUnprocessedAfterMaximumAttempts() {
+            // Given every batch write leaves all writes unprocessed
+            DynamoDBQueryTracker tracker = trackerWithClient(neverProcessAnyWrites());
+            Query parent = createQueryWithId("parent");
+            List<LeafPartitionQuery> subQueries = List.of(createSubQueryWithId("parent", "sub-1"));
+
+            // When / Then
+            assertThatThrownBy(() -> tracker.subQueriesCreated(parent, subQueries))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("too many unprocessed writes");
+            assertThat(batchWriteRequests).hasSize(10);
+            assertThat(foundWaits).containsExactly(
+                    Duration.ofMillis(500),
+                    Duration.ofSeconds(1),
+                    Duration.ofSeconds(2),
+                    Duration.ofSeconds(4),
+                    Duration.ofSeconds(8),
+                    Duration.ofSeconds(15),
+                    Duration.ofSeconds(15),
+                    Duration.ofSeconds(15),
+                    Duration.ofSeconds(15));
+            assertThat(queryTracker().getAllQueries()).isEmpty();
+        }
+
+        private DynamoDBQueryTracker trackerWithClient(DynamoDbClient client) {
+            return new DynamoDBQueryTracker(instanceProperties, client,
+                    new ExponentialBackoffWithJitter(DynamoDBQueryTracker.UNPROCESSED_WRITES_WAIT_RANGE,
+                            constantJitterFraction(0.5), ThreadSleepTestHelper.recordWaits(foundWaits)));
+        }
+
+        private int countWrites(BatchWriteItemRequest request) {
+            return request.requestItems().get(trackerTableName()).size();
+        }
+
+        private String trackerTableName() {
+            return instanceProperties.get(QUERY_TRACKER_TABLE_NAME);
+        }
+
+        private DynamoDbClient leaveWritesUnprocessedOnFirstCall(int numUnprocessed) {
+            return new BatchWriteInterceptingClient() {
+                @Override
+                public BatchWriteItemResponse batchWriteItem(BatchWriteItemRequest request) {
+                    batchWriteRequests.add(request);
+                    if (batchWriteRequests.size() > 1) {
+                        return dynamoClient.batchWriteItem(request);
+                    }
+                    List<WriteRequest> writes = request.requestItems().get(trackerTableName());
+                    List<WriteRequest> processed = writes.subList(0, writes.size() - numUnprocessed);
+                    List<WriteRequest> unprocessed = writes.subList(writes.size() - numUnprocessed, writes.size());
+                    if (!processed.isEmpty()) {
+                        dynamoClient.batchWriteItem(builder -> builder.requestItems(Map.of(trackerTableName(), processed)));
+                    }
+                    return BatchWriteItemResponse.builder()
+                            .unprocessedItems(Map.of(trackerTableName(), unprocessed))
+                            .build();
+                }
+            };
+        }
+
+        private DynamoDbClient neverProcessAnyWrites() {
+            return new BatchWriteInterceptingClient() {
+                @Override
+                public BatchWriteItemResponse batchWriteItem(BatchWriteItemRequest request) {
+                    batchWriteRequests.add(request);
+                    return BatchWriteItemResponse.builder()
+                            .unprocessedItems(request.requestItems())
+                            .build();
+                }
+            };
+        }
+
+        private abstract class BatchWriteInterceptingClient implements DynamoDbClient {
+            @Override
+            public String serviceName() {
+                return dynamoClient.serviceName();
+            }
+
+            @Override
+            public void close() {
+            }
+        }
     }
 
     @Test
