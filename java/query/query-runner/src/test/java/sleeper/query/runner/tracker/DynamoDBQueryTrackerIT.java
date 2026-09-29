@@ -39,6 +39,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
@@ -194,6 +195,43 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(35));
         assertThat(queryTracker().getStatus("parent", "my-id").getRowCount()).isEqualTo(Long.valueOf(10));
         assertThat(queryTracker().getStatus("parent", "my-other-id").getRowCount()).isEqualTo(Long.valueOf(25));
+    }
+
+    @Test
+    public void shouldTrackCreationOfSubQueries() throws QueryTrackerException {
+        // Given
+        Query parent = createQueryWithId("parent");
+        queryTracker().queryInProgress(parent);
+
+        // When
+        queryTracker().subQueriesCreated(parent, List.of(
+                createSubQueryWithId("parent", "sub-1"),
+                createSubQueryWithId("parent", "sub-2")));
+
+        // Then
+        assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(IN_PROGRESS);
+        assertThat(queryTracker().getStatus("parent", "sub-1").getLastKnownState()).isEqualTo(QUEUED);
+        assertThat(queryTracker().getStatus("parent", "sub-2").getLastKnownState()).isEqualTo(QUEUED);
+    }
+
+    @Test
+    public void shouldTrackCreationOfMoreSubQueriesThanFitInOneBatchWrite() {
+        // Given
+        Query parent = createQueryWithId("parent");
+        queryTracker().queryInProgress(parent);
+        List<LeafPartitionQuery> subQueries = IntStream.rangeClosed(1, 30)
+                .mapToObj(i -> createSubQueryWithId("parent", "sub-" + i))
+                .toList();
+
+        // When
+        queryTracker().subQueriesCreated(parent, subQueries);
+
+        // Then
+        assertThat(queryTracker().getQueriesWithState(QUEUED))
+                .extracting(TrackedQuery::getSubQueryId)
+                .containsExactlyInAnyOrderElementsOf(subQueries.stream()
+                        .map(LeafPartitionQuery::getSubQueryId)
+                        .toList());
     }
 
     @Test
