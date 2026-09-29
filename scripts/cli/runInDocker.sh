@@ -94,6 +94,10 @@ set_use_local_version() {
 }
 
 set_isolate_mvn() {
+  if [ "$1" != "true" ] && [ "$1" != "false" ]; then
+    echo "Isolate Maven must be true or false, found: $1" >&2
+    exit 1
+  fi
   mkdir -p "$DOCKER_TOOLS_CONFIG_DIR"
   echo "$1" > "$ISOLATE_MVN_CONFIG_PATH"
   echo "Isolate Maven set to: $1"
