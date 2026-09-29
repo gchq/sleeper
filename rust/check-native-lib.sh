@@ -76,7 +76,7 @@ version_at_most() {
 FAILED=false
 
 MACHINE=$(readelf -h "$LIBRARY" | sed -n 's/^ *Machine: *//p')
-echo "Found library is built for for $MACHINE"
+echo "Found library is built for $MACHINE"
 if [ "$MACHINE" != "$EXPECTED_MACHINE" ]; then
   echo "FAILED: Expected $EXPECTED_MACHINE for $ARCH"
   FAILED=true
@@ -88,7 +88,7 @@ if [ -z "$GLIBC" ]; then
   FAILED=true
 elif ! version_at_most "$GLIBC" "$MAX_GLIBC"; then
   echo "Library requires GLIBC_$GLIBC, limit is GLIBC_$MAX_GLIBC"
-  echo "FAILED: Requires a version not present in Amazon Linux 2023."
+  echo "FAILED: Requires a version not present in Amazon Linux 2023"
   FAILED=true
 else
   echo "Library requires GLIBC_$GLIBC, limit is GLIBC_$MAX_GLIBC"
@@ -100,7 +100,7 @@ if [ -z "$GLIBCXX" ]; then
   FAILED=true
 elif ! version_at_most "$GLIBCXX" "$MAX_GLIBCXX"; then
   echo "Library requires GLIBCXX_$GLIBCXX, limit is GLIBCXX_$MAX_GLIBCXX"
-  echo "FAILED: Requires a version not present in Amazon Linux 2023."
+  echo "FAILED: Requires a version not present in Amazon Linux 2023"
   FAILED=true
 else
   echo "Library requires GLIBCXX_$GLIBCXX, limit is GLIBCXX_$MAX_GLIBCXX"
@@ -109,3 +109,5 @@ fi
 if [ "$FAILED" = true ]; then
   exit 1
 fi
+
+echo "PASSED: All libraries are less than or equal to their maximum versions"
