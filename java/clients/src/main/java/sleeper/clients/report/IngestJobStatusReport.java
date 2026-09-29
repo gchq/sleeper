@@ -27,7 +27,6 @@ import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.IngestQueueMessages;
 import sleeper.clients.report.ingest.job.PersistentEmrStepCount;
 import sleeper.clients.report.job.query.JobQuery;
-import sleeper.clients.report.job.query.RangeJobsQuery;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.common.task.QueueMessageCount;
@@ -37,18 +36,13 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.cli.CommandArguments;
-import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 
 import java.time.Clock;
-import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-import static java.util.stream.Collectors.joining;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
@@ -56,11 +50,6 @@ import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
  * the jobs matching that query.
  */
 public class IngestJobStatusReport {
-    /**
-     * The query type options, and the query type each one selects. Declared in the order they appear in the usage,
-     * which is the order they are reported in if the user sets more than one.
-     */
-    private static final Map<String, JobQuery.Type> QUERY_TYPE_BY_OPTION = createQueryTypeByOption();
 
     private final IngestJobTracker tracker;
     private final IngestJobStatusReporter reporter;
@@ -133,7 +122,7 @@ public class IngestJobStatusReport {
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
             .positionalArguments(List.of("instance-id", "table-name"))
-            .options(JobTrackerReportOptions.forIngest())
+            .options(JobTrackerReportOptions.INGEST_OPTIONS)
             .helpSummary("" +
                     "A report on ingest jobs within a Sleeper instance.\n" +
                     "\n" +
@@ -151,116 +140,10 @@ public class IngestJobStatusReport {
      * @return           the arguments
      */
     public static Arguments readArguments(CommandArguments arguments, Clock clock, ConsoleInput input) {
-        JobQuery.Type jobType = determineQueryType(arguments);
-        String jobId = null;
-        Instant startTime = null;
-        Instant endTime = null;
-
-        switch (jobType) {
-            case DETAILED:
-                jobId = arguments.getString("detailed");
-                if (jobId.isEmpty()) {
-                    throw new CommandArgumentsException("Expected a value for option: detailed");
-                }
-                break;
-            case RANGE:
-                Optional<String> optionalStart = arguments.getOptionalString("start-time");
-                Optional<String> optionalEnd = arguments.getOptionalString("end-time");
-
-                if (optionalStart.isPresent() && optionalEnd.isPresent()) {
-                    startTime = readTime("start-time", optionalStart.get());
-                    endTime = readTime("end-time", optionalEnd.get());
-                    if (endTime.isBefore(startTime)) {
-                        throw new CommandArgumentsException("Range end is before range start. Range start: " + optionalStart.get() + ", range end: " + optionalEnd.get());
-                    }
-                } else if (optionalStart.isEmpty() && optionalEnd.isPresent()) {
-                    throw new CommandArgumentsException("Missing parameter of start-time which is required for the Range query type.");
-                } else if (optionalStart.isPresent() && optionalEnd.isEmpty()) {
-                    throw new CommandArgumentsException("Missing parameter of end-time which is required for the Range query type.");
-                }
-                break;
-            default:
-                break;
-        }
-
-        // Below error message to be removed as part of work for ticket number: https://github.com/gchq/sleeper/issues/8061
-        if (!jobType.equals(JobQuery.Type.RANGE) &&
-                (arguments.getOptionalString("start-time").isPresent() ||
-                        arguments.getOptionalString("end-time").isPresent())) {
-            throw new CommandArgumentsException("Range time flags, start-time and end-time are not valid for following query type: " + jobType);
-        }
-
-        IngestJobStatusReporter reporter = JobTrackerReportOptions.INGEST_REPORT_TYPE.read(arguments);
-
-        JobQuery query;
-        if (jobType == JobQuery.Type.RANGE) {
-            if (startTime == null) {
-                query = RangeJobsQuery.forDefaultPeriod(clock);
-            } else {
-                query = new RangeJobsQuery(startTime, endTime);
-            }
-        } else {
-            query = queryfromParametersOrPrompt(jobType, jobId, clock, input);
-        }
-
         return new Arguments(arguments.getString("instance-id"),
                 arguments.getString("table-name"),
-                reporter,
-                query);
-    }
-
-    /**
-     * Determines which query type the user asked for. Exactly one query type option may be set. If none is set, the
-     * user is prompted for one, unless a time was given for a range.
-     *
-     * @param  arguments the parsed command line arguments
-     * @return           the query type
-     */
-    private static JobQuery.Type determineQueryType(CommandArguments arguments) {
-        List<JobQuery.Type> setTypes = QUERY_TYPE_BY_OPTION.entrySet().stream()
-                .filter(entry -> isOptionSet(arguments, entry.getKey()))
-                .map(Map.Entry::getValue)
-                .toList();
-        if (setTypes.size() > 1) {
-            throw new CommandArgumentsException("Too many query type flags are set, maximum of 1. Flags set: " +
-                    setTypes.stream().map(JobQuery.Type::name).collect(joining(", ")));
-        }
-        if (!setTypes.isEmpty()) {
-            return setTypes.get(0);
-        }
-        // Additional step to trigger range query if no flag presented, but start-time or end-time present.
-        // Either one on its own is an error, but it is reported when the range is read, so that the user is told
-        // which one is missing rather than that the time they did set is invalid for some other query type.
-        // Likely to be refactored when including range as an option with the Query Types rather than a separate one
-        // See ticket: https://github.com/gchq/sleeper/issues/8061
-        if (arguments.getOptionalString("start-time").isPresent()
-                || arguments.getOptionalString("end-time").isPresent()) {
-            return JobQuery.Type.RANGE;
-        }
-        return JobQuery.Type.PROMPT;
-    }
-
-    private static Instant readTime(String option, String value) {
-        try {
-            return RangeJobsQuery.parseTime(value);
-        } catch (IllegalArgumentException e) {
-            throw new CommandArgumentsException(
-                    option + " parameter doesn't match expected format: " + RangeJobsQuery.DATE_FORMAT);
-        }
-    }
-
-    private static boolean isOptionSet(CommandArguments arguments, String option) {
-        return arguments.isFlagSet(option) || arguments.getOptionalString(option).isPresent();
-    }
-
-    private static Map<String, JobQuery.Type> createQueryTypeByOption() {
-        Map<String, JobQuery.Type> queryTypeByOption = new LinkedHashMap<>();
-        queryTypeByOption.put("all", JobQuery.Type.ALL);
-        queryTypeByOption.put("detailed", JobQuery.Type.DETAILED);
-        queryTypeByOption.put("range", JobQuery.Type.RANGE);
-        queryTypeByOption.put("rejected", JobQuery.Type.REJECTED);
-        queryTypeByOption.put("unfinished", JobQuery.Type.UNFINISHED);
-        return queryTypeByOption;
+                JobTrackerReportOptions.INGEST_REPORT_TYPE.read(arguments),
+                JobTrackerReportOptions.readIngestJobQuery(arguments, clock, input));
     }
 
     /**

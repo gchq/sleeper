@@ -143,6 +143,14 @@ public class CommandArguments {
         return flags.getOrDefault(name, defaultValue);
     }
 
+    public boolean isSet(CommandOption option) {
+        if (option.isFlag()) {
+            return isFlagSet(option.longName());
+        } else {
+            return argByName.containsKey(option.longName());
+        }
+    }
+
     /**
      * Retrieves unrecognised arguments, if set to pass through unrecognised arguments.
      *
