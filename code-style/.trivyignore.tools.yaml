@@ -1,0 +1,7 @@
+
+misconfigurations:
+
+  # These are present in the official AWS CDK bootstrap templates.
+  - id: AWS-0030
+  - id: AWS-0033
+  - id: AWS-0089
