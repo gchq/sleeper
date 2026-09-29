@@ -142,39 +142,13 @@ public class IngestJobStatusReport {
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
             .positionalArguments(List.of("instance-id", "table-name"))
-            .options(JobTrackerReportOptions.forIngest())
+            .options(JobTrackerReportOptions.forIngest(REPORT_TYPE.option()))
             .helpSummary("" +
                     "A report on ingest jobs within a Sleeper instance.\n" +
                     "\n" +
                     "The jobs to report on are chosen with one of the query type options, " +
                     "which are --all, --detailed, --range, --rejected and --unfinished. " +
-                    "Only one may be set at a time. If none is set, you will be prompted to choose one.\n" +
-                    "\n" +
-                    "--all, -a\n" +
-                    "Reports on all jobs.\n" +
-                    "\n" +
-                    "--detailed, -d <job-ids>\n" +
-                    "Reports in detail on the jobs with the given IDs. Separate several IDs with commas.\n" +
-                    "\n" +
-                    "--end-time <time>\n" +
-                    "End of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
-                    "Must be set together with --start-time, and only applies to the --range query type.\n" +
-                    "\n" +
-                    "--range, -r\n" +
-                    "Reports on all jobs in a time period. Defaults to the last 4 hours, " +
-                    "or set the period with --start-time and --end-time.\n" +
-                    "\n" +
-                    "--rejected, -n\n" +
-                    "Reports on all rejected jobs.\n" +
-                    "\n" +
-                    REPORT_TYPE.helpText() + "\n" +
-                    "\n" +
-                    "--start-time <time>\n" +
-                    "Start of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
-                    "Must be set together with --end-time, and only applies to the --range query type.\n" +
-                    "\n" +
-                    "--unfinished, -u\n" +
-                    "Reports on all unfinished jobs.")
+                    "Only one may be set at a time. If none is set, you will be prompted to choose one.")
             .build();
 
     /**

@@ -15,24 +15,55 @@
  */
 package sleeper.clients.report.arguments;
 
+import sleeper.clients.report.job.query.RangeJobsQuery;
 import sleeper.core.util.cli.CommandOption;
 import sleeper.core.util.cli.CommandOption.NumArgs;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class JobTrackerReportOptions {
 
-    private static final CommandOption ALL = CommandOption.withLongName("all").shortName('a').build();
-    private static final CommandOption DETAILED = CommandOption.withLongName("detailed").shortName('d').numArgs(NumArgs.ONE).build();
-    private static final CommandOption RANGE = CommandOption.withLongName("range").shortName('r').build();
-    private static final CommandOption UNFINISHED = CommandOption.withLongName("unfinished").shortName('u').build();
-    private static final CommandOption START_TIME = CommandOption.withLongName("start-time").numArgs(NumArgs.ONE).build();
-    private static final CommandOption END_TIME = CommandOption.withLongName("end-time").numArgs(NumArgs.ONE).build();
+    private static final CommandOption ALL = CommandOption
+            .withLongName("all").shortName('a')
+            .helpText("Reports on all jobs.").build();
+    private static final CommandOption DETAILED = CommandOption
+            .withLongName("detailed").shortName('d').numArgs(NumArgs.ONE)
+            .helpText("Reports in detail on the jobs with the given IDs. Separate several IDs with commas.")
+            .argsHelpText("<job-id>[,<more-ids>]")
+            .build();
+    private static final CommandOption RANGE = CommandOption
+            .withLongName("range").shortName('r')
+            .helpText("Reports on all jobs in a time period. Defaults to the last 4 hours, " +
+                    "or set the period with --start-time and --end-time.")
+            .build();
+    private static final CommandOption UNFINISHED = CommandOption
+            .withLongName("unfinished").shortName('u')
+            .helpText("Reports on all unfinished jobs.")
+            .build();
+    private static final CommandOption START_TIME = CommandOption
+            .withLongName("start-time").numArgs(NumArgs.ONE)
+            .helpText("Start of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
+                    "Must be set together with --end-time, and only applies to the --range query type.")
+            .argsHelpText("<" + RangeJobsQuery.DATE_FORMAT + ">")
+            .build();
+    private static final CommandOption END_TIME = CommandOption
+            .withLongName("end-time").numArgs(NumArgs.ONE)
+            .helpText("End of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
+                    "Must be set together with --start-time, and only applies to the --range query type.")
+            .argsHelpText("<" + RangeJobsQuery.DATE_FORMAT + ">")
+            .build();
     // Note that compaction jobs are never rejected, so this only applies to ingest.
-    private static final CommandOption REJECTED = CommandOption.withLongName("rejected").shortName('n').build();
+    private static final CommandOption REJECTED = CommandOption
+            .withLongName("rejected").shortName('n')
+            .helpText("Reports on all rejected jobs.")
+            .build();
 
-    public static List<CommandOption> forIngest() {
-        return List.of(ALL, DETAILED, END_TIME, RANGE, REJECTED, ReportTypeArgument.option(), START_TIME, UNFINISHED);
+    public static List<CommandOption> forIngest(CommandOption outputOption) {
+        return Stream.of(ALL, DETAILED, END_TIME, RANGE, REJECTED, START_TIME, UNFINISHED, outputOption)
+                .sorted(Comparator.comparing(CommandOption::longName))
+                .toList();
     }
 
 }
