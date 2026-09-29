@@ -19,6 +19,8 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
+import sleeper.core.util.cli.CommandOption;
+import sleeper.core.util.cli.CommandOption.NumArgs;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +32,12 @@ import java.util.stream.Collectors;
  * A query to generate a detailed report on specific jobs, against a job tracker.
  */
 public class DetailedJobsQuery implements JobQuery {
+
+    public static final CommandOption COMMAND_OPTION = CommandOption
+            .withLongName("detailed").shortName('d').numArgs(NumArgs.ONE)
+            .helpText("Reports in detail on the jobs with the given IDs. Separate several IDs with commas.")
+            .argsHelpText("<job-id>[,<more-ids>]")
+            .build();
 
     private final List<String> jobIds;
 

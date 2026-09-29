@@ -19,6 +19,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
+import sleeper.core.util.cli.CommandOption;
 
 import java.util.List;
 
@@ -26,6 +27,11 @@ import java.util.List;
  * A query to generate a report on jobs in a job tracker that have not yet finished.
  */
 public class UnfinishedJobsQuery implements JobQuery {
+
+    public static final CommandOption COMMAND_OPTION = CommandOption
+            .withLongName("unfinished").shortName('u')
+            .helpText("Reports on all unfinished jobs.")
+            .build();
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {

@@ -20,6 +20,8 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
+import sleeper.core.util.cli.CommandOption;
+import sleeper.core.util.cli.CommandOption.NumArgs;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -37,6 +39,24 @@ public class RangeJobsQuery implements JobQuery {
 
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
     private static final Duration DEFAULT_PERIOD = Duration.ofHours(4);
+
+    public static final CommandOption COMMAND_OPTION = CommandOption
+            .withLongName("range").shortName('r')
+            .helpText("Reports on all jobs in a time period. Defaults to the last 4 hours, " +
+                    "or set the period with --start-time and --end-time.")
+            .build();
+    public static final CommandOption START_COMMAND_OPTION = CommandOption
+            .withLongName("start-time").numArgs(NumArgs.ONE)
+            .helpText("Start of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
+                    "Must be set together with --end-time, and only applies to the --range query type.")
+            .argsHelpText("<" + RangeJobsQuery.DATE_FORMAT + ">")
+            .build();
+    public static final CommandOption END_COMMAND_OPTION = CommandOption
+            .withLongName("end-time").numArgs(NumArgs.ONE)
+            .helpText("End of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
+                    "Must be set together with --start-time, and only applies to the --range query type.")
+            .argsHelpText("<" + RangeJobsQuery.DATE_FORMAT + ">")
+            .build();
 
     private final Instant start;
     private final Instant end;

@@ -18,15 +18,17 @@ package sleeper.clients.report.arguments;
 import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
+import sleeper.clients.report.job.query.AllJobsQuery;
+import sleeper.clients.report.job.query.DetailedJobsQuery;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.JobQueryPrompt;
 import sleeper.clients.report.job.query.RangeJobsQuery;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
+import sleeper.clients.report.job.query.UnfinishedJobsQuery;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandOption;
-import sleeper.core.util.cli.CommandOption.NumArgs;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -45,53 +47,26 @@ public class JobTrackerReportOptions {
      * which is the order they are reported in if the user sets more than one.
      */
     private static final Map<String, JobQuery.Type> QUERY_TYPE_BY_OPTION = Map.of(
-            "all", JobQuery.Type.ALL,
-            "detailed", JobQuery.Type.DETAILED,
-            "range", JobQuery.Type.RANGE,
-            "rejected", JobQuery.Type.REJECTED,
-            "unfinished", JobQuery.Type.UNFINISHED);
+            AllJobsQuery.COMMAND_OPTION.longName(), JobQuery.Type.ALL,
+            DetailedJobsQuery.COMMAND_OPTION.longName(), JobQuery.Type.DETAILED,
+            RangeJobsQuery.COMMAND_OPTION.longName(), JobQuery.Type.RANGE,
+            RejectedJobsQuery.COMMAND_OPTION.longName(), JobQuery.Type.REJECTED,
+            UnfinishedJobsQuery.COMMAND_OPTION.longName(), JobQuery.Type.UNFINISHED);
 
     public static final ReportTypeArgument<IngestJobStatusReporter> INGEST_REPORT_TYPE = ReportTypeArgument
             .<IngestJobStatusReporter>withDefault("STANDARD", new StandardIngestJobStatusReporter())
             .addReporter("JSON", new JsonIngestJobStatusReporter())
             .build();
 
-    private static final CommandOption ALL = CommandOption
-            .withLongName("all").shortName('a')
-            .helpText("Reports on all jobs.").build();
-    private static final CommandOption DETAILED = CommandOption
-            .withLongName("detailed").shortName('d').numArgs(NumArgs.ONE)
-            .helpText("Reports in detail on the jobs with the given IDs. Separate several IDs with commas.")
-            .argsHelpText("<job-id>[,<more-ids>]")
-            .build();
-    private static final CommandOption RANGE = CommandOption
-            .withLongName("range").shortName('r')
-            .helpText("Reports on all jobs in a time period. Defaults to the last 4 hours, " +
-                    "or set the period with --start-time and --end-time.")
-            .build();
-    private static final CommandOption UNFINISHED = CommandOption
-            .withLongName("unfinished").shortName('u')
-            .helpText("Reports on all unfinished jobs.")
-            .build();
-    private static final CommandOption START_TIME = CommandOption
-            .withLongName("start-time").numArgs(NumArgs.ONE)
-            .helpText("Start of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
-                    "Must be set together with --end-time, and only applies to the --range query type.")
-            .argsHelpText("<" + RangeJobsQuery.DATE_FORMAT + ">")
-            .build();
-    private static final CommandOption END_TIME = CommandOption
-            .withLongName("end-time").numArgs(NumArgs.ONE)
-            .helpText("End of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
-                    "Must be set together with --start-time, and only applies to the --range query type.")
-            .argsHelpText("<" + RangeJobsQuery.DATE_FORMAT + ">")
-            .build();
-    // Note that compaction jobs are never rejected, so this only applies to ingest.
-    private static final CommandOption REJECTED = CommandOption
-            .withLongName("rejected").shortName('n')
-            .helpText("Reports on all rejected jobs.")
-            .build();
-
-    public static List<CommandOption> INGEST_OPTIONS = Stream.of(ALL, DETAILED, END_TIME, RANGE, REJECTED, START_TIME, UNFINISHED, INGEST_REPORT_TYPE.option())
+    public static List<CommandOption> INGEST_OPTIONS = Stream.of(
+            AllJobsQuery.COMMAND_OPTION,
+            DetailedJobsQuery.COMMAND_OPTION,
+            RangeJobsQuery.COMMAND_OPTION,
+            RangeJobsQuery.START_COMMAND_OPTION,
+            RangeJobsQuery.END_COMMAND_OPTION,
+            RejectedJobsQuery.COMMAND_OPTION,
+            UnfinishedJobsQuery.COMMAND_OPTION,
+            INGEST_REPORT_TYPE.option())
             .sorted(Comparator.comparing(CommandOption::longName))
             .toList();
 
