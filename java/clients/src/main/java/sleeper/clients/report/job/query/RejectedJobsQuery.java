@@ -33,6 +33,7 @@ public class RejectedJobsQuery implements JobQuery {
             .withLongName("rejected").shortName('n')
             .helpText("Reports on all rejected jobs.")
             .build();
+    public static final JobQueryTypeParser PARSER = new JobQueryTypeParser(COMMAND_OPTION, JobQuery.Type.REJECTED, RejectedJobsQuery::new);
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {

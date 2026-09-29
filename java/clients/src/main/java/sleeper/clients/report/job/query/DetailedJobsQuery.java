@@ -38,6 +38,9 @@ public class DetailedJobsQuery implements JobQuery {
             .helpText("Reports in detail on the jobs with the given IDs. Separate several IDs with commas.")
             .argsHelpText("<job-id>[,<more-ids>]")
             .build();
+    public static final JobQueryTypeParser PARSER = new JobQueryTypeParser(COMMAND_OPTION, JobQuery.Type.ALL,
+            (parameters, timeSupplier) -> fromParameters(parameters),
+            (arguments, timeSupplier) -> fromParameters(arguments.getString("detailed")));
 
     private final List<String> jobIds;
 

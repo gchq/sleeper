@@ -28,6 +28,7 @@ import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.function.Supplier;
@@ -57,6 +58,12 @@ public class RangeJobsQuery implements JobQuery {
                     "Must be set together with --start-time, and only applies to the --range query type.")
             .argsHelpText("<" + RangeJobsQuery.DATE_FORMAT + ">")
             .build();
+    public static final JobQueryTypeParser PARSER = new JobQueryTypeParser(
+            List.of(COMMAND_OPTION, START_COMMAND_OPTION, END_COMMAND_OPTION), JobQuery.Type.ALL,
+            (parameters, timeSupplier) -> fromParameters(parameters, Clock.fixed(timeSupplier.get(), ZoneOffset.UTC)), // TODO remove Clock.fixed
+            (arguments, timeSupplier) -> new RangeJobsQuery(
+                    parseTime(arguments.getString("start-time")), // TODO add validation
+                    parseTime(arguments.getString("end-time"))));
 
     private final Instant start;
     private final Instant end;
