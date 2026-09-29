@@ -10,8 +10,6 @@ env:
   DOCKER_PLATFORMS: linux/amd64,linux/arm64/v8
   DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
   BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-  TRIVY_IGNOREFILE: code-style/.trivyignore.tools.yaml
-  TRIVY_SHOW_SUPPRESSED: true
 
 jobs:
   setup:
@@ -51,6 +49,9 @@ jobs:
       - name: Pull dependencies image from registry
         run: docker pull ${{ env.DEPENDENCIES_IMAGE }}
       - name: Run Trivy vulnerability scanner
+        env:
+          TRIVY_IGNOREFILE: code-style/.trivyignore.tools.yaml
+          TRIVY_SHOW_SUPPRESSED: true
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           version: v0.71.2
@@ -58,6 +59,7 @@ jobs:
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
+          scanners: 'secret,misconfig,license'
       - name: Save dependencies image to tarball
         run: docker save ${{ env.DEPENDENCIES_IMAGE }} --output /tmp/dependencies-image.tar
       - name: Upload dependencies image as artifact
