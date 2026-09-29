@@ -238,37 +238,43 @@ public class IngestJobStatusReportTest {
         @Test
         void shouldQueryAllJobs() {
             assertThat(queryFromArguments("all-job-instance", "all-job-table", "--all"))
-                    .isInstanceOf(AllJobsQuery.class);
+                    .usingRecursiveComparison()
+                    .isEqualTo(new AllJobsQuery());
         }
 
         @Test
         void shouldQueryAllJobsWithShortFlag() {
             assertThat(queryFromArguments("all-job-instance", "all-job-table", "-a"))
-                    .isInstanceOf(AllJobsQuery.class);
+                    .usingRecursiveComparison()
+                    .isEqualTo(new AllJobsQuery());
         }
 
         @Test
         void shouldQueryUnfinishedJobs() {
             assertThat(queryFromArguments("unfinished-job-instance", "unfinished-job-table", "--unfinished"))
-                    .isInstanceOf(UnfinishedJobsQuery.class);
+                    .usingRecursiveComparison()
+                    .isEqualTo(new UnfinishedJobsQuery());
         }
 
         @Test
         void shouldQueryUnfinishedJobsWithShortFlag() {
             assertThat(queryFromArguments("unfinished-job-instance", "unfinished-job-table", "-u"))
-                    .isInstanceOf(UnfinishedJobsQuery.class);
+                    .usingRecursiveComparison()
+                    .isEqualTo(new UnfinishedJobsQuery());
         }
 
         @Test
         void shouldQueryRejectedJobs() {
             assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "--rejected"))
-                    .isInstanceOf(RejectedJobsQuery.class);
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RejectedJobsQuery());
         }
 
         @Test
         void shouldQueryRejectedJobsWithShortFlag() {
             assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "-n"))
-                    .isInstanceOf(RejectedJobsQuery.class);
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RejectedJobsQuery());
         }
 
         @Test
@@ -355,13 +361,15 @@ public class IngestJobStatusReportTest {
         @Test
         void shouldPromptForQueryTypeWhenNoFlagSet() {
             assertThat(queryFromArgumentsWithInput("a\n", "prompt-instance", "prompt-table"))
-                    .isInstanceOf(AllJobsQuery.class);
+                    .usingRecursiveComparison()
+                    .isEqualTo(new AllJobsQuery());
         }
 
         @Test
         void shouldPromptForQueryTypeWhenRangeFlagSetToFalse() {
             assertThat(queryFromArgumentsWithInput("a\n", "range-instance", "range-table", "--range=false"))
-                    .isInstanceOf(AllJobsQuery.class);
+                    .usingRecursiveComparison()
+                    .isEqualTo(new AllJobsQuery());
         }
 
         private JobQuery queryFromArguments(String... args) {
