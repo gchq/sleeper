@@ -74,7 +74,7 @@ public class ReportTypeArgumentTest {
 
         // Then
         assertThat(option.longName()).isEqualTo("report-type");
-        assertThat(option.shortName()).isNull();
+        assertThat(option.shortName()).isEmpty();
         assertThat(option.isFlag()).isFalse();
     }
 
