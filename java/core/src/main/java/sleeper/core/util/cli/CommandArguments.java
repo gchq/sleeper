@@ -29,7 +29,7 @@ public class CommandArguments {
     private final Map<String, Boolean> flags;
     private final List<String> passThroughArguments;
 
-    public CommandArguments(Builder builder) {
+    private CommandArguments(Builder builder) {
         argByName = builder.argByName;
         flags = builder.flagByName;
         passThroughArguments = builder.passThroughArguments;
@@ -71,7 +71,7 @@ public class CommandArguments {
         }
     }
 
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
@@ -179,9 +179,10 @@ public class CommandArguments {
     }
 
     /**
-     * A builder for this class.
+     * A builder for this class. This is package private because it should only ever be created by
+     * {@link ArgumentTracker}.
      */
-    public static class Builder {
+    static class Builder {
         private Map<String, String> argByName;
         private Map<String, Boolean> flagByName;
         private List<String> passThroughArguments;
@@ -192,7 +193,7 @@ public class CommandArguments {
          * @param  argByName the arguments with values
          * @return           this builder
          */
-        public Builder argByName(Map<String, String> argByName) {
+        Builder argByName(Map<String, String> argByName) {
             this.argByName = argByName;
             return this;
         }
@@ -203,7 +204,7 @@ public class CommandArguments {
          * @param  flagByName the flags with values
          * @return            this builder
          */
-        public Builder flagByName(Map<String, Boolean> flagByName) {
+        Builder flagByName(Map<String, Boolean> flagByName) {
             this.flagByName = flagByName;
             return this;
         }
@@ -214,12 +215,12 @@ public class CommandArguments {
          * @param  passThroughArguments the pass-through arguments
          * @return                      this builder
          */
-        public Builder passThroughArguments(List<String> passThroughArguments) {
+        Builder passThroughArguments(List<String> passThroughArguments) {
             this.passThroughArguments = passThroughArguments;
             return this;
         }
 
-        public CommandArguments build() {
+        CommandArguments build() {
             return new CommandArguments(this);
         }
     }

@@ -71,5 +71,4 @@ public class DetailedJobsQuery implements JobQuery {
         }
         return new DetailedJobsQuery(Arrays.asList(queryParameters.split(",")));
     }
-
 }

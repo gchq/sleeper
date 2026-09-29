@@ -53,9 +53,7 @@ class ArgumentTracker {
      */
     void option(CommandOption option, String argument) {
         argByName.put(option.longName(), argument);
-        if (option.shortName() != null) {
-            argByName.put(Character.toString(option.shortName()), argument);
-        }
+        option.shortName().ifPresent(shortName -> argByName.put(Character.toString(shortName), argument));
         firstPositionalArgumentWithNoOptionsAfter = positionalArguments.size();
     }
 
@@ -67,9 +65,7 @@ class ArgumentTracker {
      */
     void flag(CommandOption option, boolean isSet) {
         flagByName.put(option.longName(), isSet);
-        if (option.shortName() != null) {
-            flagByName.put(Character.toString(option.shortName()), isSet);
-        }
+        option.shortName().ifPresent(shortName -> flagByName.put(Character.toString(shortName), isSet));
         firstPositionalArgumentWithNoOptionsAfter = positionalArguments.size();
     }
 
