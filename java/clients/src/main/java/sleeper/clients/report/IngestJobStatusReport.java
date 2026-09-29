@@ -23,12 +23,9 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.report.arguments.JobTrackerReportOptions;
-import sleeper.clients.report.arguments.ReportTypeArgument;
 import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.IngestQueueMessages;
-import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.PersistentEmrStepCount;
-import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.RangeJobsQuery;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
@@ -59,12 +56,6 @@ import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
  * the jobs matching that query.
  */
 public class IngestJobStatusReport {
-    private static final IngestJobStatusReporter STANDARD_REPORTER = new StandardIngestJobStatusReporter();
-    private static final IngestJobStatusReporter JSON_REPORTER = new JsonIngestJobStatusReporter();
-    private static final ReportTypeArgument<IngestJobStatusReporter> REPORT_TYPE = ReportTypeArgument
-            .withDefault("STANDARD", STANDARD_REPORTER)
-            .addReporter("JSON", JSON_REPORTER)
-            .build();
     /**
      * The query type options, and the query type each one selects. Declared in the order they appear in the usage,
      * which is the order they are reported in if the user sets more than one.
@@ -142,7 +133,7 @@ public class IngestJobStatusReport {
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
             .positionalArguments(List.of("instance-id", "table-name"))
-            .options(JobTrackerReportOptions.forIngest(REPORT_TYPE.option()))
+            .options(JobTrackerReportOptions.forIngest())
             .helpSummary("" +
                     "A report on ingest jobs within a Sleeper instance.\n" +
                     "\n" +
@@ -199,7 +190,7 @@ public class IngestJobStatusReport {
             throw new CommandArgumentsException("Range time flags, start-time and end-time are not valid for following query type: " + jobType);
         }
 
-        IngestJobStatusReporter reporter = REPORT_TYPE.read(arguments);
+        IngestJobStatusReporter reporter = JobTrackerReportOptions.INGEST_REPORT_TYPE.read(arguments);
 
         JobQuery query;
         if (jobType == JobQuery.Type.RANGE) {

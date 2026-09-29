@@ -15,6 +15,9 @@
  */
 package sleeper.clients.report.arguments;
 
+import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
+import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
+import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.job.query.RangeJobsQuery;
 import sleeper.core.util.cli.CommandOption;
 import sleeper.core.util.cli.CommandOption.NumArgs;
@@ -24,6 +27,10 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class JobTrackerReportOptions {
+    public static final ReportTypeArgument<IngestJobStatusReporter> INGEST_REPORT_TYPE = ReportTypeArgument
+            .<IngestJobStatusReporter>withDefault("STANDARD", new StandardIngestJobStatusReporter())
+            .addReporter("JSON", new JsonIngestJobStatusReporter())
+            .build();
 
     private static final CommandOption ALL = CommandOption
             .withLongName("all").shortName('a')
@@ -60,8 +67,8 @@ public class JobTrackerReportOptions {
             .helpText("Reports on all rejected jobs.")
             .build();
 
-    public static List<CommandOption> forIngest(CommandOption outputOption) {
-        return Stream.of(ALL, DETAILED, END_TIME, RANGE, REJECTED, START_TIME, UNFINISHED, outputOption)
+    public static List<CommandOption> forIngest() {
+        return Stream.of(ALL, DETAILED, END_TIME, RANGE, REJECTED, START_TIME, UNFINISHED, INGEST_REPORT_TYPE.option())
                 .sorted(Comparator.comparing(CommandOption::longName))
                 .toList();
     }
