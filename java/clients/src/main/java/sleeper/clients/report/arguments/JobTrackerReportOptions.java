@@ -16,19 +16,20 @@
 package sleeper.clients.report.arguments;
 
 import sleeper.core.util.cli.CommandOption;
+import sleeper.core.util.cli.CommandOption.NumArgs;
 
 import java.util.List;
 
 public class JobTrackerReportOptions {
 
-    private static final CommandOption ALL = CommandOption.shortFlag('a', "all");
-    private static final CommandOption DETAILED = CommandOption.shortOption('d', "detailed");
-    private static final CommandOption RANGE = CommandOption.shortFlag('r', "range");
-    private static final CommandOption UNFINISHED = CommandOption.shortFlag('u', "unfinished");
-    private static final CommandOption START_TIME = CommandOption.longOption("start-time");
-    private static final CommandOption END_TIME = CommandOption.longOption("end-time");
+    private static final CommandOption ALL = CommandOption.withLongName("all").shortName('a').build();
+    private static final CommandOption DETAILED = CommandOption.withLongName("detailed").shortName('d').numArgs(NumArgs.ONE).build();
+    private static final CommandOption RANGE = CommandOption.withLongName("range").shortName('r').build();
+    private static final CommandOption UNFINISHED = CommandOption.withLongName("unfinished").shortName('u').build();
+    private static final CommandOption START_TIME = CommandOption.withLongName("start-time").numArgs(NumArgs.ONE).build();
+    private static final CommandOption END_TIME = CommandOption.withLongName("end-time").numArgs(NumArgs.ONE).build();
     // Note that compaction jobs are never rejected, so this only applies to ingest.
-    private static final CommandOption REJECTED = CommandOption.shortFlag('n', "rejected");
+    private static final CommandOption REJECTED = CommandOption.withLongName("rejected").shortName('n').build();
 
     public static List<CommandOption> forIngest() {
         return List.of(ALL, DETAILED, END_TIME, RANGE, REJECTED, ReportTypeArgument.option(), START_TIME, UNFINISHED);
