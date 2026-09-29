@@ -22,7 +22,7 @@ import java.util.List;
 public class JobTrackerReportOptions {
 
     private static final CommandOption ALL = CommandOption.shortFlag('a', "all");
-    private static final CommandOption DETAILED = CommandOption.shortFlag('d', "detailed");
+    private static final CommandOption DETAILED = CommandOption.shortOption('d', "detailed");
     private static final CommandOption RANGE = CommandOption.shortFlag('r', "range");
     private static final CommandOption UNFINISHED = CommandOption.shortFlag('u', "unfinished");
     private static final CommandOption START_TIME = CommandOption.longOption("start-time");
