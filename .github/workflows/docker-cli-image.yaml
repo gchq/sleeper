@@ -110,9 +110,6 @@ jobs:
         run: docker pull ${{ env.TEMP_IMAGE }}
       - name: Run Trivy vulnerability scanner
         if: ${{ inputs.runTrivy }}
-        env:
-          TRIVY_IGNOREFILE: code-style/.trivyignore.tools.yaml
-          TRIVY_SHOW_SUPPRESSED: true
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           version: v0.71.2
