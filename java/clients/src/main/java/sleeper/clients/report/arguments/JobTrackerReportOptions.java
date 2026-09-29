@@ -40,7 +40,14 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
 
+/**
+ * Handling of command line options for reports generated from job trackers. Shared between ingest and compaction job
+ * reporting.
+ */
 public class JobTrackerReportOptions {
+
+    private JobTrackerReportOptions() {
+    }
 
     /**
      * The query type options, and the query type each one selects. Declared in the order they appear in the usage,
@@ -58,7 +65,7 @@ public class JobTrackerReportOptions {
             .addReporter("JSON", new JsonIngestJobStatusReporter())
             .build();
 
-    public static List<CommandOption> INGEST_OPTIONS = Stream.of(
+    public static final List<CommandOption> INGEST_OPTIONS = Stream.of(
             AllJobsQuery.COMMAND_OPTION,
             DetailedJobsQuery.COMMAND_OPTION,
             RangeJobsQuery.COMMAND_OPTION,
@@ -70,6 +77,14 @@ public class JobTrackerReportOptions {
             .sorted(Comparator.comparing(CommandOption::longName))
             .toList();
 
+    /**
+     * Reads the ingest job tracker query requested from the command line.
+     *
+     * @param  arguments the command line arguments
+     * @param  clock     the clock to get the current time
+     * @param  input     the console to prompt the user for further input
+     * @return
+     */
     public static JobQuery readIngestJobQuery(CommandArguments arguments, Clock clock, ConsoleInput input) {
         return readJobQuery(arguments, clock, input, INGEST_OPTIONS, Map.of("n", new RejectedJobsQuery()));
     }
