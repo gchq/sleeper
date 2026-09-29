@@ -29,7 +29,7 @@ env:
   BASE_IMAGE: localhost:5000/base:test
   RUST_BUILD_IMAGE: "ghcr.io/gchq/sleeper-rust-builder-sccache:latest"
   SCCACHE_GHA_ENABLED: "true"
-  SSCACHE_CACHE_SIZE: "2G"
+  SCCACHE_CACHE_SIZE: "2G"
 
 jobs:
   build:
