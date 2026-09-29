@@ -61,16 +61,19 @@ There are two ways to provide your configuration:
   the [configuration documentation](deployment/instance-configuration.md#configuration-folder-structure) for the expected
   directory structure.
 
+Store your configuration outside of the Sleeper directory so it is kept separate from the source code.
+
 ```bash
-mkdir scripts/generated/my-instance
-cp example/basic/* scripts/generated/my-instance/
+# Use a directory outside the Sleeper project, e.g. your home directory or /etc
+mkdir -p ~/sleeper-config/my-instance
+cp example/basic/* ~/sleeper-config/my-instance
 # Edit all configuration files in the new directory to set your own values
 
 # Deploy pointing at the instance properties file (also picks up an adjacent tags.properties file if one exists)
-./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> --properties-file ./scripts/generated/my-instance/instance.properties
+./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> --properties-file ~/sleeper-config/my-instance/instance.properties
 
 # Or deploy pointing at the configuration directory (also picks up tables and tags)
-./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> --config-dir ./scripts/generated/my-instance
+./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> --config-dir ~/sleeper-config/my-instance
 ```
 
 Here `vpc-id` and `subnet-ids` are the ids of the VPC and subnets that some components of Sleeper will be deployed into.

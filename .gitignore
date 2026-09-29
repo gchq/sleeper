@@ -20,7 +20,6 @@ scripts/**/version.txt
 scripts/**/deployConfig.json
 scripts/trino/etc
 scripts/trino/jars
-scripts/generated/
 __pycache__
 *.pem
 *.drawio.bkp
