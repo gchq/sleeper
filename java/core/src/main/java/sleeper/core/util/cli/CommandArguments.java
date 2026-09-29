@@ -143,6 +143,12 @@ public class CommandArguments {
         return flags.getOrDefault(name, defaultValue);
     }
 
+    /**
+     * Checks whether an option was set.
+     *
+     * @param  option the option
+     * @return        true if it was set, false otherwise
+     */
     public boolean isSet(CommandOption option) {
         if (option.isFlag()) {
             return isFlagSet(option.longName());
