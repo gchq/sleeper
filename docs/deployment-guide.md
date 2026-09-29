@@ -32,7 +32,7 @@ If you prefer to use the CDK CLI directly for deployment, or you want to include
 
 ### Scripted deployment
 
-The scripts for deployment create an instance of Sleeper either from your own configuration files.
+The scripts for deployment create an instance of Sleeper from your own configuration files.
 
 The two scripts available to use are found in scripts/deploy and have the following usecases:
 
@@ -52,7 +52,8 @@ be read by the CDK.
 
 You must provide your own configuration for a Sleeper instance to deploy a new one. See
 the [configuration documentation](deployment/instance-configuration.md) for more details. These commands use the basic
-example as a starting point. There are two ways to provide your configuration:
+example as a starting point, [found here](../example/basic/instance.properties).
+There are two ways to provide your configuration:
 
 - `--properties-file` points at a single instance properties file. This will deploy the instance with no tables.
 - `--config-dir` points at a directory containing an `instance.properties` file. The directory will also be scanned for
@@ -61,15 +62,15 @@ example as a starting point. There are two ways to provide your configuration:
   directory structure.
 
 ```bash
-mkdir scripts/my-instance
-cp example/basic/* scripts/my-instance/
+mkdir scripts/generated/my-instance
+cp example/basic/* scripts/generated/my-instance/
 # Edit all configuration files in the new directory to set your own values
 
-# Deploy pointing at the instance properties file
-./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> --properties-file ./scripts/my-instance/instance.properties
+# Deploy pointing at the instance properties file (also picks up an adjacent tags.properties file if one exists)
+./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> --properties-file ./scripts/generated/my-instance/instance.properties
 
 # Or deploy pointing at the configuration directory (also picks up tables and tags)
-./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> --config-dir ./scripts/my-instance
+./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> --config-dir ./scripts/generated/my-instance
 ```
 
 Here `vpc-id` and `subnet-ids` are the ids of the VPC and subnets that some components of Sleeper will be deployed into.
