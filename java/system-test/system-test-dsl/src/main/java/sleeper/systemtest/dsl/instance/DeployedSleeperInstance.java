@@ -83,7 +83,13 @@ public final class DeployedSleeperInstance {
         return instanceProperties;
     }
 
-    public SystemTestDrivers getInstanceAdminDrivers() {
+    /**
+     * Returns drivers authenticated as the Sleeper instance admin role. Prefer these drivers for operations on the
+     * connected instance so system tests exercise the permissions granted to that role.
+     *
+     * @return drivers for the instance admin role
+     */
+    public SystemTestDrivers adminDrivers() {
         return instanceAdminDrivers;
     }
 

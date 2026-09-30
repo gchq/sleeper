@@ -71,7 +71,7 @@ public class DeployedSleeperInstances {
 
     private void takeAllTablesOffline(DeployedSleeperInstance instance) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
-        SleeperTablesDriver tablesDriver = instance.getInstanceAdminDrivers().tables(parameters);
+        SleeperTablesDriver tablesDriver = instance.adminDrivers().tables(parameters);
         tablesDriver.createTablePropertiesProvider(instanceProperties)
                 .streamOnlineTables().forEach(table -> {
                     table.set(TABLE_ONLINE, "false");
