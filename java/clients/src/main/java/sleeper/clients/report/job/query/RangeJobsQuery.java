@@ -28,7 +28,6 @@ import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.function.Supplier;
@@ -48,22 +47,22 @@ public class RangeJobsQuery implements JobQuery {
             .build();
     public static final CommandOption START_COMMAND_OPTION = CommandOption
             .withLongName("start-time").numArgs(NumArgs.ONE)
-            .helpText("Start of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
+            .helpText("Start of the period to report on, in the format " + DATE_FORMAT + ". " +
                     "Must be set together with --end-time, and only applies to the --range query type.")
-            .argsHelpText("<" + RangeJobsQuery.DATE_FORMAT + ">")
+            .argsHelpText("<" + DATE_FORMAT + ">")
             .build();
     public static final CommandOption END_COMMAND_OPTION = CommandOption
             .withLongName("end-time").numArgs(NumArgs.ONE)
-            .helpText("End of the period to report on, in the format " + RangeJobsQuery.DATE_FORMAT + ". " +
+            .helpText("End of the period to report on, in the format " + DATE_FORMAT + ". " +
                     "Must be set together with --start-time, and only applies to the --range query type.")
-            .argsHelpText("<" + RangeJobsQuery.DATE_FORMAT + ">")
+            .argsHelpText("<" + DATE_FORMAT + ">")
             .build();
     public static final JobQueryTypeParser PARSER = new JobQueryTypeParser(
             List.of(COMMAND_OPTION, START_COMMAND_OPTION, END_COMMAND_OPTION), JobQuery.Type.ALL,
-            (parameters, timeSupplier) -> fromParameters(parameters, Clock.fixed(timeSupplier.get(), ZoneOffset.UTC)), // TODO remove Clock.fixed
-            (arguments, timeSupplier) -> new RangeJobsQuery(
-                    parseTime(arguments.getString("start-time")), // TODO add validation
-                    parseTime(arguments.getString("end-time"))));
+            (parameters, time) -> fromParameters(parameters, time),
+            (arguments, time) -> new RangeJobsQuery(
+                    parseStart(arguments.getString("start-time"), time),
+                    parseEnd(arguments.getString("end-time"), time)));
 
     private final Instant start;
     private final Instant end;
