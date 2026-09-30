@@ -43,6 +43,10 @@ class DynamoDBQueryTrackerEntry {
     static final String ERROR_MESSAGE = "errors";
     static final String EXPIRY_DATE = "expiryDate";
     static final String NON_NESTED_QUERY_PLACEHOLDER = "-";
+    static final String EXPECTED_SUB_QUERY_COUNT = "expectedSubQueryCount";
+    static final String SUCCEEDED_SUB_QUERY_COUNT = "succeededSubQueryCount";
+    static final String FAILED_SUB_QUERY_COUNT = "failedSubQueryCount";
+    static final String TOTAL_SUB_QUERY_ROW_COUNT = "subQueryRowCount";
 
     private final String queryId;
     private final String subQueryId;
@@ -76,6 +80,23 @@ class DynamoDBQueryTrackerEntry {
         Map<String, AttributeValue> key = new HashMap<>();
         key.put(QUERY_ID, AttributeValue.fromS(queryId));
         key.put(SUB_QUERY_ID, AttributeValue.fromS(subQueryId));
+        return key;
+    }
+
+    public Map<String, AttributeValue> getParentKey() {
+        return getParentKey(queryId);
+    }
+
+    /**
+     * Creates the DynamoDB key of the item tracking a parent query.
+     *
+     * @param  queryId the query ID
+     * @return         the key of the item tracking the parent query
+     */
+    public static Map<String, AttributeValue> getParentKey(String queryId) {
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put(QUERY_ID, AttributeValue.fromS(queryId));
+        key.put(SUB_QUERY_ID, AttributeValue.fromS(NON_NESTED_QUERY_PLACEHOLDER));
         return key;
     }
 
@@ -136,18 +157,28 @@ class DynamoDBQueryTrackerEntry {
                 .build();
     }
 
-    public boolean isUpdateParent() {
-        return isSubQuery() &&
-                (state.equals(QueryState.COMPLETED) || state.equals(QueryState.FAILED)
-                        || state.equals(QueryState.PARTIALLY_FAILED));
+    public boolean isFinished() {
+        return state != null && state.isFinished();
     }
 
-    private boolean isSubQuery() {
+    public boolean isSubQuery() {
         return !NON_NESTED_QUERY_PLACEHOLDER.equals(subQueryId);
     }
 
     public String getQueryId() {
         return queryId;
+    }
+
+    public String getSubQueryId() {
+        return subQueryId;
+    }
+
+    public QueryState getState() {
+        return state;
+    }
+
+    public long getRowCount() {
+        return rowCount;
     }
 
     public DynamoDBQueryTrackerEntry updateParent(QueryState state, long totalRowCount) {
