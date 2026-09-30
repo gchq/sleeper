@@ -20,6 +20,7 @@ import software.amazon.awscdk.services.lambda.DockerImageCode;
 import software.amazon.awscdk.services.lambda.EcrImageCodeProps;
 import software.constructs.Construct;
 
+import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
@@ -53,6 +54,11 @@ public class SleeperContainerImagesFromProperties implements SleeperContainerIma
                         .tagOrDigest(digestProvider.getDigestToDeploy(handler.getJar().getImageName(),
                                 handler.getJar().getEcrRepositoryName(instanceProperties)))
                         .build());
+    }
+
+    @Override
+    public String getDockerImageName(DockerDeployment deployment) {
+        return deployment.getDockerImageName(instanceProperties);
     }
 
 }
