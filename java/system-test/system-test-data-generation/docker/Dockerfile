@@ -14,8 +14,11 @@
 ARG BASE_IMAGE=sleeper-base:current
 FROM ${BASE_IMAGE}
 
+USER root
+RUN mkdir -p /mnt/scratch && chown sleeper:sleeper /mnt/scratch
+USER sleeper
+
 COPY system-test.jar /system-test.jar
 COPY run.sh /run.sh
-RUN ["chmod", "+x", "/run.sh"]
 
 ENTRYPOINT ["/run.sh"]
