@@ -33,7 +33,7 @@ public enum QueryState {
 
     /**
      * Checks whether the query has finished (whether it finished successfully or
-     * not is irrelevant)..
+     * not is irrelevant).
      *
      * @return true if the query has finished
      */
