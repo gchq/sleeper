@@ -43,6 +43,7 @@ import sleeper.query.core.tracker.TrackedQuery;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -107,7 +108,26 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         TrackedQuery status = queryTracker().getStatus("my-id");
 
         // Then
-        assertThat(status.getExpiryDate() - status.getLastUpdateTime()).isEqualTo(3 * 24 * 3600);
+        assertThat(Instant.ofEpochSecond(status.getExpiryDate()))
+                .isEqualTo(Instant.ofEpochMilli(status.getLastUpdateTime())
+                        .truncatedTo(ChronoUnit.SECONDS)
+                        .plus(Duration.ofDays(3)));
+    }
+
+    @Test
+    public void shouldReportLastUpdateTimeInMilliseconds() throws QueryTrackerException {
+        // Given
+        Instant before = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+
+        // When
+        queryTracker().queryInProgress(createQueryWithId("my-id"));
+
+        // Then
+        TrackedQuery status = queryTracker().getStatus("my-id");
+        assertThat(Instant.ofEpochMilli(status.getLastUpdateTime()))
+                .isBetween(before, Instant.now());
+        assertThat(Instant.ofEpochSecond(status.getExpiryDate()))
+                .isAfter(before);
     }
 
     @Test
