@@ -26,8 +26,7 @@ chmod +x ./sleeper-install.sh
 ./sleeper-install.sh
 ```
 
-Relaunch your terminal and check that the command `sleeper version` gives a version number. Note that this will be the
-version of the CLI, rather than the version of Sleeper you will deploy.
+Relaunch your terminal and check that the command `sleeper help` gives the help text.
 
 ### Commands
 

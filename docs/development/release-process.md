@@ -41,9 +41,11 @@ the [system tests guide](system-tests.md#nightly-test-scripts).
 At this point we can pause merging any pull requests that are not essential for the release. This includes version
 upgrades done by Dependabot.
 
-8. Run a deployment with `.scripts/deploy/deployNew.sh` to check that it can deploy an instance successfully when using
-   the templates instead of your own configuration files. First set the property `sleeper.retain.infra.after.destroy` to
-   false in the template, so that the instance will tear down fully afterwards.
+8. Run a deployment with `./scripts/deploy/deployNew.sh` to check that it can deploy an instance successfully. Copy the
+   basic example configuration (e.g. from `example/basic`) to a directory of your own, and pass it to the script with
+   `--properties-file` or `--config-dir`. First set the property `sleeper.retain.infra.after.destroy` to false in the
+   instance properties, so that the instance will tear down fully afterwards. Run `./scripts/deploy/deployNew.sh --help`
+   to see the full set of options.
 
 9. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
    provide a fresh instance ID that has not been used before:
