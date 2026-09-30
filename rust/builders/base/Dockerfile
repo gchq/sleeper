@@ -12,21 +12,114 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM rust:1.96-trixie
+FROM amazonlinux:2023
+# Find architecture of host, e.g. amd64 or arm64
+ARG TARGETARCH
+ARG RUST_VERSION=1.96
+ARG RUSTUP_INIT_URL=https://sh.rustup.rs
+ARG RUSTUP_DIST_SERVER
+ARG RUSTUP_UPDATE_ROOT
 
 # Copy certs/ if it exists, skip silently if not. The glob pattern cert[s]/ matches "certs/" when
 # present but matches nothing (instead of failing) when absent — Docker's COPY fails on missing
-# sources unless a glob is used.
-COPY cert[s]/ /usr/local/share/ca-certificates/
-# Only update CA certificates and switch to HTTPS sources if certs are present in ca-certificates dir
-RUN [ -z "$(ls -A /usr/local/share/ca-certificates 2>/dev/null)" ] || \
-    { update-ca-certificates && sed -i 's|http|https|g' /etc/apt/sources.list.d/debian.sources; }
+# sources unless a glob is used. This must come before any network access below, as dnf and curl
+# both verify against the system trust store.
+COPY cert[s]/ /etc/pki/ca-trust/source/anchors/
+# Only rebuild the trust bundle if certs are present in the anchors dir
+RUN [ -z "$(ls -A /etc/pki/ca-trust/source/anchors 2>/dev/null)" ] || update-ca-trust extract
 
-RUN apt-get update && apt-get install -y \
-    clang \
-    && rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /opt/sysroot/x86_64/var/cache /opt/sysroot/aarch64/var/cache
 
-ENV CC=clang
-ENV CXX=clang++
+# Avoid downloading hosts dnf metadata cache again by symlinking the cache from container into the sysroot
+# matching the host architecture
+RUN case "${TARGETARCH}" in \
+    "amd64") ln -s /var/cache/dnf /opt/sysroot/x86_64/var/cache ;;\
+    "arm64") ln -s /var/cache/dnf /opt/sysroot/aarch64/var/cache ;;\
+    "") echo "TARGETARCH not set - this image requires BuildKit"; exit 1;;\
+    *) echo "Architecture ${TARGETARCH} not recognised"; exit 1;;\
+    esac
+
+# Install compiler and linker which supports x86_64 and aarch64 targets
+RUN dnf makecache
+RUN dnf install -y --setopt=install_weak_deps=False clang22 lld22 symlinks && dnf clean packages
+
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/.cargo \
+    PATH=/usr/local/.cargo/bin:${PATH}
+
+# Install Rust and add both required targets to toolchain
+RUN curl --proto '=https' --tlsv1.2 --fail --show-error --silent --output /tmp/rustup-init.sh \
+    ${RUSTUP_INIT_URL} \
+    && sh /tmp/rustup-init.sh -y --no-modify-path --profile minimal --default-toolchain ${RUST_VERSION} \
+    && rm -f /tmp/rustup-init.sh \
+    && rustup target add aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu --toolchain ${RUST_VERSION}
+
+# Create two sysroots, whichever one matches the host architecture should skip downloading repo metadata.
+# tsflags=noscripts stops RPM running package scriptlets, which it would run chrooted into the sysroot.
+# For the sysroot that doesn't match the host architecture those scriptlets are foreign binaries, so they
+# fail with "Exec format error" unless the host has QEMU binfmt handlers registered. The scriptlets only
+# set up a runnable system (trust stores, ldconfig caches); a sysroot is only used for headers and
+# libraries at compile time, so skipping them keeps the build free of any emulation requirement.
+RUN releasever="$(rpm -q system-release --qf '%{VERSION}')" \
+    && dnf --releasever="${releasever}" --installroot=/opt/sysroot/aarch64 --forcearch=aarch64 \
+    --setopt=install_weak_deps=False --setopt=tsflags=noscripts install -y \
+    \
+    system-release glibc-devel gcc gcc-c++ libstdc++-devel \
+    \
+    && dnf --releasever="${releasever}" --installroot=/opt/sysroot/aarch64 clean packages
+
+RUN releasever="$(rpm -q system-release --qf '%{VERSION}')" \
+    && dnf --releasever="${releasever}" --installroot=/opt/sysroot/x86_64 --forcearch=x86_64 \
+    --setopt=install_weak_deps=False --setopt=tsflags=noscripts install -y \
+    \
+    system-release glibc-devel gcc gcc-c++ libstdc++-devel \
+    \
+    && dnf --releasever="${releasever}" --installroot=/opt/sysroot/x86_64 clean packages
+
+# Convert absolute symlinks to relative within sysroots. DNF may create absolute symlinks
+# pointing outside the sysroot, which breaks cross-compilation tooling at runtime.
+RUN dnf clean all && symlinks -cr /opt/sysroot/
+
+# Create compiler wrappers to specify sysroot directories and target architecture
+RUN cat > /usr/local/bin/aarch64-linux-gnu-clang <<'EOF'
+#!/bin/sh
+exec clang-22 --target=aarch64-unknown-linux-gnu --sysroot=/opt/sysroot/aarch64 "$@"
+EOF
+
+RUN cat > /usr/local/bin/x86_64-linux-gnu-clang <<'EOF'
+#!/bin/sh
+exec clang-22 --target=x86_64-unknown-linux-gnu --sysroot=/opt/sysroot/x86_64 "$@"
+EOF
+
+RUN cat > /usr/local/bin/aarch64-linux-gnu-clang++ <<'EOF'
+#!/bin/sh
+exec clang++-22 --target=aarch64-unknown-linux-gnu --sysroot=/opt/sysroot/aarch64 "$@"
+EOF
+
+RUN cat > /usr/local/bin/x86_64-linux-gnu-clang++ <<'EOF'
+#!/bin/sh
+exec clang++-22 --target=x86_64-unknown-linux-gnu --sysroot=/opt/sysroot/x86_64 "$@"
+EOF
+
+RUN chmod 0755 /usr/local/bin/aarch64-linux-gnu-clang /usr/local/bin/x86_64-linux-gnu-clang \
+    /usr/local/bin/aarch64-linux-gnu-clang++ /usr/local/bin/x86_64-linux-gnu-clang++
+
+# Configure Rust to use per-target cross-compilation wrappers and lld linker.
+# To compile Rust code with cargo for cross-compilation targets:
+#   cargo build --target aarch64-unknown-linux-gnu
+#   cargo build --target x86_64-unknown-linux-gnu
+# For C/C++ code, invoke the compiler wrappers directly with the -fuse-ld=lld flag to use the lld linker:
+#   $(CXX_aarch64_unknown_linux_gnu) -fuse-ld=lld -o output main.cpp other.cpp
+#   $(CC_x86_64_unknown_linux_gnu) -fuse-ld=lld -c source.c -o source.o
+# The linker path points to our clang/clang++ wrappers (which inject --target and --sysroot)
+# rustflags adds -fuse-ld=lld only at link time to avoid "unused parameter" errors during C compilation
+ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=/usr/local/bin/aarch64-linux-gnu-clang \
+    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-Clink-arg=-fuse-ld=lld -Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1" \
+    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=/usr/local/bin/x86_64-linux-gnu-clang \
+    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-Clink-arg=-fuse-ld=lld" \
+    CC_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-clang \
+    CC_x86_64_unknown_linux_gnu=/usr/local/bin/x86_64-linux-gnu-clang \
+    CXX_aarch64_unknown_linux_gnu=/usr/local/bin/aarch64-linux-gnu-clang++ \
+    CXX_x86_64_unknown_linux_gnu=/usr/local/bin/x86_64-linux-gnu-clang++
 
 WORKDIR /workspace
