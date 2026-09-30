@@ -166,9 +166,12 @@ When deploying a Sleeper instance, point to your instance configuration with one
 
 * `-c propertiesFile=<path>` — the path to your `instance.properties` file. Only this file and an adjacent
   `tags.properties` are read; table properties are not loaded.
-* `-c configurationDir=<path>` — the path to the root configuration directory. The whole directory structure is read including `instance.properties` and `table.properties`. Passing the `instance.properties` file path here also works — it falls back to the directory
-  containing it. For a full description of what can be defined in the directory, refer to the configuration folder structure in the
-   [instant configuration documentation](./instance-configuration.md#configuration-folder-structure).
+* `-c configurationDir=<path>` — the path to the root configuration directory, or to the `instance.properties` file
+  within it. The whole directory structure is read including table properties, tags and schemas. If you pass the path to
+  the `instance.properties` file instead of the directory, it is read as the instance properties and the rest of the
+  configuration is loaded from the directory containing it. For a full description of what can be defined in the
+  directory, refer to the configuration folder structure in the
+  [instance configuration documentation](./instance-configuration.md#configuration-folder-structure).
 
 Set exactly one of these; setting both, or neither, is an error.
 
