@@ -58,7 +58,7 @@ public class RangeJobsQuery implements JobQuery {
             .argsHelpText("<" + DATE_FORMAT + ">")
             .build();
     public static final JobQueryTypeParser PARSER = new JobQueryTypeParser(
-            List.of(COMMAND_OPTION, START_COMMAND_OPTION, END_COMMAND_OPTION), JobQuery.Type.ALL,
+            List.of(COMMAND_OPTION, START_COMMAND_OPTION, END_COMMAND_OPTION), JobQueryType.ALL,
             (parameters, time) -> fromParameters(parameters, time),
             (arguments, time) -> new RangeJobsQuery(
                     parseStart(arguments.getString("start-time"), time),
@@ -86,8 +86,8 @@ public class RangeJobsQuery implements JobQuery {
     }
 
     @Override
-    public Type getType() {
-        return Type.RANGE;
+    public JobQueryType getType() {
+        return JobQueryType.RANGE;
     }
 
     /**

@@ -38,7 +38,7 @@ public class DetailedJobsQuery implements JobQuery {
             .helpText("Reports in detail on the jobs with the given IDs. Separate several IDs with commas.")
             .argsHelpText("<job-id>[,<more-ids>]")
             .build();
-    public static final JobQueryTypeParser PARSER = new JobQueryTypeParser(COMMAND_OPTION, JobQuery.Type.ALL,
+    public static final JobQueryTypeParser PARSER = new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.ALL,
             (parameters, timeSupplier) -> fromParameters(parameters),
             (arguments, timeSupplier) -> fromParameters(arguments.getString("detailed")));
 
@@ -59,8 +59,8 @@ public class DetailedJobsQuery implements JobQuery {
     }
 
     @Override
-    public Type getType() {
-        return Type.DETAILED;
+    public JobQueryType getType() {
+        return JobQueryType.DETAILED;
     }
 
     private <T> List<T> run(Function<String, Optional<T>> getJob) {

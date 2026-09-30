@@ -22,6 +22,7 @@ import sleeper.clients.report.job.query.AllJobsQuery;
 import sleeper.clients.report.job.query.DetailedJobsQuery;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.JobQueryPrompt;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.report.job.query.RangeJobsQuery;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
 import sleeper.clients.report.job.query.UnfinishedJobsQuery;
@@ -53,12 +54,12 @@ public class JobTrackerReportOptions {
      * The query type options, and the query type each one selects. Declared in the order they appear in the usage,
      * which is the order they are reported in if the user sets more than one.
      */
-    private static final Map<String, JobQuery.Type> QUERY_TYPE_BY_OPTION = Map.of(
-            AllJobsQuery.COMMAND_OPTION.longName(), JobQuery.Type.ALL,
-            DetailedJobsQuery.COMMAND_OPTION.longName(), JobQuery.Type.DETAILED,
-            RangeJobsQuery.COMMAND_OPTION.longName(), JobQuery.Type.RANGE,
-            RejectedJobsQuery.COMMAND_OPTION.longName(), JobQuery.Type.REJECTED,
-            UnfinishedJobsQuery.COMMAND_OPTION.longName(), JobQuery.Type.UNFINISHED);
+    private static final Map<String, JobQueryType> QUERY_TYPE_BY_OPTION = Map.of(
+            AllJobsQuery.COMMAND_OPTION.longName(), JobQueryType.ALL,
+            DetailedJobsQuery.COMMAND_OPTION.longName(), JobQueryType.DETAILED,
+            RangeJobsQuery.COMMAND_OPTION.longName(), JobQueryType.RANGE,
+            RejectedJobsQuery.COMMAND_OPTION.longName(), JobQueryType.REJECTED,
+            UnfinishedJobsQuery.COMMAND_OPTION.longName(), JobQueryType.UNFINISHED);
 
     public static final ReportTypeArgument<IngestJobStatusReporter> INGEST_REPORT_TYPE = ReportTypeArgument
             .<IngestJobStatusReporter>withDefault("STANDARD", new StandardIngestJobStatusReporter())
@@ -90,7 +91,7 @@ public class JobTrackerReportOptions {
     }
 
     private static JobQuery readJobQuery(CommandArguments arguments, Clock clock, ConsoleInput input, List<CommandOption> options, Map<String, JobQuery> extraQueryTypes) {
-        JobQuery.Type jobType = determineQueryType(arguments, options);
+        JobQueryType jobType = determineQueryType(arguments, options);
         String jobId = null;
         Instant startTime = null;
         Instant endTime = null;
@@ -123,20 +124,20 @@ public class JobTrackerReportOptions {
         }
 
         // Below error message to be removed as part of work for ticket number: https://github.com/gchq/sleeper/issues/8061
-        if (!jobType.equals(JobQuery.Type.RANGE) &&
+        if (!jobType.equals(JobQueryType.RANGE) &&
                 (arguments.getOptionalString("start-time").isPresent() ||
                         arguments.getOptionalString("end-time").isPresent())) {
             throw new CommandArgumentsException("Range time flags, start-time and end-time are not valid for following query type: " + jobType);
         }
 
         JobQuery query;
-        if (jobType == JobQuery.Type.RANGE) {
+        if (jobType == JobQueryType.RANGE) {
             if (startTime == null) {
                 query = RangeJobsQuery.forDefaultPeriod(clock);
             } else {
                 query = new RangeJobsQuery(startTime, endTime);
             }
-        } else if (jobType == JobQuery.Type.PROMPT) {
+        } else if (jobType == JobQueryType.PROMPT) {
             return JobQueryPrompt.from(clock, input, extraQueryTypes);
         } else {
             query = JobQuery.from(jobType, jobId, clock);
@@ -144,8 +145,8 @@ public class JobTrackerReportOptions {
         return query;
     }
 
-    private static JobQuery.Type determineQueryType(CommandArguments arguments, List<CommandOption> options) {
-        List<JobQuery.Type> setTypes = options.stream()
+    private static JobQueryType determineQueryType(CommandArguments arguments, List<CommandOption> options) {
+        List<JobQueryType> setTypes = options.stream()
                 .filter(arguments::isSet)
                 .map(CommandOption::longName)
                 .filter(QUERY_TYPE_BY_OPTION::containsKey)
@@ -153,7 +154,7 @@ public class JobTrackerReportOptions {
                 .toList();
         if (setTypes.size() > 1) {
             throw new CommandArgumentsException("Too many query type flags are set, maximum of 1. Flags set: " +
-                    setTypes.stream().map(JobQuery.Type::name).collect(joining(", ")));
+                    setTypes.stream().map(JobQueryType::name).collect(joining(", ")));
         }
         if (!setTypes.isEmpty()) {
             return setTypes.get(0);
@@ -165,9 +166,9 @@ public class JobTrackerReportOptions {
         // See ticket: https://github.com/gchq/sleeper/issues/8061
         if (arguments.getOptionalString("start-time").isPresent()
                 || arguments.getOptionalString("end-time").isPresent()) {
-            return JobQuery.Type.RANGE;
+            return JobQueryType.RANGE;
         }
-        return JobQuery.Type.PROMPT;
+        return JobQueryType.PROMPT;
     }
 
     private static Instant readTime(String option, String value) {

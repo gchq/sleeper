@@ -16,7 +16,6 @@
 
 package sleeper.clients.report.job.query;
 
-import sleeper.clients.report.job.query.JobQuery.Type;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.core.job.CompactionJob;
@@ -57,28 +56,28 @@ public class JobQueryTestBase {
     protected final ToStringConsoleOutput out = new ToStringConsoleOutput();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
 
-    protected List<CompactionJobStatus> queryStatuses(Type queryType) {
+    protected List<CompactionJobStatus> queryStatuses(JobQueryType queryType) {
         return queryStatusesWithParams(queryType, null);
     }
 
-    protected List<CompactionJobStatus> queryStatusesWithParams(Type queryType, String queryParameters) {
+    protected List<CompactionJobStatus> queryStatusesWithParams(JobQueryType queryType, String queryParameters) {
         return queryStatuses(queryType, queryParameters, Clock.systemUTC());
     }
 
-    protected List<CompactionJobStatus> queryStatusesAtTime(Type queryType, Instant time) {
+    protected List<CompactionJobStatus> queryStatusesAtTime(JobQueryType queryType, Instant time) {
         return queryStatuses(queryType, null,
                 Clock.fixed(time, ZoneId.of("UTC")));
     }
 
-    protected JobQuery queryFrom(Type queryType) {
+    protected JobQuery queryFrom(JobQueryType queryType) {
         return queryFrom(queryType, null, Clock.systemUTC());
     }
 
-    private List<CompactionJobStatus> queryStatuses(Type queryType, String queryParameters, Clock clock) {
+    private List<CompactionJobStatus> queryStatuses(JobQueryType queryType, String queryParameters, Clock clock) {
         return queryFrom(queryType, queryParameters, clock).run(tracker, tableId);
     }
 
-    private JobQuery queryFrom(Type queryType, String queryParameters, Clock clock) {
+    private JobQuery queryFrom(JobQueryType queryType, String queryParameters, Clock clock) {
         return JobQuery.fromParametersOrPrompt(queryType, queryParameters, clock, in.consoleIn());
     }
 

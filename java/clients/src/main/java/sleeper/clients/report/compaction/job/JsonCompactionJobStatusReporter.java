@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 
 import sleeper.clients.report.job.JsonJobRunSummary;
 import sleeper.clients.report.job.JsonJobRunTime;
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobUpdateTypeInRun;
@@ -53,7 +53,7 @@ public class JsonCompactionJobStatusReporter implements CompactionJobStatusRepor
     }
 
     @Override
-    public void report(List<CompactionJobStatus> statusList, JobQuery.Type queryType) {
+    public void report(List<CompactionJobStatus> statusList, JobQueryType queryType) {
         out.println(gson.toJson(statusList));
     }
 }

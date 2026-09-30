@@ -31,7 +31,7 @@ public class AllJobsQuery implements JobQuery {
     public static final CommandOption COMMAND_OPTION = CommandOption
             .withLongName("all").shortName('a')
             .helpText("Reports on all jobs.").build();
-    public static final JobQueryTypeParser PARSER = new JobQueryTypeParser(COMMAND_OPTION, JobQuery.Type.ALL, AllJobsQuery::new);
+    public static final JobQueryTypeParser PARSER = new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.ALL, AllJobsQuery::new);
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {
@@ -44,7 +44,7 @@ public class AllJobsQuery implements JobQuery {
     }
 
     @Override
-    public Type getType() {
-        return Type.ALL;
+    public JobQueryType getType() {
+        return JobQueryType.ALL;
     }
 }

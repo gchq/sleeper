@@ -28,6 +28,7 @@ import sleeper.clients.report.ingest.job.IngestQueueMessages;
 import sleeper.clients.report.ingest.job.PersistentEmrStepCount;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.common.task.QueueMessageCount;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -82,7 +83,7 @@ public class IngestJobStatusReport {
      * @return                 the query
      */
     public static JobQuery queryfromParametersOrPrompt(
-            JobQuery.Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
+            JobQueryType queryType, String queryParameters, Clock clock, ConsoleInput input) {
         return JobQuery.fromParametersOrPrompt(queryType, queryParameters, clock, input, Map.of("n", new RejectedJobsQuery()));
     }
 

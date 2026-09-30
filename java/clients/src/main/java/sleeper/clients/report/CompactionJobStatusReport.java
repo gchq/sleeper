@@ -25,6 +25,7 @@ import sleeper.clients.report.compaction.job.JsonCompactionJobStatusReporter;
 import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.JobQueryArgument;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -88,7 +89,7 @@ public class CompactionJobStatusReport {
             String instanceId = args[0];
             String tableName = args[1];
             CompactionJobStatusReporter reporter = getReporter(args, 2);
-            JobQuery.Type queryType = JobQueryArgument.readTypeArgument(args, 3);
+            JobQueryType queryType = JobQueryArgument.readTypeArgument(args, 3);
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
             try (S3Client s3Client = buildAwsV2Client(S3Client.builder());

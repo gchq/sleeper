@@ -26,6 +26,7 @@ import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter
 import sleeper.clients.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.report.compaction.task.StandardCompactionTaskStatusReporter;
 import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.util.console.ConsoleHelper;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -84,10 +85,10 @@ public class CompactionStatusReportScreen {
         if (tableOpt.isPresent()) {
             TableStatus table = tableOpt.get().getStatus();
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
-                    new MenuOption("All", () -> runCompactionJobStatusReport(properties, table, JobQuery.Type.ALL)),
-                    new MenuOption("Unfinished", () -> runCompactionJobStatusReport(properties, table, JobQuery.Type.UNFINISHED)),
-                    new MenuOption("Detailed", () -> runCompactionJobStatusReport(properties, table, JobQuery.Type.DETAILED, promptForJobId(in))),
-                    new MenuOption("Range", () -> runCompactionJobStatusReport(properties, table, JobQuery.Type.RANGE, promptForRange(in)))).run();
+                    new MenuOption("All", () -> runCompactionJobStatusReport(properties, table, JobQueryType.ALL)),
+                    new MenuOption("Unfinished", () -> runCompactionJobStatusReport(properties, table, JobQueryType.UNFINISHED)),
+                    new MenuOption("Detailed", () -> runCompactionJobStatusReport(properties, table, JobQueryType.DETAILED, promptForJobId(in))),
+                    new MenuOption("Range", () -> runCompactionJobStatusReport(properties, table, JobQueryType.RANGE, promptForRange(in)))).run();
         }
     }
 
@@ -97,11 +98,11 @@ public class CompactionStatusReportScreen {
                 new MenuOption("Unfinished", () -> runCompactionTaskStatusReport(properties, CompactionTaskQuery.UNFINISHED))).run();
     }
 
-    private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus table, JobQuery.Type queryType) {
+    private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus table, JobQueryType queryType) {
         runCompactionJobStatusReport(properties, table, queryType, "");
     }
 
-    private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus table, JobQuery.Type queryType, String queryParameters) {
+    private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus table, JobQueryType queryType, String queryParameters) {
         JobQuery query = JobQuery.fromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), in);
         new CompactionJobStatusReport(trackers.loadCompactionJobTracker(properties),
                 new StandardCompactionJobStatusReporter(out.printStream()), table, query).run();

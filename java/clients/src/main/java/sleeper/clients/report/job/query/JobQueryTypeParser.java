@@ -15,7 +15,6 @@
  */
 package sleeper.clients.report.job.query;
 
-import sleeper.clients.report.job.query.JobQuery.Type;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandOption;
 
@@ -30,19 +29,19 @@ import java.util.function.Supplier;
 public class JobQueryTypeParser {
 
     private final List<CommandOption> options;
-    private final JobQuery.Type type;
+    private final JobQueryType type;
     private final ByParameters byParameters;
     private final ByArguments byArguments;
 
-    public JobQueryTypeParser(CommandOption option, Type type, Supplier<JobQuery> constructor) {
+    public JobQueryTypeParser(CommandOption option, JobQueryType type, Supplier<JobQuery> constructor) {
         this(option, type, (params, time) -> constructor.get(), (args, time) -> constructor.get());
     }
 
-    public JobQueryTypeParser(CommandOption option, Type type, ByParameters byParameters, ByArguments byArguments) {
+    public JobQueryTypeParser(CommandOption option, JobQueryType type, ByParameters byParameters, ByArguments byArguments) {
         this(List.of(option), type, byParameters, byArguments);
     }
 
-    public JobQueryTypeParser(List<CommandOption> options, Type type, ByParameters byParameters, ByArguments byArguments) {
+    public JobQueryTypeParser(List<CommandOption> options, JobQueryType type, ByParameters byParameters, ByArguments byArguments) {
         this.options = options;
         this.type = type;
         this.byParameters = byParameters;
@@ -57,7 +56,7 @@ public class JobQueryTypeParser {
      * @param  timeSupplier    a supplier to get the current time
      * @return                 the query, if this parser supports the given type
      */
-    public Optional<JobQuery> read(JobQuery.Type foundType, String queryParameters, Clock clock) {
+    public Optional<JobQuery> read(JobQueryType foundType, String queryParameters, Clock clock) {
         if (foundType == type) {
             return Optional.of(byParameters.read(queryParameters, clock));
         } else {

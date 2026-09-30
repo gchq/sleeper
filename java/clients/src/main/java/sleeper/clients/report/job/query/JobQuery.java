@@ -54,7 +54,7 @@ public interface JobQuery {
      *
      * @return the query type
      */
-    Type getType();
+    JobQueryType getType();
 
     /**
      * Creates a query for jobs based on parameters. To allow the PROMPT query type,
@@ -65,7 +65,7 @@ public interface JobQuery {
      * @param  clock           the clock to find the current time
      * @return                 the query
      */
-    static JobQuery from(Type queryType, String queryParameters, Clock clock) {
+    static JobQuery from(JobQueryType queryType, String queryParameters, Clock clock) {
         if (queryType.isParametersRequired() && queryParameters == null) {
             throw new IllegalArgumentException("No parameters provided for query type " + queryType);
         }
@@ -95,7 +95,7 @@ public interface JobQuery {
      * @return                 the query
      */
     static JobQuery fromParametersOrPrompt(
-            Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
+            JobQueryType queryType, String queryParameters, Clock clock, ConsoleInput input) {
         return fromParametersOrPrompt(queryType, queryParameters, clock, input, Map.of());
     }
 
@@ -110,27 +110,11 @@ public interface JobQuery {
      * @return                 the query
      */
     static JobQuery fromParametersOrPrompt(
-            Type queryType, String queryParameters, Clock clock, ConsoleInput input,
+            JobQueryType queryType, String queryParameters, Clock clock, ConsoleInput input,
             Map<String, JobQuery> extraQueryTypes) {
-        if (queryType == JobQuery.Type.PROMPT) {
+        if (queryType == JobQueryType.PROMPT) {
             return JobQueryPrompt.from(clock, input, extraQueryTypes);
         }
         return from(queryType, queryParameters, clock);
-    }
-
-    /**
-     * The type of a query for jobs to include in a report.
-     */
-    enum Type {
-        PROMPT,
-        ALL,
-        DETAILED,
-        RANGE,
-        UNFINISHED,
-        REJECTED;
-
-        public boolean isParametersRequired() {
-            return this == DETAILED;
-        }
     }
 }
