@@ -83,7 +83,7 @@ public class JobTrackerReportOptions {
      * @param  arguments the command line arguments
      * @param  clock     the clock to get the current time
      * @param  input     the console to prompt the user for further input
-     * @return
+     * @return           the query
      */
     public static JobQuery readIngestJobQuery(CommandArguments arguments, Clock clock, ConsoleInput input) {
         return readJobQuery(arguments, clock, input, INGEST_OPTIONS, Map.of("n", new RejectedJobsQuery()));
@@ -144,13 +144,6 @@ public class JobTrackerReportOptions {
         return query;
     }
 
-    /**
-     * Determines which query type the user asked for. Exactly one query type option may be set. If none is set, the
-     * user is prompted for one, unless a time was given for a range.
-     *
-     * @param  arguments the parsed command line arguments
-     * @return           the query type
-     */
     private static JobQuery.Type determineQueryType(CommandArguments arguments, List<CommandOption> options) {
         List<JobQuery.Type> setTypes = options.stream()
                 .filter(arguments::isSet)
