@@ -16,6 +16,7 @@
 package sleeper.clients.report.job.query;
 
 import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandOption;
 
 import java.time.Clock;
@@ -73,10 +74,23 @@ public class JobQueryTypeParser {
      */
     public Optional<JobQuery> read(CommandArguments arguments, Clock clock) {
         if (options.stream().anyMatch(arguments::isSet)) {
-            return Optional.of(byArguments.read(arguments, clock));
+            try {
+                return Optional.of(byArguments.read(arguments, clock));
+            } catch (RuntimeException e) {
+                throw new CommandArgumentsException(e);
+            }
         } else {
             return Optional.empty();
         }
+    }
+
+    /**
+     * Retrieves a list of command line options that trigger this query type.
+     *
+     * @return the options
+     */
+    public List<CommandOption> options() {
+        return options;
     }
 
     /**

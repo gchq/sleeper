@@ -19,6 +19,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
+import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandOption;
 import sleeper.core.util.cli.CommandOption.NumArgs;
 
@@ -38,14 +39,17 @@ public class DetailedJobsQuery implements JobQuery {
             .helpText("Reports in detail on the jobs with the given IDs. Separate several IDs with commas.")
             .argsHelpText("<job-id>[,<more-ids>]")
             .build();
-    public static final JobQueryTypeParser PARSER = new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.ALL,
-            (parameters, timeSupplier) -> fromParameters(parameters),
-            (arguments, timeSupplier) -> fromParameters(arguments.getString("detailed")));
 
     private final List<String> jobIds;
 
     public DetailedJobsQuery(List<String> jobIds) {
         this.jobIds = jobIds;
+    }
+
+    public static JobQueryTypeParser parser() {
+        return new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.ALL,
+                (parameters, timeSupplier) -> fromParameters(parameters),
+                (arguments, timeSupplier) -> fromCommandLine(arguments.getString("detailed")));
     }
 
     @Override
@@ -81,5 +85,12 @@ public class DetailedJobsQuery implements JobQuery {
             return null;
         }
         return new DetailedJobsQuery(Arrays.asList(queryParameters.split(",")));
+    }
+
+    private static JobQuery fromCommandLine(String jobIds) {
+        if ("".equals(jobIds)) {
+            throw new CommandArgumentsException("Expected a value for option: detailed");
+        }
+        return new DetailedJobsQuery(Arrays.asList(jobIds.split(",")));
     }
 }

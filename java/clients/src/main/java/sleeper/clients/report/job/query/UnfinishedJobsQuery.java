@@ -32,7 +32,10 @@ public class UnfinishedJobsQuery implements JobQuery {
             .withLongName("unfinished").shortName('u')
             .helpText("Reports on all unfinished jobs.")
             .build();
-    public static final JobQueryTypeParser PARSER = new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.UNFINISHED, UnfinishedJobsQuery::new);
+
+    public static JobQueryTypeParser parser() {
+        return new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.UNFINISHED, UnfinishedJobsQuery::new);
+    }
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {

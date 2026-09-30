@@ -15,18 +15,39 @@
  */
 package sleeper.clients.report.job.query;
 
+import sleeper.core.util.cli.CommandOption;
+
+import java.util.List;
+import java.util.Objects;
+
 /**
  * The type of a query for jobs to include in a report.
  */
 public enum JobQueryType {
-    PROMPT,
-    ALL,
-    DETAILED,
-    RANGE,
-    UNFINISHED,
-    REJECTED;
+    PROMPT(null),
+    ALL(AllJobsQuery.parser()),
+    DETAILED(DetailedJobsQuery.parser()),
+    RANGE(RangeJobsQuery.parser()),
+    UNFINISHED(UnfinishedJobsQuery.parser()),
+    REJECTED(RejectedJobsQuery.parser());
+
+    public static final List<JobQueryType> INGEST_OPTIONS = List.of(ALL, DETAILED, RANGE, UNFINISHED, REJECTED);
+
+    private final JobQueryTypeParser parser;
+
+    JobQueryType(JobQueryTypeParser parser) {
+        this.parser = parser;
+    }
 
     public boolean isParametersRequired() {
         return this == DETAILED;
+    }
+
+    public JobQueryTypeParser parser() {
+        return Objects.requireNonNull(parser, "Query type has no parser: " + this);
+    }
+
+    public List<CommandOption> options() {
+        return parser().options();
     }
 }
