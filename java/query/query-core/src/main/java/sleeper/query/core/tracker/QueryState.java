@@ -32,6 +32,16 @@ public enum QueryState {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryState.class);
 
     /**
+     * Checks whether the query has finished (whether it finished successfully or
+     * not is irrelevant)..
+     *
+     * @return true if the query has finished
+     */
+    public boolean isFinished() {
+        return this == COMPLETED || this == FAILED || this == PARTIALLY_FAILED;
+    }
+
+    /**
      * Returns the state of the parent query if it has finished.
      *
      * @param  queryId  the query ID
