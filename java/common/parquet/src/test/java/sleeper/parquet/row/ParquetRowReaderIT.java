@@ -18,6 +18,7 @@ package sleeper.parquet.row;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
+import org.apache.parquet.io.ParquetDecodingException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -39,6 +40,7 @@ import java.util.Map;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ParquetRowReaderIT {
 
@@ -510,5 +512,36 @@ class ParquetRowReaderIT {
         assertThat(readRow1).isEqualTo(new Row(Map.of("column1", "A")));
         assertThat(readRow2).isEqualTo(new Row(Map.of("column1", "C")));
         assertThat(readRow3).isNull();
+    }
+
+    @Test
+    void shouldFailToReadFileWhenNullabilityOfFieldDoesNotMatch() throws Exception {
+        // Given the read schema has a non-nullable value field
+        Schema readSchema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
+        // And the write schema makes the same field nullable
+        Schema writeSchema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new StringType(), true))
+                .build();
+        // And all the data in the file has a value for that field
+        Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, writeSchema)) {
+            writer.write(new Row(Map.of(
+                    "key", "key1",
+                    "value", "test")));
+        }
+
+        // When we try to read the file
+        try (ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(path, readSchema).build()) {
+            // Then it fails because the schema is not compatible
+            assertThatThrownBy(() -> reader.read())
+                    .isInstanceOf(ParquetDecodingException.class)
+                    .cause()
+                    .isInstanceOf(ParquetDecodingException.class)
+                    .hasMessageContaining("requested schema is not compatible with the file schema");
+        }
     }
 }
