@@ -58,6 +58,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class DeployNewInstanceIT {
+
     InstanceProperties instanceProperties = new InstanceProperties();
     Schema schema = createSchemaWithKey("key");
     InMemoryTableIndex tableIndex = new InMemoryTableIndex();
@@ -119,7 +120,7 @@ public class DeployNewInstanceIT {
                     "my-instance", "test-vpc", "test-subnet",
                     "--config-dir", configDir.toString());
 
-            // Then CDK is invoked before AddTableClient runs — tables have no ID in the CDK request
+            // Then CDK is invoked before AddTableClient runs so tables have no ID in the CDK request
             InstanceProperties expected = new InstanceProperties();
             expected.set(ID, "my-instance");
             expected.set(VPC_ID, "test-vpc");
