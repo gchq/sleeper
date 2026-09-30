@@ -18,7 +18,7 @@ package sleeper.clients.report.ingest.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.util.Collections;
@@ -34,7 +34,7 @@ public class StandardIngestJobStatusReporterUnfinishedQueryTest {
         List<IngestJobStatus> noJobs = Collections.emptyList();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.UNFINISHED, noJobs, 0)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.UNFINISHED, noJobs, 0)).hasToString(
                 example("reports/ingest/job/standard/unfinished/noJobs.txt"));
     }
 
@@ -44,7 +44,7 @@ public class StandardIngestJobStatusReporterUnfinishedQueryTest {
         List<IngestJobStatus> mixedUnfinishedJobStatuses = IngestJobStatusReporterTestData.mixedUnfinishedJobStatuses();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.UNFINISHED, mixedUnfinishedJobStatuses, 2)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.UNFINISHED, mixedUnfinishedJobStatuses, 2)).hasToString(
                 example("reports/ingest/job/standard/unfinished/mixedUnfinishedJobs.txt"));
     }
 }

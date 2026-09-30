@@ -19,6 +19,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
+import sleeper.core.util.cli.CommandOption;
 
 import java.util.List;
 
@@ -26,6 +27,14 @@ import java.util.List;
  * A query to generate a report on all jobs held in a job tracker.
  */
 public class AllJobsQuery implements JobQuery {
+
+    public static final CommandOption COMMAND_OPTION = CommandOption
+            .withLongName("all").shortName('a')
+            .helpText("Reports on all jobs.").build();
+
+    public static JobQueryTypeParser parser() {
+        return new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.ALL, AllJobsQuery::new);
+    }
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {
@@ -38,7 +47,7 @@ public class AllJobsQuery implements JobQuery {
     }
 
     @Override
-    public Type getType() {
-        return Type.ALL;
+    public JobQueryType getType() {
+        return JobQueryType.ALL;
     }
 }

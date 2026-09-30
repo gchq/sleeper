@@ -20,6 +20,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
+import sleeper.core.util.cli.CommandOption;
 
 import java.util.List;
 
@@ -27,6 +28,15 @@ import java.util.List;
  * A query to generate a report on jobs in a job tracker that were rejected as invalid.
  */
 public class RejectedJobsQuery implements JobQuery {
+
+    public static final CommandOption COMMAND_OPTION = CommandOption
+            .withLongName("rejected").shortName('n')
+            .helpText("Reports on all rejected jobs.")
+            .build();
+
+    public static JobQueryTypeParser parser() {
+        return new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.REJECTED, RejectedJobsQuery::new);
+    }
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {
@@ -39,7 +49,7 @@ public class RejectedJobsQuery implements JobQuery {
     }
 
     @Override
-    public Type getType() {
-        return Type.REJECTED;
+    public JobQueryType getType() {
+        return JobQueryType.REJECTED;
     }
 }

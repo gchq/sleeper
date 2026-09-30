@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.report;
+package sleeper.clients.report.arguments;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +38,7 @@ public class ReportTypeArgumentTest {
 
     private final CommandLineUsage usage = CommandLineUsage.builder()
             .positionalArguments(List.of("instance-id"))
-            .options(List.of(ReportTypeArgument.option()))
+            .options(List.of(reportType.option()))
             .build();
 
     @Test
@@ -70,20 +70,14 @@ public class ReportTypeArgumentTest {
     @Test
     void shouldDeclareOptionWithSharedName() {
         // When
-        CommandOption option = ReportTypeArgument.option();
+        CommandOption option = reportType.option();
 
         // Then
         assertThat(option.longName()).isEqualTo("report-type");
         assertThat(option.shortName()).isEmpty();
         assertThat(option.isFlag()).isFalse();
-    }
-
-    @Test
-    void shouldCreateHelpTextListingTypesWithTheDefaultFirst() {
-        // When / Then
-        assertThat(reportType.helpText()).isEqualTo("" +
-                "--report-type <type>\n" +
-                "Output format. One of STANDARD, JSON, CSV. Defaults to STANDARD.");
+        assertThat(option.helpText()).get().isEqualTo("Output format. One of STANDARD, JSON, CSV. Defaults to STANDARD.");
+        assertThat(option.argsHelpText()).get().isEqualTo("<type>");
     }
 
     private String read(String... args) {

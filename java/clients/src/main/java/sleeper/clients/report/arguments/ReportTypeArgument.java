@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.clients.report;
+package sleeper.clients.report.arguments;
 
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandOption;
+import sleeper.core.util.cli.CommandOption.NumArgs;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -63,19 +64,12 @@ public class ReportTypeArgument<T> {
      *
      * @return the option
      */
-    public static CommandOption option() {
-        return CommandOption.longOption(OPTION_NAME);
-    }
-
-    /**
-     * Creates the section of a help summary describing this option. Report commands include this in their help
-     * summary, in alphabetical order with their other options.
-     *
-     * @return the help text
-     */
-    public String helpText() {
-        return "--" + OPTION_NAME + " <type>\n" +
-                "Output format. One of " + validTypes() + ". Defaults to " + defaultType + ".";
+    public CommandOption option() {
+        return CommandOption.withLongName(OPTION_NAME)
+                .numArgs(NumArgs.ONE)
+                .helpText("Output format. One of " + validTypes() + ". Defaults to " + defaultType + ".")
+                .argsHelpText("<type>")
+                .build();
     }
 
     /**

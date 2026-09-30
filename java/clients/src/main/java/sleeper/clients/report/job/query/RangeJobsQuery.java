@@ -20,6 +20,10 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
+import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandArgumentsException;
+import sleeper.core.util.cli.CommandOption;
+import sleeper.core.util.cli.CommandOption.NumArgs;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -27,6 +31,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 
@@ -38,15 +43,44 @@ public class RangeJobsQuery implements JobQuery {
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
     private static final Duration DEFAULT_PERIOD = Duration.ofHours(4);
 
+    public static final CommandOption COMMAND_OPTION = CommandOption
+            .withLongName("range").shortName('r')
+            .helpText("Reports on all jobs in a time period. Defaults to the last 4 hours, " +
+                    "or set the period with --start-time and --end-time.")
+            .build();
+    public static final CommandOption START_COMMAND_OPTION = CommandOption
+            .withLongName("start-time").numArgs(NumArgs.ONE)
+            .helpText("Start of the period to report on, in the format " + DATE_FORMAT + ". " +
+                    "Must be set together with --end-time, and only applies to the --range query type.")
+            .argsHelpText("<" + DATE_FORMAT + ">")
+            .build();
+    public static final CommandOption END_COMMAND_OPTION = CommandOption
+            .withLongName("end-time").numArgs(NumArgs.ONE)
+            .helpText("End of the period to report on, in the format " + DATE_FORMAT + ". " +
+                    "Must be set together with --start-time, and only applies to the --range query type.")
+            .argsHelpText("<" + DATE_FORMAT + ">")
+            .build();
+
     private final Instant start;
     private final Instant end;
 
     public RangeJobsQuery(Instant start, Instant end) {
         if (start.isAfter(end)) {
-            throw new IllegalArgumentException("Start of range provided is after end");
+            throw new IllegalArgumentException("Range end is before range start. Range start: " + start + ", range end: " + end);
         }
         this.start = start;
         this.end = end;
+    }
+
+    public static JobQueryTypeParser parser() {
+        return new JobQueryTypeParser(
+                List.of(COMMAND_OPTION, START_COMMAND_OPTION, END_COMMAND_OPTION), JobQueryType.ALL,
+                (parameters, time) -> fromParameters(parameters, time),
+                (arguments, time) -> new RangeJobsQuery(
+                        parseTimeParameter("start-time", arguments)
+                                .orElseGet(() -> time.instant().minus(DEFAULT_PERIOD)),
+                        parseTimeParameter("end-time", arguments)
+                                .orElseGet(() -> time.instant())));
     }
 
     @Override
@@ -60,8 +94,8 @@ public class RangeJobsQuery implements JobQuery {
     }
 
     @Override
-    public Type getType() {
-        return Type.RANGE;
+    public JobQueryType getType() {
+        return JobQueryType.RANGE;
     }
 
     /**
@@ -134,6 +168,17 @@ public class RangeJobsQuery implements JobQuery {
 
     private static Instant parseEnd(String endStr, Clock clock) {
         return parseDate(endStr, clock::instant);
+    }
+
+    private static Optional<Instant> parseTimeParameter(String name, CommandArguments arguments) {
+        return arguments.getOptionalString(name)
+                .map(string -> {
+                    try {
+                        return parseTime(string);
+                    } catch (RuntimeException e) {
+                        throw new CommandArgumentsException(name + " parameter doesn't match expected format: " + DATE_FORMAT);
+                    }
+                });
     }
 
     /**

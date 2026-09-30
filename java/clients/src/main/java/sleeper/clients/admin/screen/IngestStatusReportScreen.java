@@ -26,6 +26,7 @@ import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.report.ingest.task.StandardIngestTaskStatusReporter;
 import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.util.console.ConsoleHelper;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -91,11 +92,11 @@ public class IngestStatusReportScreen {
         if (tableOpt.isPresent()) {
             TableStatus table = tableOpt.get().getStatus();
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
-                    new MenuOption("All", () -> runIngestJobStatusReport(properties, table, JobQuery.Type.ALL)),
-                    new MenuOption("Unfinished", () -> runIngestJobStatusReport(properties, table, JobQuery.Type.UNFINISHED)),
-                    new MenuOption("Detailed", () -> runIngestJobStatusReport(properties, table, JobQuery.Type.DETAILED, promptForJobId(in))),
-                    new MenuOption("Range", () -> runIngestJobStatusReport(properties, table, JobQuery.Type.RANGE, promptForRange(in))),
-                    new MenuOption("Rejected", () -> runIngestJobStatusReport(properties, table, JobQuery.Type.REJECTED))).run();
+                    new MenuOption("All", () -> runIngestJobStatusReport(properties, table, JobQueryType.ALL)),
+                    new MenuOption("Unfinished", () -> runIngestJobStatusReport(properties, table, JobQueryType.UNFINISHED)),
+                    new MenuOption("Detailed", () -> runIngestJobStatusReport(properties, table, JobQueryType.DETAILED, promptForJobId(in))),
+                    new MenuOption("Range", () -> runIngestJobStatusReport(properties, table, JobQueryType.RANGE, promptForRange(in))),
+                    new MenuOption("Rejected", () -> runIngestJobStatusReport(properties, table, JobQueryType.REJECTED))).run();
         }
     }
 
@@ -106,12 +107,12 @@ public class IngestStatusReportScreen {
     }
 
     private void runIngestJobStatusReport(InstanceProperties properties, TableStatus table,
-            JobQuery.Type queryType) {
+            JobQueryType queryType) {
         runIngestJobStatusReport(properties, table, queryType, "");
     }
 
     private void runIngestJobStatusReport(InstanceProperties properties, TableStatus table,
-            JobQuery.Type queryType, String queryParameters) {
+            JobQueryType queryType, String queryParameters) {
         JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), in);
         new IngestJobStatusReport(trackers.loadIngestJobTracker(properties), table, query,
                 new StandardIngestJobStatusReporter(out.printStream()),
