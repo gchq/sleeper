@@ -100,6 +100,13 @@ public class SqsQueryProcessor {
             return;
         }
 
+        // Record the creation of the subqueries in the tracker before they are sent to the queue.
+        // If the subqueries were sent to the queue before the tracker was updated then some
+        // subqueries might complete before the tracker was updated and so the query might be marked
+        // as completed when queries were still being submitted.
+        queryTrackers.subQueriesCreated(query, subQueries);
+        LOGGER.info("Added the creation of {} subqueries to the query tracker", subQueries.size());
+
         // Put these subqueries on to the leaf partition query queue so they can be processed independently
         String sqsLeafPartitionQueryQueueURL = instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL);
         for (LeafPartitionQuery subQuery : subQueries) {
@@ -109,7 +116,6 @@ public class SqsQueryProcessor {
                     .messageBody(serialisedQuery)
                     .build());
         }
-        queryTrackers.subQueriesCreated(query, subQueries);
         LOGGER.info("Submitted {} subqueries to queue", subQueries.size());
     }
 
