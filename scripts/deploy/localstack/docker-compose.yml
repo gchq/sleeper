@@ -1,15 +1,28 @@
 services:
-  localstack:
-    image: localstack/localstack:4.2
-    container_name: sleeper-localstack
+  floci:
+    image: floci/floci:latest-compat #
     ports:
       - "4566:4566"
-      - "9000:9000"
     environment:
-      - SERVICES=s3,dynamodb,sqs,cloudwatch
-      - PERSISTENCE=/tmp/localstack/data
-      - LAMBDA_EXECUTOR=local
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - START_WEB=1
-      - LOCALSTACK_HOST=localhost
-      - SQS_ENDPOINT_STRATEGY=path
+      FLOCI_HOSTNAME: localhost
+      PERSISTENCE: "1"
+      FLOCI_SERVICES_LAMBDA_DOCKER_NETWORK: myapp_default
+      FLOCI_DOCKER_DOCKER_HOST: unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/app/data #
+      - ./init/ready.d:/etc/localstack/init/ready.d:ro
+  #localstack:
+  # image: localstack/localstack:4.2
+  #container_name: sleeper-localstack - Not sure what this maps too
+  #ports:
+  # - "4566:4566"
+  # - "9000:9000" - Do we need this as well
+  #environment:
+  #  - SERVICES=s3,dynamodb,sqs,cloudwatch - Not needed
+  #  - PERSISTENCE=/tmp/localstack/data - How does this map
+  #  - LAMBDA_EXECUTOR=local - Not needed
+  #  - DOCKER_HOST=unix:///var/run/docker.sock
+  #  - START_WEB=1 - How does this map
+  #  - LOCALSTACK_HOST=localhost
+  #  - SQS_ENDPOINT_STRATEGY=path - How does this map
