@@ -37,6 +37,10 @@ public class TrackedQuery {
     private final QueryState lastKnownState;
     private final Long rowCount;
     private final String errorMessage;
+    private final Long expectedSubQueryCount;
+    private final Long succeededSubQueryCount;
+    private final Long failedSubQueryCount;
+    private final Long finishedSubQueryRowCount;
 
     private TrackedQuery(Builder builder) {
         queryId = builder.queryId;
@@ -46,6 +50,10 @@ public class TrackedQuery {
         lastKnownState = builder.lastKnownState;
         rowCount = builder.rowCount;
         errorMessage = builder.errorMessage;
+        expectedSubQueryCount = builder.expectedSubQueryCount;
+        succeededSubQueryCount = builder.succeededSubQueryCount;
+        failedSubQueryCount = builder.failedSubQueryCount;
+        finishedSubQueryRowCount = builder.finishedSubQueryRowCount;
     }
 
     public static Builder builder() {
@@ -55,7 +63,11 @@ public class TrackedQuery {
     public Builder toBuilder() {
         return builder().queryId(queryId).subQueryId(subQueryId)
                 .lastUpdateTime(lastUpdateTime).expiryDate(expiryDate)
-                .lastKnownState(lastKnownState).rowCount(rowCount).errorMessage(errorMessage);
+                .lastKnownState(lastKnownState).rowCount(rowCount).errorMessage(errorMessage)
+                .expectedSubQueryCount(expectedSubQueryCount)
+                .succeededSubQueryCount(succeededSubQueryCount)
+                .failedSubQueryCount(failedSubQueryCount)
+                .finishedSubQueryRowCount(finishedSubQueryRowCount);
     }
 
     public String getQueryId() {
@@ -86,6 +98,52 @@ public class TrackedQuery {
         return errorMessage;
     }
 
+    public Long getExpectedSubQueryCount() {
+        return expectedSubQueryCount;
+    }
+
+    public Long getSucceededSubQueryCount() {
+        return succeededSubQueryCount;
+    }
+
+    public Long getFailedSubQueryCount() {
+        return failedSubQueryCount;
+    }
+
+    public Long getFinishedSubQueryRowCount() {
+        return finishedSubQueryRowCount;
+    }
+
+    /**
+     * Retrieves the number of sub-queries that have finished, whether they succeeded or failed. This is only known
+     * for a parent query that was split into sub-queries.
+     *
+     * @return the number of sub-queries that have finished, or null if that is not known
+     */
+    public Long getFinishedSubQueryCount() {
+        if (expectedSubQueryCount == null) {
+            return null;
+        }
+        return orZero(succeededSubQueryCount) + orZero(failedSubQueryCount);
+    }
+
+    /**
+     * Retrieves the number of sub-queries that have not finished yet. This is only known for a parent query that was
+     * split into sub-queries.
+     *
+     * @return the number of sub-queries still to finish, or null if that is not known
+     */
+    public Long getRemainingSubQueryCount() {
+        if (expectedSubQueryCount == null) {
+            return null;
+        }
+        return Math.max(0, expectedSubQueryCount - getFinishedSubQueryCount());
+    }
+
+    private static long orZero(Long count) {
+        return count != null ? count : 0;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -101,12 +159,17 @@ public class TrackedQuery {
                 && Objects.equals(expiryDate, that.expiryDate)
                 && lastKnownState == that.lastKnownState
                 && Objects.equals(rowCount, that.rowCount)
-                && Objects.equals(errorMessage, that.errorMessage);
+                && Objects.equals(errorMessage, that.errorMessage)
+                && Objects.equals(expectedSubQueryCount, that.expectedSubQueryCount)
+                && Objects.equals(succeededSubQueryCount, that.succeededSubQueryCount)
+                && Objects.equals(failedSubQueryCount, that.failedSubQueryCount)
+                && Objects.equals(finishedSubQueryRowCount, that.finishedSubQueryRowCount);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(queryId, subQueryId, lastUpdateTime, expiryDate, lastKnownState, rowCount, errorMessage);
+        return Objects.hash(queryId, subQueryId, lastUpdateTime, expiryDate, lastKnownState, rowCount, errorMessage,
+                expectedSubQueryCount, succeededSubQueryCount, failedSubQueryCount, finishedSubQueryRowCount);
     }
 
     @Override
@@ -119,6 +182,10 @@ public class TrackedQuery {
                 ", lastKnownState=" + lastKnownState +
                 ", rowCount=" + rowCount +
                 ", errorMessage='" + errorMessage + '\'' +
+                ", expectedSubQueryCount=" + expectedSubQueryCount +
+                ", succeededSubQueryCount=" + succeededSubQueryCount +
+                ", failedSubQueryCount=" + failedSubQueryCount +
+                ", finishedSubQueryRowCount=" + finishedSubQueryRowCount +
                 '}';
     }
 
@@ -133,6 +200,10 @@ public class TrackedQuery {
         private QueryState lastKnownState;
         private Long rowCount = 0L;
         private String errorMessage;
+        private Long expectedSubQueryCount;
+        private Long succeededSubQueryCount;
+        private Long failedSubQueryCount;
+        private Long finishedSubQueryRowCount;
 
         private Builder() {
         }
@@ -231,6 +302,55 @@ public class TrackedQuery {
          */
         public Builder errorMessage(String errorMessage) {
             this.errorMessage = errorMessage;
+            return this;
+        }
+
+        /**
+         * Provides the number of sub-queries the query was split into. This is only set on a parent query that was
+         * split into sub-queries.
+         *
+         * @param  expectedSubQueryCount the number of sub-queries, or null if that is not known
+         * @return                       the builder
+         */
+        public Builder expectedSubQueryCount(Long expectedSubQueryCount) {
+            this.expectedSubQueryCount = expectedSubQueryCount;
+            return this;
+        }
+
+        /**
+         * Provides the number of sub-queries that have finished successfully. This is only set on a parent query
+         * that was split into sub-queries.
+         *
+         * @param  succeededSubQueryCount the number of successful sub-queries, or null if that is not known
+         * @return                        the builder
+         */
+        public Builder succeededSubQueryCount(Long succeededSubQueryCount) {
+            this.succeededSubQueryCount = succeededSubQueryCount;
+            return this;
+        }
+
+        /**
+         * Provides the number of sub-queries that have failed, fully or partially. This is only set on a parent
+         * query that was split into sub-queries.
+         *
+         * @param  failedSubQueryCount the number of failed sub-queries, or null if that is not known
+         * @return                     the builder
+         */
+        public Builder failedSubQueryCount(Long failedSubQueryCount) {
+            this.failedSubQueryCount = failedSubQueryCount;
+            return this;
+        }
+
+        /**
+         * Provides the total number of rows output so far by sub-queries that have finished. This is only set on a
+         * parent query that was split into sub-queries.
+         *
+         * @param  finishedSubQueryRowCount the number of rows output by finished sub-queries, or null if that is not
+         *                                  known
+         * @return                          the builder
+         */
+        public Builder finishedSubQueryRowCount(Long finishedSubQueryRowCount) {
+            this.finishedSubQueryRowCount = finishedSubQueryRowCount;
             return this;
         }
 

@@ -46,7 +46,7 @@ class DynamoDBQueryTrackerEntry {
     static final String EXPECTED_SUB_QUERY_COUNT = "expectedSubQueryCount";
     static final String SUCCEEDED_SUB_QUERY_COUNT = "succeededSubQueryCount";
     static final String FAILED_SUB_QUERY_COUNT = "failedSubQueryCount";
-    static final String TOTAL_SUB_QUERY_ROW_COUNT = "subQueryRowCount";
+    static final String FINISHED_SUB_QUERY_ROW_COUNT = "finishedSubQueryRowCount";
 
     private final String queryId;
     private final String subQueryId;
@@ -154,7 +154,16 @@ class DynamoDBQueryTrackerEntry {
                 .lastKnownState(state)
                 .rowCount(rowCount)
                 .errorMessage(errorMessage)
+                .expectedSubQueryCount(readOptionalLong(stringAttributeValueMap, EXPECTED_SUB_QUERY_COUNT))
+                .succeededSubQueryCount(readOptionalLong(stringAttributeValueMap, SUCCEEDED_SUB_QUERY_COUNT))
+                .failedSubQueryCount(readOptionalLong(stringAttributeValueMap, FAILED_SUB_QUERY_COUNT))
+                .finishedSubQueryRowCount(readOptionalLong(stringAttributeValueMap, FINISHED_SUB_QUERY_ROW_COUNT))
                 .build();
+    }
+
+    private static Long readOptionalLong(Map<String, AttributeValue> item, String attribute) {
+        AttributeValue value = item.get(attribute);
+        return value != null ? Long.valueOf(value.n()) : null;
     }
 
     public boolean isFinished() {
