@@ -1,31 +1,7 @@
 
-vulnerabilities:
+misconfigurations:
 
-  # Dependencies of the latest version of Docker:
-
-  ## Golang
-  # github.com/docker/docker
-  - id: CVE-2026-33997
-  # github.com/containerd/containerd/v2
-  - id: CVE-2026-53495
-  - id: CVE-2026-53493
-  # golang.org/x/net
-  - id: CVE-2026-46600
-  # golang.org/x/crypto
-  - id: CVE-2026-56854
-  - id: CVE-2026-56855
-  - id: CVE-2026-78662
-  # github.com/cilium/ebpf
-  - id: CVE-2026-10722
-  # github.com/moby/go-archive
-  - id: CVE-2026-17106
-
-
-  # AWS SDK supports supports up to version 24.x of node.js. Therefore are unable to update for issue below
-  # until support is provided.
-  ## Node.js (node-pkg)
-  # ip-address
-  - id: CVE-2026-101910
-  - id: CVE-2026-101913
-  # undici
-  - id: CVE-2026-85024
+  # These are present in the official AWS CDK bootstrap templates.
+  - id: AWS-0030
+  - id: AWS-0033
+  - id: AWS-0089
