@@ -23,4 +23,6 @@ OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 
 INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-SleeperEnvironment\"].BuildEC2Id" "$OUTPUTS_FILE" --raw-output)
 
+echo "Stopping instance $INSTANCE_ID in environment $ENVIRONMENT_ID"
+
 aws ec2 stop-instances --instance-ids "$INSTANCE_ID" "$@"
