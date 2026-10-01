@@ -17,6 +17,7 @@ package sleeper.clients.query;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.api.QuerySender;
 import sleeper.clients.testutil.ExceptionWithOutput;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
@@ -47,10 +48,15 @@ import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.core.tracker.InMemoryQueryTracker;
+import sleeper.query.core.tracker.QueryState;
+import sleeper.query.core.tracker.QueryTrackerStore;
+import sleeper.query.core.tracker.TrackedQuery;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -86,6 +92,64 @@ public class QueryLambdaClientTest {
     private final InMemoryRowStore rowStore = new InMemoryRowStore();
     private final InMemoryQueryTracker queryTracker = new InMemoryQueryTracker(instanceProperties);
     private final List<Row> outputRows = new ArrayList<>();
+
+    @Test
+    void shouldReportSubQueryProgressWhileQueryIsInProgress() throws Exception {
+        // Given
+        // - A query tracker where the query is in progress with counts of finished sub-queries
+        // - Then completed when polled again
+        Schema schema = createSchemaWithKey("key");
+        createTable("test-table", schema);
+        QueryTrackerStore tracker = statusSequence(
+                trackedQuery(QueryState.IN_PROGRESS, 16L, 3L, 1L, 250L),
+                trackedQuery(QueryState.COMPLETED, 16L, 15L, 1L, 1000L)
+                        .toBuilder().rowCount(1000L).build());
+
+        // When
+        in.enterNextPrompts(
+                SEND_TO_S3_OPTION,
+                RANGE_QUERY_OPTION,
+                NO_OPTION, YES_OPTION,
+                "3", "6", "",
+                EXIT_OPTION);
+        runQueryClient(query -> {
+        }, tracker);
+
+        // Then
+        assertThat(out.toString())
+                .contains("Polling query tracker\n" +
+                        "Query in progress: 4 of 16 subqueries finished, 12 remaining, 250 rows output so far\n" +
+                        "Sleeping for 1 seconds\n")
+                .contains("Finished query processing with final state of: COMPLETED\n" +
+                        "Query returned 1000 rows");
+    }
+
+    @Test
+    void shouldNotReportSubQueryProgressWhenTheTrackerHoldsNoCounts() throws Exception {
+        // Given
+        Schema schema = createSchemaWithKey("key");
+        createTable("test-table", schema);
+        QueryTrackerStore tracker = statusSequence(
+                trackedQuery(QueryState.IN_PROGRESS, null, null, null, null),
+                trackedQuery(QueryState.COMPLETED, null, null, null, null));
+
+        // When
+        in.enterNextPrompts(
+                SEND_TO_S3_OPTION,
+                RANGE_QUERY_OPTION,
+                NO_OPTION, YES_OPTION,
+                "3", "6", "",
+                EXIT_OPTION);
+        runQueryClient(query -> {
+        }, tracker);
+
+        // Then
+        assertThat(out.toString())
+                .contains("Polling query tracker\n" +
+                        "Sleeping for 1 seconds\n")
+                .contains("Finished query processing with final state of: COMPLETED\n" +
+                        "Query returned 0 rows");
+    }
 
     @Test
     void shouldRunRangeQuery() throws Exception {
@@ -143,14 +207,59 @@ public class QueryLambdaClientTest {
     }
 
     private void runQueryClient() throws Exception {
+        runQueryClient(this::runQuery, queryTracker);
+    }
+
+    private void runQueryClient(QuerySender querySender, QueryTrackerStore trackerStore) throws Exception {
         try {
             new QueryLambdaClient(instanceProperties, tableIndex, tablePropertiesProvider(),
-                    this::runQuery, queryTracker,
+                    querySender, trackerStore,
                     in.consoleIn(), out.consoleOut())
                     .run();
         } catch (Exception e) {
             throw new ExceptionWithOutput(out, e);
         }
+    }
+
+    private QueryTrackerStore statusSequence(TrackedQuery... statuses) {
+        Deque<TrackedQuery> remaining = new ArrayDeque<>(List.of(statuses));
+        return new QueryTrackerStore() {
+            @Override
+            public TrackedQuery getStatus(String queryId) {
+                return remaining.poll();
+            }
+
+            @Override
+            public TrackedQuery getStatus(String queryId, String subQueryId) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public List<TrackedQuery> getAllQueries() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public List<TrackedQuery> getQueriesWithState(QueryState state) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public List<TrackedQuery> getFailedQueries() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+
+    private TrackedQuery trackedQuery(QueryState state, Long expected, Long succeeded, Long failed, Long rows) {
+        return TrackedQuery.builder()
+                .queryId("test-query")
+                .lastKnownState(state)
+                .expectedSubQueryCount(expected)
+                .succeededSubQueryCount(succeeded)
+                .failedSubQueryCount(failed)
+                .finishedSubQueryRowCount(rows)
+                .build();
     }
 
     private TablePropertiesProvider tablePropertiesProvider() {

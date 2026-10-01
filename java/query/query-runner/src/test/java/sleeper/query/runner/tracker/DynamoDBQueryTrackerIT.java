@@ -160,6 +160,20 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
     }
 
     @Test
+    public void shouldNotReportSubQueryProgressWhenSubQueryCountsWereNotTracked() throws QueryTrackerException {
+        // When the sub-queries were not registered with the tracker before running
+        queryTracker().queryInProgress(createQueryWithId("parent"));
+        queryTracker().queryInProgress(createSubQueryWithId("parent", "my-id"));
+
+        // Then
+        TrackedQuery status = queryTracker().getStatus("parent");
+        assertThat(status.getExpectedSubQueryCount()).isNull();
+        assertThat(status.getFinishedSubQueryCount()).isNull();
+        assertThat(status.getRemainingSubQueryCount()).isNull();
+        assertThat(status.getFinishedSubQueryRowCount()).isNull();
+    }
+
+    @Test
     public void shouldNotUpdateParentStateInTableWhenMoreChildrenAreYetToComplete() throws QueryTrackerException {
         // When
         queryTracker().queryInProgress(createQueryWithId("parent"));
@@ -400,6 +414,47 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         void setUp() {
             queryTracker().queryInProgress(parent);
             queryTracker().subQueriesCreated(parent, List.of(sub1, sub2));
+        }
+
+        @Test
+        void shouldReportProgressBeforeAnySubQueryFinishes() throws QueryTrackerException {
+            // When
+            TrackedQuery status = queryTracker().getStatus("parent");
+
+            // Then
+            assertThat(status.getExpectedSubQueryCount()).isEqualTo(2L);
+            assertThat(status.getFinishedSubQueryCount()).isEqualTo(0L);
+            assertThat(status.getRemainingSubQueryCount()).isEqualTo(2L);
+            assertThat(status.getFinishedSubQueryRowCount()).isEqualTo(0L);
+        }
+
+        @Test
+        void shouldReportProgressWhenSomeSubQueriesHaveFinished() throws QueryTrackerException {
+            // When
+            queryTracker().queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+
+            // Then
+            TrackedQuery status = queryTracker().getStatus("parent");
+            assertThat(status.getExpectedSubQueryCount()).isEqualTo(2L);
+            assertThat(status.getSucceededSubQueryCount()).isEqualTo(1L);
+            assertThat(status.getFailedSubQueryCount()).isEqualTo(0L);
+            assertThat(status.getFinishedSubQueryCount()).isEqualTo(1L);
+            assertThat(status.getRemainingSubQueryCount()).isEqualTo(1L);
+            assertThat(status.getFinishedSubQueryRowCount()).isEqualTo(10L);
+        }
+
+        @Test
+        void shouldReportProgressWhenASubQueryFailed() throws QueryTrackerException {
+            // When
+            queryTracker().queryFailed(sub1, new Exception("Fail"));
+
+            // Then
+            TrackedQuery status = queryTracker().getStatus("parent");
+            assertThat(status.getExpectedSubQueryCount()).isEqualTo(2L);
+            assertThat(status.getSucceededSubQueryCount()).isEqualTo(0L);
+            assertThat(status.getFailedSubQueryCount()).isEqualTo(1L);
+            assertThat(status.getFinishedSubQueryCount()).isEqualTo(1L);
+            assertThat(status.getRemainingSubQueryCount()).isEqualTo(1L);
         }
 
         @Test
