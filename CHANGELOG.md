@@ -10,15 +10,13 @@ available [here](docs/development/roadmap.md).
 
 ### 2nd October 2026
 
-This includes a migration of Rust builder images to Amazon Linux 2023 so that machines running on that image can run
-queries with the DataFusion data engine, a security improvement to run Docker containers as a non-root user, and several
-query bug fixes.
+This includes support for running the DataFusion data engine on Amazon Linux 2023. Docker containers now run as a non-root user, and there are several query bug fixes and improvements to make queries work at larger numbers of partitions.
 
 Security:
 - Docker containers now run as a dedicated non-root `sleeper` user instead of root. Custom base images must create a `sleeper` user and set `USER sleeper`.
 
-Build:
-- Rust builder images now use Amazon Linux 2023 instead of Debian Trixie, with a single consolidated build script `rust/builders/build.sh` replacing `buildAll.sh` and `buildAllSccache.sh`.
+Datafusion:
+- Support has been added for running the DataFusion data engine on Amazon Linux 2023.
 
 Bulk import:
 - Submitting a bulk import job from the Java client now generates a job ID if one is not set, validates the job ID, and returns it for tracking.
