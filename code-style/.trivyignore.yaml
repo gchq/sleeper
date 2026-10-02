@@ -11,9 +11,21 @@ vulnerabilities:
   - id: CVE-2026-6790
 
 
-  # Trivy is saying Jackson 2.22.2 is present in images, but Maven reports only 2.22.3 is used. This may be a temporary
-  # problem in GitHub Actions.
+  # Jackson 2.22.2 is bundled inside org.apache.parquet:parquet-jackson:1.18.1, relocated under shaded.parquet. This
+  # doesn't appear in the Maven dependency tree, but Trivy detects it from the bundled pom.properties files. We use
+  # Jackson 2.22.3 directly. These can be removed when Parquet releases a version bundling a fixed Jackson version.
 
+  # com.fasterxml.jackson.core:jackson-core
+  - id: CVE-2026-89407
+    purls:
+      - pkg:maven/com.fasterxml.jackson.core/jackson-core@2.22.2
+  - id: CVE-2026-89425
+    purls:
+      - pkg:maven/com.fasterxml.jackson.core/jackson-core@2.22.2
   # com.fasterxml.jackson.core:jackson-databind
   - id: CVE-2026-91776
+    purls:
+      - pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.22.2
   - id: CVE-2026-91777
+    purls:
+      - pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.22.2
