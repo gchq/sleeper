@@ -35,8 +35,11 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedAndFailedToStartIngestRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 
 public class IngestJobMessageHandlerTest {
 
@@ -200,12 +203,13 @@ public class IngestJobMessageHandlerTest {
         void shouldFailValidationWhenExpandingDirectoriesThrows() {
             //Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+            RuntimeException failure = new RuntimeException("Access Denied");
             IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = IngestJobMessageHandler.forIngestJob()
                     .tableIndex(tableIndex)
                     .ingestJobTracker(tracker)
                     .timeSupplier(() -> validationTime)
                     .expandDirectories(files -> {
-                        throw new RuntimeException("Access Denied");
+                        throw failure;
                     })
                     .build();
             String json = "{" +
@@ -213,14 +217,21 @@ public class IngestJobMessageHandlerTest {
                     "\"tableName\":\"test-table\"," +
                     "\"files\":[\"dir\"]" +
                     "}";
+            IngestJob expectedJob = IngestJob.builder()
+                    .id("test-job-id")
+                    .tableName("test-table")
+                    .tableId(tableId)
+                    .files(List.of("dir"))
+                    .build();
 
             // When / Then
-            IngestJobStatus expected = ingestJobStatus("test-job-id",
-                    rejectedRun("test-job-id", json, validationTime,
-                            "Error listing files. Reason: Access Denied"));
-            assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(tracker.getInvalidJobs()).containsExactly(expected);
-            assertThat(tracker.getAllJobs(tableId)).containsExactly(expected);
+            assertThatThrownBy(() -> ingestJobMessageHandler.deserialiseAndValidate(json))
+                    .isSameAs(failure);
+            assertThat(tracker.getInvalidJobs()).isEmpty();
+            assertThat(tracker.getAllJobs(tableId))
+                    .containsExactly(ingestJobStatus(expectedJob,
+                            acceptedAndFailedToStartIngestRun(expectedJob, validationTime, validationTime,
+                                    List.of("Access Denied"))));
         }
 
         @Test

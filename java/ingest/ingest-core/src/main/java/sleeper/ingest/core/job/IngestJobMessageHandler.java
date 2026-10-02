@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 
 import java.time.Instant;
@@ -44,6 +45,7 @@ import static sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent.ing
  */
 public class IngestJobMessageHandler<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobMessageHandler.class);
+    private final Supplier<String> jobRunIdSupplier;
     private final TableIndex tableIndex;
     private final IngestJobTracker ingestJobTracker;
     private final Function<String, T> deserialiser;
@@ -54,6 +56,7 @@ public class IngestJobMessageHandler<T> {
     private final Supplier<Instant> timeSupplier;
 
     private IngestJobMessageHandler(Builder<T> builder) {
+        jobRunIdSupplier = Objects.requireNonNull(builder.jobRunIdSupplier, "jobRunIdSupplier must not be null");
         tableIndex = Objects.requireNonNull(builder.tableIndex, "tableIndex must not be null");
         ingestJobTracker = Objects.requireNonNull(builder.ingestJobTracker, "ingestJobTracker must not be null");
         deserialiser = Objects.requireNonNull(builder.deserialiser, "deserialiser must not be null");
@@ -153,14 +156,26 @@ public class IngestJobMessageHandler<T> {
             expanded = expandDirectories.expandPaths(files);
         } catch (RuntimeException e) {
             LOGGER.warn("Failed expanding directories for job {}", jobId, e);
+            String jobRunId = jobRunIdSupplier.get();
+            Instant failureTime = timeSupplier.get();
             ingestJobTracker.jobValidated(
-                    refusedEventBuilder()
+                    IngestJobValidatedEvent.builder()
                             .jobId(jobId)
                             .tableId(table.getTableUniqueId())
-                            .jsonMessage(message)
-                            .reasons("Error listing files. Reason: " + e.getMessage())
+                            .fileCount(files.size())
+                            .validationTime(failureTime)
+                            .reasons(List.of())
+                            .jobRunId(jobRunId)
                             .build());
-            return Optional.empty();
+            ingestJobTracker.jobFailed(
+                    IngestJobFailedEvent.builder()
+                            .jobId(jobId)
+                            .tableId(table.getTableUniqueId())
+                            .jobRunId(jobRunId)
+                            .failureTime(failureTime)
+                            .failure(e)
+                            .build());
+            throw e;
         }
 
         if (!expanded.missingPaths().isEmpty()) {
@@ -213,6 +228,7 @@ public class IngestJobMessageHandler<T> {
         private BiFunction<T, IngestJob, T> applyIngestJobChanges;
         private ExpandDirectories expandDirectories;
         private Supplier<String> jobIdSupplier = () -> UUID.randomUUID().toString();
+        private Supplier<String> jobRunIdSupplier = () -> UUID.randomUUID().toString();
         private Supplier<Instant> timeSupplier = Instant::now;
 
         private Builder() {
@@ -310,6 +326,17 @@ public class IngestJobMessageHandler<T> {
 
         public IngestJobMessageHandler<T> build() {
             return new IngestJobMessageHandler<>(this);
+        }
+
+        /**
+         * Sets the job run ID supplier. Used to generate a run ID when a job fails during validation.
+         *
+         * @param  jobRunIdSupplier the job run ID supplier
+         * @return                  the builder
+         */
+        public Builder<T> jobRunIdSupplier(Supplier<String> jobRunIdSupplier) {
+            this.jobRunIdSupplier = jobRunIdSupplier;
+            return this;
         }
     }
 }
