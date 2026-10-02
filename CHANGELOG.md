@@ -15,7 +15,7 @@ This includes support for running the DataFusion data engine on Amazon Linux 202
 Security:
 - Docker containers now run as a dedicated non-root `sleeper` user instead of root. Custom base images must create a `sleeper` user and set `USER sleeper`.
 
-Datafusion:
+DataFusion:
 - Support has been added for running the DataFusion data engine on Amazon Linux 2023.
 
 Bulk import:
