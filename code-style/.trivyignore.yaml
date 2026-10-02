@@ -9,3 +9,11 @@ vulnerabilities:
   - id: CVE-2026-10050
   #  org.eclipse.jetty:jetty-server
   - id: CVE-2026-6790
+
+
+  # Trivy is saying Jackson 2.22.2 is present in images, but Maven reports only 2.22.3 is used. This may be a temporary
+  # problem in GitHub Actions.
+
+  # com.fasterxml.jackson.core:jackson-databind
+  - id: CVE-2026-91776
+  - id: CVE-2026-91777
