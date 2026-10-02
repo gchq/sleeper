@@ -34,7 +34,7 @@ import java.util.Objects;
  * A model for entries in the query tracker DynamoDB table. Will be mapped to {@link TrackedQuery} objects.
  */
 class DynamoDBQueryTrackerEntry {
-
+    private static final Long NUM_SECONDS_IN_A_DAY = 60 * 60 * 24L;
     static final String QUERY_ID = "queryId";
     static final String LAST_UPDATE_TIME = "lastUpdateTime";
     static final String LAST_KNOWN_STATE = "lastKnownState";
@@ -87,12 +87,15 @@ class DynamoDBQueryTrackerEntry {
 
     public Map<String, AttributeValueUpdate> getValueUpdate(long queryTrackerTTL) {
         Map<String, AttributeValueUpdate> valueUpdate = new HashMap<>();
-        long now = System.currentTimeMillis() / 1000;
-        long expiryDate = now + (3600 * 24 * queryTrackerTTL);
+        long now = System.currentTimeMillis();
+        // Last update time is stored in milliesconds.
         valueUpdate.put(LAST_UPDATE_TIME, AttributeValueUpdate.builder()
                 .value(AttributeValue.fromN(String.valueOf(now)))
                 .action(AttributeAction.PUT)
                 .build());
+        // The expiry date is stored in epoch seconds so divide now by 1000; the queryTrackerTTL is in days
+        // so add NUM_SECONDS_IN_A_DAY * queryTrackerTTL.
+        long expiryDate = (now / 1000) + (NUM_SECONDS_IN_A_DAY * queryTrackerTTL);
         valueUpdate.put(EXPIRY_DATE, AttributeValueUpdate.builder()
                 .value(AttributeValue.fromN(String.valueOf(expiryDate)))
                 .action(AttributeAction.PUT)
