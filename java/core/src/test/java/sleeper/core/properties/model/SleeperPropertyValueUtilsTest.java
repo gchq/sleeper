@@ -55,6 +55,17 @@ class SleeperPropertyValueUtilsTest {
         }
 
         @Test
+        void shouldValidateDoubleInInclusiveRange() {
+            // When/Then
+            assertThat(SleeperPropertyValueUtils.isDoubleInRangeInclusive("0", 0.0, 1.0)).isTrue();
+            assertThat(SleeperPropertyValueUtils.isDoubleInRangeInclusive("0.5", 0.0, 1.0)).isTrue();
+            assertThat(SleeperPropertyValueUtils.isDoubleInRangeInclusive("1", 0.0, 1.0)).isTrue();
+            assertThat(SleeperPropertyValueUtils.isDoubleInRangeInclusive("-0.1", 0.0, 1.0)).isFalse();
+            assertThat(SleeperPropertyValueUtils.isDoubleInRangeInclusive("1.1", 0.0, 1.0)).isFalse();
+            assertThat(SleeperPropertyValueUtils.isDoubleInRangeInclusive("ABC", 0.0, 1.0)).isFalse();
+        }
+
+        @Test
         void shouldValidAllCorrectVariantsForIsPositiveIntegerOrNull() {
             // When/Then
             assertThat(SleeperPropertyValueUtils.isPositiveIntegerOrNull(null))

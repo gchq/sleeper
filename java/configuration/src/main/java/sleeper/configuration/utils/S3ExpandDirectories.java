@@ -16,10 +16,14 @@
 package sleeper.configuration.utils;
 
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Discovers files under given paths in S3. This is used when submitting files for ingest to a Sleeper table, to allow
@@ -57,14 +61,39 @@ public class S3ExpandDirectories {
     }
 
     private List<S3FileDetails> listFiles(S3Path path) {
+        String pathInBucket = path.pathInBucket();
+        if (pathInBucket.isEmpty() || pathInBucket.endsWith("/")) {
+            return listFilesUnderPrefix(path, pathInBucket);
+        }
+        return Stream.concat(
+                findFileWithExactKey(path).stream(),
+                listFilesUnderPrefix(path, pathInBucket + "/").stream())
+                .toList();
+    }
+
+    private List<S3FileDetails> listFilesUnderPrefix(S3Path path, String prefix) {
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(ListObjectsV2Request.builder()
                 .bucket(path.bucket())
-                .prefix(path.pathInBucket())
+                .prefix(prefix)
                 .build());
         return response.contents().stream()
                 .filter(s3Object -> checkIsParquetFile(s3Object.key()))
                 .map(s3Object -> new S3FileDetails(path.bucket(), s3Object.key(), s3Object.size()))
                 .toList();
+    }
+
+    private Optional<S3FileDetails> findFileWithExactKey(S3Path path) {
+        if (!checkIsParquetFile(path.pathInBucket())) {
+            return Optional.empty();
+        }
+        try {
+            HeadObjectResponse response = s3Client.headObject(builder -> builder
+                    .bucket(path.bucket())
+                    .key(path.pathInBucket()));
+            return Optional.of(new S3FileDetails(path.bucket(), path.pathInBucket(), response.contentLength()));
+        } catch (NoSuchKeyException e) {
+            return Optional.empty();
+        }
     }
 
     private static boolean checkIsNotCrcFile(String key) {

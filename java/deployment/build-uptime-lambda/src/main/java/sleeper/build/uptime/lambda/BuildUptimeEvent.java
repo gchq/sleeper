@@ -55,7 +55,7 @@ public class BuildUptimeEvent {
 
     @Override
     public String toString() {
-        return "BuildUptimeEvent{operation=" + operation + ", ec2Ids=" + ec2Ids + ", rules=" + rules + "}";
+        return "BuildUptimeEvent{operation=" + operation + ", condition=" + condition + ", testBucket=" + testBucket + ", ec2Ids=" + ec2Ids + ", rules=" + rules + "}";
     }
 
     public static Builder start() {

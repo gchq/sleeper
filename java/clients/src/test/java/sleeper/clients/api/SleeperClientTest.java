@@ -267,6 +267,76 @@ class SleeperClientTest {
     }
 
     @Test
+    void shouldGenerateIdForBulkImportJobWhenIdIsNull() {
+        // Given
+        BulkImportPlatform platform = BulkImportPlatform.NonPersistentEMR;
+        BulkImportJob job = BulkImportJob.builder()
+                .tableName("import-table")
+                .files(List.of("filename.parquet"))
+                .build();
+
+        // When
+        String jobId = sleeperClient.bulkImportFromFiles(platform, job);
+
+        // Then
+        assertThat(jobId).isNotBlank();
+        assertThat(instance.bulkImportQueues()).isEqualTo(
+                Map.of(platform, List.of(job.toBuilder().id(jobId).build())));
+    }
+
+    @Test
+    void shouldReturnExistingIdForBulkImportJob() {
+        // Given
+        BulkImportPlatform platform = BulkImportPlatform.NonPersistentEMR;
+        BulkImportJob job = BulkImportJob.builder()
+                .id("my-job")
+                .tableName("import-table")
+                .files(List.of("filename.parquet"))
+                .build();
+
+        // When
+        String jobId = sleeperClient.bulkImportFromFiles(platform, job);
+
+        // Then
+        assertThat(jobId).isEqualTo("my-job");
+        assertThat(instance.bulkImportQueues()).isEqualTo(Map.of(platform, List.of(job)));
+    }
+
+    @Test
+    void shouldRejectInvalidBulkImportJobIdBeforeSending() {
+        // Given
+        BulkImportPlatform platform = BulkImportPlatform.NonPersistentEMR;
+        BulkImportJob job = BulkImportJob.builder()
+                .id("Invalid_Job")
+                .tableName("import-table")
+                .files(List.of("filename.parquet"))
+                .build();
+
+        // When / Then
+        assertThatThrownBy(() -> sleeperClient.bulkImportFromFiles(platform, job))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Job Ids must only contain lowercase alphanumerics and dashes.");
+        assertThat(instance.bulkImportQueues()).isEmpty();
+    }
+
+    @Test
+    void shouldRejectBulkImportJobIdLongerThan63CharactersBeforeSending() {
+        // Given
+        BulkImportPlatform platform = BulkImportPlatform.NonPersistentEMR;
+        BulkImportJob job = BulkImportJob.builder()
+                .id("a".repeat(64))
+                .tableName("import-table")
+                .files(List.of("filename.parquet"))
+                .build();
+
+        // When / Then
+        assertThatThrownBy(() -> sleeperClient.bulkImportFromFiles(platform, job))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Job IDs are only allowed to be up to 63 characters long.");
+        assertThat(instance.bulkImportQueues()).isEmpty();
+    }
+
+    @Test
     void shouldSendParquetFilesToIngestBatcher() {
         String tableName = "ingest-table";
         List<String> fileList = List.of("filename1.parquet", "filename2.parquet");

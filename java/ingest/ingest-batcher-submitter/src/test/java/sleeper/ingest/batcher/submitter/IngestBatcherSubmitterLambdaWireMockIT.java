@@ -35,8 +35,9 @@ import java.time.Instant;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.findUnmatchedRequests;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.head;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -66,7 +67,7 @@ public class IngestBatcherSubmitterLambdaWireMockIT {
     void shouldHandleNetworkErrorCorrectly(WireMockRuntimeInfo runtimeInfo) {
         // Given
         // Mock Network error
-        stubFor(get("/test-bucket?list-type=2&prefix=test-file-1.parquet")
+        stubFor(head(urlEqualTo("/test-bucket/test-file-1.parquet"))
                 .willReturn(aResponse().withStatus(500)));
 
         // Define job

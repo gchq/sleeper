@@ -46,8 +46,11 @@ cleanDisk() {
     echo "Cleaning up disk to free space"
     mkdir -p "$MVN_DIR_HOST"
     rm -rf "$MVN_DIR_HOST"/*
+    # Delete and recreate the cache directory rather than just its contents, so that we take
+    # ownership of it if anything left it owned by root. It's bind mounted into the builder
+    # container, where a root-owned cache directory fails any build that needs to write to it.
+    sudo rm -rf "$CACHE_DIR_HOST"
     mkdir -p "$CACHE_DIR_HOST"
-    rm -rf "$CACHE_DIR_HOST"/*
     mkdir -p "$RUST_TARGET_DIR_HOST"
     sudo rm -rf "$RUST_TARGET_DIR_HOST"/*
     echo "Finding old logs to delete under $LOGS_DIR_HOST"

@@ -115,6 +115,46 @@ class PersistentEmrPlatformExecutorWiremockIT {
     }
 
     @Test
+    void shouldFindClusterOnSecondPage(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        BulkImportJob job = jobForTable()
+                .id("test-job")
+                .files(List.of("file.parquet"))
+                .build();
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.ListClusters"))
+                .inScenario("pagination")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willSetStateTo("second-page")
+                .willReturn(aResponse().withStatus(200)
+                        .withBody("{\"Clusters\":[{\"Id\":\"other-cluster-id\",\"Name\":\"other-cluster\"}],\"Marker\":\"next-page\"}")));
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.ListClusters"))
+                .inScenario("pagination")
+                .whenScenarioStateIs("second-page")
+                .willReturn(aResponse().withStatus(200)
+                        .withBody(exampleString("example/persistent-emr/listclusters-response.json"))));
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.AddJobFlowSteps"))
+                .willReturn(aResponse().withStatus(200)));
+
+        // When
+        createExecutor(runtimeInfo).runJob(job, "test-run");
+
+        // Then
+        assertThat(findAll(postRequestedFor(urlEqualTo("/"))
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.ListClusters"))))
+                .hasSize(2)
+                .anySatisfy(request -> assertThatJson(request.getBodyAsString())
+                        .isEqualTo("{\"ClusterStates\":[\"BOOTSTRAPPING\",\"RUNNING\",\"STARTING\",\"WAITING\"]}"))
+                .anySatisfy(request -> assertThatJson(request.getBodyAsString())
+                        .isEqualTo("{\"ClusterStates\":[\"BOOTSTRAPPING\",\"RUNNING\",\"STARTING\",\"WAITING\"],\"Marker\":\"next-page\"}"));
+        assertThat(findAll(postRequestedFor(urlEqualTo("/"))
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.AddJobFlowSteps"))))
+                .hasSize(1);
+    }
+
+    @Test
     void shouldRetryWhenRateLimitedOnListClusters(WireMockRuntimeInfo runtimeInfo) {
         // Given
         BulkImportJob job = jobForTable()

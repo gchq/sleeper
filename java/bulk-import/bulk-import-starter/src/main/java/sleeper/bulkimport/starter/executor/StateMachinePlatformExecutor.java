@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
 import static sleeper.core.properties.instance.EKSProperty.EKS_IS_NATIVE_LIBS_IMAGE;
@@ -55,7 +56,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         String stateMachineArn = instanceProperties.get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);
         BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         Map<String, Object> input = new HashMap<>();
-        List<String> args = constructArgs(arguments, stateMachineArn);
+        List<String> args = constructArgs(arguments, instanceProperties.get(BULK_IMPORT_EKS_CLUSTER_NAME) + "-EKS");
         String ephemeralStorage = instanceProperties.get(BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE);
         input.put("job", bulkImportJob);
         input.put("jobPodPrefix", jobPodPrefix(bulkImportJob));

@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.37.5</version>
+    <version>0.38.0</version>
 
     <modules>
         <module>analytics-integration</module>
@@ -83,7 +83,7 @@
         We upgraded to the latest version from woodstox-core 5.4.0.
         -->
         <woodstox.version>7.2.2</woodstox.version>
-        <woodstox.stax2.version>4.3.0</woodstox.stax2.version>
+        <woodstox.stax2.version>4.3.1</woodstox.stax2.version>
         <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.1. -->
         <ivy.version>2.6.0</ivy.version>
         <!--
@@ -94,12 +94,12 @@
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.3</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
-        <protobuf.version>4.36.1</protobuf.version>
+        <protobuf.version>4.36.2</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
-        <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of LZ4 Java with vulnerabilities. -->
         <org.lz4.version>1.8.1</org.lz4.version>
-        <yawk.lz4.version>1.11.2</yawk.lz4.version>
+        <yawk.lz4.version>1.12.0</yawk.lz4.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.2</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
@@ -114,7 +114,7 @@
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict.
         -->
-        <kotlin.version>2.4.10</kotlin.version>
+        <kotlin.version>2.4.20</kotlin.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict within Spark, and with Trino.
@@ -124,10 +124,10 @@
         Spark declares an old version of RoaringBitmap with vulnerabilities. We have upgraded the version
         ahead of the Spark version to address detected vulnerabilities.
         -->
-        <roaringbitmap.version>1.6.21</roaringbitmap.version>
+        <roaringbitmap.version>1.6.23</roaringbitmap.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.6.3</logback.version>
+        <logback.version>1.6.4</logback.version>
         <!--
         Spark declares an old version of Log4J with vulnerabilities. We exclude some of the Log4J dependencies as we use
         SLF4J, but we can't exclude them from EMR.
@@ -141,26 +141,31 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.54.13</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.55.6</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
-        At the time of writing it's not compatible with the latest version.
-        We're getting different versions mixed together in the classpath and seeing the following error when
-        BulkImportJobDriver.start tries to create an SqsClient:
+        It's not compatible with the latest version, so we match the version that it provides.
+        If we don't, we get different versions mixed together in the classpath. With a version that was too new we
+        saw the following error when BulkImportJobDriver.start tries to create an SqsClient:
         java.lang.NoSuchFieldError: AWS_AUTH_SCHEME_PREFERENCE
         at software.amazon.awssdk.awscore.auth.AuthSchemePreferenceResolver.fromSystemSetting(AuthSchemePreferenceResolver.java:75)
-        The old version of the library is coming from this file in the EMR Serverless Docker image:
-        /usr/share/aws/emr/serverless-goodies/lib/emr-serverless-spark-goodies-2.19.0.jar
-        To find the version below, we logged out the code location for the class in the Spark
-        driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
+        The version of the library is coming from this file in the EMR Serverless Docker image:
+        /usr/share/aws/emr/serverless-goodies/lib/emr-serverless-spark-goodies-2.22.0.jar
+        The image must match the EMR release label we deploy with, which defaults to the value of the instance
+        property sleeper.default.table.bulk.import.emr.release.label. To find the version below, pull the image
+        public.ecr.aws/emr-serverless/spark/emr-7.12.0:latest for the platform linux/amd64, then read this file
+        from inside the jar above:
+        META-INF/maven/software.amazon.awssdk/sdk-core/pom.properties
+        This is also checked in .github/scripts/checkVersionNumber.sh so that Dependabot can't upgrade it. Only change
+        it when deliberately matching a version from EMR Serverless, and verify with EmrServerlessBulkImportST.
         -->
-        <aws-java-sdk-v2.bulk-import.version>2.54.13</aws-java-sdk-v2.bulk-import.version>
+        <aws-java-sdk-v2.bulk-import.version>2.35.5</aws-java-sdk-v2.bulk-import.version>
         <aws-crt.version>0.48.4</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
-        <aws-lambda-java-runtime-interface-client.version>2.12.0</aws-lambda-java-runtime-interface-client.version>
+        <aws-lambda-java-runtime-interface-client.version>2.12.1</aws-lambda-java-runtime-interface-client.version>
         <aws-lambda-powertools.version>2.10.0</aws-lambda-powertools.version>
-        <commons-lang3.version>3.20.0</commons-lang3.version>
+        <commons-lang3.version>3.21.0</commons-lang3.version>
         <commons-codec.version>1.22.1</commons-codec.version>
         <commons-io.version>2.22.0</commons-io.version>
         <commons-configuration.version>2.15.1</commons-configuration.version>
@@ -174,22 +179,22 @@
         <httpcore4.version>4.4.16</httpcore4.version>
         <httpclient4.version>4.5.14</httpclient4.version>
         <httpclient5.version>5.6.4</httpclient5.version>
-        <httpcore5.version>5.4.3</httpcore5.version>
+        <httpcore5.version>5.4.4</httpcore5.version>
         <jaxb.version>2.3.1</jaxb.version>
-        <jline.version>4.4.2</jline.version>
+        <jline.version>4.4.6</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-16</zstd-jni.version>
+        <zstd-jni.version>1.5.7-20</zstd-jni.version>
         <airlift.units.version>1.10</airlift.units.version>
         <airlift.slice.version>2.3</airlift.slice.version>
         <!-- Trino and its dependencies declare different versions of Airlift. -->
         <airlift.version>241</airlift.version>
         <!-- Trino and its dependencies declare different versions of OpenTelemetry. -->
-        <opentelemetry.version>1.65.0</opentelemetry.version>
+        <opentelemetry.version>1.66.0</opentelemetry.version>
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
-        <zookeeper.version>3.9.5</zookeeper.version>
-        <jackson.version>2.22.2</jackson.version>
+        <zookeeper.version>3.9.6</zookeeper.version>
+        <jackson.version>2.22.3</jackson.version>
         <jackson.annotations.version>2.22</jackson.annotations.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.13.0</jjwt.build.version>
@@ -199,17 +204,17 @@
         <google.http-client.version>2.2.0</google.http-client.version>
         <google.grpc.version>1.84.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.268.0</cdk.version>
+        <cdk.version>2.271.0</cdk.version>
         <constructs.version>10.8.1</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
         <jsii.version>1.140.0</jsii.version>
         <gson.version>2.14.0</gson.version>
-        <slf4j.version>2.0.19</slf4j.version>
+        <slf4j.version>2.0.20</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <aspectj.version>1.9.25.1</aspectj.version>
-        <pty4j.version>0.13.12</pty4j.version>
+        <pty4j.version>0.13.13</pty4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
-        <bouncycastle.version>1.85</bouncycastle.version>
+        <bouncycastle.version>1.86</bouncycastle.version>
         <athena.version>2025.15.1</athena.version>
         <trino.version>435</trino.version>
         <!-- Trino requires an old version of JGraphT -->
@@ -218,20 +223,20 @@
         <!-- This is not managed for the whole project as it conflicts with Trino. -->
         <jersey.build.version>4.0.0</jersey.build.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
-        <netty.version>4.2.17.Final</netty.version>
+        <netty.version>4.2.18.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
-        <netty-tcnative.version>2.0.83.Final</netty-tcnative.version>
+        <netty-tcnative.version>2.0.84.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>
         <jakarta.activation.version>2.1.4</jakarta.activation.version>
-        <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
+        <jakarta.xml.bind.version>4.0.0</jakarta.xml.bind.version>
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.3</jgrapht.version>
         <apfloat.version>1.16.0</apfloat.version>
-        <joda-time.version>2.14.3</joda-time.version>
+        <joda-time.version>2.14.4</joda-time.version>
         <json-smart.version>2.6.0</json-smart.version>
-        <jnr.ffi.version>2.3.1</jnr.ffi.version>
+        <jnr.ffi.version>2.3.3</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <docker-java.version>3.7.1</docker-java.version>
         <jib.version>0.28.2</jib.version>
@@ -241,15 +246,15 @@
         <!-- Testing -->
         <junit.version>5.14.4</junit.version>
         <junit.platform.version>1.14.4</junit.platform.version>
-        <mockito.version>5.23.0</mockito.version>
+        <mockito.version>5.24.0</mockito.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <handlebars.version>4.5.4</handlebars.version>
+        <handlebars.version>4.5.5</handlebars.version>
         <assertj.version>3.27.7</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>31.0.0</approvaltests.version>
         <json-path.version>3.0.0</json-path.version>
-        <xmlunit.version>2.13.0</xmlunit.version>
+        <xmlunit.version>2.14.0</xmlunit.version>
         <jsonunit.version>6.2.0</jsonunit.version>
         <checkstyle.version>12.3.1</checkstyle.version>
         <sleeper.system.test.short.id />
@@ -283,9 +288,9 @@
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>13.0.0</dependency-check.plugin.version>
         <site.plugin.version>3.22.0</site.plugin.version>
-        <exec.plugin.version>3.6.3</exec.plugin.version>
+        <exec.plugin.version>3.6.4</exec.plugin.version>
         <resources.plugin.version>3.5.0</resources.plugin.version>
-        <deploy.plugin.version>3.1.4</deploy.plugin.version>
+        <deploy.plugin.version>3.2.0</deploy.plugin.version>
         <source.plugin.version>3.4.0</source.plugin.version>
         <javadoc.plugin.version>3.12.0</javadoc.plugin.version>
         <!--

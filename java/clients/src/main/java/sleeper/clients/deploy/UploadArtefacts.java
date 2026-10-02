@@ -63,13 +63,13 @@ public class UploadArtefacts {
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
             .systemArguments(List.of("scripts directory"))
             .options(List.of(
-                    CommandOption.shortOption('p', "properties"),
-                    CommandOption.shortOption('i', "id"),
-                    CommandOption.longFlag("create-builder"),
                     CommandOption.longOption("base-image-registry"),
+                    CommandOption.longOption("cdk-app"),
+                    CommandOption.longFlag("create-builder"),
                     CommandOption.longFlag("create-deployment"),
-                    CommandOption.shortOption('u', "upload"),
-                    CommandOption.longOption("cdk-app")))
+                    CommandOption.shortOption('i', "id"),
+                    CommandOption.shortOption('p', "properties"),
+                    CommandOption.shortOption('u', "upload")))
             .helpSummary("Uploads jars and Docker images to AWS. You must set either an instance properties file " +
                     "or an artefacts deployment ID to upload to.\n" +
                     "\n" +
@@ -79,13 +79,17 @@ public class UploadArtefacts {
                     "CDK app directly, you can then use this tool to upload the needed artefacts to that " +
                     "deployment.\n" +
                     "\n" +
-                    "--properties, -p\n" +
-                    "An instance properties file to read configuration from. If you do not also set the " +
-                    "artefacts deployment ID, it will be read from this file, defaulting to the instance ID. " +
-                    "Docker images that are not required to deploy this instance will not be uploaded.\n" +
+                    "--base-image-registry <registry-prefix>\n" +
+                    "By default, if you're uploading from a local build, a local Docker registry will be created " +
+                    "to hold base images for further builds. This will not be used when retrieving images from a " +
+                    "remote repository. If you set up a suitable registry yourself, you can use " +
+                    "--base-image-registry <registry-prefix> to use that instead.\n" +
                     "\n" +
-                    "--id, -i\n" +
-                    "An artefacts deployment ID to upload to. All Docker images will be uploaded.\n" +
+                    "--cdk-app\n" +
+                    "By default we include images required for a normal Sleeper instance deployment. Other " +
+                    "deployment types may need different Docker images, in which case you can set this to a CDK " +
+                    "app that requires extra images.\n" +
+                    "Valid values: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance() + "\n" +
                     "\n" +
                     "--create-builder\n" +
                     "By default, if you're uploading from a local build, a Docker builder will be created " +
@@ -93,25 +97,21 @@ public class UploadArtefacts {
                     "remote repository. If you set up a suitable builder yourself instead, you can use " +
                     "--create-builder=false to turn off this behaviour.\n" +
                     "\n" +
-                    "--base-image-registry <registry-prefix>\n" +
-                    "By default, if you're uploading from a local build, a local Docker registry will be created " +
-                    "to hold base images for further builds. This will not be used when retrieving images from a " +
-                    "remote repository. If you set up a suitable registry yourself, you can use " +
-                    "--base-image-registry <registry-prefix> to use that instead.\n" +
-                    "\n" +
                     "--create-deployment\n" +
                     "By default, we assume you have deployed an artefacts deployment separately. If you set this " +
                     "flag, this tool will deploy a new artefacts CDK deployment for you.\n" +
                     "\n" +
+                    "--id, -i\n" +
+                    "An artefacts deployment ID to upload to. All Docker images will be uploaded.\n" +
+                    "\n" +
+                    "--properties, -p\n" +
+                    "An instance properties file to read configuration from. If you do not also set the " +
+                    "artefacts deployment ID, it will be read from this file, defaulting to the instance ID. " +
+                    "Docker images that are not required to deploy this instance will not be uploaded.\n" +
+                    "\n" +
                     "--upload, -u\n" +
                     "By default, all artefacts are uploaded. You can use \"--upload jars\" to only upload the " +
-                    "jars, or \"--upload images\" to only upload the container images.\n" +
-                    "\n" +
-                    "--cdk-app\n" +
-                    "By default we include images required for a normal Sleeper instance deployment. Other " +
-                    "deployment types may need different Docker images, in which case you can set this to a CDK " +
-                    "app that requires extra images.\n" +
-                    "Valid values: " + SleeperInternalCdkApp.describeCdkAppsDeployingSleeperInstance())
+                    "jars, or \"--upload images\" to only upload the container images.")
             .build();
 
     public static Arguments readArguments(CommandArguments arguments, Function<Path, InstanceProperties> loadInstanceProperties) {

@@ -34,8 +34,86 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 RUNNER_PATH="$THIS_DIR/runner"
 HOME_RUNNER_PATH="$HOME/.sleeper/runner"
 if [ ! -f "$RUNNER_PATH/Dockerfile" ]; then
-    RUNNER_PATH="$HOME_RUNNER_PATH"
+  RUNNER_PATH="$HOME_RUNNER_PATH"
 fi
+
+DOCKER_TOOLS_CONFIG_DIR="$HOME/.sleeper/docker-tools"
+
+# Allow setting of registry to pull docker images from
+REGISTRY_CONFIG_PATH="$DOCKER_TOOLS_CONFIG_DIR/registry"
+DEFAULT_REGISTRY="ghcr.io/gchq"
+get_registry() {
+  if [ -f "$REGISTRY_CONFIG_PATH" ]; then
+    cat "$REGISTRY_CONFIG_PATH"
+  else
+    echo "$DEFAULT_REGISTRY"
+  fi
+}
+
+set_registry() {
+  mkdir -p "$DOCKER_TOOLS_CONFIG_DIR"
+  echo "$1" > "$REGISTRY_CONFIG_PATH"
+  echo "Registry set to: $1"
+}
+
+# Allow using the version of Sleeper in a local repository checkout, instead of always pulling latest
+USE_LOCAL_VERSION_CONFIG_PATH="$DOCKER_TOOLS_CONFIG_DIR/use-local-version"
+ISOLATE_MVN_CONFIG_PATH="$DOCKER_TOOLS_CONFIG_DIR/isolate-mvn"
+LOCAL_REPO_CONFIG_PATH="$HOME/.sleeper/local-repo"
+
+get_version_tag() {
+  if [ -f "$USE_LOCAL_VERSION_CONFIG_PATH" ] && [ "$(cat "$USE_LOCAL_VERSION_CONFIG_PATH")" == "true" ]; then
+    if [ ! -f "$LOCAL_REPO_CONFIG_PATH" ]; then
+      echo "Error: the local version requires the CLI to have been installed with --useLocalRepo." >&2
+      exit 1
+    fi
+    LOCAL_REPO=$(<"$LOCAL_REPO_CONFIG_PATH")
+    sed -n 's:.*<version>\(.*\)</version>.*:\1:p' "$LOCAL_REPO/java/pom.xml" | head -n1
+  else
+    echo "latest"
+  fi
+}
+
+get_isolate_mvn() {
+  if [ ! -f "$ISOLATE_MVN_CONFIG_PATH" ]; then
+    echo "false"
+  else
+    cat "$ISOLATE_MVN_CONFIG_PATH"
+  fi
+}
+
+set_use_local_version() {
+  if [ "$1" == "true" ] && [ ! -f "$LOCAL_REPO_CONFIG_PATH" ]; then
+    echo "Error: the local version requires the CLI to have been installed with --useLocalRepo," >&2
+    echo "as the version is read from the repository's java/pom.xml." >&2
+    exit 1
+  fi
+  mkdir -p "$DOCKER_TOOLS_CONFIG_DIR"
+  echo "$1" > "$USE_LOCAL_VERSION_CONFIG_PATH"
+  echo "Use local version set to: $1"
+}
+
+set_isolate_mvn() {
+  if [ "$1" != "true" ] && [ "$1" != "false" ]; then
+    echo "Isolate Maven must be true or false, found: $1" >&2
+    exit 1
+  fi
+  mkdir -p "$DOCKER_TOOLS_CONFIG_DIR"
+  echo "$1" > "$ISOLATE_MVN_CONFIG_PATH"
+  echo "Isolate Maven set to: $1"
+}
+
+# Report the checkout an install is tied to, so any mismatch with the images being pulled is visible
+echo_local_repo_checkout() {
+  local LOCAL_REPO=$1
+  echo "Local repository: $LOCAL_REPO"
+  local BRANCH COMMIT
+  BRANCH=$(git -C "$LOCAL_REPO" rev-parse --abbrev-ref HEAD 2> /dev/null) || BRANCH=""
+  COMMIT=$(git -C "$LOCAL_REPO" rev-parse --short HEAD 2> /dev/null) || COMMIT=""
+  if [ -n "$COMMIT" ]; then
+    echo "Checked out at $BRANCH ($COMMIT)"
+  fi
+}
 
 run_in_docker() {
   local RUN_PARAMS
@@ -44,7 +122,11 @@ run_in_docker() {
     RUN_PARAMS+=(-it)
   fi
   local TEMP_DIR=$(mktemp -d)
+  # Create the directories we bind mount below. If we left this to Docker, it would create any
+  # missing ones as root, and the non-root user in the container would not be able to write to them.
   mkdir -p "$HOME/.aws"
+  mkdir -p "$HOME/.ssh"
+  mkdir -p "$HOME/.cache"
   RUN_PARAMS+=(
     --rm
     --add-host "host.docker.internal=host-gateway"
@@ -108,12 +190,18 @@ run_in_environment_docker() {
 run_in_builder_docker() {
   build_temp_runner_image sleeper-builder:current
   mkdir -p "$HOME/.sleeper/builder"
-  mkdir -p "$HOME/.m2"
+  local BUILDER_ARGS=(
+    -v "$HOME/.sleeper/builder:/sleeper-builder"
+    -e HOST_MOUNT_PATH="$HOME/.sleeper/builder"
+    -e CONTAINER_MOUNT_PATH=/sleeper-builder
+  )
+  local ISOLATE_MVN=$(get_isolate_mvn)
+  if [ "$ISOLATE_MVN" == "false" ]; then
+    mkdir -p "$HOME/.m2"
+    BUILDER_ARGS+=(-v "$HOME/.m2:$HOME_IN_IMAGE/.m2")
+  fi
   run_in_docker \
-    -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
-    -v "$HOME/.sleeper/builder:/sleeper-builder" \
-    -e HOST_MOUNT_PATH="$HOME/.sleeper/builder" \
-    -e CONTAINER_MOUNT_PATH=/sleeper-builder \
+    "${BUILDER_ARGS[@]}" \
     "$TEMP_RUNNER_IMAGE" "$@"
 }
 
@@ -122,14 +210,22 @@ get_version() {
 }
 
 pull_docker_images() {
-  echo "Downloading CLI runner Dockerfile"
-  mkdir -p "$HOME_RUNNER_PATH"
-  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
 
-  echo "Pulling CLI Docker images"
+  mkdir -p "$HOME_RUNNER_PATH"
+  if [ -f "$LOCAL_REPO_CONFIG_PATH" ]; then
+    echo "CLI was previously installed from a local repo. Copying CLI runner Dockerfile from there."
+    LOCAL_REPO=$(<"$LOCAL_REPO_CONFIG_PATH")
+    cp "$LOCAL_REPO/scripts/cli/runner/Dockerfile" $HOME_RUNNER_PATH
+  else
+    echo "Downloading CLI runner Dockerfile"
+    curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
+  fi
+
+  VERSION=$(get_version_tag)
+  echo "Pulling CLI Docker images from $(get_registry) (version: $VERSION)"
   for IMAGE_NAME in "${ALL_IMAGES[@]}"; do
     echo "Pulling image: $IMAGE_NAME"
-    REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:latest"
+    REMOTE_IMAGE="$(get_registry)/$IMAGE_NAME:$VERSION"
     LOCAL_IMAGE="$IMAGE_NAME:current"
 
     # Use docker build rather than docker pull + docker tag, so that BuildKit
@@ -204,12 +300,24 @@ upgrade_cli() {
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
   local TEMP_DIR=$(mktemp -d)
   TEMP_PATH="$TEMP_DIR/sleeper"
-  curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
-  chmod a+x "$TEMP_PATH"
-  "$TEMP_PATH" cli pull-images
+
+  if [ -f "$LOCAL_REPO_CONFIG_PATH" ]; then
+    echo "Sleeper Docker tools CLI was previously installed from a local repository, updating from there"
+    LOCAL_REPO=$(<"$LOCAL_REPO_CONFIG_PATH")
+    echo_local_repo_checkout "$LOCAL_REPO"
+    SCRIPT_PATH="$LOCAL_REPO/scripts/cli/runInDocker.sh"
+  else
+    echo "Downloading Sleeper Docker tools CLI"
+    curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
+    SCRIPT_PATH="$TEMP_PATH"
+    echo "Downloaded command"
+  fi
+
+  chmod a+x "$SCRIPT_PATH"
+  "$SCRIPT_PATH" cli pull-images
   remove_old_images
-  mv "$TEMP_PATH" "$EXECUTABLE_PATH"
-  rmdir "$TEMP_DIR"
+  cp "$SCRIPT_PATH" "$EXECUTABLE_PATH"
+  rm -rf "$TEMP_DIR"
   echo "Updated"
 
   # If we didn't exit here, bash would carry on where it left off before the function call, but in the new version.
@@ -248,6 +356,24 @@ elif [ "$COMMAND" == "cli" ]; then
     upgrade_cli
   elif [ "$SUBCOMMAND" == "pull-images" ]; then
     pull_docker_images
+  elif [ "$SUBCOMMAND" == "set-registry" ]; then
+    if [ "$#" -lt 1 ]; then
+      echo "Usage: sleeper cli set-registry <registry>"
+      exit 1
+    fi
+    set_registry "$1"
+  elif [ "$SUBCOMMAND" == "set-use-local-version" ]; then
+    if [ "$#" -lt 1 ]; then
+      echo "Usage: sleeper cli set-use-local-version <true|false>"
+      exit 1
+    fi
+    set_use_local_version "$1"
+  elif [ "$SUBCOMMAND" == "set-isolate-mvn" ]; then
+    if [ "$#" -lt 1 ]; then
+      echo "Usage: sleeper cli set-isolate-mvn <true|false>"
+      exit 1
+    fi
+    set_isolate_mvn "$1"
   else
     echo "Command not found: cli $SUBCOMMAND"
     show_usage
@@ -278,6 +404,10 @@ elif [ "$COMMAND" == "help" ]; then
   echo
   echo "cli pull-images"
   echo "Retrieves the latest version of the Docker images."
+  echo
+  echo "cli set-isolate-mvn <true|false>"
+  echo "By default, the host's local Maven repository will be mounted into builder containers. If this is set to true,"
+  echo "that will not happen."
   echo
   echo "version"
   echo "Prints the version of Sleeper that was used to build the Docker images currently being used. This will be a"

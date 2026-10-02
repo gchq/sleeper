@@ -36,6 +36,23 @@ public class ClientUtils {
         }
     }
 
+    /**
+     * Parses a boolean command line argument strictly.
+     *
+     * @param  value the command line value
+     * @return       the parsed boolean
+     * @throws IllegalArgumentException if the value is not true or false
+     */
+    public static boolean parseBooleanArgument(String value) {
+        if ("true".equalsIgnoreCase(value)) {
+            return true;
+        }
+        if ("false".equalsIgnoreCase(value)) {
+            return false;
+        }
+        throw new IllegalArgumentException("Expected true or false, found: " + value);
+    }
+
     private static final long K_COUNT = 1_000;
     private static final long M_COUNT = 1_000_000;
     private static final long G_COUNT = 1_000_000_000;

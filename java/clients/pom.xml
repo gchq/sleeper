@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.37.5</version>
+        <version>0.38.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -154,6 +154,11 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>container-images</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>system-test-configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
 

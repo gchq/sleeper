@@ -106,19 +106,37 @@ To build the Sleeper Docker tools, you can run this script:
 
 There are also scripts to build individual tools, like `scripts/cli/environment/buildWithDependencies.sh`.
 
-Use `./scripts/cli/runInDocker.sh` to run the built CLI. This will act the same as running the `sleeper`
-command after installing the CLI. You can manually install it if you copy that script somewhere, rename it to `sleeper`,
-and put it on the system path. Then `sleeper ...` commands will work as though you'd installed it normally.
+You can also use `./scripts/cli/runInDocker.sh` to run the CLI from this repository without the need to install it.
+This acts the same as the `sleeper` command, using the same Docker images and configuration.
 
-If you have the CLI installed already it will be replaced with the version that is built. If the `runInDocker.sh` script
-is different in the version you installed before, it will not be replaced. You can find it
-at `$HOME/.local/bin/sleeper`, and manually overwrite it with the contents of `./scripts/cli/runInDocker.sh`.
+Building the images above replaces the images an already-installed CLI uses, but the `sleeper` command itself is just
+a copy of `runInDocker.sh`, so it does not update the installed copy of that script. If it has changed since you
+installed, you can install again with `--useLocalRepo` as described below, run `sleeper cli upgrade` if you installed
+that way already, or overwrite `$HOME/.local/bin/sleeper` with the contents of `./scripts/cli/runInDocker.sh`.
+
+#### Installing the CLI
+
+Installing is a separate step from building. You can run the install script from this repository, and it will install
+the CLI exactly as described in [Sleeper Docker tools](deployment/docker-tools.md), downloading the `sleeper` command
+from GitHub.
+
+If you've built the tools locally and want to apply local changes to the scripts as well, use this:
+
+```bash
+./scripts/cli/install.sh --useLocalOnce
+```
+
+The `--useLocalOnce` flag will stop it from pulling Docker images from the remote registry, and will install the CLI
+script from the local repository. Further calls to upgrade the CLI will retrieve it as previously configured, from
+GitHub by default.
 
 ### Publishing artefacts
 
 Tools are available to publish built artefacts to shared repositories, and to install them locally to avoid the need to
 build Sleeper yourself. We do not currently publish artefacts publicly.
-See [publishing artefacts](development/publishing.md) for how to set this up yourself.
+See [publishing artefacts](development/publishing.md) for how to set this up yourself, and
+[publishing the Docker tools CLI](development/publishing-docker-tools.md) for pointing the Docker tools CLI at your own
+container registry.
 
 ## Using the codebase
 

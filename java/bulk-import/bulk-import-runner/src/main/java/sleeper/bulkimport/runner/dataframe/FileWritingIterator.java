@@ -59,7 +59,7 @@ public class FileWritingIterator implements Iterator<Row> {
     private String path;
     private long numRows;
     private boolean hasMore = false;
-    private Instant startTime = null;
+    private Instant startTime;
 
     public FileWritingIterator(
             Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties,
@@ -126,9 +126,6 @@ public class FileWritingIterator implements Iterator<Row> {
     }
 
     private void write(Row row) throws IOException {
-        if (null == startTime) {
-            startTime = Instant.now();
-        }
         // Append to current writer
         sleeper.core.row.Row writeRow = getRow(row);
         parquetWriter.write(writeRow);
@@ -155,8 +152,8 @@ public class FileWritingIterator implements Iterator<Row> {
         parquetWriter.close();
         sketchesStore.saveFileSketches(path, schema, sketches);
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, Instant.now());
-        double rate = numRows / (double) duration.getSeconds();
-        LOGGER.info("Overall written {} rows in {} (rate was {} per second)",
+        double rate = numRows / duration.getSecondsAsDouble();
+        LOGGER.info("Written {} rows to file in {} (rate was {} per second)",
                 numRows, duration, rate);
     }
 
@@ -178,6 +175,7 @@ public class FileWritingIterator implements Iterator<Row> {
 
     private ParquetWriter<sleeper.core.row.Row> createWriter(String partitionId) throws IOException {
         numRows = 0L;
+        startTime = Instant.now();
         path = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
                 .constructPartitionParquetFilePath(partitionId, outputFilenameSupplier.get());
 

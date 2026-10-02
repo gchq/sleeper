@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.table.ReinitialiseTable;
+import sleeper.clients.util.ClientUtils;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.table.TableProperties;
@@ -80,7 +81,7 @@ public class ReinitialiseTableFromSplitPoints {
         String instanceId = args[0];
         String tableName = args[1];
         String splitPointsFile = args[2];
-        boolean splitPointsFileBase64Encoded = args.length != 3 && Boolean.parseBoolean(args[3]);
+        boolean splitPointsFileBase64Encoded = args.length != 3 && ClientUtils.parseBooleanArgument(args[3]);
 
         System.out.println("If you continue all data will be deleted in the table.");
         System.out.println("The metadata about the partitions will be deleted and replaced "

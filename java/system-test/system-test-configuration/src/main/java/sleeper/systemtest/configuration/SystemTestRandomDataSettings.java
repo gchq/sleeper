@@ -24,6 +24,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_LON
 import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_INT;
 import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_LONG;
 import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_BYTE_ARRAY_LENGTH;
+import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_NULL_PROBABILITY;
 import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_STRING_LENGTH;
 
 public class SystemTestRandomDataSettings {
@@ -36,6 +37,7 @@ public class SystemTestRandomDataSettings {
     private final int byteArrayLength;
     private final int maxMapEntries;
     private final int maxListEntries;
+    private final double nullProbability;
 
     private SystemTestRandomDataSettings(Builder builder) {
         minInt = builder.minInt;
@@ -46,6 +48,7 @@ public class SystemTestRandomDataSettings {
         byteArrayLength = builder.byteArrayLength;
         maxMapEntries = builder.maxMapEntries;
         maxListEntries = builder.maxListEntries;
+        nullProbability = builder.nullProbability;
     }
 
     public static Builder builder() {
@@ -62,6 +65,7 @@ public class SystemTestRandomDataSettings {
                 .byteArrayLength(properties.getInt(RANDOM_BYTE_ARRAY_LENGTH))
                 .maxMapEntries(properties.getInt(MAX_ENTRIES_RANDOM_MAP))
                 .maxListEntries(properties.getInt(MAX_ENTRIES_RANDOM_LIST))
+                .nullProbability(properties.getDouble(RANDOM_NULL_PROBABILITY))
                 .build();
     }
 
@@ -101,15 +105,19 @@ public class SystemTestRandomDataSettings {
         return maxListEntries;
     }
 
+    public double getNullProbability() {
+        return nullProbability;
+    }
+
     @Override
     public String toString() {
         return "SystemTestRandomDataSettings{minInt=" + minInt + ", maxInt=" + maxInt + ", minLong=" + minLong + ", maxLong=" + maxLong + ", stringLength=" + stringLength + ", byteArrayLength="
-                + byteArrayLength + ", maxMapEntries=" + maxMapEntries + ", maxListEntries=" + maxListEntries + "}";
+                + byteArrayLength + ", maxMapEntries=" + maxMapEntries + ", maxListEntries=" + maxListEntries + ", nullProbability=" + nullProbability + "}";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(minInt, maxInt, minLong, maxLong, stringLength, byteArrayLength, maxMapEntries, maxListEntries);
+        return Objects.hash(minInt, maxInt, minLong, maxLong, stringLength, byteArrayLength, maxMapEntries, maxListEntries, nullProbability);
     }
 
     @Override
@@ -122,7 +130,8 @@ public class SystemTestRandomDataSettings {
         }
         SystemTestRandomDataSettings other = (SystemTestRandomDataSettings) obj;
         return minInt == other.minInt && maxInt == other.maxInt && minLong == other.minLong && maxLong == other.maxLong && stringLength == other.stringLength
-                && byteArrayLength == other.byteArrayLength && maxMapEntries == other.maxMapEntries && maxListEntries == other.maxListEntries;
+                && byteArrayLength == other.byteArrayLength && maxMapEntries == other.maxMapEntries && maxListEntries == other.maxListEntries
+                && Double.compare(nullProbability, other.nullProbability) == 0;
     }
 
     public static class Builder {
@@ -134,6 +143,7 @@ public class SystemTestRandomDataSettings {
         private int byteArrayLength = defaultInt(RANDOM_BYTE_ARRAY_LENGTH);
         private int maxMapEntries = defaultInt(MAX_ENTRIES_RANDOM_MAP);
         private int maxListEntries = defaultInt(MAX_ENTRIES_RANDOM_LIST);
+        private double nullProbability = defaultDouble(RANDOM_NULL_PROBABILITY);
 
         private Builder() {
         }
@@ -178,6 +188,11 @@ public class SystemTestRandomDataSettings {
             return this;
         }
 
+        public Builder nullProbability(double nullProbability) {
+            this.nullProbability = nullProbability;
+            return this;
+        }
+
         public SystemTestRandomDataSettings build() {
             return new SystemTestRandomDataSettings(this);
         }
@@ -189,5 +204,9 @@ public class SystemTestRandomDataSettings {
 
     private static long defaultLong(SystemTestProperty property) {
         return Long.parseLong(property.getDefaultValue());
+    }
+
+    private static double defaultDouble(SystemTestProperty property) {
+        return Double.parseDouble(property.getDefaultValue());
     }
 }

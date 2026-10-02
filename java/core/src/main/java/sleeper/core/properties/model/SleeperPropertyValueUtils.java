@@ -138,6 +138,18 @@ public class SleeperPropertyValueUtils {
     }
 
     /**
+     * Checks if a property value is a double precision decimal number within an inclusive range.
+     *
+     * @param  value the value
+     * @param  low   the inclusive lower bound
+     * @param  high  the inclusive upper bound
+     * @return       true if the value meets the requirement
+     */
+    public static boolean isDoubleInRangeInclusive(String value, Double low, Double high) {
+        return parseAndCheckDouble(value, num -> num >= low && num <= high);
+    }
+
+    /**
      * Checks if a property value is a non-empty string.
      *
      * @param  string the value

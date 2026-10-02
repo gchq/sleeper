@@ -51,7 +51,7 @@ public class RandomRowSupplier implements Supplier<Row> {
         for (Field field : schema.getAllFields()) {
             Supplier<Object> supplier = getSupplier(field.getType(), settings, random);
             if (field.isNullable()) {
-                fieldNameToSupplier.put(field.getName(), () -> random.nextDouble() < 0.2 ? null : supplier.get());
+                fieldNameToSupplier.put(field.getName(), () -> random.nextDouble() < settings.getNullProbability() ? null : supplier.get());
             } else {
                 fieldNameToSupplier.put(field.getName(), supplier);
             }

@@ -288,7 +288,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                     METRICS_LOGGER.info("Wrote {} rows to S3 in {} at {} per second",
                             noOfRowsWritten,
                             duration,
-                            FORMATTER.format(noOfRowsWritten / (double) duration.getSeconds()));
+                            FORMATTER.format(noOfRowsWritten / duration.getSecondsAsDouble()));
                     return result;
                 });
     }

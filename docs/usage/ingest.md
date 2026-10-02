@@ -50,7 +50,7 @@ Here's an example of how to use the scripts to ingest with the batcher:
 ```bash
 ./scripts/table/sendToIngestBatcher.sh <instance-id> <table-name> bucket-name/path/to/file.parquet bucket-name/path/to/folder
 ./scripts/report/ingestBatcherReport.sh <instance-id> standard -a
-./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> standard -a
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --all
 ```
 
 The batcher will wait until enough data is present in the files to create an ingest or bulk import job. You can
@@ -83,6 +83,24 @@ Here's an example of an SQS message for an ingest or bulk import job:
 ```
 
 Files are submitted to the ingest batcher with the same format, but without the `id` field.
+
+### File paths
+
+Each entry under `files` should be a path in S3 in the format `bucket-name/object-key`, where object-key is either a
+file (ending in `.parquet`) or a directory (for clarity it is recommended to explicitly end the key with a `/`, but
+if it does not end with a `/` then files and subdirectories in `object-key/` will be included). The full rules for
+resolving a path are:
+
+- If an object exists at exactly the provided key, and its name ends in `.parquet`, then that file is included.
+- The path is also treated as a directory. Every `.parquet` file under `bucket-name/object-key/` is included,
+  looking recursively in all subdirectories. A trailing slash is optional. (Note that if there was a file
+  `data/day1.parquet` and a file `data/day1.parquet/file-1.parquet` then both would be included.)
+- Only files whose names end in `.parquet` are included - files whose names do not end in `.parquet` are ignored.
+- A path will not match other files or directories whose names happen to start with the same characters, e.g.
+  `bucket-name/data/day1` will not match files under `bucket-name/data/day10/` or a file named
+  `bucket-name/data/day1-old.parquet`.
+
+If no files are found at one of the paths, the job or request is rejected.
 
 ## Ingest systems
 
@@ -155,18 +173,49 @@ We may add a REST API to serve this purpose in the future. You can also use the 
 of jobs manually:
 
 ```bash
-./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters>
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> [options]
 ```
 
-For example:
+The instance ID and table name are required. The output format is set with `--report-type`, which accepts `STANDARD`
+(the default) or `JSON`. The jobs to include are chosen with one of the query type options below. If you don't set a
+query type, the script will prompt you for one.
 
 ```bash
-./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> # Prompt for report type
-./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> standard -a # All jobs
-./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> standard -u # Unfinished jobs
-./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> standard -n # Rejected jobs
-./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> standard -r 20250523090000,20250523100000 # Date range in format yyyyMMddhhmmss
-./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> standard -d <job-id> # Job details
+# Prompt for the query type
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name>
+
+# All jobs
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --all
+
+# Unfinished jobs
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --unfinished
+
+# Rejected jobs
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --rejected
+
+# Details of a single job
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --detailed <job-id>
+
+# Details of several jobs, with the IDs separated by commas
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --detailed <job-id>,<job-id>
+
+# Jobs in a date range, in format yyyyMMddHHmmss.
+# --start-time and --end-time must be given together, and only apply to this query type.
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --range --start-time 20250523090000 --end-time 20250523100000
+
+# Jobs in the last 4 hours, the default range
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --range
+
+# All jobs, as JSON
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --all --report-type JSON
+```
+
+Each query type option also has a short form: `-a` (all), `-d` (detailed), `-n` (rejected), `-r` (range) and
+`-u` (unfinished). Only one query type may be set at a time.
+
+For more information please run:
+```bash
+./scripts/report/ingestJobStatusReport.sh --help
 ```
 
 Note that if a run of the job has finished, it may still be uncommitted. This means the data has been sorted and written

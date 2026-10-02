@@ -85,6 +85,10 @@ public class LoggedDuration {
         return duration.getSeconds();
     }
 
+    public double getSecondsAsDouble() {
+        return duration.toNanos() / 1_000_000_000.0;
+    }
+
     @Override
     public String toString() {
         if (shortOutput) {

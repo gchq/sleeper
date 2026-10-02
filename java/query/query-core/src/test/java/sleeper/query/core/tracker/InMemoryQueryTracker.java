@@ -22,6 +22,7 @@ import sleeper.query.core.output.ResultsOutputInfo;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,7 @@ public class InMemoryQueryTracker implements QueryStatusReportListener, QueryTra
     private final Supplier<Instant> timeSupplier;
     private final Map<String, TrackedQuery> queryIdToStatus = new HashMap<>();
     private final Map<String, TrackedQuery> subQueryIdToStatus = new HashMap<>();
+    private final List<TrackedQuery> allUpdates = new ArrayList<>();
 
     public InMemoryQueryTracker(InstanceProperties instanceProperties) {
         this(instanceProperties, Instant::now);
@@ -73,6 +75,10 @@ public class InMemoryQueryTracker implements QueryStatusReportListener, QueryTra
         return status;
     }
 
+    public List<TrackedQuery> getAllUpdates() {
+        return allUpdates;
+    }
+
     @Override
     public List<TrackedQuery> getAllQueries() {
         return streamAllQueries().toList();
@@ -102,7 +108,9 @@ public class InMemoryQueryTracker implements QueryStatusReportListener, QueryTra
 
     @Override
     public void queryQueued(Query query) {
-        queryIdToStatus.put(query.getQueryId(), newQuery(query, QueryState.QUEUED));
+        TrackedQuery update = newQuery(query, QueryState.QUEUED);
+        allUpdates.add(update);
+        queryIdToStatus.put(query.getQueryId(), update);
     }
 
     @Override
@@ -122,7 +130,9 @@ public class InMemoryQueryTracker implements QueryStatusReportListener, QueryTra
     @Override
     public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
         for (LeafPartitionQuery subQuery : subQueries) {
-            subQueryIdToStatus.put(subQuery.getSubQueryId(), newQuery(subQuery, QueryState.QUEUED));
+            TrackedQuery update = newQuery(subQuery, QueryState.QUEUED);
+            allUpdates.add(update);
+            subQueryIdToStatus.put(subQuery.getSubQueryId(), update);
         }
     }
 
@@ -166,17 +176,19 @@ public class InMemoryQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     private void upsertQuery(String queryId, Supplier<TrackedQuery> createNew, Function<TrackedQuery, TrackedQuery> update) {
-        queryIdToStatus.put(queryId,
-                Optional.ofNullable(queryIdToStatus.get(queryId))
-                        .map(update)
-                        .orElseGet(createNew));
+        TrackedQuery updated = Optional.ofNullable(queryIdToStatus.get(queryId))
+                .map(update)
+                .orElseGet(createNew);
+        allUpdates.add(updated);
+        queryIdToStatus.put(queryId, updated);
     }
 
     private void upsertQuery(LeafPartitionQuery query, Supplier<TrackedQuery> createNew, Function<TrackedQuery, TrackedQuery> update) {
-        subQueryIdToStatus.put(query.getSubQueryId(),
-                Optional.ofNullable(subQueryIdToStatus.get(query.getSubQueryId()))
-                        .map(update)
-                        .orElseGet(createNew));
+        TrackedQuery updated = Optional.ofNullable(subQueryIdToStatus.get(query.getSubQueryId()))
+                .map(update)
+                .orElseGet(createNew);
+        allUpdates.add(updated);
+        subQueryIdToStatus.put(query.getSubQueryId(), updated);
     }
 
     private TrackedQuery newQuery(Query query, QueryState state) {

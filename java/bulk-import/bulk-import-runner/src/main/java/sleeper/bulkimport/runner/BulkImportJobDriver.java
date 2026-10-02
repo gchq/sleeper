@@ -192,7 +192,7 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
         long numRows = fileReferences.stream()
                 .mapToLong(FileReference::getNumberOfRows)
                 .sum();
-        double rate = numRows / (double) duration.getSeconds();
+        double rate = numRows / duration.getSecondsAsDouble();
         LOGGER.info("Bulk import job {} took {} (rate of {} per second)", runIds.getJobId(), duration, rate);
 
         tracker.jobFinished(IngestJobFinishedEvent.builder()

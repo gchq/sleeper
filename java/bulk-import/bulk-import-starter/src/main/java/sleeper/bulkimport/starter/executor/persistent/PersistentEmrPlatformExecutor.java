@@ -23,7 +23,6 @@ import software.amazon.awssdk.services.emr.model.AddJobFlowStepsRequest;
 import software.amazon.awssdk.services.emr.model.ClusterState;
 import software.amazon.awssdk.services.emr.model.ClusterSummary;
 import software.amazon.awssdk.services.emr.model.EmrException;
-import software.amazon.awssdk.services.emr.model.ListClustersResponse;
 import software.amazon.awssdk.services.emr.model.StepConfig;
 
 import sleeper.bulkimport.starter.executor.BulkImportArguments;
@@ -86,10 +85,10 @@ public class PersistentEmrPlatformExecutor implements PlatformExecutor {
 
     private static String getClusterIdFromName(EmrClient emrClient, String clusterName) {
         LOGGER.debug("Searching for id of cluster with name {}", clusterName);
-        ListClustersResponse response = emrClient.listClusters(request -> request
-                .clusterStates(ClusterState.BOOTSTRAPPING, ClusterState.RUNNING, ClusterState.STARTING, ClusterState.WAITING));
         String clusterId = null;
-        for (ClusterSummary cs : response.clusters()) {
+        for (ClusterSummary cs : emrClient.listClustersPaginator(request -> request
+                .clusterStates(ClusterState.BOOTSTRAPPING, ClusterState.RUNNING, ClusterState.STARTING, ClusterState.WAITING))
+                .clusters()) {
             LOGGER.debug("Found cluster with name {}", cs.name());
             if (cs.name().equals(clusterName)) {
                 clusterId = cs.id();

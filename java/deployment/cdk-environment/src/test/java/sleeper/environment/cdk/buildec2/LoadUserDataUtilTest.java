@@ -92,13 +92,13 @@ class LoadUserDataUtilTest {
         assertThat(LoadUserDataUtil.crontab(BuildEC2Parameters.from(AppContext.of(
                 NIGHTLY_TEST_RUN_ENABLED.value(true),
                 NIGHTLY_TEST_DEPLOY_ID.value("mt"),
-                NIGHTLY_TEST_RUN_HOUR_UTC.value(3),
+                NIGHTLY_TEST_RUN_HOUR_UTC.value(20),
                 LOGIN_USER.value("my-user"),
                 VPC_ID.value("my-vpc"),
                 NIGHTLY_TEST_SUBNETS.value("subnet-1", "subnet-2"),
                 NIGHTLY_TEST_BUCKET.value("my-bucket")))))
                 .contains("PATH=$PATH:/usr/bin:/home/my-user/.local/bin")
-                .contains("0 3 * * TUE,THU,SAT,SUN");
+                .contains("0 20 * * SUN,TUE,THU");
     }
 
 }

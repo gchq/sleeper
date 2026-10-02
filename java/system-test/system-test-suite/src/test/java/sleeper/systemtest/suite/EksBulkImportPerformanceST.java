@@ -79,7 +79,7 @@ public class EksBulkImportPerformanceST {
         assertThat(sleeper.eksBulkImportCheck().waitUntilExecutionsFinishedGetStatuses(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5))))
                 .containsOnly("SUCCEEDED");
-        assertThat(sleeper.eksBulkImportCheck().getPods())
+        assertThat(sleeper.eksBulkImportCheck().getDriverPods())
                 .isEmpty();
         assertThat(sleeper.eksBulkImportCheck().getJobs())
                 .isEmpty();

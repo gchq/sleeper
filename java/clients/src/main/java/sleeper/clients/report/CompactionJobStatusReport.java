@@ -56,17 +56,18 @@ public class CompactionJobStatusReport {
 
     private final CompactionJobStatusReporter compactionJobStatusReporter;
     private final CompactionJobTracker compactionJobTracker;
-    private final JobQuery.Type queryType;
+    private final TableStatus tableStatus;
     private final JobQuery query;
 
     public CompactionJobStatusReport(
             CompactionJobTracker compactionJobTracker,
             CompactionJobStatusReporter reporter,
+            TableStatus tableStatus,
             JobQuery query) {
         this.compactionJobTracker = compactionJobTracker;
         this.compactionJobStatusReporter = reporter;
+        this.tableStatus = tableStatus;
         this.query = query;
-        this.queryType = query.getType();
     }
 
     /**
@@ -76,7 +77,7 @@ public class CompactionJobStatusReport {
         if (query == null) {
             return;
         }
-        compactionJobStatusReporter.report(query.run(compactionJobTracker), queryType);
+        compactionJobStatusReporter.report(query.run(compactionJobTracker, tableStatus.getTableUniqueId()), query.getType());
     }
 
     public static void main(String[] args) {
@@ -99,8 +100,8 @@ public class CompactionJobStatusReport {
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
                 CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-                JobQuery query = JobQuery.fromParametersOrPrompt(table, queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
-                new CompactionJobStatusReport(tracker, reporter, query).run();
+                JobQuery query = JobQuery.fromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
+                new CompactionJobStatusReport(tracker, reporter, table, query).run();
             }
         } catch (IllegalArgumentException e) {
             System.err.println(e.getMessage());

@@ -1,0 +1,5 @@
+ApplicationID=SLEEPER
+Description=Sleeper demonstration instance
+Environment=DEV
+Product=Sleeper
+Project=sleeper-demo

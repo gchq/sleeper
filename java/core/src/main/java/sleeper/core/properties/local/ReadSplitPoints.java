@@ -76,9 +76,11 @@ public class ReadSplitPoints {
      * @throws IOException          if the file could not be read
      */
     public static List<Object> readSplitPoints(TableProperties tableProperties, String splitPointsFile, boolean stringsBase64Encoded) throws IOException {
-        List<Object> splitPoints = fromLines(Files.lines(Paths.get(splitPointsFile)), tableProperties.getSchema(), stringsBase64Encoded);
-        LOGGER.info("Read {} split points from file: {}", splitPoints.size(), splitPointsFile);
-        return splitPoints;
+        try (Stream<String> lines = Files.lines(Paths.get(splitPointsFile))) {
+            List<Object> splitPoints = fromLines(lines, tableProperties.getSchema(), stringsBase64Encoded);
+            LOGGER.info("Read {} split points from file: {}", splitPoints.size(), splitPointsFile);
+            return splitPoints;
+        }
     }
 
     /**

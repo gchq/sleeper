@@ -96,7 +96,7 @@ Run the following command to see how many rows are currently in the system:
 ./scripts/report/filesStatusReport.sh <instance-id> system-test
 ```
 
-The randomly generated data in the table conforms to the schema given in the file `scripts/templates/schema.template`.
+The randomly generated data in the table conforms to the schema given in the file `scripts/test/deployAll/schema.json.template`.
 This has a key field called `key` which is of type string. The code that randomly generates the data will generate keys
 which are random strings of length 10. To run a query, use:
 

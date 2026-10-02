@@ -74,6 +74,10 @@ public class RowJsonSerDe {
 
     /**
      * Deserialises a JSON string to a row.
+     * <p>
+     * Missing fields and explicit JSON nulls are stored as null for nullable fields. For non-nullable fields,
+     * they are omitted from the row, including row keys and sort keys. This method does not validate that the row
+     * contains all fields required by the schema.
      *
      * @param  jsonSchema the JSON string
      * @return            a row

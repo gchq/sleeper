@@ -52,6 +52,12 @@ You can also configure options for the build with `scripts/deploy/setDeployConfi
 see [building in a custom environment](custom-environment.md). If it's set to deploy images from a remote repository,
 this publishing will fail.
 
+### Publishing the Docker tools CLI
+
+The [Sleeper Docker tools](../deployment/docker-tools.md) CLI uses its own images, which are not published by
+`publishDocker.sh`. See [publishing the Docker tools CLI](publishing-docker-tools.md) for how to publish those images
+to your own registry, and how to point the CLI at it.
+
 ### Installing published artefacts
 
 We have scripts to install Sleeper from published artefacts. We have not yet published Sleeper to Maven Central or

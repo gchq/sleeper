@@ -28,8 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.LinkedList;
 import java.util.Optional;
 
@@ -69,10 +69,10 @@ public class NightlyTestSummaryTable {
     }
 
     public boolean containsTestFromToday(Instant now) {
-        Instant today = now.truncatedTo(ChronoUnit.DAYS);
         return executions.stream()
                 .map(execution -> execution.startTime)
-                .anyMatch(startTime -> startTime.truncatedTo(ChronoUnit.DAYS).equals(today));
+                .anyMatch(startTime -> Duration.between(startTime, now)
+                        .compareTo(Duration.ofHours(12)) < 0);
     }
 
     public static class Execution {

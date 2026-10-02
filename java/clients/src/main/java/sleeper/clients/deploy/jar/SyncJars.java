@@ -22,6 +22,8 @@ import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.util.ClientUtils;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,7 +58,7 @@ public class SyncJars {
         Path jarsDirectory = Path.of(args[0]);
         String bucketName = args[1];
         boolean deleteOldJars = optionalArgument(args, 2)
-                .map(Boolean::parseBoolean)
+                .map(ClientUtils::parseBooleanArgument)
                 .orElse(false);
         try (S3Client s3Client = S3Client.create();
                 StsClient stsClient = StsClient.create()) {

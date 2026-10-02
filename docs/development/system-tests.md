@@ -29,11 +29,11 @@ This will generate everything for you including:
 
 Once generated, it deploys Sleeper using CDK.
 
-This test has an instance properties file next to the deploy script called `system-test-instance.properties`.
-When running the deploy script, the `scripts/test/deployAll` directory is scanned for `table.properties`,
-`tags.properties`, and `schema.properties` files. If they are found, they are picked up and used by the test.
-If they are not present, then the template files in `scripts/templates` are used. Note that properties in these
-files with the value `changeme` will be overwritten by the script.
+This test has its configuration next to the deploy script in `scripts/test/deployAll`: an instance properties file
+called `system-test-instance.properties` and a `system-test` table (`table.properties` and `schema.json`). By default
+these are deployed as-is, and are created from the `.template` files in that directory on first run.
+To use your own configuration instead, pass `--properties-file` for a different instance
+properties file, or `--config-dir` for a full configuration directory including your own tables.
 
 There's an optional stacks property which determines which components will be deployed - you may want to customise this
 to experiment with different stacks.
@@ -41,8 +41,8 @@ to experiment with different stacks.
 There are also properties specific to system tests, which can also be changed in `system-test-instance.properties`.
 These can be used to configure how much test data will be generated, and how much that data can vary.
 
-All resources are tagged with the tags defined in the file `scripts/templates/tags.template`, or a `tags.properties`
-file placed next to the `system-test-instance.properties`.
+All resources are tagged with the tags in the `tags.properties` file next to the `system-test-instance.properties`
+(created from `tags.properties.template` on first run).
 
 You can get a report of your instance by running:
 
@@ -267,3 +267,4 @@ results for each test will be at {NIGHTLY_TEST_BUCKET}/{DATE_OF_TEST}/{SUITE_NAM
 | 0.37.3         | 27/07/2026 | 201,576         | 3,632,578             | 154,669         |                 | 4,861,571       |
 | 0.37.4         | 26/08/2026 | 201,375         | 3,659,122             | 167,816         |                 | 4,664,790       |
 | 0.37.5         | 07/09/2026 | 202,827         | 3,698,386             | 158,508         |                 | 9,217,982       |
+| 0.38.0         | 01/10/2026 | 177,804         | 3,756,396             | 176,789         |                 | 8,787,217       |

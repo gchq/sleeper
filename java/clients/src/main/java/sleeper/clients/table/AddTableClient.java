@@ -69,10 +69,10 @@ public class AddTableClient {
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
             .positionalArguments(List.of("instance-id"))
             .options(List.of(
-                    CommandOption.longOption("table-name"),
+                    CommandOption.longOption("config-dir"),
                     CommandOption.longOption("schema"),
-                    CommandOption.longOption("table-properties"),
-                    CommandOption.longOption("config-dir")))
+                    CommandOption.longOption("table-name"),
+                    CommandOption.longOption("table-properties")))
             .helpSummary("" +
                     "Adds a new table to an existing Sleeper instance.\n" +
                     "\n" +

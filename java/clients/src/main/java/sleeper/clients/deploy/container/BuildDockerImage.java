@@ -49,17 +49,19 @@ public class BuildDockerImage {
             .positionalArguments(List.of("scripts directory", "image name", "tag"))
             .systemArguments(List.of("scripts directory"))
             .options(List.of(
-                    CommandOption.longFlag("multiplatform"),
-                    CommandOption.longOption("default-base-image")))
+                    CommandOption.longOption("default-base-image"),
+                    CommandOption.longFlag("multiplatform")))
             .helpSummary("Available Docker deployment image names: " +
                     DockerDeployment.all().stream().map(DockerDeployment::getDeploymentName).collect(joining(", ")) + "\n\n" +
                     "Available lambda image names: " +
                     LambdaJar.all().stream().map(LambdaJar::getImageName).collect(joining(", ")) + "\n\n" +
-                    "The --multiplatform flag specifies to build a multiplatform image if it's configured to be " +
-                    "built that way. By default an image is only built for the default platform. If you pass " +
-                    "--default-base-image <image>, it will be set in the BASE_IMAGE build argument, but only if " +
-                    "the image uses the default base image. Other arguments will be passed through to Docker as " +
-                    "options when specified at the end.")
+                    "Other arguments will be passed through to Docker as options when specified at the end.\n\n" +
+                    "--default-base-image <image>\n" +
+                    "Sets the BASE_IMAGE build argument, but only if the image uses the default base image.\n" +
+                    "\n" +
+                    "--multiplatform\n" +
+                    "Builds a multiplatform image if it's configured to be built that way. " +
+                    "By default an image is only built for the default platform.")
             .passThroughExtraArguments(true)
             .build();
 

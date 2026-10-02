@@ -16,6 +16,7 @@
 package sleeper.clients.deploy.container;
 
 import sleeper.clients.deploy.DeployConfiguration;
+import sleeper.clients.util.ClientUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -36,7 +37,7 @@ public class UploadDockerImagesToRepository {
 
         Path scriptsDirectory = Path.of(args[0]);
         String repositoryPrefix = args[1];
-        boolean createMultiplatformBuilder = optionalArgument(args, 2).map(Boolean::parseBoolean).orElse(true);
+        boolean createMultiplatformBuilder = optionalArgument(args, 2).map(ClientUtils::parseBooleanArgument).orElse(true);
         DeployConfiguration deployConfig = DeployConfiguration.fromScriptsDirectory(scriptsDirectory);
 
         if (deployConfig.dockerImageLocation() != DockerImageLocation.LOCAL_BUILD) {

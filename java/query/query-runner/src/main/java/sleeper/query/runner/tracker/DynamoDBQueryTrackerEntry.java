@@ -79,6 +79,12 @@ class DynamoDBQueryTrackerEntry {
         return key;
     }
 
+    public Map<String, AttributeValue> getItem(long queryTrackerTTL) {
+        Map<String, AttributeValue> item = new HashMap<>(getKey());
+        getValueUpdate(queryTrackerTTL).forEach((attribute, update) -> item.put(attribute, update.value()));
+        return item;
+    }
+
     public Map<String, AttributeValueUpdate> getValueUpdate(long queryTrackerTTL) {
         Map<String, AttributeValueUpdate> valueUpdate = new HashMap<>();
         long now = System.currentTimeMillis() / 1000;
@@ -132,7 +138,8 @@ class DynamoDBQueryTrackerEntry {
 
     public boolean isUpdateParent() {
         return isSubQuery() &&
-                (state.equals(QueryState.COMPLETED) || state.equals(QueryState.FAILED));
+                (state.equals(QueryState.COMPLETED) || state.equals(QueryState.FAILED)
+                        || state.equals(QueryState.PARTIALLY_FAILED));
     }
 
     private boolean isSubQuery() {

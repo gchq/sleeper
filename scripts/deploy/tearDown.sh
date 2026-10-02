@@ -16,11 +16,6 @@
 set -e
 unset CDPATH
 
-if [ "$#" -gt 1 ]; then
-  echo "Usage: $0 <optional-instance-id>"
-  exit 1
-fi
-
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 

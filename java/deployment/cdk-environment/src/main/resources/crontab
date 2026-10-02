@@ -23,5 +23,5 @@
 MAILTO=""
 SHELL=/usr/bin/bash
 PATH=$PATH:/usr/bin:/home/${loginUser}/.local/bin
-0 ${testHour} * * TUE,THU,SAT,SUN /home/${loginUser}/.sleeper/builder/sleeper/scripts/test/nightly/startNightlyTestsFromHost.sh ${loginUser} functional
-0 ${testHour} * * MON,WED,FRI /home/${loginUser}/.sleeper/builder/sleeper/scripts/test/nightly/startNightlyTestsFromHost.sh ${loginUser} performance
+0 ${testHour} * * MON,WED /home/${loginUser}/.sleeper/builder/sleeper/scripts/test/nightly/startNightlyTestsFromHost.sh ${loginUser} functional
+0 ${testHour} * * SUN,TUE,THU /home/${loginUser}/.sleeper/builder/sleeper/scripts/test/nightly/startNightlyTestsFromHost.sh ${loginUser} performance

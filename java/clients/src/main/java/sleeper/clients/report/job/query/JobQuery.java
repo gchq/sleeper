@@ -16,7 +16,6 @@
 package sleeper.clients.report.job.query;
 
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -36,17 +35,19 @@ public interface JobQuery {
      * Retrieves compaction jobs matching this query.
      *
      * @param  tracker the job tracker
+     * @param  tableId the Sleeper table ID to report on
      * @return         the jobs
      */
-    List<CompactionJobStatus> run(CompactionJobTracker tracker);
+    List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId);
 
     /**
      * Retrieves ingest jobs matching this query.
      *
      * @param  tracker the job tracker
+     * @param  tableId the Sleeper table ID to report on
      * @return         the jobs
      */
-    List<IngestJobStatus> run(IngestJobTracker tracker);
+    List<IngestJobStatus> run(IngestJobTracker tracker, String tableId);
 
     /**
      * Retrieves the type of this query.
@@ -59,25 +60,24 @@ public interface JobQuery {
      * Creates a query for jobs based on parameters. To allow the PROMPT query type,
      * use {@link #fromParametersOrPrompt}.
      *
-     * @param  table           the Sleeper table to generate a report for
      * @param  queryType       the type of query to run
      * @param  queryParameters the parameters for the query, if required
      * @param  clock           the clock to find the current time
      * @return                 the query
      */
-    static JobQuery from(TableStatus table, Type queryType, String queryParameters, Clock clock) {
+    static JobQuery from(Type queryType, String queryParameters, Clock clock) {
         if (queryType.isParametersRequired() && queryParameters == null) {
             throw new IllegalArgumentException("No parameters provided for query type " + queryType);
         }
         switch (queryType) {
             case ALL:
-                return new AllJobsQuery(table);
+                return new AllJobsQuery();
             case UNFINISHED:
-                return new UnfinishedJobsQuery(table);
+                return new UnfinishedJobsQuery();
             case DETAILED:
                 return DetailedJobsQuery.fromParameters(queryParameters);
             case RANGE:
-                return RangeJobsQuery.fromParameters(table, queryParameters, clock);
+                return RangeJobsQuery.fromParameters(queryParameters, clock);
             case REJECTED:
                 return new RejectedJobsQuery();
             default:
@@ -88,7 +88,6 @@ public interface JobQuery {
     /**
      * Creates a query for jobs based on parameters. Takes input from the console for the PROMPT query type.
      *
-     * @param  table           the Sleeper table to generate a report for
      * @param  queryType       the type of query to run
      * @param  queryParameters the parameters for the query, if required
      * @param  clock           the clock to find the current time
@@ -96,14 +95,13 @@ public interface JobQuery {
      * @return                 the query
      */
     static JobQuery fromParametersOrPrompt(
-            TableStatus table, Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
-        return fromParametersOrPrompt(table, queryType, queryParameters, clock, input, Map.of());
+            Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
+        return fromParametersOrPrompt(queryType, queryParameters, clock, input, Map.of());
     }
 
     /**
      * Creates a query for jobs based on parameters. Takes input from the console for the PROMPT query type.
      *
-     * @param  table           the Sleeper table to generate a report for
      * @param  queryType       the type of query to run
      * @param  queryParameters the parameters for the query, if required
      * @param  clock           the clock to find the current time
@@ -112,12 +110,12 @@ public interface JobQuery {
      * @return                 the query
      */
     static JobQuery fromParametersOrPrompt(
-            TableStatus table, Type queryType, String queryParameters, Clock clock,
-            ConsoleInput input, Map<String, JobQuery> extraQueryTypes) {
+            Type queryType, String queryParameters, Clock clock, ConsoleInput input,
+            Map<String, JobQuery> extraQueryTypes) {
         if (queryType == JobQuery.Type.PROMPT) {
-            return JobQueryPrompt.from(table, clock, input, extraQueryTypes);
+            return JobQueryPrompt.from(clock, input, extraQueryTypes);
         }
-        return from(table, queryType, queryParameters, clock);
+        return from(queryType, queryParameters, clock);
     }
 
     /**

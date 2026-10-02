@@ -148,6 +148,54 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
         }
 
         @Test
+        void shouldNotReadSiblingDirectoryWithSameNamePrefix() {
+            // Given
+            List<String> files = List.of(bucket + "/data/day1");
+            String objectKey1 = "data/day1/file-1.parquet";
+            String objectKey2 = "data/day10/file-2.parquet";
+            String objectKey3 = "data/day1-backup/file-3.parquet";
+            String objectKey4 = "data/day1.old.parquet";
+            putObject(bucket, objectKey1, "test-data");
+            putObject(bucket, objectKey2, "test-data");
+            putObject(bucket, objectKey3, "test-data");
+            putObject(bucket, objectKey4, "test-data");
+
+            // When / Then
+            assertThat(listPathsForJob(files))
+                    .containsExactly(bucket + "/" + objectKey1);
+        }
+
+        @Test
+        void shouldNotReadSiblingFileWithSameNamePrefixWhenPathIsAFile() {
+            // Given
+            List<String> files = List.of(bucket + "/data/file-1.parquet");
+            String objectKey1 = "data/file-1.parquet";
+            String objectKey2 = "data/file-1.parquet.old.parquet";
+            putObject(bucket, objectKey1, "test-data");
+            putObject(bucket, objectKey2, "test-data");
+
+            // When / Then
+            assertThat(listPathsForJob(files))
+                    .containsExactly(bucket + "/" + objectKey1);
+        }
+
+        @Test
+        void shouldReadFileAndDirectoryContentsWhenBothMatchPathExactly() {
+            // Given
+            List<String> files = List.of(bucket + "/data/day1.parquet");
+            String objectKey1 = "data/day1.parquet";
+            String objectKey2 = "data/day1.parquet/file-1.parquet";
+            putObject(bucket, objectKey1, "test-data");
+            putObject(bucket, objectKey2, "test-data");
+
+            // When / Then
+            assertThat(listPathsForJob(files))
+                    .containsExactlyInAnyOrder(
+                            bucket + "/" + objectKey1,
+                            bucket + "/" + objectKey2);
+        }
+
+        @Test
         void shouldReadOnlyFolderContentWhenPathEndsInSlash() {
             // Given
             List<String> files = List.of(bucket + "/test-folder/");

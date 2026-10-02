@@ -138,7 +138,7 @@ public class BuildUptimeLambdaIT extends LocalStackTestBase {
                 "\"executions\": [{" +
                 "\"startTime\": \"2024-10-02T03:00:00Z\"" +
                 "}]}");
-        times.add(Instant.parse("2024-10-02T15:02:00Z"));
+        times.add(Instant.parse("2024-10-02T14:02:00Z"));
 
         // When
         handle(BuildUptimeEvent.stop()

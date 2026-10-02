@@ -53,7 +53,7 @@
     "HOST_MOUNT_PATH": "${localWorkspaceFolder}",
     "CONTAINER_MOUNT_PATH": "${containerWorkspaceFolder}"
   },
-  "initializeCommand": "mkdir -p ${localEnv:HOME}/.aws ; mkdir -p ${localEnv:HOME}/.m2 ; mkdir -p ${localEnv:HOME}/.ssh",
+  "initializeCommand": "mkdir -p ${localEnv:HOME}/.aws ; mkdir -p ${localEnv:HOME}/.m2 ; mkdir -p ${localEnv:HOME}/.ssh ; mkdir -p ${localEnv:HOME}/.cache",
   "remoteUser": "sleeper",
   "updateRemoteUserUID": true
 }

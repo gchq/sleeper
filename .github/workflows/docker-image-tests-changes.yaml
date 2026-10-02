@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'rust/**' # We've seen Rust failures because of code built against a different glibc version than is present in the image
+      - 'scripts/build/**'
       - '.github/workflows/docker-image-tests.yaml'
 
 jobs:

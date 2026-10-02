@@ -12,4 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 [advisories]
+
+# These are vulnerabilities in quick-xml, used by object_store.
+# A fix is available, but we need DataFusion to update to object_store v0.14 before we can apply it.
+# See https://github.com/gchq/sleeper/issues/7596
 ignore = ["RUSTSEC-2026-0194", "RUSTSEC-2026-0195"]

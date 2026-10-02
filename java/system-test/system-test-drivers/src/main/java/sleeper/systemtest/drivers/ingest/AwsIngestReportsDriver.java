@@ -41,6 +41,8 @@ import sleeper.systemtest.dsl.reporting.SystemTestReport;
 import java.time.Instant;
 import java.util.List;
 
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+
 public class AwsIngestReportsDriver implements IngestReportsDriver {
     private final SystemTestInstanceContext instance;
     private final DynamoDbClient dynamoClient;
@@ -66,16 +68,16 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
     }
 
     public SystemTestReport jobsReport() {
-        return (out, startTime) -> new IngestJobStatusReport(jobTracker(),
-                new RangeJobsQuery(instance.getTableStatus(), startTime, Instant.MAX),
+        return (out, startTime) -> new IngestJobStatusReport(jobTracker(), instance.getTableStatus(),
+                new RangeJobsQuery(startTime, Instant.MAX),
                 new StandardIngestJobStatusReporter(out), queueMessages, instance.getInstanceProperties(),
                 PersistentEmrStepCount.byStatus(instance.getInstanceProperties(), emr))
                 .run();
     }
 
     public List<IngestJobStatus> jobs(ReportingContext reportingContext) {
-        return new RangeJobsQuery(instance.getTableStatus(), reportingContext.getRecordingStartTime(), Instant.MAX)
-                .run(jobTracker());
+        return new RangeJobsQuery(reportingContext.getRecordingStartTime(), Instant.MAX)
+                .run(jobTracker(), instance.getTableProperties().get(TABLE_ID));
     }
 
     private IngestJobTracker jobTracker() {

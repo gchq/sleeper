@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NoResultsOutput implements ResultsOutput {
-
     public static final String NO_RESULTS_OUTPUT = "NoResultsOutput";
 
     private final List<ResultsOutputLocation> outputLocations = new ArrayList<>();
@@ -36,8 +35,7 @@ public class NoResultsOutput implements ResultsOutput {
     }
 
     @Override
-    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query,
-            CloseableIterator<Row> results) {
+    public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Row> results) {
         return new ResultsOutputInfo(0, outputLocations);
     }
 }

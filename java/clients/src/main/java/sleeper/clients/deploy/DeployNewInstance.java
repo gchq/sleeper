@@ -77,14 +77,17 @@ public class DeployNewInstance {
             .systemArguments(List.of("scriptsDirectory"))
             .positionalArguments(List.of("scriptsDirectory", "instanceId", "vpcId", "subnetIds"))
             .options(List.of(
-                    CommandOption.longOption("properties-file"),
                     CommandOption.longOption("config-dir"),
-                    CommandOption.longFlag("paused")))
+                    CommandOption.longFlag("paused"),
+                    CommandOption.longOption("properties-file")))
             .helpSummary("" +
                     "Deploys a new instance of Sleeper.\n" +
                     "\n" +
-                    "--config-dir <dir>\n" +
-                    "Path to a directory containing an instance.properties file. Passed to the CDK in the context variable \"configurationDir\".\n" +
+                    "--config-dir <path>\n" +
+                    "Path to a configuration directory, or to an instance properties file. If a directory is given, it must contain\n" +
+                    "an instance.properties file. If a file is given, it is read as the instance properties, and the rest of the\n" +
+                    "configuration is loaded from the directory containing it. The whole directory structure is read including table\n" +
+                    "properties, tags and schemas. Passed to the CDK in the context variable \"configurationDir\".\n" +
                     "One of --properties-file and --config-dir must be set but not both.\n" +
                     "\n" +
                     "--paused\n" +

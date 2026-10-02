@@ -16,7 +16,6 @@
 package sleeper.clients.report.job.query;
 
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -37,27 +36,26 @@ import java.util.function.Supplier;
 public class RangeJobsQuery implements JobQuery {
 
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
+    private static final Duration DEFAULT_PERIOD = Duration.ofHours(4);
 
-    private final String tableId;
     private final Instant start;
     private final Instant end;
 
-    public RangeJobsQuery(TableStatus table, Instant start, Instant end) {
+    public RangeJobsQuery(Instant start, Instant end) {
         if (start.isAfter(end)) {
             throw new IllegalArgumentException("Start of range provided is after end");
         }
-        this.tableId = table.getTableUniqueId();
         this.start = start;
         this.end = end;
     }
 
     @Override
-    public List<CompactionJobStatus> run(CompactionJobTracker tracker) {
+    public List<CompactionJobStatus> run(CompactionJobTracker tracker, String tableId) {
         return tracker.getJobsInTimePeriod(tableId, start, end);
     }
 
     @Override
-    public List<IngestJobStatus> run(IngestJobTracker tracker) {
+    public List<IngestJobStatus> run(IngestJobTracker tracker, String tableId) {
         return tracker.getJobsInTimePeriod(tableId, start, end);
     }
 
@@ -70,38 +68,46 @@ public class RangeJobsQuery implements JobQuery {
      * Reads a command line parameter that sets the time period for a query. Takes the start and end of the period in
      * the format yyyyMMddHHmmss, separated by a comma.
      *
-     * @param  table           the Sleeper table to be queried
      * @param  queryParameters the start and end of the period as strings separated by a comma, or null for the default
      *                         period
      * @param  clock           a clock to get the current time (can be fixed for testing)
      * @return                 a query to report on all jobs in the given time period
      */
-    public static JobQuery fromParameters(TableStatus table, String queryParameters, Clock clock) {
+    public static JobQuery fromParameters(String queryParameters, Clock clock) {
         if (queryParameters == null) {
-            Instant end = clock.instant();
-            Instant start = end.minus(Duration.ofHours(4));
-            return new RangeJobsQuery(table, start, end);
+            return forDefaultPeriod(clock);
         } else {
             String[] parts = queryParameters.split(",");
             Instant start = parseStart(parts[0], clock);
             Instant end = parseEnd(parts[1], clock);
-            return new RangeJobsQuery(table, start, end);
+            return new RangeJobsQuery(start, end);
         }
+    }
+
+    /**
+     * Creates a query for the default time period, which is the last 4 hours. Used when a range is asked for without
+     * setting the period.
+     *
+     * @param  clock a clock to get the current time (can be fixed for testing)
+     * @return       a query to report on all jobs in the default time period
+     */
+    public static JobQuery forDefaultPeriod(Clock clock) {
+        Instant end = clock.instant();
+        return new RangeJobsQuery(end.minus(DEFAULT_PERIOD), end);
     }
 
     /**
      * Prompts the user to set the time period for a query. Will ask for the start and end times as separate prompts in
      * the format yyyyMMddHHmmss.
      *
-     * @param  table the Sleeper table to be queried
      * @param  in    the console to prompt the user
      * @param  clock a clock to get the current time (can be fixed for testing)
      * @return       a query to report on all jobs in the given time period
      */
-    public static JobQuery prompt(TableStatus table, ConsoleInput in, Clock clock) {
+    public static JobQuery prompt(ConsoleInput in, Clock clock) {
         Instant start = promptStart(in, clock);
         Instant end = promptEnd(in, clock);
-        return new RangeJobsQuery(table, start, end);
+        return new RangeJobsQuery(start, end);
     }
 
     private static Instant promptStart(ConsoleInput in, Clock clock) {
@@ -123,22 +129,34 @@ public class RangeJobsQuery implements JobQuery {
     }
 
     private static Instant parseStart(String startStr, Clock clock) {
-        return parseDate(startStr, () -> clock.instant().minus(Duration.ofHours(4)));
+        return parseDate(startStr, () -> clock.instant().minus(DEFAULT_PERIOD));
     }
 
     private static Instant parseEnd(String endStr, Clock clock) {
         return parseDate(endStr, clock::instant);
     }
 
-    private static Instant parseDate(String input, Supplier<Instant> getDefault) {
-        if ("".equals(input)) {
-            return getDefault.get();
-        }
+    /**
+     * Reads a time set on the command line. Report commands use this to read the start and end of the period to
+     * report on, so that the expected format is only defined here. See {@link #DATE_FORMAT} for that format.
+     *
+     * @param  input                    the time
+     * @return                          the time
+     * @throws IllegalArgumentException if the time is not in the expected format
+     */
+    public static Instant parseTime(String input) {
         try {
             return createDateInputFormat().parse(input).toInstant();
         } catch (ParseException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    private static Instant parseDate(String input, Supplier<Instant> getDefault) {
+        if ("".equals(input)) {
+            return getDefault.get();
+        }
+        return parseTime(input);
     }
 
     private static SimpleDateFormat createDateInputFormat() {
