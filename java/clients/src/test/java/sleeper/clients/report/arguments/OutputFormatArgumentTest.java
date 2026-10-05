@@ -50,21 +50,21 @@ public class OutputFormatArgumentTest {
     @Test
     void shouldReadReporterWhenOptionSet() {
         // When / Then
-        assertThat(read("my-instance", "--report-type", "JSON")).isEqualTo("json-reporter");
+        assertThat(read("my-instance", "--format", "JSON")).isEqualTo("json-reporter");
     }
 
     @Test
     void shouldReadReporterIgnoringCase() {
         // When / Then
-        assertThat(read("my-instance", "--report-type", "json")).isEqualTo("json-reporter");
+        assertThat(read("my-instance", "--format", "json")).isEqualTo("json-reporter");
     }
 
     @Test
     void shouldFailWhenReportTypeIsNotSupported() {
         // When / Then
-        assertThatThrownBy(() -> read("my-instance", "--report-type", "xml"))
+        assertThatThrownBy(() -> read("my-instance", "--format", "xml"))
                 .isInstanceOf(CommandArgumentsException.class)
-                .hasMessage("Report type not supported: xml. Valid types: STANDARD, JSON, CSV");
+                .hasMessage("Output format not supported: xml. Valid formats: CSV, JSON, STANDARD");
     }
 
     @Test
@@ -73,11 +73,11 @@ public class OutputFormatArgumentTest {
         CommandOption option = reportType.option();
 
         // Then
-        assertThat(option.longName()).isEqualTo("report-type");
+        assertThat(option.longName()).isEqualTo("format");
         assertThat(option.shortName()).isEmpty();
         assertThat(option.isFlag()).isFalse();
-        assertThat(option.helpText()).get().isEqualTo("Output format. One of STANDARD, JSON, CSV. Defaults to STANDARD.");
-        assertThat(option.argsHelpText()).get().isEqualTo("<type>");
+        assertThat(option.helpText()).get().isEqualTo("Output format. One of CSV, JSON, STANDARD. Defaults to STANDARD.");
+        assertThat(option.argsHelpText()).get().isEqualTo("<format>");
     }
 
     private String read(String... args) {
