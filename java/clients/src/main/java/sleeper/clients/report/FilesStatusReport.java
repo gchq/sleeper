@@ -111,7 +111,7 @@ public class FilesStatusReport {
      * @param tableName     the name of the table to report on
      * @param maxNoRefFiles the maximum number of files with no references to count
      * @param verbose       if true, the report will include detailed file information
-     * @param reporterType  the output format, one of STANDARD, JSON, CSV
+     * @param reporter      the reporter for the given output format
      */
     public record Arguments(
             String instanceId,
