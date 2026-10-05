@@ -91,23 +91,7 @@ public interface JobQuery {
      * @return                 the query
      */
     static JobQuery from(JobQueryType queryType, String queryParameters, Clock clock) {
-        if (queryType.isParametersRequired() && queryParameters == null) {
-            throw new IllegalArgumentException("No parameters provided for query type " + queryType);
-        }
-        switch (queryType) {
-            case ALL:
-                return new AllJobsQuery();
-            case UNFINISHED:
-                return new UnfinishedJobsQuery();
-            case DETAILED:
-                return DetailedJobsQuery.fromParameters(queryParameters);
-            case RANGE:
-                return RangeJobsQuery.fromParameters(queryParameters, clock);
-            case REJECTED:
-                return new RejectedJobsQuery();
-            default:
-                throw new IllegalArgumentException("Unexpected query type: " + queryType);
-        }
+        return queryType.parser().read(queryParameters, clock);
     }
 
     /**

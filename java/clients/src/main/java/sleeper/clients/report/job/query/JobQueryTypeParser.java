@@ -57,12 +57,11 @@ public class JobQueryTypeParser {
      * @param  clock           a clock to get the current time
      * @return                 the query, if this parser supports the given type
      */
-    public Optional<JobQuery> read(JobQueryType foundType, String queryParameters, Clock clock) {
-        if (foundType == type) {
-            return Optional.of(byParameters.read(queryParameters, clock));
-        } else {
-            return Optional.empty();
+    public JobQuery read(String queryParameters, Clock clock) {
+        if (type.isParametersRequired() && queryParameters == null) {
+            throw new IllegalArgumentException("No parameters provided for query type " + type);
         }
+        return byParameters.read(queryParameters, clock);
     }
 
     /**
