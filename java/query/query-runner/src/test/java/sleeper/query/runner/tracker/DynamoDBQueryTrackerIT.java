@@ -23,6 +23,10 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -369,6 +373,11 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
         private abstract class BatchWriteInterceptingClient implements DynamoDbClient {
             @Override
+            public UpdateItemResponse updateItem(UpdateItemRequest request) {
+                return dynamoClient.updateItem(request);
+            }
+
+            @Override
             public String serviceName() {
                 return dynamoClient.serviceName();
             }
@@ -376,6 +385,144 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
             @Override
             public void close() {
             }
+        }
+    }
+
+    @Nested
+    @DisplayName("Update parent query from counters of finished sub-queries")
+    class UpdateParentFromCounters {
+        List<QueryRequest> queryRequests = new ArrayList<>();
+        Query parent = createQueryWithId("parent");
+        LeafPartitionQuery sub1 = createSubQueryWithId("parent", "sub-1");
+        LeafPartitionQuery sub2 = createSubQueryWithId("parent", "sub-2");
+
+        @BeforeEach
+        void setUp() {
+            queryTracker().queryInProgress(parent);
+            queryTracker().subQueriesCreated(parent, List.of(sub1, sub2));
+        }
+
+        @Test
+        void shouldCompleteParentWithoutReadingSubQueryItems() throws QueryTrackerException {
+            // Given
+            DynamoDBQueryTracker tracker = trackerRecordingQueryRequests();
+
+            // When
+            tracker.queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+            tracker.queryCompleted(sub2, new ResultsOutputInfo(25, Collections.emptyList()));
+
+            // Then
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
+            assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(35));
+            assertThat(queryRequests).isEmpty();
+        }
+
+        @Test
+        void shouldNotFinishParentWhenNotAllSubQueriesHaveFinished() throws QueryTrackerException {
+            // When
+            queryTracker().queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+
+            // Then
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(IN_PROGRESS);
+        }
+
+        @Test
+        void shouldFailParentWhenAllSubQueriesFailed() throws QueryTrackerException {
+            // When
+            queryTracker().queryFailed(sub1, new Exception("Fail"));
+            queryTracker().queryFailed(sub2, new Exception("Fail"));
+
+            // Then
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(FAILED);
+        }
+
+        @Test
+        void shouldPartiallyFailParentWhenSomeSubQueriesFailed() throws QueryTrackerException {
+            // When
+            queryTracker().queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+            queryTracker().queryFailed(sub2, new Exception("Fail"));
+
+            // Then
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(PARTIALLY_FAILED);
+            assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(10));
+        }
+
+        @Test
+        void shouldNotCountSubQueryTwiceWhenItIsCompletedTwice() throws QueryTrackerException {
+            // When a duplicate message completes the same sub-query twice
+            queryTracker().queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+            queryTracker().queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+
+            // Then the parent is still waiting for the other sub-query
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(IN_PROGRESS);
+
+            // And when the other sub-query completes, the parent finishes with each sub-query counted once
+            queryTracker().queryCompleted(sub2, new ResultsOutputInfo(5, Collections.emptyList()));
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
+            assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(15));
+        }
+
+        @Test
+        void shouldNotRevertFinishedSubQueryWhenDuplicateMessageRestartsIt() throws QueryTrackerException {
+            // When a duplicate message restarts a sub-query that already finished
+            queryTracker().queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+            queryTracker().queryInProgress(sub1);
+
+            // Then the sub-query is still finished
+            assertThat(queryTracker().getStatus("parent", "sub-1").getLastKnownState()).isEqualTo(COMPLETED);
+
+            // And when the other sub-query completes, the parent finishes with each sub-query counted once
+            queryTracker().queryCompleted(sub2, new ResultsOutputInfo(5, Collections.emptyList()));
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
+            assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(15));
+        }
+
+        @Test
+        void shouldResetCountersWhenSubQueriesAreRecreatedByDuplicateOfParentQuery() throws QueryTrackerException {
+            // Given the query ran once already
+            queryTracker().queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+            queryTracker().queryCompleted(sub2, new ResultsOutputInfo(25, Collections.emptyList()));
+
+            // When a duplicate message reruns the whole query
+            queryTracker().queryInProgress(parent);
+            queryTracker().subQueriesCreated(parent, List.of(sub1, sub2));
+            queryTracker().queryInProgress(sub1);
+            queryTracker().queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+            queryTracker().queryCompleted(sub2, new ResultsOutputInfo(25, Collections.emptyList()));
+
+            // Then
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
+            assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(35));
+        }
+
+        private DynamoDBQueryTracker trackerRecordingQueryRequests() {
+            return new DynamoDBQueryTracker(instanceProperties, new DynamoDbClient() {
+
+                @Override
+                public QueryResponse query(QueryRequest request) {
+                    queryRequests.add(request);
+                    return dynamoClient.query(request);
+                }
+
+                @Override
+                public UpdateItemResponse updateItem(UpdateItemRequest request) {
+                    return dynamoClient.updateItem(request);
+                }
+
+                @Override
+                public BatchWriteItemResponse batchWriteItem(BatchWriteItemRequest request) {
+                    return dynamoClient.batchWriteItem(request);
+                }
+
+                @Override
+                public String serviceName() {
+                    return dynamoClient.serviceName();
+                }
+
+                @Override
+                public void close() {
+                }
+            });
         }
     }
 
