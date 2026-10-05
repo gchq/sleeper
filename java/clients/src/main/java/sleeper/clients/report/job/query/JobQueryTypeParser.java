@@ -54,7 +54,7 @@ public class JobQueryTypeParser {
      *
      * @param  foundType       the job query type
      * @param  queryParameters the parameters
-     * @param  timeSupplier    a supplier to get the current time
+     * @param  clock           a clock to get the current time
      * @return                 the query, if this parser supports the given type
      */
     public Optional<JobQuery> read(JobQueryType foundType, String queryParameters, Clock clock) {
@@ -68,9 +68,9 @@ public class JobQueryTypeParser {
     /**
      * Parses a job tracker query from command line arguments.
      *
-     * @param  arguments    the arguments
-     * @param  timeSupplier a supplier to get the current time
-     * @return              the query, if an argument supported by this parser is set
+     * @param  arguments the arguments
+     * @param  clock     a clock to get the current time
+     * @return           the query, if an argument supported by this parser is set
      */
     public Optional<JobQuery> read(CommandArguments arguments, Clock clock) {
         if (options.stream().anyMatch(arguments::isSet)) {
