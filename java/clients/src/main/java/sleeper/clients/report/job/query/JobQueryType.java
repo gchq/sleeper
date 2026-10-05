@@ -43,10 +43,20 @@ public enum JobQueryType {
         return this == DETAILED;
     }
 
+    /**
+     * Retrieves a parser to read a job query if it is of this type.
+     *
+     * @return the parser
+     */
     public JobQueryTypeParser parser() {
         return Objects.requireNonNull(parser, "Query type has no parser: " + this);
     }
 
+    /**
+     * Retrieves the command line options that are only used by this job query type.
+     *
+     * @return the options
+     */
     public List<CommandOption> options() {
         return parser().options();
     }

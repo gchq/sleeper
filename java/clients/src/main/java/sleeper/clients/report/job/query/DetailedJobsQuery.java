@@ -46,6 +46,11 @@ public class DetailedJobsQuery implements JobQuery {
         this.jobIds = jobIds;
     }
 
+    /**
+     * Creates a parser for this query type.
+     *
+     * @return this parser
+     */
     public static JobQueryTypeParser parser() {
         return new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.ALL,
                 (parameters, timeSupplier) -> fromParameters(parameters),

@@ -32,6 +32,11 @@ public class AllJobsQuery implements JobQuery {
             .withLongName("all").shortName('a')
             .helpText("Reports on all jobs.").build();
 
+    /**
+     * Creates a parser for this query type.
+     *
+     * @return this parser
+     */
     public static JobQueryTypeParser parser() {
         return new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.ALL, AllJobsQuery::new);
     }

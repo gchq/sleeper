@@ -33,6 +33,11 @@ public class UnfinishedJobsQuery implements JobQuery {
             .helpText("Reports on all unfinished jobs.")
             .build();
 
+    /**
+     * Creates a parser for this query type.
+     *
+     * @return this parser
+     */
     public static JobQueryTypeParser parser() {
         return new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.UNFINISHED, UnfinishedJobsQuery::new);
     }

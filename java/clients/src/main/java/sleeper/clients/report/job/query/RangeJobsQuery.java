@@ -72,6 +72,11 @@ public class RangeJobsQuery implements JobQuery {
         this.end = end;
     }
 
+    /**
+     * Creates a parser for this query type.
+     *
+     * @return this parser
+     */
     public static JobQueryTypeParser parser() {
         return new JobQueryTypeParser(
                 List.of(COMMAND_OPTION, START_COMMAND_OPTION, END_COMMAND_OPTION), JobQueryType.ALL,
