@@ -21,6 +21,7 @@ import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.JobQueryPrompt;
 import sleeper.clients.report.job.query.JobQueryType;
+import sleeper.clients.report.job.query.JobQueryTypeParser;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.core.util.cli.CommandArguments;
@@ -61,7 +62,7 @@ public class JobTrackerReportOptions {
      * @return           the query
      */
     public static JobQuery readIngestJobQuery(CommandArguments arguments, Clock clock, ConsoleInput input) {
-        return JobQuery.forIngest(arguments, clock)
+        return JobQueryTypeParser.readOneOfTypes(JobQueryType.INGEST_OPTIONS, arguments, clock)
                 .orElseGet(() -> JobQueryPrompt.from(clock, input, Map.of("n", new RejectedJobsQuery())));
     }
 

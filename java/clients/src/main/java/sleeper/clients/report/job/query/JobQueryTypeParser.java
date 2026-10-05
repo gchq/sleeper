@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static java.util.stream.Collectors.joining;
+
 /**
  * A parser to read a query of a certain type against a job tracker.
  */
@@ -50,6 +52,28 @@ public class JobQueryTypeParser {
     }
 
     /**
+     * Parses a job tracker query from command line arguments with a restricted set of allowed query types. The list of
+     * type options should not include prompting. If none is specified, an empty optional will be returned, in which
+     * case some default behaviour should happen, e.g. prompting.
+     *
+     * @param  typeOptions the allowed query types
+     * @param  arguments   the arguments
+     * @param  clock       a clock to get the current time
+     * @return             the query, if exactly one of the given types is set
+     */
+    public static Optional<JobQuery> readOneOfTypes(List<JobQueryType> typeOptions, CommandArguments arguments, Clock clock) {
+        List<JobQuery> queries = typeOptions.stream()
+                .flatMap(type -> type.parser().read(arguments, clock).stream())
+                .toList();
+        if (queries.size() > 1) {
+            throw new CommandArgumentsException(
+                    "Cannot combine query types. Options have been set for the following types: " +
+                            queries.stream().map(JobQuery::getType).map(JobQueryType::name).collect(joining(", ")));
+        }
+        return queries.stream().findFirst();
+    }
+
+    /**
      * Parses a job tracker query from query parameters.
      *
      * @param  foundType       the job query type
@@ -64,14 +88,7 @@ public class JobQueryTypeParser {
         return byParameters.read(queryParameters, clock);
     }
 
-    /**
-     * Parses a job tracker query from command line arguments.
-     *
-     * @param  arguments the arguments
-     * @param  clock     a clock to get the current time
-     * @return           the query, if an argument supported by this parser is set
-     */
-    public Optional<JobQuery> read(CommandArguments arguments, Clock clock) {
+    private Optional<JobQuery> read(CommandArguments arguments, Clock clock) {
         if (options.stream().anyMatch(arguments::isSet)) {
             try {
                 return Optional.of(byArguments.read(arguments, clock));

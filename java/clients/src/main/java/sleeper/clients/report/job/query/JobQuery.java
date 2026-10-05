@@ -20,15 +20,10 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
-import sleeper.core.util.cli.CommandArguments;
-import sleeper.core.util.cli.CommandArgumentsException;
 
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-
-import static java.util.stream.Collectors.joining;
 
 /**
  * A query to generate a report based on jobs in a job tracker. Different types of query can include jobs based on their
@@ -62,39 +57,6 @@ public interface JobQuery {
     JobQueryType getType();
 
     /**
-     * Creates a query for jobs based on command line arguments for an ingest jobs report. If none is specified, an
-     * empty optional will be returned, in which case some default behaviour should happen, e.g. prompting.
-     *
-     * @param  arguments the command line arguments
-     * @param  clock     the clock to find the current time
-     * @return           the job query, if one was set on the command line
-     */
-    static Optional<JobQuery> forIngest(CommandArguments arguments, Clock clock) {
-        List<JobQuery> queries = JobQueryType.INGEST_OPTIONS.stream()
-                .flatMap(type -> type.parser().read(arguments, clock).stream())
-                .toList();
-        if (queries.size() > 1) {
-            throw new CommandArgumentsException(
-                    "Cannot combine query types. Options have been set for the following types: " +
-                            queries.stream().map(JobQuery::getType).map(JobQueryType::name).collect(joining(", ")));
-        }
-        return queries.stream().findFirst();
-    }
-
-    /**
-     * Creates a query for jobs based on parameters. To allow the PROMPT query type,
-     * use {@link #fromParametersOrPrompt}.
-     *
-     * @param  queryType       the type of query to run
-     * @param  queryParameters the parameters for the query, if required
-     * @param  clock           the clock to find the current time
-     * @return                 the query
-     */
-    static JobQuery from(JobQueryType queryType, String queryParameters, Clock clock) {
-        return queryType.parser().read(queryParameters, clock);
-    }
-
-    /**
      * Creates a query for jobs based on parameters. Takes input from the console for the PROMPT query type.
      *
      * @param  queryType       the type of query to run
@@ -124,6 +86,6 @@ public interface JobQuery {
         if (queryType == JobQueryType.PROMPT) {
             return JobQueryPrompt.from(clock, input, extraQueryTypes);
         }
-        return from(queryType, queryParameters, clock);
+        return queryType.parser().read(queryParameters, clock);
     }
 }
