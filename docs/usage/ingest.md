@@ -209,7 +209,7 @@ query type, the script will prompt you for one.
 ./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --all --format JSON
 ```
 
-Each query type option also has a short form: `-a` (all), `-d` (detailed), `-n` (rejected), `-r` (range) and
+Each query type option also has a short form: `-a` (all), `-d` (detailed), `-n` (rejected), `-r` (recent) and
 `-u` (unfinished). Only one query type may be set at a time.
 
 For more information please run:
