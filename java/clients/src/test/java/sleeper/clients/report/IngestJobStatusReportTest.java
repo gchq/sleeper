@@ -378,7 +378,9 @@ public class IngestJobStatusReportTest {
         @Test
         void shouldListEveryQueryTypeSetInTheOrderTheyAppearInTheUsage() {
             // When / Then
-            assertThatThrownBy(() -> queryFromArgumentsAtTime(Instant.now(), "multiple-flag-instance", "multiple-flag-table", "-aur"))
+            assertThatThrownBy(() -> queryFromArgumentsAtTime(
+                    Instant.parse("2026-10-05T14:56:00Z"),
+                    "multiple-flag-instance", "multiple-flag-table", "-aur"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Cannot combine query types. Options have been set for the following types: ALL, RANGE, UNFINISHED");
         }
