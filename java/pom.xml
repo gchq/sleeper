@@ -160,7 +160,7 @@
         it when deliberately matching a version from EMR Serverless, and verify with EmrServerlessBulkImportST.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.35.5</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.48.4</aws-crt.version>
+        <aws-crt.version>0.48.5</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.12.1</aws-lambda-java-runtime-interface-client.version>
