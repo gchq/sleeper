@@ -29,6 +29,9 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -243,6 +246,51 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                         builder.lastKnownState(QUEUED).rowCount(0L).build(),
                         builder.lastKnownState(QUEUED).rowCount(0L).build(),
                         builder.lastKnownState(QUEUED).rowCount(0L).build());
+    }
+
+    @Test
+    public void shouldTrackSubQueriesBeforeTheyAreSentToTheQueue() throws Exception {
+        // Given
+        TableProperties table = createTable();
+        loadData(table);
+        RangeFactory rangeFactory = new RangeFactory(SCHEMA);
+        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "A", true, "Z", true);
+        Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, true, null, true);
+        Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, true, null, true);
+        Query query = Query.builder()
+                .tableName(table.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .build();
+        List<Integer> queuedSubQueriesAtSendTime = new ArrayList<>();
+        queryProcessorLambda = new SqsQueryProcessorLambda(s3Client,
+                countQueuedSubQueriesOnSend(queuedSubQueriesAtSendTime), dynamoClient,
+                instanceProperties.get(CONFIG_BUCKET));
+
+        // When
+        processQuery(query);
+
+        // Then all sub-queries were already tracked when each message was sent to the queue
+        assertThat(queuedSubQueriesAtSendTime).containsExactly(4, 4, 4, 4);
+    }
+
+    private SqsClient countQueuedSubQueriesOnSend(List<Integer> queuedSubQueriesAtSendTime) {
+        return new SqsClient() {
+            @Override
+            public String serviceName() {
+                return sqsClient.serviceName();
+            }
+
+            @Override
+            public void close() {
+            }
+
+            @Override
+            public SendMessageResponse sendMessage(SendMessageRequest request) {
+                queuedSubQueriesAtSendTime.add(queryTracker.getQueriesWithState(QUEUED).size());
+                return sqsClient.sendMessage(request);
+            }
+        };
     }
 
     @Test
