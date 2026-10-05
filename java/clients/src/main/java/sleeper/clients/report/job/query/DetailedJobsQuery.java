@@ -52,8 +52,7 @@ public class DetailedJobsQuery implements JobQuery {
      * @return this parser
      */
     public static JobQueryTypeParser parser() {
-        return new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.DETAILED,
-                (parameters, timeSupplier) -> fromParameters(parameters),
+        return new JobQueryTypeParser(COMMAND_OPTION, (parameters, timeSupplier) -> fromParameters(parameters),
                 (arguments, timeSupplier) -> fromCommandLine(arguments.getString("detailed")));
     }
 
@@ -86,8 +85,8 @@ public class DetailedJobsQuery implements JobQuery {
      * @return                 the query for a detailed report on those jobs
      */
     public static JobQuery fromParameters(String queryParameters) {
-        if ("".equals(queryParameters)) {
-            return null;
+        if (queryParameters == null || "".equals(queryParameters)) {
+            throw new IllegalArgumentException("No parameters provided for query type DETAILED");
         }
         return new DetailedJobsQuery(Arrays.asList(queryParameters.split(",")));
     }

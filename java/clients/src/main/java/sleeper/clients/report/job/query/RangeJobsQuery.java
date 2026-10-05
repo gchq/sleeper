@@ -79,8 +79,7 @@ public class RangeJobsQuery implements JobQuery {
      */
     public static JobQueryTypeParser parser() {
         return new JobQueryTypeParser(
-                List.of(COMMAND_OPTION, START_COMMAND_OPTION, END_COMMAND_OPTION), JobQueryType.RANGE,
-                (parameters, time) -> fromParameters(parameters, time),
+                List.of(COMMAND_OPTION, START_COMMAND_OPTION, END_COMMAND_OPTION), (parameters, time) -> fromParameters(parameters, time),
                 (arguments, time) -> new RangeJobsQuery(
                         parseTimeParameter("start-time", arguments)
                                 .orElseGet(() -> time.instant().minus(DEFAULT_PERIOD)),

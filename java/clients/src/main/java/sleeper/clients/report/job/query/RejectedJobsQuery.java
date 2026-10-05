@@ -40,7 +40,7 @@ public class RejectedJobsQuery implements JobQuery {
      * @return this parser
      */
     public static JobQueryTypeParser parser() {
-        return new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.REJECTED, RejectedJobsQuery::new);
+        return new JobQueryTypeParser(COMMAND_OPTION, RejectedJobsQuery::new);
     }
 
     @Override

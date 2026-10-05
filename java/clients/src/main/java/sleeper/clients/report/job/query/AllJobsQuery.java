@@ -38,7 +38,7 @@ public class AllJobsQuery implements JobQuery {
      * @return this parser
      */
     public static JobQueryTypeParser parser() {
-        return new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.ALL, AllJobsQuery::new);
+        return new JobQueryTypeParser(COMMAND_OPTION, AllJobsQuery::new);
     }
 
     @Override

@@ -34,21 +34,19 @@ import static java.util.stream.Collectors.joining;
 public class JobQueryTypeParser {
 
     private final List<CommandOption> options;
-    private final JobQueryType type;
     private final ByParameters byParameters;
     private final ByArguments byArguments;
 
-    public JobQueryTypeParser(CommandOption option, JobQueryType type, Supplier<JobQuery> constructor) {
-        this(option, type, (params, time) -> constructor.get(), (args, time) -> constructor.get());
+    public JobQueryTypeParser(CommandOption option, Supplier<JobQuery> constructor) {
+        this(option, (params, time) -> constructor.get(), (args, time) -> constructor.get());
     }
 
-    public JobQueryTypeParser(CommandOption option, JobQueryType type, ByParameters byParameters, ByArguments byArguments) {
-        this(List.of(option), type, byParameters, byArguments);
+    public JobQueryTypeParser(CommandOption option, ByParameters byParameters, ByArguments byArguments) {
+        this(List.of(option), byParameters, byArguments);
     }
 
-    public JobQueryTypeParser(List<CommandOption> options, JobQueryType type, ByParameters byParameters, ByArguments byArguments) {
+    public JobQueryTypeParser(List<CommandOption> options, ByParameters byParameters, ByArguments byArguments) {
         this.options = Objects.requireNonNull(options, "options must not be null");
-        this.type = Objects.requireNonNull(type, "type must not be null");
         this.byParameters = Objects.requireNonNull(byParameters, "byParameters must not be null");
         this.byArguments = Objects.requireNonNull(byArguments, "byArguments must not be null");
     }
@@ -83,9 +81,6 @@ public class JobQueryTypeParser {
      * @return                 the query, if this parser supports the given type
      */
     public JobQuery read(String queryParameters, Clock clock) {
-        if (type.isParametersRequired() && queryParameters == null) {
-            throw new IllegalArgumentException("No parameters provided for query type " + type);
-        }
         return byParameters.read(queryParameters, clock);
     }
 
