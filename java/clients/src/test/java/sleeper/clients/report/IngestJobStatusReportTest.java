@@ -89,8 +89,8 @@ public class IngestJobStatusReportTest {
     }
 
     @Nested
-    @DisplayName("Detailed jobs query")
-    class Detailed {
+    @DisplayName("Job details query")
+    class JobDetails {
 
         @Test
         void shouldQueryJobWithGivenId() {
@@ -145,8 +145,8 @@ public class IngestJobStatusReportTest {
     }
 
     @Nested
-    @DisplayName("Range query")
-    class Range {
+    @DisplayName("Time range query")
+    class TimeRange {
 
         @Test
         void shouldQueryJobsInGivenPeriod() {
@@ -247,7 +247,7 @@ public class IngestJobStatusReportTest {
 
     @Nested
     @DisplayName("Unfinished jobs query")
-    class Unfinished {
+    class UnfinishedJobs {
 
         @Test
         void shouldQueryUnfinishedJobs() {
@@ -266,7 +266,7 @@ public class IngestJobStatusReportTest {
 
     @Nested
     @DisplayName("Rejected jobs query")
-    class Rejected {
+    class RejectedJobs {
 
         @Test
         void shouldQueryRejectedJobs() {
