@@ -19,23 +19,24 @@ import sleeper.core.util.cli.CommandOption;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * The type of a query for jobs to include in a report.
  */
 public enum JobQueryType {
     PROMPT(null),
-    ALL(AllJobsQuery.parser()),
-    DETAILED(DetailedJobsQuery.parser()),
-    RANGE(RangeJobsQuery.parser()),
-    UNFINISHED(UnfinishedJobsQuery.parser()),
-    REJECTED(RejectedJobsQuery.parser());
+    ALL(AllJobsQuery::parser),
+    DETAILED(DetailedJobsQuery::parser),
+    RANGE(RangeJobsQuery::parser),
+    UNFINISHED(UnfinishedJobsQuery::parser),
+    REJECTED(RejectedJobsQuery::parser);
 
     public static final List<JobQueryType> INGEST_OPTIONS = List.of(ALL, DETAILED, RANGE, UNFINISHED, REJECTED);
 
-    private final JobQueryTypeParser parser;
+    private final Supplier<JobQueryTypeParser> parser;
 
-    JobQueryType(JobQueryTypeParser parser) {
+    JobQueryType(Supplier<JobQueryTypeParser> parser) {
         this.parser = parser;
     }
 
@@ -49,7 +50,7 @@ public enum JobQueryType {
      * @return the parser
      */
     public JobQueryTypeParser parser() {
-        return Objects.requireNonNull(parser, "Query type has no parser: " + this);
+        return Objects.requireNonNull(parser, "Query type has no parser: " + this).get();
     }
 
     /**

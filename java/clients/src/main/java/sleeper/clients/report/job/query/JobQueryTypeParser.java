@@ -21,6 +21,7 @@ import sleeper.core.util.cli.CommandOption;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -46,10 +47,10 @@ public class JobQueryTypeParser {
     }
 
     public JobQueryTypeParser(List<CommandOption> options, JobQueryType type, ByParameters byParameters, ByArguments byArguments) {
-        this.options = options;
-        this.type = type;
-        this.byParameters = byParameters;
-        this.byArguments = byArguments;
+        this.options = Objects.requireNonNull(options, "options must not be null");
+        this.type = Objects.requireNonNull(type, "type must not be null");
+        this.byParameters = Objects.requireNonNull(byParameters, "byParameters must not be null");
+        this.byArguments = Objects.requireNonNull(byArguments, "byArguments must not be null");
     }
 
     /**
