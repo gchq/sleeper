@@ -52,7 +52,7 @@ public class DetailedJobsQuery implements JobQuery {
      * @return this parser
      */
     public static JobQueryTypeParser parser() {
-        return new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.ALL,
+        return new JobQueryTypeParser(COMMAND_OPTION, JobQueryType.DETAILED,
                 (parameters, timeSupplier) -> fromParameters(parameters),
                 (arguments, timeSupplier) -> fromCommandLine(arguments.getString("detailed")));
     }
