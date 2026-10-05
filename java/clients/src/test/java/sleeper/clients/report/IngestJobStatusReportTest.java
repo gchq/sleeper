@@ -75,6 +75,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryAllJobs() {
+            // When / Then
             assertThat(queryFromArguments("all-job-instance", "all-job-table", "--all"))
                     .usingRecursiveComparison()
                     .isEqualTo(new AllJobsQuery());
@@ -82,6 +83,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryAllJobsWithShortFlag() {
+            // When / Then
             assertThat(queryFromArguments("all-job-instance", "all-job-table", "-a"))
                     .usingRecursiveComparison()
                     .isEqualTo(new AllJobsQuery());
@@ -94,6 +96,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryJobWithGivenId() {
+            // When / Then
             assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "--detailed", "6545"))
                     .usingRecursiveComparison()
                     .isEqualTo(new DetailedJobsQuery(List.of("6545")));
@@ -101,6 +104,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryDetailedJobWithShortFlag() {
+            // When / Then
             assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d", "23"))
                     .usingRecursiveComparison()
                     .isEqualTo(new DetailedJobsQuery(List.of("23")));
@@ -108,6 +112,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryDetailedJobWithIdAttachedToShortOption() {
+            // When / Then
             assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d23"))
                     .usingRecursiveComparison()
                     .isEqualTo(new DetailedJobsQuery(List.of("23")));
@@ -115,6 +120,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryJobWithIdThatLooksLikeAnOption() {
+            // When / Then
             assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d", "-a"))
                     .usingRecursiveComparison()
                     .isEqualTo(new DetailedJobsQuery(List.of("-a")));
@@ -122,6 +128,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryEachJobWhenSeveralIdsGivenSeparatedByCommas() {
+            // When / Then
             assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "--detailed", "6545,8102"))
                     .usingRecursiveComparison()
                     .isEqualTo(new DetailedJobsQuery(List.of("6545", "8102")));
@@ -150,6 +157,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryJobsInGivenPeriod() {
+            // When / Then
             assertThat(queryFromArguments("range-job-instance", "range-job-table",
                     "--start-time", "20201010093000", "--end-time", "20211008150000"))
                     .usingRecursiveComparison()
@@ -159,6 +167,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryJobsInGivenPeriodWhenRecentFlagAlsoSet() {
+            // When / Then
             assertThat(queryFromArguments("range-job-instance", "range-job-table",
                     "--recent", "--start-time", "20201114120101", "--end-time", "20210407150000"))
                     .usingRecursiveComparison()
@@ -173,7 +182,7 @@ public class IngestJobStatusReportTest {
             RangeJobsQuery expectedQuery = new RangeJobsQuery(
                     Instant.parse("2024-05-01T08:00:00Z"), now);
 
-            // Then
+            // When / Then
             assertThat(queryFromArgumentsAtTime(now, "range-default-instance", "range-default-table", "-r"))
                     .usingRecursiveComparison()
                     .isEqualTo(expectedQuery);
@@ -187,7 +196,7 @@ public class IngestJobStatusReportTest {
             // Given
             Instant now = Instant.parse("2024-05-01T12:00:00Z");
 
-            // Then
+            // When / Then
             assertThat(queryFromArgumentsAtTime(now, "range-instance", "range-table", "--recent=true"))
                     .usingRecursiveComparison()
                     .isEqualTo(new RangeJobsQuery(
@@ -251,6 +260,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryUnfinishedJobs() {
+            // When / Then
             assertThat(queryFromArguments("unfinished-job-instance", "unfinished-job-table", "--unfinished"))
                     .usingRecursiveComparison()
                     .isEqualTo(new UnfinishedJobsQuery());
@@ -258,6 +268,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryUnfinishedJobsWithShortFlag() {
+            // When / Then
             assertThat(queryFromArguments("unfinished-job-instance", "unfinished-job-table", "-u"))
                     .usingRecursiveComparison()
                     .isEqualTo(new UnfinishedJobsQuery());
@@ -270,6 +281,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryRejectedJobs() {
+            // When / Then
             assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "--rejected"))
                     .usingRecursiveComparison()
                     .isEqualTo(new RejectedJobsQuery());
@@ -277,6 +289,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldQueryRejectedJobsWithShortFlag() {
+            // When / Then
             assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "-n"))
                     .usingRecursiveComparison()
                     .isEqualTo(new RejectedJobsQuery());
@@ -289,6 +302,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldPromptForQueryTypeWhenNoFlagSet() {
+            // When / Then
             assertThat(queryFromArgumentsWithInput("a\n", "prompt-instance", "prompt-table"))
                     .usingRecursiveComparison()
                     .isEqualTo(new AllJobsQuery());
@@ -296,6 +310,7 @@ public class IngestJobStatusReportTest {
 
         @Test
         void shouldPromptForQueryTypeWhenRecentFlagSetToFalse() {
+            // When / Then
             assertThat(queryFromArgumentsWithInput("a\n", "range-instance", "range-table", "--recent=false"))
                     .usingRecursiveComparison()
                     .isEqualTo(new AllJobsQuery());
