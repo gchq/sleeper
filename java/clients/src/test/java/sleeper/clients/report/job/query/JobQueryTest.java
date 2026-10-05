@@ -76,8 +76,7 @@ public class JobQueryTest extends JobQueryTestBase {
         JobQueryType queryType = JobQueryType.DETAILED;
 
         // When
-        assertThatThrownBy(() -> queryStatuses(queryType))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(queryFrom(queryType)).isNull();
     }
 
     @Test

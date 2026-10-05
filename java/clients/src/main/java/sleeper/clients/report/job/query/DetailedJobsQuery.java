@@ -86,7 +86,7 @@ public class DetailedJobsQuery implements JobQuery {
      */
     public static JobQuery fromParameters(String queryParameters) {
         if (queryParameters == null || "".equals(queryParameters)) {
-            throw new IllegalArgumentException("No parameters provided for query type DETAILED");
+            return null;
         }
         return new DetailedJobsQuery(Arrays.asList(queryParameters.split(",")));
     }
