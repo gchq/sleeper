@@ -76,7 +76,6 @@ public class JobQueryTypeParser {
     /**
      * Parses a job tracker query from query parameters.
      *
-     * @param  foundType       the job query type
      * @param  queryParameters the parameters
      * @param  clock           a clock to get the current time
      * @return                 the query, if this parser supports the given type
