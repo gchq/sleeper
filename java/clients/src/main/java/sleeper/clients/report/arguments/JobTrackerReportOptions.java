@@ -40,9 +40,6 @@ import java.util.stream.Stream;
  */
 public class JobTrackerReportOptions {
 
-    private JobTrackerReportOptions() {
-    }
-
     public static final OutputFormatArgument<IngestJobStatusReporter> INGEST_OUTPUT_FORMAT = OutputFormatArgument
             .<IngestJobStatusReporter>withDefault("STANDARD", new StandardIngestJobStatusReporter())
             .addReporter("JSON", new JsonIngestJobStatusReporter())
@@ -55,6 +52,9 @@ public class JobTrackerReportOptions {
             .toList();
 
     private static final Map<String, JobQuery> INGEST_PROMPT_EXTRA_QUERIES = Map.of("n", new RejectedJobsQuery());
+
+    private JobTrackerReportOptions() {
+    }
 
     /**
      * Reads the ingest job tracker query requested from the command line.
