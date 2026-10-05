@@ -50,13 +50,13 @@ public class RangeJobsQuery implements JobQuery {
     public static final CommandOption START_COMMAND_OPTION = CommandOption
             .withLongName("start-time").numArgs(NumArgs.ONE)
             .helpText("Start of the period to report on, in the format " + DATE_FORMAT + ". " +
-                    "Must be set together with --end-time, and only applies to the --range query type.")
+                    "Must be set together with --end-time, and cannot be combined with other query types.")
             .argsHelpText("<" + DATE_FORMAT + ">")
             .build();
     public static final CommandOption END_COMMAND_OPTION = CommandOption
             .withLongName("end-time").numArgs(NumArgs.ONE)
             .helpText("End of the period to report on, in the format " + DATE_FORMAT + ". " +
-                    "Must be set together with --start-time, and only applies to the --range query type.")
+                    "Must be set together with --start-time, and cannot be combined with other query types.")
             .argsHelpText("<" + DATE_FORMAT + ">")
             .build();
 
@@ -107,10 +107,10 @@ public class RangeJobsQuery implements JobQuery {
      *
      * @param  queryParameters the start and end of the period as strings separated by a comma, or null for the default
      *                         period
-     * @param  timeSupplier a supplier of the current time (can be fixed for testing)
-     * @return              a query to report on all jobs in the given time period
+     * @param  timeSupplier    a supplier of the current time (can be fixed for testing)
+     * @return                 a query to report on all jobs in the given time period
      */
-    public static JobQuery fromParameters(String queryParameters, Supplier<Instant> timeSupplier) {
+    private static JobQuery fromParameters(String queryParameters, Supplier<Instant> timeSupplier) {
         if (queryParameters == null) {
             return forDefaultPeriod(timeSupplier);
         } else {
@@ -121,6 +121,12 @@ public class RangeJobsQuery implements JobQuery {
         }
     }
 
+    private static JobQuery fromArguments(CommandArguments arguments, Supplier<Instant> timeSupplier) {
+        Optional<Instant> startTime = parseTimeParameter("start-time", arguments);
+        Optional<Instant> endTime = parseTimeParameter("end-time", arguments);
+        return null;
+    }
+
     /**
      * Creates a query for the default time period, which is the last 4 hours. Used when a range is asked for without
      * setting the period.
@@ -128,7 +134,7 @@ public class RangeJobsQuery implements JobQuery {
      * @param  timeSupplier a supplier of the current time (can be fixed for testing)
      * @return              a query to report on all jobs in the default time period
      */
-    public static JobQuery forDefaultPeriod(Supplier<Instant> timeSupplier) {
+    private static JobQuery forDefaultPeriod(Supplier<Instant> timeSupplier) {
         Instant end = timeSupplier.get();
         return new RangeJobsQuery(end.minus(DEFAULT_PERIOD), end);
     }
