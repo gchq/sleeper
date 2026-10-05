@@ -214,6 +214,38 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     }
 
     @Test
+    public void shouldTrackOneEntryPerSubQueryWhenQueryIsProcessedTwice() throws Exception {
+        // Given
+        TableProperties table = createTable();
+        loadData(table);
+        RangeFactory rangeFactory = new RangeFactory(SCHEMA);
+        Range range1 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), "A", true, "Z", true);
+        Range range2 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(1), 0, true, null, true);
+        Range range3 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 0, true, null, true);
+        Query query = Query.builder()
+                .tableName(table.get(TABLE_NAME))
+                .queryId("abc")
+                .regions(List.of(new Region(List.of(range1, range2, range3))))
+                .build();
+
+        // When
+        processQuery(query);
+        processQuery(query);
+
+        // Then
+        TrackedQuery.Builder builder = trackedQuery()
+                .queryId("abc").rowCount(0L);
+        assertThat(queryTracker.getAllQueries())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
+                .containsExactlyInAnyOrder(
+                        builder.lastKnownState(IN_PROGRESS).rowCount(0L).build(),
+                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
+                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
+                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
+                        builder.lastKnownState(QUEUED).rowCount(0L).build());
+    }
+
+    @Test
     public void shouldSetStatusOfQueryAndSubQueriesToCOMPLETEDWhenAllSubQueriesHaveFinished() throws Exception {
         // Given
         TableProperties table = createTable();
