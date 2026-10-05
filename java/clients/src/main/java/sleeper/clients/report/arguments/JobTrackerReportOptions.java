@@ -53,6 +53,8 @@ public class JobTrackerReportOptions {
             .sorted(Comparator.comparing(CommandOption::longName))
             .toList();
 
+    private static final Map<String, JobQuery> INGEST_PROMPT_EXTRA_QUERIES = Map.of("n", new RejectedJobsQuery());
+
     /**
      * Reads the ingest job tracker query requested from the command line.
      *
@@ -63,7 +65,41 @@ public class JobTrackerReportOptions {
      */
     public static JobQuery readIngestJobQuery(CommandArguments arguments, Clock clock, ConsoleInput input) {
         return JobQueryTypeParser.readOneOfTypes(JobQueryType.INGEST_OPTIONS, arguments, clock)
-                .orElseGet(() -> JobQueryPrompt.from(clock, input, Map.of("n", new RejectedJobsQuery())));
+                .orElseGet(() -> JobQueryPrompt.from(clock, input, INGEST_PROMPT_EXTRA_QUERIES));
+    }
+
+    /**
+     * Creates a query for ingest jobs based on parameters. Takes input from the console for the PROMPT query type.
+     *
+     * @param  queryType       the type of query to run
+     * @param  queryParameters the parameters for the query, if required
+     * @param  clock           the clock to find the current time
+     * @param  input           the console to read from for the PROMPT query type
+     * @return                 the query
+     */
+    public static JobQuery ingestJobQueryFromParametersOrPrompt(JobQueryType queryType, String queryParameters, Clock clock, ConsoleInput input) {
+        return fromParametersOrPrompt(queryType, queryParameters, clock, input, INGEST_PROMPT_EXTRA_QUERIES);
+    }
+
+    /**
+     * Creates a query for compaction jobs based on parameters. Takes input from the console for the PROMPT query type.
+     *
+     * @param  queryType       the type of query to run
+     * @param  queryParameters the parameters for the query, if required
+     * @param  clock           the clock to find the current time
+     * @param  input           the console to read from for the PROMPT query type
+     * @return                 the query
+     */
+    public static JobQuery compactionJobQueryFromParametersOrPrompt(JobQueryType queryType, String queryParameters, Clock clock, ConsoleInput input) {
+        return fromParametersOrPrompt(queryType, queryParameters, clock, input, Map.of());
+    }
+
+    private static JobQuery fromParametersOrPrompt(
+            JobQueryType queryType, String queryParameters, Clock clock, ConsoleInput input, Map<String, JobQuery> extraQueryTypes) {
+        if (queryType == JobQueryType.PROMPT) {
+            return JobQueryPrompt.from(clock, input, extraQueryTypes);
+        }
+        return queryType.parser().read(queryParameters, clock);
     }
 
 }

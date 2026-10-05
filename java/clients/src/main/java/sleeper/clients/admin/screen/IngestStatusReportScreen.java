@@ -22,6 +22,7 @@ import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.report.IngestJobStatusReport;
 import sleeper.clients.report.IngestTaskStatusReport;
 import sleeper.clients.report.TableNamesReport;
+import sleeper.clients.report.arguments.JobTrackerReportOptions;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.report.ingest.task.StandardIngestTaskStatusReporter;
@@ -113,7 +114,7 @@ public class IngestStatusReportScreen {
 
     private void runIngestJobStatusReport(InstanceProperties properties, TableStatus table,
             JobQueryType queryType, String queryParameters) {
-        JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), in);
+        JobQuery query = JobTrackerReportOptions.ingestJobQueryFromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), in);
         new IngestJobStatusReport(trackers.loadIngestJobTracker(properties), table, query,
                 new StandardIngestJobStatusReporter(out.printStream()),
                 queueClient, properties, getStepCount.apply(properties)).run();

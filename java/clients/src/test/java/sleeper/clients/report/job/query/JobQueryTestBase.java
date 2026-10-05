@@ -16,6 +16,7 @@
 
 package sleeper.clients.report.job.query;
 
+import sleeper.clients.report.arguments.JobTrackerReportOptions;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.core.job.CompactionJob;
@@ -78,7 +79,7 @@ public class JobQueryTestBase {
     }
 
     private JobQuery queryFrom(JobQueryType queryType, String queryParameters, Clock clock) {
-        return JobQuery.fromParametersOrPrompt(queryType, queryParameters, clock, in.consoleIn());
+        return JobTrackerReportOptions.compactionJobQueryFromParametersOrPrompt(queryType, queryParameters, clock, in.consoleIn());
     }
 
     private TableProperties createTableProperties() {

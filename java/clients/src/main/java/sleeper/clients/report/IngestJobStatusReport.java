@@ -27,8 +27,6 @@ import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.IngestQueueMessages;
 import sleeper.clients.report.ingest.job.PersistentEmrStepCount;
 import sleeper.clients.report.job.query.JobQuery;
-import sleeper.clients.report.job.query.JobQueryType;
-import sleeper.clients.report.job.query.RejectedJobsQuery;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.common.task.QueueMessageCount;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -71,20 +69,6 @@ public class IngestJobStatusReport {
         this.properties = properties;
         this.tableStatus = tableStatus;
         this.persistentEmrStepCount = persistentEmrStepCount;
-    }
-
-    /**
-     * Creates a query for ingest and bulk import jobs to include in a report.
-     *
-     * @param  queryType       the type of query
-     * @param  queryParameters parameters for the query, as specified on the command line
-     * @param  clock           a clock to get the current time, to read relative time ranges
-     * @param  input           the console input, to prompt for further parameters
-     * @return                 the query
-     */
-    public static JobQuery queryfromParametersOrPrompt(
-            JobQueryType queryType, String queryParameters, Clock clock, ConsoleInput input) {
-        return JobQuery.fromParametersOrPrompt(queryType, queryParameters, clock, input, Map.of("n", new RejectedJobsQuery()));
     }
 
     /**
