@@ -128,7 +128,9 @@ public class TrackedQuery {
     public static final class Builder {
         private String queryId;
         private String subQueryId = "-";
+        // The last update time is stored as milliseconds since the epoch.
         private Long lastUpdateTime;
+        // The expiry date is stored as seconds since the epoch as that's what DynamoDB needs for expiring entries.
         private Long expiryDate;
         private QueryState lastKnownState;
         private Long rowCount = 0L;
@@ -187,13 +189,14 @@ public class TrackedQuery {
          * @return            the builder
          */
         public Builder expiryDate(Instant expiryDate) {
-            return expiryDate(expiryDate.toEpochMilli());
+            return expiryDate(expiryDate.getEpochSecond());
         }
 
         /**
-         * Provides the expiry date.
+         * Provides the expiry date. This is in seconds rather than milliseconds, as DynamoDB requires epoch seconds
+         * for a TTL attribute.
          *
-         * @param  expiryDate the expiry date in milliseconds since the epoch
+         * @param  expiryDate the expiry date in seconds since the epoch
          * @return            the builder
          */
         public Builder expiryDate(Long expiryDate) {
