@@ -176,7 +176,7 @@ of jobs manually:
 ./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> [options]
 ```
 
-The instance ID and table name are required. The output format is set with `--report-type`, which accepts `STANDARD`
+The instance ID and table name are required. The output format is set with `--format`, which accepts `STANDARD`
 (the default) or `JSON`. The jobs to include are chosen with one of the query type options below. If you don't set a
 query type, the script will prompt you for one.
 
@@ -207,7 +207,7 @@ query type, the script will prompt you for one.
 ./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --range
 
 # All jobs, as JSON
-./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --all --report-type JSON
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --all --format JSON
 ```
 
 Each query type option also has a short form: `-a` (all), `-d` (detailed), `-n` (rejected), `-r` (range) and

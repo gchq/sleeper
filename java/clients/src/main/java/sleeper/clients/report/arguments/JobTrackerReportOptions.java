@@ -43,14 +43,14 @@ public class JobTrackerReportOptions {
     private JobTrackerReportOptions() {
     }
 
-    public static final ReportTypeArgument<IngestJobStatusReporter> INGEST_REPORT_TYPE = ReportTypeArgument
+    public static final OutputFormatArgument<IngestJobStatusReporter> INGEST_OUTPUT_FORMAT = OutputFormatArgument
             .<IngestJobStatusReporter>withDefault("STANDARD", new StandardIngestJobStatusReporter())
             .addReporter("JSON", new JsonIngestJobStatusReporter())
             .build();
 
     public static final List<CommandOption> INGEST_OPTIONS = Stream.concat(
             JobQueryType.INGEST_OPTIONS.stream().flatMap(type -> type.options().stream()),
-            Stream.of(INGEST_REPORT_TYPE.option()))
+            Stream.of(INGEST_OUTPUT_FORMAT.option()))
             .sorted(Comparator.comparing(CommandOption::longName))
             .toList();
 

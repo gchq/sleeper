@@ -19,7 +19,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.report.filestatus.CVSFileStatusReporter;
+import sleeper.clients.report.arguments.OutputFormatArgument;
+import sleeper.clients.report.filestatus.CsvFileStatusReporter;
 import sleeper.clients.report.filestatus.FileStatusCollector;
 import sleeper.clients.report.filestatus.FileStatusReporter;
 import sleeper.clients.report.filestatus.JsonFileStatusReporter;
@@ -31,15 +32,12 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.cli.CommandArguments;
-import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
+import sleeper.core.util.cli.CommandOption.NumArgs;
 import sleeper.statestore.StateStoreFactory;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
@@ -47,28 +45,17 @@ import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
  * Creates reports on the files in a Sleeper table.
  */
 public class FilesStatusReport {
+
+    private static final OutputFormatArgument<FileStatusReporter> OUTPUT_FORMAT = OutputFormatArgument
+            .<FileStatusReporter>withDefault("STANDARD", new StandardFileStatusReporter())
+            .addReporter("JSON", new JsonFileStatusReporter())
+            .addReporter("CSV", new CsvFileStatusReporter())
+            .build();
+
     private final int maxNumberOfFilesWithNoReferencesToCount;
     private final boolean verbose;
     private final FileStatusReporter fileStatusReporter;
     private final FileStatusCollector fileStatusCollector;
-
-    private static final String DEFAULT_STATUS_REPORTER = "STANDARD";
-    private static final Map<String, FileStatusReporter> FILE_STATUS_REPORTERS = new HashMap<>();
-
-    static {
-        FILE_STATUS_REPORTERS.put(DEFAULT_STATUS_REPORTER, new StandardFileStatusReporter());
-        FILE_STATUS_REPORTERS.put("JSON", new JsonFileStatusReporter());
-        FILE_STATUS_REPORTERS.put("CSV", new CVSFileStatusReporter());
-    }
-
-    public FilesStatusReport(StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, boolean verbose) {
-        this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose, DEFAULT_STATUS_REPORTER);
-    }
-
-    public FilesStatusReport(
-            StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, boolean verbose, String outputType) {
-        this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose, getReporter(outputType));
-    }
 
     public FilesStatusReport(
             StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, boolean verbose,
@@ -77,13 +64,6 @@ public class FilesStatusReport {
         this.verbose = verbose;
         this.fileStatusReporter = fileStatusReporter;
         this.fileStatusCollector = new FileStatusCollector(stateStore);
-    }
-
-    private static FileStatusReporter getReporter(String outputType) {
-        if (!FILE_STATUS_REPORTERS.containsKey(outputType)) {
-            throw new IllegalArgumentException("Output type not supported " + outputType);
-        }
-        return FILE_STATUS_REPORTERS.get(outputType);
     }
 
     /**
@@ -97,20 +77,16 @@ public class FilesStatusReport {
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
             .positionalArguments(List.of("instance-id", "table-name"))
             .options(List.of(
-                    CommandOption.longOption("max-no-ref-files"),
-                    CommandOption.longOption("report-type"),
-                    CommandOption.longFlag("verbose")))
-            .helpSummary("" +
-                    "Creates a report on the status of files in a Sleeper table.\n" +
-                    "\n" +
-                    "--max-no-ref-files <number>\n" +
-                    "Maximum number of files with no references to count. Defaults to 1000.\n" +
-                    "\n" +
-                    "--report-type <type>\n" +
-                    "Output format. One of STANDARD, JSON, CSV. Defaults to STANDARD.\n" +
-                    "\n" +
-                    "--verbose\n" +
-                    "If set, the report will include detailed file information.")
+                    OUTPUT_FORMAT.option(),
+                    CommandOption.withLongName("max-no-ref-files")
+                            .numArgs(NumArgs.ONE)
+                            .helpText("Maximum number of files with no references to count. Defaults to 1000.")
+                            .argsHelpText("<number>")
+                            .build(),
+                    CommandOption.withLongName("verbose")
+                            .helpText("If set, the report will include detailed file information.")
+                            .build()))
+            .helpSummary("Creates a report on the status of files in a Sleeper table.")
             .build();
 
     /**
@@ -125,9 +101,7 @@ public class FilesStatusReport {
                 arguments.getString("table-name"),
                 arguments.getIntegerOrDefault("max-no-ref-files", 1000),
                 arguments.isFlagSet("verbose"),
-                arguments.getOptionalString("report-type")
-                        .map(s -> s.toUpperCase(Locale.ROOT))
-                        .orElse(DEFAULT_STATUS_REPORTER));
+                OUTPUT_FORMAT.read(arguments));
     }
 
     /**
@@ -144,13 +118,7 @@ public class FilesStatusReport {
             String tableName,
             int maxNoRefFiles,
             boolean verbose,
-            String reporterType) {
-
-        public Arguments {
-            if (!FILE_STATUS_REPORTERS.containsKey(reporterType)) {
-                throw new CommandArgumentsException("Report type not supported: " + reporterType + ". Valid types: " + String.join(", ", FILE_STATUS_REPORTERS.keySet()));
-            }
-        }
+            FileStatusReporter reporter) {
     }
 
     public static void main(String[] rawArgs) {
@@ -164,7 +132,7 @@ public class FilesStatusReport {
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
             StateStore stateStore = stateStoreFactory.getStateStore(tablePropertiesProvider.getByName(args.tableName()));
-            new FilesStatusReport(stateStore, args.maxNoRefFiles(), args.verbose(), args.reporterType()).run();
+            new FilesStatusReport(stateStore, args.maxNoRefFiles(), args.verbose(), args.reporter()).run();
         }
     }
 }

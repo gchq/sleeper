@@ -128,7 +128,7 @@ public class IngestJobStatusReport {
     public static Arguments readArguments(CommandArguments arguments, Supplier<Instant> timeSupplier, ConsoleInput input) {
         return new Arguments(arguments.getString("instance-id"),
                 arguments.getString("table-name"),
-                JobTrackerReportOptions.INGEST_REPORT_TYPE.read(arguments),
+                JobTrackerReportOptions.INGEST_OUTPUT_FORMAT.read(arguments),
                 JobTrackerReportOptions.readIngestJobQuery(arguments, timeSupplier, input));
     }
 

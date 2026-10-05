@@ -25,6 +25,8 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import static java.util.stream.Collectors.joining;
+
 /**
  * Reads the output format for a report from the command line. Holds the reporters a report command can output with,
  * and resolves the one the user asked for. Report commands share this so that they declare the same option, accept
@@ -35,15 +37,15 @@ import java.util.Map;
  *
  * @param <T> the type of reporter this resolves to
  */
-public class ReportTypeArgument<T> {
+public class OutputFormatArgument<T> {
 
-    public static final String OPTION_NAME = "report-type";
+    public static final String OPTION_NAME = "format";
 
-    private final Map<String, T> reporterByType;
+    private final Map<String, T> formatToReporter;
     private final String defaultType;
 
-    private ReportTypeArgument(Builder<T> builder) {
-        reporterByType = builder.reporterByType;
+    private OutputFormatArgument(Builder<T> builder) {
+        formatToReporter = builder.formatToReporter;
         defaultType = builder.defaultType;
     }
 
@@ -51,12 +53,12 @@ public class ReportTypeArgument<T> {
      * Creates a builder, starting with the reporter to use when the option is not set.
      *
      * @param  <T>      the type of reporter this resolves to
-     * @param  type     the name of the output format, in upper case
+     * @param  format   the name of the output format, in upper case
      * @param  reporter the reporter
      * @return          the builder
      */
-    public static <T> Builder<T> withDefault(String type, T reporter) {
-        return new Builder<T>().addDefaultReporter(type, reporter);
+    public static <T> Builder<T> withDefault(String format, T reporter) {
+        return new Builder<T>().addDefaultReporter(format, reporter);
     }
 
     /**
@@ -67,8 +69,8 @@ public class ReportTypeArgument<T> {
     public CommandOption option() {
         return CommandOption.withLongName(OPTION_NAME)
                 .numArgs(NumArgs.ONE)
-                .helpText("Output format. One of " + validTypes() + ". Defaults to " + defaultType + ".")
-                .argsHelpText("<type>")
+                .helpText("Output format. One of " + validFormats() + ". Defaults to " + defaultType + ".")
+                .argsHelpText("<format>")
                 .build();
     }
 
@@ -81,16 +83,16 @@ public class ReportTypeArgument<T> {
      */
     public T read(CommandArguments arguments) {
         String setType = arguments.getOptionalString(OPTION_NAME).orElse(defaultType);
-        T reporter = reporterByType.get(setType.toUpperCase(Locale.ROOT));
+        T reporter = formatToReporter.get(setType.toUpperCase(Locale.ROOT));
         if (reporter == null) {
             throw new CommandArgumentsException(
-                    "Report type not supported: " + setType + ". Valid types: " + validTypes());
+                    "Output format not supported: " + setType + ". Valid formats: " + validFormats());
         }
         return reporter;
     }
 
-    private String validTypes() {
-        return String.join(", ", reporterByType.keySet());
+    private String validFormats() {
+        return formatToReporter.keySet().stream().sorted().collect(joining(", "));
     }
 
     /**
@@ -99,7 +101,7 @@ public class ReportTypeArgument<T> {
      * @param <T> the type of reporter this resolves to
      */
     public static class Builder<T> {
-        private final Map<String, T> reporterByType = new LinkedHashMap<>();
+        private final Map<String, T> formatToReporter = new LinkedHashMap<>();
         private String defaultType;
 
         private Builder() {
@@ -108,22 +110,22 @@ public class ReportTypeArgument<T> {
         /**
          * Adds a reporter the user may select. Reporters are listed to the user in the order they are added here.
          *
-         * @param  type     the name of the output format, in upper case
+         * @param  format   the name of the output format, in upper case
          * @param  reporter the reporter
          * @return          this builder
          */
-        public Builder<T> addReporter(String type, T reporter) {
-            reporterByType.put(type, reporter);
+        public Builder<T> addReporter(String format, T reporter) {
+            formatToReporter.put(format, reporter);
             return this;
         }
 
-        public ReportTypeArgument<T> build() {
-            return new ReportTypeArgument<>(this);
+        public OutputFormatArgument<T> build() {
+            return new OutputFormatArgument<>(this);
         }
 
-        private Builder<T> addDefaultReporter(String type, T reporter) {
-            defaultType = type;
-            return addReporter(type, reporter);
+        private Builder<T> addDefaultReporter(String format, T reporter) {
+            defaultType = format;
+            return addReporter(format, reporter);
         }
     }
 }

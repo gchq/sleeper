@@ -28,9 +28,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class ReportTypeArgumentTest {
+public class OutputFormatArgumentTest {
 
-    private final ReportTypeArgument<String> reportType = ReportTypeArgument
+    private final OutputFormatArgument<String> reportType = OutputFormatArgument
             .withDefault("STANDARD", "standard-reporter")
             .addReporter("JSON", "json-reporter")
             .addReporter("CSV", "csv-reporter")
