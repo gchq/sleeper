@@ -27,11 +27,10 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static org.mockito.Mockito.mock;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
@@ -62,24 +61,24 @@ public class JobQueryTestBase {
     }
 
     protected List<CompactionJobStatus> queryStatusesWithParams(JobQueryType queryType, String queryParameters) {
-        return queryStatuses(queryType, queryParameters, Clock.systemUTC());
+        return queryStatuses(queryType, queryParameters, Instant::now);
     }
 
     protected List<CompactionJobStatus> queryStatusesAtTime(JobQueryType queryType, Instant time) {
         return queryStatuses(queryType, null,
-                Clock.fixed(time, ZoneId.of("UTC")));
+                () -> time);
     }
 
     protected JobQuery queryFrom(JobQueryType queryType) {
-        return queryFrom(queryType, null, Clock.systemUTC());
+        return queryFrom(queryType, null, Instant::now);
     }
 
-    private List<CompactionJobStatus> queryStatuses(JobQueryType queryType, String queryParameters, Clock clock) {
-        return queryFrom(queryType, queryParameters, clock).run(tracker, tableId);
+    private List<CompactionJobStatus> queryStatuses(JobQueryType queryType, String queryParameters, Supplier<Instant> timeSupplier) {
+        return queryFrom(queryType, queryParameters, timeSupplier).run(tracker, tableId);
     }
 
-    private JobQuery queryFrom(JobQueryType queryType, String queryParameters, Clock clock) {
-        return JobTrackerReportOptions.compactionJobQueryFromParametersOrPrompt(queryType, queryParameters, clock, in.consoleIn());
+    private JobQuery queryFrom(JobQueryType queryType, String queryParameters, Supplier<Instant> timeSupplier) {
+        return JobTrackerReportOptions.compactionJobQueryFromParametersOrPrompt(queryType, queryParameters, timeSupplier, in.consoleIn());
     }
 
     private TableProperties createTableProperties() {

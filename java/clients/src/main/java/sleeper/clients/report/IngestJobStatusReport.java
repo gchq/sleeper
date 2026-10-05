@@ -38,9 +38,10 @@ import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 
-import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
@@ -86,7 +87,7 @@ public class IngestJobStatusReport {
 
     public static void main(String[] args) {
         Arguments reportArgs = CommandArguments.parseAndValidateOrExit(USAGE, args,
-                cmdArgs -> readArguments(cmdArgs, Clock.systemUTC(), ConsoleInput.stdIn()));
+                cmdArgs -> readArguments(cmdArgs, Instant::now, ConsoleInput.stdIn()));
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
@@ -119,16 +120,16 @@ public class IngestJobStatusReport {
     /**
      * Reads the arguments from the command line and builds the query.
      *
-     * @param  arguments the parsed command line arguments
-     * @param  clock     a clock to get the current time, to read relative time ranges
-     * @param  input     the console input, to prompt for further parameters
-     * @return           the arguments
+     * @param  arguments    the parsed command line arguments
+     * @param  timeSupplier a supplier of the current time, to read relative time ranges
+     * @param  input        the console input, to prompt for further parameters
+     * @return              the arguments
      */
-    public static Arguments readArguments(CommandArguments arguments, Clock clock, ConsoleInput input) {
+    public static Arguments readArguments(CommandArguments arguments, Supplier<Instant> timeSupplier, ConsoleInput input) {
         return new Arguments(arguments.getString("instance-id"),
                 arguments.getString("table-name"),
                 JobTrackerReportOptions.INGEST_REPORT_TYPE.read(arguments),
-                JobTrackerReportOptions.readIngestJobQuery(arguments, clock, input));
+                JobTrackerReportOptions.readIngestJobQuery(arguments, timeSupplier, input));
     }
 
     /**

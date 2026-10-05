@@ -27,7 +27,6 @@ import sleeper.core.util.cli.CommandOption.NumArgs;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -79,12 +78,12 @@ public class RangeJobsQuery implements JobQuery {
      */
     public static JobQueryTypeParser parser() {
         return new JobQueryTypeParser(
-                List.of(COMMAND_OPTION, START_COMMAND_OPTION, END_COMMAND_OPTION), (parameters, time) -> fromParameters(parameters, time),
-                (arguments, time) -> new RangeJobsQuery(
+                List.of(COMMAND_OPTION, START_COMMAND_OPTION, END_COMMAND_OPTION), RangeJobsQuery::fromParameters,
+                (arguments, timeSupplier) -> new RangeJobsQuery(
                         parseTimeParameter("start-time", arguments)
-                                .orElseGet(() -> time.instant().minus(DEFAULT_PERIOD)),
+                                .orElseGet(() -> timeSupplier.get().minus(DEFAULT_PERIOD)),
                         parseTimeParameter("end-time", arguments)
-                                .orElseGet(() -> time.instant())));
+                                .orElseGet(timeSupplier)));
     }
 
     @Override
@@ -108,16 +107,16 @@ public class RangeJobsQuery implements JobQuery {
      *
      * @param  queryParameters the start and end of the period as strings separated by a comma, or null for the default
      *                         period
-     * @param  clock           a clock to get the current time (can be fixed for testing)
-     * @return                 a query to report on all jobs in the given time period
+     * @param  timeSupplier a supplier of the current time (can be fixed for testing)
+     * @return              a query to report on all jobs in the given time period
      */
-    public static JobQuery fromParameters(String queryParameters, Clock clock) {
+    public static JobQuery fromParameters(String queryParameters, Supplier<Instant> timeSupplier) {
         if (queryParameters == null) {
-            return forDefaultPeriod(clock);
+            return forDefaultPeriod(timeSupplier);
         } else {
             String[] parts = queryParameters.split(",");
-            Instant start = parseStart(parts[0], clock);
-            Instant end = parseEnd(parts[1], clock);
+            Instant start = parseStart(parts[0], timeSupplier);
+            Instant end = parseEnd(parts[1], timeSupplier);
             return new RangeJobsQuery(start, end);
         }
     }
@@ -126,11 +125,11 @@ public class RangeJobsQuery implements JobQuery {
      * Creates a query for the default time period, which is the last 4 hours. Used when a range is asked for without
      * setting the period.
      *
-     * @param  clock a clock to get the current time (can be fixed for testing)
-     * @return       a query to report on all jobs in the default time period
+     * @param  timeSupplier a supplier of the current time (can be fixed for testing)
+     * @return              a query to report on all jobs in the default time period
      */
-    public static JobQuery forDefaultPeriod(Clock clock) {
-        Instant end = clock.instant();
+    public static JobQuery forDefaultPeriod(Supplier<Instant> timeSupplier) {
+        Instant end = timeSupplier.get();
         return new RangeJobsQuery(end.minus(DEFAULT_PERIOD), end);
     }
 
@@ -138,40 +137,40 @@ public class RangeJobsQuery implements JobQuery {
      * Prompts the user to set the time period for a query. Will ask for the start and end times as separate prompts in
      * the format yyyyMMddHHmmss.
      *
-     * @param  in    the console to prompt the user
-     * @param  clock a clock to get the current time (can be fixed for testing)
-     * @return       a query to report on all jobs in the given time period
+     * @param  in           the console to prompt the user
+     * @param  timeSupplier a supplier of the current time (can be fixed for testing)
+     * @return              a query to report on all jobs in the given time period
      */
-    public static JobQuery prompt(ConsoleInput in, Clock clock) {
-        Instant start = promptStart(in, clock);
-        Instant end = promptEnd(in, clock);
+    public static JobQuery prompt(ConsoleInput in, Supplier<Instant> timeSupplier) {
+        Instant start = promptStart(in, timeSupplier);
+        Instant end = promptEnd(in, timeSupplier);
         return new RangeJobsQuery(start, end);
     }
 
-    private static Instant promptStart(ConsoleInput in, Clock clock) {
+    private static Instant promptStart(ConsoleInput in, Supplier<Instant> timeSupplier) {
         String str = in.promptLine("Enter range start in format " + DATE_FORMAT + " (default is 4 hours ago): ");
         try {
-            return parseStart(str, clock);
+            return parseStart(str, timeSupplier);
         } catch (IllegalArgumentException e) {
-            return promptStart(in, clock);
+            return promptStart(in, timeSupplier);
         }
     }
 
-    private static Instant promptEnd(ConsoleInput in, Clock clock) {
+    private static Instant promptEnd(ConsoleInput in, Supplier<Instant> timeSupplier) {
         String str = in.promptLine("Enter range end in format " + DATE_FORMAT + " (default is now): ");
         try {
-            return parseEnd(str, clock);
+            return parseEnd(str, timeSupplier);
         } catch (IllegalArgumentException e) {
-            return promptEnd(in, clock);
+            return promptEnd(in, timeSupplier);
         }
     }
 
-    private static Instant parseStart(String startStr, Clock clock) {
-        return parseDate(startStr, () -> clock.instant().minus(DEFAULT_PERIOD));
+    private static Instant parseStart(String startStr, Supplier<Instant> timeSupplier) {
+        return parseDate(startStr, () -> timeSupplier.get().minus(DEFAULT_PERIOD));
     }
 
-    private static Instant parseEnd(String endStr, Clock clock) {
-        return parseDate(endStr, clock::instant);
+    private static Instant parseEnd(String endStr, Supplier<Instant> timeSupplier) {
+        return parseDate(endStr, timeSupplier);
     }
 
     private static Optional<Instant> parseTimeParameter(String name, CommandArguments arguments) {

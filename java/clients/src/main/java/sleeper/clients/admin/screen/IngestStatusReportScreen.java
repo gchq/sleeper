@@ -37,7 +37,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 
-import java.time.Clock;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -114,7 +114,7 @@ public class IngestStatusReportScreen {
 
     private void runIngestJobStatusReport(InstanceProperties properties, TableStatus table,
             JobQueryType queryType, String queryParameters) {
-        JobQuery query = JobTrackerReportOptions.ingestJobQueryFromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), in);
+        JobQuery query = JobTrackerReportOptions.ingestJobQueryFromParametersOrPrompt(queryType, queryParameters, Instant::now, in);
         new IngestJobStatusReport(trackers.loadIngestJobTracker(properties), table, query,
                 new StandardIngestJobStatusReporter(out.printStream()),
                 queueClient, properties, getStepCount.apply(properties)).run();

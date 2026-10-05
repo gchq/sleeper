@@ -35,7 +35,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
-import java.time.Clock;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -102,7 +102,7 @@ public class CompactionJobStatusReport {
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
                 CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-                JobQuery query = JobTrackerReportOptions.compactionJobQueryFromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
+                JobQuery query = JobTrackerReportOptions.compactionJobQueryFromParametersOrPrompt(queryType, queryParameters, Instant::now, ConsoleInput.stdIn());
                 new CompactionJobStatusReport(tracker, reporter, table, query).run();
             }
         } catch (IllegalArgumentException e) {

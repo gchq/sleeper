@@ -19,7 +19,7 @@ import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandOption;
 
-import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,14 +56,14 @@ public class JobQueryTypeParser {
      * type options should not include prompting. If none is specified, an empty optional will be returned, in which
      * case some default behaviour should happen, e.g. prompting.
      *
-     * @param  typeOptions the allowed query types
-     * @param  arguments   the arguments
-     * @param  clock       a clock to get the current time
-     * @return             the query, if exactly one of the given types is set
+     * @param  typeOptions  the allowed query types
+     * @param  arguments    the arguments
+     * @param  timeSupplier a supplier of the current time
+     * @return              the query, if exactly one of the given types is set
      */
-    public static Optional<JobQuery> readOneOfTypes(List<JobQueryType> typeOptions, CommandArguments arguments, Clock clock) {
+    public static Optional<JobQuery> readOneOfTypes(List<JobQueryType> typeOptions, CommandArguments arguments, Supplier<Instant> timeSupplier) {
         List<JobQuery> queries = typeOptions.stream()
-                .flatMap(type -> type.parser().read(arguments, clock).stream())
+                .flatMap(type -> type.parser().read(arguments, timeSupplier).stream())
                 .toList();
         if (queries.size() > 1) {
             throw new CommandArgumentsException(
@@ -77,17 +77,17 @@ public class JobQueryTypeParser {
      * Parses a job tracker query from query parameters.
      *
      * @param  queryParameters the parameters
-     * @param  clock           a clock to get the current time
+     * @param  timeSupplier    a supplier of the current time
      * @return                 the query, if this parser supports the given type
      */
-    public JobQuery read(String queryParameters, Clock clock) {
-        return byParameters.read(queryParameters, clock);
+    public JobQuery read(String queryParameters, Supplier<Instant> timeSupplier) {
+        return byParameters.read(queryParameters, timeSupplier);
     }
 
-    private Optional<JobQuery> read(CommandArguments arguments, Clock clock) {
+    private Optional<JobQuery> read(CommandArguments arguments, Supplier<Instant> timeSupplier) {
         if (options.stream().anyMatch(arguments::isSet)) {
             try {
-                return Optional.of(byArguments.read(arguments, clock));
+                return Optional.of(byArguments.read(arguments, timeSupplier));
             } catch (RuntimeException e) {
                 throw new CommandArgumentsException(e);
             }
@@ -114,10 +114,10 @@ public class JobQueryTypeParser {
          * Parses query parameters into a jobs query.
          *
          * @param  queryParameters the parameters
-         * @param  clock           a clock to get the current time
+         * @param  timeSupplier    a supplier of the current time
          * @return                 the query
          */
-        JobQuery read(String queryParameters, Clock clock);
+        JobQuery read(String queryParameters, Supplier<Instant> timeSupplier);
     }
 
     /**
@@ -128,11 +128,11 @@ public class JobQueryTypeParser {
         /**
          * Parses arguments into a jobs query.
          *
-         * @param  arguments the arguments
-         * @param  clock     a clock to get the current time
-         * @return           the query
+         * @param  arguments    the arguments
+         * @param  timeSupplier a supplier of the current time
+         * @return              the query
          */
-        JobQuery read(CommandArguments arguments, Clock clock);
+        JobQuery read(CommandArguments arguments, Supplier<Instant> timeSupplier);
     }
 
 }

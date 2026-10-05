@@ -36,7 +36,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 
-import java.time.Clock;
+import java.time.Instant;
 import java.util.Optional;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
@@ -104,7 +104,7 @@ public class CompactionStatusReportScreen {
     }
 
     private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus table, JobQueryType queryType, String queryParameters) {
-        JobQuery query = JobTrackerReportOptions.compactionJobQueryFromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), in);
+        JobQuery query = JobTrackerReportOptions.compactionJobQueryFromParametersOrPrompt(queryType, queryParameters, Instant::now, in);
         new CompactionJobStatusReport(trackers.loadCompactionJobTracker(properties),
                 new StandardCompactionJobStatusReporter(out.printStream()), table, query).run();
         confirmReturnToMainScreen(out, in);

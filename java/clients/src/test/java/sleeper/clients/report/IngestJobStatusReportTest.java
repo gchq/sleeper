@@ -35,9 +35,7 @@ import sleeper.core.util.cli.CommandArgumentsException;
 import java.io.ByteArrayInputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Scanner;
 
@@ -397,7 +395,7 @@ public class IngestJobStatusReportTest {
     private static Arguments readArgumentsAtTime(Instant now, ConsoleInput input, String... args) {
         return IngestJobStatusReport.readArguments(
                 CommandArgumentReader.parse(IngestJobStatusReport.USAGE, args),
-                Clock.fixed(now, ZoneId.of("UTC")), input);
+                () -> now, input);
     }
 
     private static ConsoleInput consoleInputFrom(String input) {

@@ -27,10 +27,11 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandOption;
 
-import java.time.Clock;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -58,14 +59,14 @@ public class JobTrackerReportOptions {
     /**
      * Reads the ingest job tracker query requested from the command line.
      *
-     * @param  arguments the command line arguments
-     * @param  clock     the clock to get the current time
-     * @param  input     the console to prompt the user for further input
-     * @return           the query
+     * @param  arguments    the command line arguments
+     * @param  timeSupplier a supplier of the current time
+     * @param  input        the console to prompt the user for further input
+     * @return              the query
      */
-    public static JobQuery readIngestJobQuery(CommandArguments arguments, Clock clock, ConsoleInput input) {
-        return JobQueryTypeParser.readOneOfTypes(JobQueryType.INGEST_OPTIONS, arguments, clock)
-                .orElseGet(() -> JobQueryPrompt.from(clock, input, INGEST_PROMPT_EXTRA_QUERIES));
+    public static JobQuery readIngestJobQuery(CommandArguments arguments, Supplier<Instant> timeSupplier, ConsoleInput input) {
+        return JobQueryTypeParser.readOneOfTypes(JobQueryType.INGEST_OPTIONS, arguments, timeSupplier)
+                .orElseGet(() -> JobQueryPrompt.from(timeSupplier, input, INGEST_PROMPT_EXTRA_QUERIES));
     }
 
     /**
@@ -73,12 +74,12 @@ public class JobTrackerReportOptions {
      *
      * @param  queryType       the type of query to run
      * @param  queryParameters the parameters for the query, if required
-     * @param  clock           the clock to find the current time
+     * @param  timeSupplier    a supplier of the current time
      * @param  input           the console to read from for the PROMPT query type
      * @return                 the query
      */
-    public static JobQuery ingestJobQueryFromParametersOrPrompt(JobQueryType queryType, String queryParameters, Clock clock, ConsoleInput input) {
-        return fromParametersOrPrompt(queryType, queryParameters, clock, input, INGEST_PROMPT_EXTRA_QUERIES);
+    public static JobQuery ingestJobQueryFromParametersOrPrompt(JobQueryType queryType, String queryParameters, Supplier<Instant> timeSupplier, ConsoleInput input) {
+        return fromParametersOrPrompt(queryType, queryParameters, timeSupplier, input, INGEST_PROMPT_EXTRA_QUERIES);
     }
 
     /**
@@ -86,20 +87,20 @@ public class JobTrackerReportOptions {
      *
      * @param  queryType       the type of query to run
      * @param  queryParameters the parameters for the query, if required
-     * @param  clock           the clock to find the current time
+     * @param  timeSupplier    a supplier of the current time
      * @param  input           the console to read from for the PROMPT query type
      * @return                 the query
      */
-    public static JobQuery compactionJobQueryFromParametersOrPrompt(JobQueryType queryType, String queryParameters, Clock clock, ConsoleInput input) {
-        return fromParametersOrPrompt(queryType, queryParameters, clock, input, Map.of());
+    public static JobQuery compactionJobQueryFromParametersOrPrompt(JobQueryType queryType, String queryParameters, Supplier<Instant> timeSupplier, ConsoleInput input) {
+        return fromParametersOrPrompt(queryType, queryParameters, timeSupplier, input, Map.of());
     }
 
     private static JobQuery fromParametersOrPrompt(
-            JobQueryType queryType, String queryParameters, Clock clock, ConsoleInput input, Map<String, JobQuery> extraQueryTypes) {
+            JobQueryType queryType, String queryParameters, Supplier<Instant> timeSupplier, ConsoleInput input, Map<String, JobQuery> extraQueryTypes) {
         if (queryType == JobQueryType.PROMPT) {
-            return JobQueryPrompt.from(clock, input, extraQueryTypes);
+            return JobQueryPrompt.from(timeSupplier, input, extraQueryTypes);
         }
-        return queryType.parser().read(queryParameters, clock);
+        return queryType.parser().read(queryParameters, timeSupplier);
     }
 
 }
