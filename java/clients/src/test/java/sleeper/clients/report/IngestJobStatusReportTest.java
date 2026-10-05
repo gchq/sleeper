@@ -15,7 +15,6 @@
  */
 package sleeper.clients.report;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -45,8 +44,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IngestJobStatusReportTest {
-
-    private static final Instant DEFAULT_TIME = Instant.parse("2026-10-05T13:43:00Z");
 
     @Nested
     class ParseArguments {
@@ -154,23 +151,23 @@ public class IngestJobStatusReportTest {
         @Test
         void shouldQueryJobsInGivenPeriod() {
             assertThat(queryFromArguments("range-job-instance", "range-job-table",
-                    "--range", "--start-time", "20201010093000", "--end-time", "20211008150000"))
+                    "--start-time", "20201010093000", "--end-time", "20211008150000"))
                     .usingRecursiveComparison()
                     .isEqualTo(new RangeJobsQuery(
                             Instant.parse("2020-10-10T09:30:00Z"), Instant.parse("2021-10-08T15:00:00Z")));
         }
 
         @Test
-        void shouldQueryJobsInGivenPeriodWhenOnlyTimeFlagsGiven() {
+        void shouldQueryJobsInGivenPeriodWhenRecentFlagAlsoSet() {
             assertThat(queryFromArguments("range-job-instance", "range-job-table",
-                    "--start-time", "20201114120101", "--end-time", "20210407150000"))
+                    "--recent", "--start-time", "20201114120101", "--end-time", "20210407150000"))
                     .usingRecursiveComparison()
                     .isEqualTo(new RangeJobsQuery(
                             Instant.parse("2020-11-14T12:01:01Z"), Instant.parse("2021-04-07T15:00:00Z")));
         }
 
         @Test
-        void shouldQueryJobsInLastFourHoursWhenRangeSetWithNoTimes() {
+        void shouldQueryJobsInLastFourHoursWhenRecentSetWithNoTimes() {
             // Given
             Instant now = Instant.parse("2024-05-01T12:00:00Z");
             RangeJobsQuery expectedQuery = new RangeJobsQuery(
@@ -180,21 +177,44 @@ public class IngestJobStatusReportTest {
             assertThat(queryFromArgumentsAtTime(now, "range-default-instance", "range-default-table", "-r"))
                     .usingRecursiveComparison()
                     .isEqualTo(expectedQuery);
-            assertThat(queryFromArgumentsAtTime(now, "range-default-instance", "range-default-table", "--range"))
+            assertThat(queryFromArgumentsAtTime(now, "range-default-instance", "range-default-table", "--recent"))
                     .usingRecursiveComparison()
                     .isEqualTo(expectedQuery);
         }
 
         @Test
-        void shouldQueryJobsInDefaultPeriodWhenRangeSetToTrue() {
+        void shouldQueryJobsInDefaultPeriodWhenRecentSetToTrue() {
             // Given
             Instant now = Instant.parse("2024-05-01T12:00:00Z");
 
             // Then
-            assertThat(queryFromArgumentsAtTime(now, "range-instance", "range-table", "--range=true"))
+            assertThat(queryFromArgumentsAtTime(now, "range-instance", "range-table", "--recent=true"))
                     .usingRecursiveComparison()
                     .isEqualTo(new RangeJobsQuery(
                             Instant.parse("2024-05-01T08:00:00Z"), now));
+        }
+
+        @Test
+        void shouldQueryJobsWithStartTimeButNoEndTime() {
+            // When / Then
+            assertThat(queryFromArgumentsAtTime(
+                    Instant.parse("2024-05-01T10:00:00Z"),
+                    "range-instance", "range-table", "--start-time", "20240501080000"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RangeJobsQuery(
+                            Instant.parse("2024-05-01T08:00:00Z"),
+                            Instant.parse("2024-05-01T10:00:00Z")));
+        }
+
+        @Test
+        void shouldQueryJobsWithEndTimeButNoStartTime() {
+            // When / Then
+            assertThat(queryFromArguments(
+                    "range-instance", "range-table", "--end-time", "20240501080000"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RangeJobsQuery(
+                            Instant.parse("2024-05-01T04:00:00Z"),
+                            Instant.parse("2024-05-01T08:00:00Z")));
         }
 
         @Test
@@ -222,46 +242,6 @@ public class IngestJobStatusReportTest {
                     "--start-time", "20200101120000", "--end-time", "19700101120000"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Range end is before range start. Range start: 2020-01-01T12:00:00Z, range end: 1970-01-01T12:00:00Z");
-        }
-
-        @Test
-        @Disabled("TODO")
-        void shouldRejectRangeReportWithStartTimeButNoEndTime() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
-                    "--start-time", "20221101085959"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Missing parameter of end-time which is required for the Range query type.");
-        }
-
-        @Test
-        @Disabled("TODO")
-        void shouldRejectRangeReportWithEndTimeButNoStartTime() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
-                    "--end-time", "20240912093000"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Missing parameter of start-time which is required for the Range query type.");
-        }
-
-        @Test
-        @Disabled("TODO")
-        void shouldReportMissingEndTimeWhenOnlyStartTimeGivenWithNoQueryTypeFlag() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table",
-                    "--start-time", "20221101085959"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Missing parameter of end-time which is required for the Range query type.");
-        }
-
-        @Test
-        @Disabled("TODO")
-        void shouldReportMissingStartTimeWhenOnlyEndTimeGivenWithNoQueryTypeFlag() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table",
-                    "--end-time", "20240912093000"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Missing parameter of start-time which is required for the Range query type.");
         }
     }
 
@@ -315,8 +295,8 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
-        void shouldPromptForQueryTypeWhenRangeFlagSetToFalse() {
-            assertThat(queryFromArgumentsWithInput("a\n", "range-instance", "range-table", "--range=false"))
+        void shouldPromptForQueryTypeWhenRecentFlagSetToFalse() {
+            assertThat(queryFromArgumentsWithInput("a\n", "range-instance", "range-table", "--recent=false"))
                     .usingRecursiveComparison()
                     .isEqualTo(new AllJobsQuery());
         }
@@ -398,30 +378,36 @@ public class IngestJobStatusReportTest {
         @Test
         void shouldListEveryQueryTypeSetInTheOrderTheyAppearInTheUsage() {
             // When / Then
-            assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "-aur"))
+            assertThatThrownBy(() -> queryFromArgumentsAtTime(Instant.now(), "multiple-flag-instance", "multiple-flag-table", "-aur"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Cannot combine query types. Options have been set for the following types: ALL, RANGE, UNFINISHED");
         }
     }
 
     private JobQuery queryFromArguments(String... args) {
-        return queryFromArgumentsAtTime(DEFAULT_TIME, args);
+        return readArguments(args).query();
     }
 
     private JobQuery queryFromArgumentsAtTime(Instant now, String... args) {
-        return readArgumentsAtTime(now, ConsoleInput.stdIn(), args).query();
+        return readArgumentsAtTime(now, consoleInputFrom(""), args).query();
     }
 
     private JobQuery queryFromArgumentsWithInput(String input, String... args) {
-        return readArgumentsAtTime(DEFAULT_TIME, consoleInputFrom(input), args).query();
+        return readArguments(consoleInputFrom(input), args).query();
     }
 
     private static Arguments readArguments(String... args) {
-        return readArgumentsAtTime(DEFAULT_TIME, ConsoleInput.stdIn(), args);
+        return readArguments(consoleInputFrom(""), args);
     }
 
     private static Arguments readArgumentsAtTime(Instant now, ConsoleInput input, String... args) {
         return readArguments(() -> now, input, args);
+    }
+
+    private static Arguments readArguments(ConsoleInput input, String... args) {
+        return readArguments(() -> {
+            throw new IllegalStateException("Unexpected time query");
+        }, input, args);
     }
 
     private static Arguments readArguments(Supplier<Instant> timeSupplier, ConsoleInput input, String... args) {

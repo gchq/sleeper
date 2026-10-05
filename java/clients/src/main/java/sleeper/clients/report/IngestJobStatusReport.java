@@ -112,8 +112,7 @@ public class IngestJobStatusReport {
             .helpSummary("" +
                     "A report on ingest jobs within a Sleeper instance.\n" +
                     "\n" +
-                    "The jobs to report on are chosen with one of the query type options, " +
-                    "which are --all, --detailed, --range, --rejected and --unfinished. " +
+                    "The jobs to report on are chosen with one of the query type options. " +
                     "Only one may be set at a time. If none is set, you will be prompted to choose one.")
             .build();
 

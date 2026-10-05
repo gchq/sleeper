@@ -42,21 +42,20 @@ public class RangeJobsQuery implements JobQuery {
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
     private static final Duration DEFAULT_PERIOD = Duration.ofHours(4);
 
-    public static final CommandOption COMMAND_OPTION = CommandOption
-            .withLongName("range").shortName('r')
-            .helpText("Reports on all jobs in a time period. Defaults to the last 4 hours, " +
-                    "or set the period with --start-time and --end-time.")
+    public static final CommandOption RECENT_COMMAND_OPTION = CommandOption
+            .withLongName("recent").shortName('r')
+            .helpText("Reports on all jobs in the last 4 hours.")
             .build();
     public static final CommandOption START_COMMAND_OPTION = CommandOption
             .withLongName("start-time").numArgs(NumArgs.ONE)
             .helpText("Start of the period to report on, in the format " + DATE_FORMAT + ". " +
-                    "Must be set together with --end-time, and cannot be combined with other query types.")
+                    "Can only be combined with --end-time, and defaults to 4 hours before --end-time.")
             .argsHelpText("<" + DATE_FORMAT + ">")
             .build();
     public static final CommandOption END_COMMAND_OPTION = CommandOption
             .withLongName("end-time").numArgs(NumArgs.ONE)
             .helpText("End of the period to report on, in the format " + DATE_FORMAT + ". " +
-                    "Must be set together with --start-time, and cannot be combined with other query types.")
+                    "Can only be combined with --start-time, and defaults to the current time.")
             .argsHelpText("<" + DATE_FORMAT + ">")
             .build();
 
@@ -78,12 +77,8 @@ public class RangeJobsQuery implements JobQuery {
      */
     public static JobQueryTypeParser parser() {
         return new JobQueryTypeParser(
-                List.of(COMMAND_OPTION, START_COMMAND_OPTION, END_COMMAND_OPTION), RangeJobsQuery::fromParameters,
-                (arguments, timeSupplier) -> new RangeJobsQuery(
-                        parseTimeParameter("start-time", arguments)
-                                .orElseGet(() -> timeSupplier.get().minus(DEFAULT_PERIOD)),
-                        parseTimeParameter("end-time", arguments)
-                                .orElseGet(timeSupplier)));
+                List.of(RECENT_COMMAND_OPTION, START_COMMAND_OPTION, END_COMMAND_OPTION),
+                RangeJobsQuery::fromParameters, RangeJobsQuery::fromArguments);
     }
 
     @Override
@@ -122,9 +117,9 @@ public class RangeJobsQuery implements JobQuery {
     }
 
     private static JobQuery fromArguments(CommandArguments arguments, Supplier<Instant> timeSupplier) {
-        Optional<Instant> startTime = parseTimeParameter("start-time", arguments);
-        Optional<Instant> endTime = parseTimeParameter("end-time", arguments);
-        return null;
+        Instant end = parseTimeParameter("end-time", arguments).orElseGet(timeSupplier);
+        Instant start = parseTimeParameter("start-time", arguments).orElseGet(() -> end.minus(DEFAULT_PERIOD));
+        return new RangeJobsQuery(start, end);
     }
 
     /**
