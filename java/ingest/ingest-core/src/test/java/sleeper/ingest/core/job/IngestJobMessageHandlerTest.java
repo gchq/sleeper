@@ -197,6 +197,33 @@ public class IngestJobMessageHandlerTest {
         }
 
         @Test
+        void shouldFailValidationWhenExpandingDirectoriesThrows() {
+            //Given
+            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = IngestJobMessageHandler.forIngestJob()
+                    .tableIndex(tableIndex)
+                    .ingestJobTracker(tracker)
+                    .timeSupplier(() -> validationTime)
+                    .expandDirectories(files -> {
+                        throw new RuntimeException("Access Denied");
+                    })
+                    .build();
+            String json = "{" +
+                    "\"id\":\"test-job-id\"," +
+                    "\"tableName\":\"test-table\"," +
+                    "\"files\":[\"dir\"]" +
+                    "}";
+
+            // When / Then
+            IngestJobStatus expected = ingestJobStatus("test-job-id",
+                    rejectedRun("test-job-id", json, validationTime,
+                            "Error listing files. Reason: Access Denied"));
+            assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
+            assertThat(tracker.getInvalidJobs()).containsExactly(expected);
+            assertThat(tracker.getAllJobs(tableId)).containsExactly(expected);
+        }
+
+        @Test
         void shouldFailValidationWhenDirectoryIsEmptyAndIdIsGenerated() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
