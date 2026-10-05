@@ -26,25 +26,16 @@ import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandLineUsage;
 
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Lists all tables in a Sleeper instance with ID, either in standard or JSON format.
  */
 public class ListTablesReport {
-    private static final String DEFAULT_REPORTER = "STANDARD";
     private static final OutputFormatArgument<ListTablesReporter> OUTPUT_FORMAT = OutputFormatArgument
             .<ListTablesReporter>withDefault("STANDARD", new StandardListTablesReporter())
             .addReporter("JSON", new JsonListTablesReporter())
             .build();
-    private static final Map<String, ListTablesReporter> REPORTERS = new HashMap<>();
-
-    static {
-        REPORTERS.put(DEFAULT_REPORTER, new StandardListTablesReporter());
-        REPORTERS.put("JSON", new JsonListTablesReporter());
-    }
 
     private final SleeperClient client;
     private final ListTablesReporter reporter;
