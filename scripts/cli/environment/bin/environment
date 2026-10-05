@@ -81,6 +81,12 @@ if [ "$SUBCOMMAND" == "help" ]; then
   echo "key, uploading it with EC2 Instance Connect, and then using SSM Session Manager to tunnel to the instance."
   echo "Any arguments will be passed as arguments to SSH, instead of invoking \"screen -d -RR\"."
   echo
+  echo "start"
+  echo "Starts the EC2 instance of the current environment. Any arguments are passed to \"aws ec2 start-instances\"."
+  echo
+  echo "stop"
+  echo "Stops the EC2 instance of the current environment. Any arguments are passed to \"aws ec2 stop-instances\"."
+  echo
   echo "deluser"
   echo "Deletes a user in the EC2 instance of the current environment. Takes a single argument of the username."
   echo
