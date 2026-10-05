@@ -39,10 +39,6 @@ public enum JobQueryType {
         this.parser = parser;
     }
 
-    public boolean isParametersRequired() {
-        return this == DETAILED;
-    }
-
     /**
      * Retrieves a parser to read a job query if it is of this type.
      *
