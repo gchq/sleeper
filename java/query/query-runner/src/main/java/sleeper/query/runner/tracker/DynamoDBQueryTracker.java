@@ -199,7 +199,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
                         "#Expected", DynamoDBQueryTrackerEntry.EXPECTED_SUB_QUERY_COUNT,
                         "#Succeeded", DynamoDBQueryTrackerEntry.SUCCEEDED_SUB_QUERY_COUNT,
                         "#Failed", DynamoDBQueryTrackerEntry.FAILED_SUB_QUERY_COUNT,
-                        "#Rows", DynamoDBQueryTrackerEntry.TOTAL_SUB_QUERY_ROW_COUNT))
+                        "#Rows", DynamoDBQueryTrackerEntry.FINISHED_SUB_QUERY_ROW_COUNT))
                 .expressionAttributeValues(Map.of(
                         ":expected", AttributeValue.fromN(String.valueOf(subQueryCount)),
                         ":zero", AttributeValue.fromN("0"))));
@@ -356,7 +356,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
                 .expressionAttributeNames(Map.of(
                         "#Succeeded", DynamoDBQueryTrackerEntry.SUCCEEDED_SUB_QUERY_COUNT,
                         "#Failed", DynamoDBQueryTrackerEntry.FAILED_SUB_QUERY_COUNT,
-                        "#Rows", DynamoDBQueryTrackerEntry.TOTAL_SUB_QUERY_ROW_COUNT))
+                        "#Rows", DynamoDBQueryTrackerEntry.FINISHED_SUB_QUERY_ROW_COUNT))
                 .expressionAttributeValues(Map.of(
                         ":succeeded", AttributeValue.fromN(succeeded ? "1" : "0"),
                         ":failed", AttributeValue.fromN(succeeded ? "0" : "1"),
@@ -391,7 +391,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
         } else {
             parentState = QueryState.PARTIALLY_FAILED;
         }
-        long totalRowCount = readLongAttribute(parentItem, DynamoDBQueryTrackerEntry.TOTAL_SUB_QUERY_ROW_COUNT);
+        long totalRowCount = readLongAttribute(parentItem, DynamoDBQueryTrackerEntry.FINISHED_SUB_QUERY_ROW_COUNT);
         LOGGER.info("Updating state of parent to {}", parentState);
         updateState(leafQueryEntry.updateParent(parentState, totalRowCount));
     }

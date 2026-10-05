@@ -203,7 +203,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         TrackedQuery.Builder builder = trackedQuery()
                 .queryId("abc").rowCount(0L);
         assertThat(queryTracker.getAllQueries())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId",
+                        "expectedSubQueryCount", "succeededSubQueryCount", "failedSubQueryCount", "finishedSubQueryRowCount")
                 .containsExactlyInAnyOrder(
                         builder.lastKnownState(IN_PROGRESS).rowCount(0L).build(),
                         builder.lastKnownState(QUEUED).rowCount(0L).build(),
@@ -213,7 +214,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
-                .isEqualTo(builder.lastKnownState(IN_PROGRESS).rowCount(0L).build());
+                .isEqualTo(builder.lastKnownState(IN_PROGRESS).rowCount(0L)
+                        .expectedSubQueryCount(4L)
+                        .succeededSubQueryCount(0L)
+                        .failedSubQueryCount(0L)
+                        .finishedSubQueryRowCount(0L)
+                        .build());
     }
 
     @Test
@@ -239,7 +245,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         TrackedQuery.Builder builder = trackedQuery()
                 .queryId("abc").rowCount(0L);
         assertThat(queryTracker.getAllQueries())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId",
+                        "expectedSubQueryCount", "succeededSubQueryCount", "failedSubQueryCount", "finishedSubQueryRowCount")
                 .containsExactlyInAnyOrder(
                         builder.lastKnownState(IN_PROGRESS).rowCount(0L).build(),
                         builder.lastKnownState(QUEUED).rowCount(0L).build(),
@@ -317,7 +324,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         TrackedQuery.Builder builder = trackedQuery()
                 .queryId("abc").rowCount(0L);
         assertThat(queryTracker.getAllQueries())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId",
+                        "expectedSubQueryCount", "succeededSubQueryCount", "failedSubQueryCount", "finishedSubQueryRowCount")
                 .containsExactlyInAnyOrder(
                         builder.lastKnownState(COMPLETED).rowCount(1344L).build(),
                         builder.lastKnownState(COMPLETED).rowCount(336L).build(),
@@ -327,7 +335,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate", "subQueryId")
-                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1344L).build());
+                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1344L)
+                        .expectedSubQueryCount(4L)
+                        .succeededSubQueryCount(4L)
+                        .failedSubQueryCount(0L)
+                        .finishedSubQueryRowCount(1344L)
+                        .build());
     }
 
     @Test
@@ -357,7 +370,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
-                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1344L).build());
+                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1344L)
+                        .expectedSubQueryCount(4L)
+                        .succeededSubQueryCount(4L)
+                        .failedSubQueryCount(0L)
+                        .finishedSubQueryRowCount(1344L)
+                        .build());
         // Given
         table = createTable();
         query = Query.builder()
@@ -377,7 +395,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
-                .isEqualTo(builder.lastKnownState(COMPLETED).build());
+                .isEqualTo(builder.lastKnownState(COMPLETED)
+                        .expectedSubQueryCount(4L)
+                        .succeededSubQueryCount(4L)
+                        .failedSubQueryCount(0L)
+                        .finishedSubQueryRowCount(1344L)
+                        .build());
     }
 
     @Test
@@ -409,6 +432,10 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                         .subQueryId("-")
                         .lastKnownState(COMPLETED)
                         .rowCount(10L)
+                        .expectedSubQueryCount(1L)
+                        .succeededSubQueryCount(1L)
+                        .failedSubQueryCount(0L)
+                        .finishedSubQueryRowCount(10L)
                         .build(),
                         trackedQuery()
                                 .queryId("abc")
