@@ -27,7 +27,8 @@ import java.util.function.Supplier;
 import static java.util.stream.Collectors.joining;
 
 /**
- * A parser to read a query of a certain type against a job tracker.
+ * A parser to read a job tracker query of a certain type. This can be used from command line arguments or from inside
+ * a command line application where we may have prompted for parameters.
  */
 public class JobQueryTypeParser {
 
