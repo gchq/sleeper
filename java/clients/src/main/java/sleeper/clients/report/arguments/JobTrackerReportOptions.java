@@ -15,6 +15,9 @@
  */
 package sleeper.clients.report.arguments;
 
+import sleeper.clients.report.compaction.job.CompactionJobStatusReporter;
+import sleeper.clients.report.compaction.job.JsonCompactionJobStatusReporter;
+import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.report.ingest.job.IngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
@@ -53,6 +56,17 @@ public class JobTrackerReportOptions {
 
     private static final Map<String, JobQuery> INGEST_PROMPT_EXTRA_QUERIES = Map.of("n", new RejectedJobsQuery());
 
+    public static final OutputFormatArgument<CompactionJobStatusReporter> COMPACTION_OUTPUT_FORMAT = OutputFormatArgument
+            .<CompactionJobStatusReporter>withDefault("STANDARD", new StandardCompactionJobStatusReporter())
+            .addReporter("JSON", new JsonCompactionJobStatusReporter())
+            .build();
+
+    public static final List<CommandOption> COMPACTION_OPTIONS = Stream.concat(
+            JobQueryType.COMPACTION_OPTIONS.stream().flatMap(type -> type.options().stream()),
+            Stream.of(COMPACTION_OUTPUT_FORMAT.option()))
+            .sorted(Comparator.comparing(CommandOption::longName))
+            .toList();
+
     private JobTrackerReportOptions() {
     }
 
@@ -67,6 +81,19 @@ public class JobTrackerReportOptions {
     public static JobQuery readIngestJobQuery(CommandArguments arguments, Supplier<Instant> timeSupplier, ConsoleInput input) {
         return JobQueryTypeParser.readOneOfTypes(JobQueryType.INGEST_OPTIONS, arguments, timeSupplier)
                 .orElseGet(() -> JobQueryPrompt.from(timeSupplier, input, INGEST_PROMPT_EXTRA_QUERIES));
+    }
+
+    /**
+     * Reads the compaction job tracker query requested from the command line.
+     *
+     * @param  arguments    the command line arguments
+     * @param  timeSupplier a supplier of the current time
+     * @param  input        the console to prompt the user for further input
+     * @return              the query
+     */
+    public static JobQuery readCompactionJobQuery(CommandArguments arguments, Supplier<Instant> timeSupplier, ConsoleInput input) {
+        return JobQueryTypeParser.readOneOfTypes(JobQueryType.COMPACTION_OPTIONS, arguments, timeSupplier)
+                .orElseGet(() -> JobQueryPrompt.from(timeSupplier, input, Map.of()));
     }
 
     /**

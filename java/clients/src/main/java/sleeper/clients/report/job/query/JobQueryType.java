@@ -32,6 +32,7 @@ public enum JobQueryType {
     REJECTED(RejectedJobsQuery.parser());
 
     public static final List<JobQueryType> INGEST_OPTIONS = List.of(ALL, DETAILED, RANGE, UNFINISHED, REJECTED);
+    public static final List<JobQueryType> COMPACTION_OPTIONS = List.of(ALL, DETAILED, RANGE, UNFINISHED); // Compactions cannot be rejected
 
     private final JobQueryTypeParser parser;
 

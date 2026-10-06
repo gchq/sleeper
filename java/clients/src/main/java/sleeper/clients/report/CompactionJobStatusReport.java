@@ -34,11 +34,15 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandLineUsage;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
@@ -110,6 +114,42 @@ public class CompactionJobStatusReport {
             printUsage();
             System.exit(1);
         }
+    }
+
+    public static final CommandLineUsage USAGE = CommandLineUsage.builder()
+            .positionalArguments(List.of("instance-id", "table-name"))
+            .options(JobTrackerReportOptions.COMPACTION_OPTIONS)
+            .helpSummary("" +
+                    "A report on compaction jobs within a Sleeper instance.\n" +
+                    "\n" +
+                    "The jobs to report on are chosen with one of the query type options. " +
+                    "Only one may be set at a time. If none is set, you will be prompted to choose one.")
+            .build();
+
+    /**
+     * Reads the arguments from the command line and builds the query.
+     *
+     * @param  arguments    the parsed command line arguments
+     * @param  timeSupplier a supplier of the current time, to read relative time ranges
+     * @param  input        the console input, to prompt for further parameters
+     * @return              the arguments
+     */
+    public static Arguments readArguments(CommandArguments arguments, Supplier<Instant> timeSupplier, ConsoleInput input) {
+        return new Arguments(arguments.getString("instance-id"),
+                arguments.getString("table-name"),
+                JobTrackerReportOptions.COMPACTION_OUTPUT_FORMAT.read(arguments),
+                JobTrackerReportOptions.readCompactionJobQuery(arguments, timeSupplier, input));
+    }
+
+    /**
+     * Holds the arguments for the compaction job status report command.
+     *
+     * @param instanceId the Sleeper instance ID
+     * @param tableName  the table name
+     * @param reporter   the reporter format, either STANDARD or JSON
+     * @param query      the query to execute for the report
+     */
+    public record Arguments(String instanceId, String tableName, CompactionJobStatusReporter reporter, JobQuery query) {
     }
 
     private static void printUsage() {

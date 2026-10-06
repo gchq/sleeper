@@ -28,23 +28,23 @@ import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.RangeJobsQuery;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
 import sleeper.clients.report.job.query.UnfinishedJobsQuery;
-import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.testutil.TestConsoleInput;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
-import java.io.ByteArrayInputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.List;
-import java.util.Scanner;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IngestJobStatusReportTest {
+
+    private final ToStringConsoleOutput output = new ToStringConsoleOutput();
+    private final TestConsoleInput input = new TestConsoleInput(output.consoleOut());
 
     @Nested
     class ParseArguments {
@@ -433,36 +433,24 @@ public class IngestJobStatusReportTest {
     }
 
     private JobQuery queryFromArgumentsAtTime(Instant now, String... args) {
-        return readArgumentsAtTime(now, consoleInputFrom(""), args).query();
+        return readArguments(() -> now, args).query();
     }
 
-    private JobQuery queryFromArgumentsWithInput(String input, String... args) {
-        return readArguments(consoleInputFrom(input), args).query();
+    private JobQuery queryFromArgumentsWithInput(String inputLines, String... args) {
+        input.enterNextPrompts(inputLines.lines().toArray(String[]::new));
+        return readArguments(args).query();
     }
 
-    private static Arguments readArguments(String... args) {
-        return readArguments(consoleInputFrom(""), args);
-    }
-
-    private static Arguments readArgumentsAtTime(Instant now, ConsoleInput input, String... args) {
-        return readArguments(() -> now, input, args);
-    }
-
-    private static Arguments readArguments(ConsoleInput input, String... args) {
+    private Arguments readArguments(String... args) {
         return readArguments(() -> {
             throw new IllegalStateException("Unexpected time query");
-        }, input, args);
+        }, args);
     }
 
-    private static Arguments readArguments(Supplier<Instant> timeSupplier, ConsoleInput input, String... args) {
+    private Arguments readArguments(Supplier<Instant> timeSupplier, String... args) {
         return IngestJobStatusReport.readArguments(
                 CommandArgumentReader.parse(IngestJobStatusReport.USAGE, args),
-                timeSupplier, input);
-    }
-
-    private static ConsoleInput consoleInputFrom(String input) {
-        return new ConsoleInput(null, new PrintStream(System.out),
-                new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8))));
+                timeSupplier, input.consoleIn());
     }
 
 }
