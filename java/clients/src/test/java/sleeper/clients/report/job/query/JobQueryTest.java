@@ -71,7 +71,7 @@ public class JobQueryTest extends JobQueryTestBase {
     }
 
     @Test
-    public void shouldFailDetailedQueryWithNoJobIds() {
+    public void shouldReturnNoDetailedQueryWithNoJobIds() {
         // Given
         JobQueryType queryType = JobQueryType.DETAILED;
 
