@@ -108,7 +108,7 @@ You can view the statistic for jobs and tasks by using the `compactionJobStatusR
 
 ```shell
 # To view all jobs
-./scripts/report/compactionJobStatusReport.sh <instance-id> <table-name> standard -a
+./scripts/report/compactionJobStatusReport.sh <instance-id> <table-name> -a
 # To view all tasks
 ./scripts/report/compactionTaskStatusReport.sh <instance-id> standard -a
 ```
