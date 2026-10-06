@@ -22,11 +22,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.report.arguments.JobTrackerReportOptions;
 import sleeper.clients.report.compaction.job.CompactionJobStatusReporter;
-import sleeper.clients.report.compaction.job.JsonCompactionJobStatusReporter;
-import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.report.job.query.JobQuery;
-import sleeper.clients.report.job.query.JobQueryArgument;
-import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -38,13 +34,9 @@ import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandLineUsage;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.function.Supplier;
 
-import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
@@ -52,13 +44,6 @@ import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
  * matching that query.
  */
 public class CompactionJobStatusReport {
-    private static final String DEFAULT_REPORTER = "STANDARD";
-    private static final Map<String, CompactionJobStatusReporter> REPORTERS = new HashMap<>();
-
-    static {
-        REPORTERS.put(DEFAULT_REPORTER, new StandardCompactionJobStatusReporter());
-        REPORTERS.put("JSON", new JsonCompactionJobStatusReporter());
-    }
 
     private final CompactionJobStatusReporter compactionJobStatusReporter;
     private final CompactionJobTracker compactionJobTracker;
@@ -87,32 +72,19 @@ public class CompactionJobStatusReport {
     }
 
     public static void main(String[] args) {
-        try {
-            if (args.length < 2 || args.length > 5) {
-                throw new IllegalArgumentException("Wrong number of arguments");
-            }
-            String instanceId = args[0];
-            String tableName = args[1];
-            CompactionJobStatusReporter reporter = getReporter(args, 2);
-            JobQueryType queryType = JobQueryArgument.readTypeArgument(args, 3);
-            String queryParameters = optionalArgument(args, 4).orElse(null);
+        Arguments reportArgs = CommandArguments.parseAndValidateOrExit(USAGE, args,
+                cmdArgs -> readArguments(cmdArgs, Instant::now, ConsoleInput.stdIn()));
 
-            try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                    DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                    StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
-                String accountName = stsClient.getCallerIdentity().account();
-                InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, instanceId);
-                DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-                TableStatus table = tableIndex.getTableByName(tableName)
-                        .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
-                CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-                JobQuery query = JobTrackerReportOptions.compactionJobQueryFromParametersOrPrompt(queryType, queryParameters, Instant::now, ConsoleInput.stdIn());
-                new CompactionJobStatusReport(tracker, reporter, table, query).run();
-            }
-        } catch (IllegalArgumentException e) {
-            System.err.println(e.getMessage());
-            printUsage();
-            System.exit(1);
+        try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                StsClient stsClient = buildAwsV2Client(StsClient.builder())) {
+            String accountName = stsClient.getCallerIdentity().account();
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, reportArgs.instanceId());
+            DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
+            TableStatus table = tableIndex.getTableByName(reportArgs.tableName())
+                    .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + reportArgs.tableName()));
+            CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
+            new CompactionJobStatusReport(tracker, reportArgs.reporter(), table, reportArgs.query()).run();
         }
     }
 
@@ -150,24 +122,5 @@ public class CompactionJobStatusReport {
      * @param query      the query to execute for the report
      */
     public record Arguments(String instanceId, String tableName, CompactionJobStatusReporter reporter, JobQuery query) {
-    }
-
-    private static void printUsage() {
-        System.err.println("Usage: <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters> \n" +
-                "Query types are:\n" +
-                "-a (Return all jobs)\n" +
-                "-d (Detailed, provide a jobId)\n" +
-                "-r (Provide startRange and endRange separated by commas in format yyyyMMddhhmmss)\n" +
-                "-u (Unfinished jobs)");
-    }
-
-    private static CompactionJobStatusReporter getReporter(String[] args, int index) {
-        String reporterType = optionalArgument(args, index)
-                .map(str -> str.toUpperCase(Locale.ROOT))
-                .orElse(DEFAULT_REPORTER);
-        if (!REPORTERS.containsKey(reporterType)) {
-            throw new IllegalArgumentException("Output type not supported: " + reporterType);
-        }
-        return REPORTERS.get(reporterType);
     }
 }
