@@ -47,12 +47,14 @@ class DynamoDBQueryTrackerEntry {
     static final String SUCCEEDED_SUB_QUERY_COUNT = "succeededSubQueryCount";
     static final String FAILED_SUB_QUERY_COUNT = "failedSubQueryCount";
     static final String FINISHED_SUB_QUERY_ROW_COUNT = "finishedSubQueryRowCount";
+    static final String ATTEMPT_ID = "attemptId";
 
     private final String queryId;
     private final String subQueryId;
     private final QueryState state;
     private final long rowCount;
-    private final String errorMessage;
+    private final String errorMessage;q
+    private final String attemptId;
 
     private DynamoDBQueryTrackerEntry(Builder builder) {
         queryId = builder.queryId;
@@ -60,6 +62,7 @@ class DynamoDBQueryTrackerEntry {
         state = builder.state;
         rowCount = builder.rowCount;
         errorMessage = builder.errorMessage;
+        attemptId = builder.attemptId;
     }
 
     public static Builder withQuery(Query query) {
@@ -69,7 +72,8 @@ class DynamoDBQueryTrackerEntry {
     public static Builder withLeafQuery(LeafPartitionQuery query) {
         return builder()
                 .queryId(query.getQueryId())
-                .subQueryId(query.getSubQueryId());
+                .subQueryId(query.getSubQueryId())
+                .attemptId(query.getAttemptId());
     }
 
     public static Builder builder() {
@@ -135,6 +139,12 @@ class DynamoDBQueryTrackerEntry {
                     .action(AttributeAction.PUT)
                     .build());
         }
+        if (Objects.nonNull(attemptId)) {
+            valueUpdate.put(ATTEMPT_ID, AttributeValueUpdate.builder()
+                    .value(AttributeValue.fromS(attemptId))
+                    .action(AttributeAction.PUT)
+                    .build());
+        }
         return valueUpdate;
     }
 
@@ -185,6 +195,10 @@ class DynamoDBQueryTrackerEntry {
         return subQueryId;
     }
 
+    public String getAttemptId() {
+        return attemptId;
+    }
+
     public QueryState getState() {
         return state;
     }
@@ -208,6 +222,7 @@ class DynamoDBQueryTrackerEntry {
         private QueryState state;
         private long rowCount;
         private String errorMessage;
+        private String attemptId;
 
         private Builder() {
         }
@@ -234,6 +249,11 @@ class DynamoDBQueryTrackerEntry {
 
         public Builder errorMessage(String errorMessage) {
             this.errorMessage = errorMessage;
+            return this;
+        }
+
+        public Builder attemptId(String attemptId) {
+            this.attemptId = attemptId;
             return this;
         }
 

@@ -51,6 +51,7 @@ class QueryJson {
     private final String leafPartitionId;
     private final JsonElement partitionRegion;
     private final List<String> files;
+    private final String attemptId;
 
     private QueryJson(Builder builder) {
         tableName = builder.tableName;
@@ -68,6 +69,7 @@ class QueryJson {
         leafPartitionId = builder.leafPartitionId;
         partitionRegion = builder.partitionRegion;
         files = builder.files;
+        attemptId = builder.attemptId;
     }
 
     static QueryJson from(Query query, QuerySerDe.SchemaLoader schemaLoader) {
@@ -93,6 +95,7 @@ class QueryJson {
                 .leafPartitionId(leafQuery.getLeafPartitionId())
                 .partitionRegion(regionSerDe.toJsonTree(leafQuery.getPartitionRegion()))
                 .files(leafQuery.getFiles())
+                .attemptId(leafQuery.getAttemptId())
                 .build();
     }
 
@@ -148,6 +151,7 @@ class QueryJson {
                 .leafPartitionId(leafPartitionId)
                 .partitionRegion(partitionRegion)
                 .files(files)
+                .attemptId(attemptId)
                 .build();
     }
 
@@ -227,6 +231,7 @@ class QueryJson {
         private String leafPartitionId;
         private JsonElement partitionRegion;
         private List<String> files;
+        private String attemptId;
 
         private Builder() {
         }
@@ -312,6 +317,11 @@ class QueryJson {
 
         public Builder files(List<String> files) {
             this.files = files;
+            return this;
+        }
+
+        public Builder attemptId(String attemptId) {
+            this.attemptId = attemptId;
             return this;
         }
 

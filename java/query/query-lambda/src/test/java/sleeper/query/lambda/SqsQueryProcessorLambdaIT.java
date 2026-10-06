@@ -66,6 +66,7 @@ import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.tracker.QueryStatusReportListener;
+import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.output.S3ResultsOutput;
@@ -109,7 +110,6 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.query.core.tracker.QueryState.COMPLETED;
 import static sleeper.query.core.tracker.QueryState.IN_PROGRESS;
-import static sleeper.query.core.tracker.QueryState.QUEUED;
 
 public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
@@ -200,21 +200,13 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         processQuery(query);
 
         // Then
+        // The subqueries are not tracked individually until they start running, and the parent records how
+        // many to expect
         TrackedQuery.Builder builder = trackedQuery()
                 .queryId("abc").rowCount(0L);
         assertThat(queryTracker.getAllQueries())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId",
-                        "expectedSubQueryCount", "succeededSubQueryCount", "failedSubQueryCount", "finishedSubQueryRowCount")
-                .containsExactlyInAnyOrder(
-                        builder.lastKnownState(IN_PROGRESS).rowCount(0L).build(),
-                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
-                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
-                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
-                        builder.lastKnownState(QUEUED).rowCount(0L).build());
-        assertThat(queryTracker.getStatus("abc"))
-                .usingRecursiveComparison()
-                .ignoringFields("lastUpdateTime", "expiryDate")
-                .isEqualTo(builder.lastKnownState(IN_PROGRESS).rowCount(0L)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                .containsExactly(builder.lastKnownState(IN_PROGRESS).rowCount(0L)
                         .expectedSubQueryCount(4L)
                         .succeededSubQueryCount(0L)
                         .failedSubQueryCount(0L)
@@ -238,21 +230,35 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                 .build();
 
         // When
+        // Both attempts at the query are processed, including all subquery messages from both attempts
         processQuery(query);
         processQuery(query);
+        processLeafPartitionQuery(4);
+        processLeafPartitionQuery(4);
 
         // Then
+        // There should be one entry per subquery, each subquery is only counted once against the parent, and the
+        // parent's row count does not include rows from the first attempt's subqueries
         TrackedQuery.Builder builder = trackedQuery()
                 .queryId("abc").rowCount(0L);
         assertThat(queryTracker.getAllQueries())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId",
                         "expectedSubQueryCount", "succeededSubQueryCount", "failedSubQueryCount", "finishedSubQueryRowCount")
                 .containsExactlyInAnyOrder(
-                        builder.lastKnownState(IN_PROGRESS).rowCount(0L).build(),
-                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
-                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
-                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
-                        builder.lastKnownState(QUEUED).rowCount(0L).build());
+                        builder.lastKnownState(COMPLETED).rowCount(1344L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(336L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(336L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(336L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(336L).build());
+        assertThat(queryTracker.getStatus("abc"))
+                .usingRecursiveComparison()
+                .ignoringFields("lastUpdateTime", "expiryDate")
+                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1344L)
+                        .expectedSubQueryCount(4L)
+                        .succeededSubQueryCount(4L)
+                        .failedSubQueryCount(0L)
+                        .finishedSubQueryRowCount(1344L)
+                        .build());
     }
 
     @Test
@@ -269,19 +275,19 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                 .queryId("abc")
                 .regions(List.of(new Region(List.of(range1, range2, range3))))
                 .build();
-        List<Integer> queuedSubQueriesAtSendTime = new ArrayList<>();
+        List<Long> expectedSubQueryCountsAtSendTime = new ArrayList<>();
         queryProcessorLambda = new SqsQueryProcessorLambda(s3Client,
-                countQueuedSubQueriesOnSend(queuedSubQueriesAtSendTime), dynamoClient,
+                recordExpectedSubQueryCountOnSend(query, expectedSubQueryCountsAtSendTime), dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET));
 
         // When
         processQuery(query);
 
-        // Then all sub-queries were already tracked when each message was sent to the queue
-        assertThat(queuedSubQueriesAtSendTime).containsExactly(4, 4, 4, 4);
+        // Then
+        assertThat(expectedSubQueryCountsAtSendTime).containsExactly(4L, 4L, 4L, 4L);
     }
 
-    private SqsClient countQueuedSubQueriesOnSend(List<Integer> queuedSubQueriesAtSendTime) {
+    private SqsClient recordExpectedSubQueryCountOnSend(Query query, List<Long> expectedSubQueryCountsAtSendTime) {
         return new SqsClient() {
             @Override
             public String serviceName() {
@@ -294,7 +300,11 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
             @Override
             public SendMessageResponse sendMessage(SendMessageRequest request) {
-                queuedSubQueriesAtSendTime.add(queryTracker.getQueriesWithState(QUEUED).size());
+                try {
+                    expectedSubQueryCountsAtSendTime.add(queryTracker.getStatus(query.getQueryId()).getExpectedSubQueryCount());
+                } catch (QueryTrackerException e) {
+                    throw new RuntimeException(e);
+                }
                 return sqsClient.sendMessage(request);
             }
         };
