@@ -187,7 +187,7 @@ public class CommandArguments {
     private CommandArguments exitIfHelpRequested(CommandLineUsage usage) {
         if (isFlagSet("help")) {
             System.out.println(usage.createHelpText());
-            System.exit(1);
+            System.exit(0);
         }
         return this;
     }

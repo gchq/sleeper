@@ -69,7 +69,7 @@ public class QueryTrackerReporterTestHelper {
      * @param  trackedQueries the data from the query tracker
      * @return                the report
      */
-    public static String getStandardReport(TrackerQuery query, List<TrackedQuery> trackedQueries) {
+    public static String getStandardReport(QueryTrackerQuery query, List<TrackedQuery> trackedQueries) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         new StandardQueryTrackerReporter(output.getPrintStream())
                 .report(query, trackedQueries);
@@ -83,7 +83,7 @@ public class QueryTrackerReporterTestHelper {
      * @param  trackedQueries the data from the query tracker
      * @return                the report
      */
-    public static String getJsonReport(TrackerQuery query, List<TrackedQuery> trackedQueries) {
+    public static String getJsonReport(QueryTrackerQuery query, List<TrackedQuery> trackedQueries) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         new JsonQueryTrackerReporter(output.getPrintStream())
                 .report(query, trackedQueries);
