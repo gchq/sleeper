@@ -62,41 +62,58 @@ SERVERLESS_JAR_GLOB="/usr/share/aws/emr/serverless-goodies/lib/emr-serverless-sp
 EKS_JAR_GLOB="/usr/share/aws/aws-java-sdk-v2/aws-sdk-java-bundle-*.jar"
 
 TMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TMP_DIR"' EXIT
+CONTAINER=""
+cleanup() {
+    rm -rf "$TMP_DIR"
+    if [ -n "$CONTAINER" ]; then
+        docker rm "$CONTAINER"
+    fi
+}
+trap cleanup EXIT
 
-# Copies the jar holding the AWS SDK out of the image and reads the SDK version from it.
-# This only needs bash and cat in the image, as the EMR on EKS image has no unzip.
+# Copies the jar holding the AWS SDK out of the image and reads the SDK version from it into SDK_VERSION.
+# This only needs bash and ls in the image, as the EMR on EKS image has no unzip.
 read_sdk_version() {
     local image=$1
     local jar_glob=$2
-    echo "Pulling $image" >&2
-    docker pull --platform "$DOCKER_PLATFORM" "$image" >&2 || return 1
-    echo "Reading AWS SDK version from $jar_glob in $image" >&2
-    local jar_count
-    jar_count=$(docker run --rm --platform "$DOCKER_PLATFORM" --entrypoint /bin/bash "$image" -c "ls $jar_glob | wc -l")
-    if [ "$jar_count" == "1" ]; then
-        docker run --rm --platform "$DOCKER_PLATFORM" --entrypoint /bin/bash "$image" -c "cat $jar_glob" > "$TMP_DIR/sdk.jar"
+    echo "Pulling $image"
+    docker pull --platform "$DOCKER_PLATFORM" "$image"
+    echo "Finding jar matching $jar_glob in $image"
+    local jars
+    jars=$(docker run --rm --init --platform "$DOCKER_PLATFORM" --entrypoint /bin/bash "$image" -c "ls $jar_glob")
+    echo "$jars"
+    if [ "$(echo "$jars" | wc -l)" != "1" ]; then
+        echo "Expected exactly one jar matching $jar_glob in $image"
+        exit 1
     fi
+    echo "Copying $jars out of $image"
+    CONTAINER=$(docker create --platform "$DOCKER_PLATFORM" "$image")
+    docker cp "$CONTAINER:$jars" "$TMP_DIR/sdk.jar"
+    docker rm "$CONTAINER"
+    CONTAINER=""
     if [ "$REMOVE_IMAGES" == "true" ]; then
-        echo "Removing $image" >&2
-        docker rmi "$image" >&2
+        echo "Removing $image"
+        docker rmi "$image"
     fi
-    if [ "$jar_count" != "1" ]; then
-        echo "Expected exactly one jar matching $jar_glob in $image, found $jar_count" >&2
-        return 1
-    fi
+    echo "Reading sdk-core pom.properties from copied jar"
     unzip -p "$TMP_DIR/sdk.jar" META-INF/maven/software.amazon.awssdk/sdk-core/pom.properties \
-        | grep -oP '(?<=^version=).*'
+        > "$TMP_DIR/pom.properties"
+    cat "$TMP_DIR/pom.properties"
+    SDK_VERSION=$(grep -oP '(?<=^version=).*' "$TMP_DIR/pom.properties")
 }
 
-SERVERLESS_AWS_VERSION=$(read_sdk_version "$SERVERLESS_IMAGE" "$SERVERLESS_JAR_GLOB")
-echo "AWS SDK version in $SERVERLESS_IMAGE: $SERVERLESS_AWS_VERSION"
-EKS_AWS_VERSION=$(read_sdk_version "$EKS_IMAGE" "$EKS_JAR_GLOB")
-echo "AWS SDK version in $EKS_IMAGE: $EKS_AWS_VERSION"
+read_sdk_version "$SERVERLESS_IMAGE" "$SERVERLESS_JAR_GLOB"
+SERVERLESS_AWS_VERSION=$SDK_VERSION
+read_sdk_version "$EKS_IMAGE" "$EKS_JAR_GLOB"
+EKS_AWS_VERSION=$SDK_VERSION
 
+echo "Reading version from Maven pom.xml"
 pushd "${PROJECT_ROOT}/java" > /dev/null
 PINNED_AWS_VERSION=$(mvn help:evaluate -Dexpression=aws-java-sdk-v2.bulk-import.version -q -DforceStdout)
 popd > /dev/null
+
+echo "AWS SDK version in $SERVERLESS_IMAGE: $SERVERLESS_AWS_VERSION"
+echo "AWS SDK version in $EKS_IMAGE: $EKS_AWS_VERSION"
 echo "Bulk import version of AWS SDK: $PINNED_AWS_VERSION"
 
 if [ "$REFERENCE_PLATFORM" == "serverless" ]; then
