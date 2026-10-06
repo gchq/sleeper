@@ -108,7 +108,7 @@ public class OutputFormatArgument<T> {
         }
 
         /**
-         * Adds a reporter the user may select. Reporters are listed to the user in the order they are added here.
+         * Adds a reporter the user may select.
          *
          * @param  format   the name of the output format, in upper case
          * @param  reporter the reporter
