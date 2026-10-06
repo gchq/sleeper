@@ -67,7 +67,7 @@ The query type can be one of the following options:
 - `--pending` or `-p` shows pending files, which have not yet been added to a job
 
 If you do not provide a query type as a parameter to the script you will be prompted to select one. The output format
-can be set with `--format`, which accepts `STANDARD` (the default) or `JSON`. Run the script with `--help` to see all
+can be set with `--format`, which accepts `standard` (the default) or `json`. Run the script with `--help` to see all
 options.
 
 ### Manually sending files to the batcher queue

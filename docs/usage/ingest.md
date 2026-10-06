@@ -237,8 +237,8 @@ of files manually:
 ./scripts/report/ingestBatcherReport.sh <instance-id> [options]
 ```
 
-The instance ID is required. The output format is set with `--format`, which accepts `STANDARD` (the default) or
-`JSON`. The files to include are chosen with one of the query type options below. If you don't set a query type, the
+The instance ID is required. The output format is set with `--format`, which accepts `standard` (the default) or
+`json`. The files to include are chosen with one of the query type options below. If you don't set a query type, the
 script will prompt you for one.
 
 ```bash
@@ -252,5 +252,5 @@ script will prompt you for one.
 ./scripts/report/ingestBatcherReport.sh <instance-id> --pending
 
 # All files, as JSON
-./scripts/report/ingestBatcherReport.sh <instance-id> --all --format JSON
+./scripts/report/ingestBatcherReport.sh <instance-id> --all --format json
 ```
