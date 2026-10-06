@@ -49,14 +49,15 @@ public class RangeJobsQuery implements JobQuery {
             .build();
     public static final CommandOption START_COMMAND_OPTION = CommandOption
             .withLongName("start-time").numArgs(NumArgs.ONE)
-            .helpText("Start of the period to report on, in the format " + DATE_FORMAT + ". " +
-                    "Can only be combined with --end-time, and defaults to 4 hours before --end-time.")
+            .helpText("Start of the period to report on, in the format " + DATE_FORMAT + ".\n" +
+                    "Can be combined with --end-time. Defaults to 4 hours before --end-time, or 4 hours before the " +
+                    "current time if --end-time is not set.")
             .argsHelpText("<" + DATE_FORMAT + ">")
             .build();
     public static final CommandOption END_COMMAND_OPTION = CommandOption
             .withLongName("end-time").numArgs(NumArgs.ONE)
-            .helpText("End of the period to report on, in the format " + DATE_FORMAT + ". " +
-                    "Can only be combined with --start-time, and defaults to the current time.")
+            .helpText("End of the period to report on, in the format " + DATE_FORMAT + ".\n" +
+                    "Can be combined with --start-time. Defaults to the current time.")
             .argsHelpText("<" + DATE_FORMAT + ">")
             .build();
 
