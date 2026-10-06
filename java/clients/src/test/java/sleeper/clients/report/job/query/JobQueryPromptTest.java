@@ -18,7 +18,6 @@ package sleeper.clients.report.job.query;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.report.job.query.JobQuery.Type;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Instant;
@@ -201,14 +200,14 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     }
 
     private List<CompactionJobStatus> queryStatusByPrompt() {
-        return queryStatuses(Type.PROMPT);
+        return queryStatuses(JobQueryType.PROMPT);
     }
 
     private List<CompactionJobStatus> queryStatusByPromptAtTime(Instant time) {
-        return queryStatusesAtTime(Type.PROMPT, time);
+        return queryStatusesAtTime(JobQueryType.PROMPT, time);
     }
 
     private JobQuery queryByPrompt() {
-        return queryFrom(Type.PROMPT);
+        return queryFrom(JobQueryType.PROMPT);
     }
 }

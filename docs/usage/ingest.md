@@ -176,7 +176,7 @@ of jobs manually:
 ./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> [options]
 ```
 
-The instance ID and table name are required. The output format is set with `--report-type`, which accepts `STANDARD`
+The instance ID and table name are required. The output format is set with `--format`, which accepts `STANDARD`
 (the default) or `JSON`. The jobs to include are chosen with one of the query type options below. If you don't set a
 query type, the script will prompt you for one.
 
@@ -199,18 +199,17 @@ query type, the script will prompt you for one.
 # Details of several jobs, with the IDs separated by commas
 ./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --detailed <job-id>,<job-id>
 
-# Jobs in a date range, in format yyyyMMddHHmmss.
-# --start-time and --end-time must be given together, and only apply to this query type.
-./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --range --start-time 20250523090000 --end-time 20250523100000
+# Jobs in a date range, in format yyyyMMddHHmmss. Start or end may be omitted.
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --start-time 20250523090000 --end-time 20250523100000
 
-# Jobs in the last 4 hours, the default range
-./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --range
+# Jobs in the last 4 hours
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --recent
 
 # All jobs, as JSON
-./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --all --report-type JSON
+./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --all --format JSON
 ```
 
-Each query type option also has a short form: `-a` (all), `-d` (detailed), `-n` (rejected), `-r` (range) and
+Each query type option also has a short form: `-a` (all), `-d` (detailed), `-n` (rejected), `-r` (recent) and
 `-u` (unfinished). Only one query type may be set at a time.
 
 For more information please run:

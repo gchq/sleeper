@@ -20,11 +20,13 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.report.arguments.JobTrackerReportOptions;
 import sleeper.clients.report.compaction.job.CompactionJobStatusReporter;
 import sleeper.clients.report.compaction.job.JsonCompactionJobStatusReporter;
 import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.JobQueryArgument;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -33,7 +35,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
-import java.time.Clock;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -88,7 +90,7 @@ public class CompactionJobStatusReport {
             String instanceId = args[0];
             String tableName = args[1];
             CompactionJobStatusReporter reporter = getReporter(args, 2);
-            JobQuery.Type queryType = JobQueryArgument.readTypeArgument(args, 3);
+            JobQueryType queryType = JobQueryArgument.readTypeArgument(args, 3);
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
             try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
@@ -100,7 +102,7 @@ public class CompactionJobStatusReport {
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
                 CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-                JobQuery query = JobQuery.fromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), ConsoleInput.stdIn());
+                JobQuery query = JobTrackerReportOptions.compactionJobQueryFromParametersOrPrompt(queryType, queryParameters, Instant::now, ConsoleInput.stdIn());
                 new CompactionJobStatusReport(tracker, reporter, table, query).run();
             }
         } catch (IllegalArgumentException e) {
