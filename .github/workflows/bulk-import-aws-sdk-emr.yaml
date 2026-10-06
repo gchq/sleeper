@@ -17,4 +17,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Check bulk import AWS SDK version against EMR
-        run: .github/scripts/checkBulkImportAwsSdkAgainstEmr.sh
+        run: .github/scripts/checkBulkImportAwsSdkAgainstEmr.sh --remove-images

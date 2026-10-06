@@ -19,6 +19,16 @@ unset CDPATH
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
+# The images are several GB, so in CI we remove each one after reading it to save disk space.
+# Locally we keep them, so they don't need pulling again on the next run.
+REMOVE_IMAGES=false
+if [ "${1:-}" == "--remove-images" ]; then
+    REMOVE_IMAGES=true
+elif [ $# -gt 0 ]; then
+    echo "Usage: $0 [--remove-images]"
+    exit 1
+fi
+
 # Which EMR image the bulk import AWS SDK version must match: serverless or eks.
 # The other image is also checked, but a mismatch there only produces a warning.
 REFERENCE_PLATFORM=serverless
@@ -56,14 +66,9 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 # Copies the jar holding the AWS SDK out of the image and reads the SDK version from it.
 # This only needs bash and cat in the image, as the EMR on EKS image has no unzip.
-# The images are several GB, so we remove them afterwards unless they were already present.
 read_sdk_version() {
     local image=$1
     local jar_glob=$2
-    local remove_image=false
-    if ! docker image inspect "$image" > /dev/null 2>&1; then
-        remove_image=true
-    fi
     echo "Pulling $image" >&2
     docker pull --platform "$DOCKER_PLATFORM" "$image" >&2 || return 1
     echo "Reading AWS SDK version from $jar_glob in $image" >&2
@@ -72,7 +77,7 @@ read_sdk_version() {
     if [ "$jar_count" == "1" ]; then
         docker run --rm --platform "$DOCKER_PLATFORM" --entrypoint /bin/bash "$image" -c "cat $jar_glob" > "$TMP_DIR/sdk.jar"
     fi
-    if [ "$remove_image" == "true" ]; then
+    if [ "$REMOVE_IMAGES" == "true" ]; then
         echo "Removing $image" >&2
         docker rmi "$image" >&2
     fi
