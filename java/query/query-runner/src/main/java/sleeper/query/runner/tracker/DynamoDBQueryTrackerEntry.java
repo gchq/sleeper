@@ -53,7 +53,7 @@ class DynamoDBQueryTrackerEntry {
     private final String subQueryId;
     private final QueryState state;
     private final long rowCount;
-    private final String errorMessage;q
+    private final String errorMessage;
     private final String attemptId;
 
     private DynamoDBQueryTrackerEntry(Builder builder) {
