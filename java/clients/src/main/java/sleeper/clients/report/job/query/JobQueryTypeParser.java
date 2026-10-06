@@ -91,6 +91,8 @@ public class JobQueryTypeParser {
             } catch (CommandArgumentsException e) {
                 throw e;
             } catch (RuntimeException e) {
+                // Since the scope of this catch is limited to just the parsing code,
+                // we hope any internal parsing failures should already be wrapped with a useful message.
                 throw new CommandArgumentsException(e);
             }
         } else {
