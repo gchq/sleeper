@@ -64,13 +64,16 @@ read_sdk_version() {
     if ! docker image inspect "$image" > /dev/null 2>&1; then
         remove_image=true
     fi
-    docker pull --quiet --platform "$DOCKER_PLATFORM" "$image" >&2 || return 1
+    echo "Pulling $image" >&2
+    docker pull --platform "$DOCKER_PLATFORM" "$image" >&2 || return 1
+    echo "Reading AWS SDK version from $jar_glob in $image" >&2
     local jar_count
     jar_count=$(docker run --rm --platform "$DOCKER_PLATFORM" --entrypoint /bin/bash "$image" -c "ls $jar_glob | wc -l")
     if [ "$jar_count" == "1" ]; then
         docker run --rm --platform "$DOCKER_PLATFORM" --entrypoint /bin/bash "$image" -c "cat $jar_glob" > "$TMP_DIR/sdk.jar"
     fi
     if [ "$remove_image" == "true" ]; then
+        echo "Removing $image" >&2
         docker rmi "$image" >&2
     fi
     if [ "$jar_count" != "1" ]; then
