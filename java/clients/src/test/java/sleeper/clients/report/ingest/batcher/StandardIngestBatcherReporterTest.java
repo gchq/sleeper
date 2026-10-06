@@ -54,7 +54,7 @@ public class StandardIngestBatcherReporterTest {
             List<IngestBatcherTrackedFile> noFiles = Collections.emptyList();
 
             // When / Then
-            assertThat(getStandardReport(BatcherQuery.Type.ALL, noFiles)).hasToString(
+            assertThat(getStandardReport(BatcherQuery.ALL, noFiles)).hasToString(
                     example("reports/ingest/batcher/standard/all/noFiles.txt"));
         }
 
@@ -64,7 +64,7 @@ public class StandardIngestBatcherReporterTest {
             List<IngestBatcherTrackedFile> fileIngestRequestList = onePendingAndTwoBatchedFiles();
 
             // When / Then
-            assertThat(getStandardReport(BatcherQuery.Type.ALL, fileIngestRequestList)).hasToString(
+            assertThat(getStandardReport(BatcherQuery.ALL, fileIngestRequestList)).hasToString(
                     example("reports/ingest/batcher/standard/all/onePendingAndTwoBatchedFiles.txt"));
         }
 
@@ -74,7 +74,7 @@ public class StandardIngestBatcherReporterTest {
             List<IngestBatcherTrackedFile> fileIngestRequestList = filesWithLargeAndDecimalSizes();
 
             // When / Then
-            assertThat(getStandardReport(BatcherQuery.Type.ALL, fileIngestRequestList)).hasToString(
+            assertThat(getStandardReport(BatcherQuery.ALL, fileIngestRequestList)).hasToString(
                     example("reports/ingest/batcher/standard/all/largeAndDecimalFileSizes.txt"));
         }
     }
@@ -88,7 +88,7 @@ public class StandardIngestBatcherReporterTest {
             List<IngestBatcherTrackedFile> noFiles = Collections.emptyList();
 
             // When / Then
-            assertThat(getStandardReport(BatcherQuery.Type.PENDING, noFiles)).hasToString(
+            assertThat(getStandardReport(BatcherQuery.PENDING, noFiles)).hasToString(
                     example("reports/ingest/batcher/standard/pending/noFiles.txt"));
         }
 
@@ -98,12 +98,12 @@ public class StandardIngestBatcherReporterTest {
             List<IngestBatcherTrackedFile> fileIngestRequestList = multiplePendingFiles();
 
             // When / Then
-            assertThat(getStandardReport(BatcherQuery.Type.PENDING, fileIngestRequestList)).hasToString(
+            assertThat(getStandardReport(BatcherQuery.PENDING, fileIngestRequestList)).hasToString(
                     example("reports/ingest/batcher/standard/pending/multiplePendingFiles.txt"));
         }
     }
 
-    private String getStandardReport(BatcherQuery.Type queryType, List<IngestBatcherTrackedFile> fileRequestList) {
-        return IngestBatcherReporterTestHelper.getStandardReport(tableIndex, queryType, fileRequestList);
+    private String getStandardReport(BatcherQuery query, List<IngestBatcherTrackedFile> fileRequestList) {
+        return IngestBatcherReporterTestHelper.getStandardReport(tableIndex, query, fileRequestList);
     }
 }
