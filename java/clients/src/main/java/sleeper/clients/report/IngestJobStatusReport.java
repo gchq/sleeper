@@ -137,7 +137,7 @@ public class IngestJobStatusReport {
      * @param instanceId the Sleeper instance ID
      * @param tableName  the table name
      * @param reporter   the reporter format, either STANDARD or JSON
-     * @param query      the query to execute for the ingest report
+     * @param query      the query to execute for the report
      */
     public record Arguments(String instanceId, String tableName, IngestJobStatusReporter reporter, JobQuery query) {
     }
