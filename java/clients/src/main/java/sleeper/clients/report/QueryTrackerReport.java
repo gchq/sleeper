@@ -92,7 +92,7 @@ public class QueryTrackerReport {
             .helpSummary("" +
                     "A report on queries held in the query tracker of a Sleeper instance.\n" +
                     "\n" +
-                    "The queries to report on are chosen with one of the query type options. " +
+                    "The queries to report on are chosen with one of the report type options. " +
                     "Only one may be set at a time. If none is set, you will be prompted to choose one.")
             .build();
 
