@@ -119,8 +119,28 @@ public class RangeJobsQuery implements JobQuery {
     }
 
     private static JobQuery fromArguments(CommandArguments arguments, Supplier<Instant> timeSupplier) {
-        Instant end = parseTimeParameter("end-time", arguments).orElseGet(timeSupplier);
-        Instant start = parseTimeParameter("start-time", arguments).orElseGet(() -> end.minus(DEFAULT_PERIOD));
+        Optional<Instant> endArgument = parseTimeParameter("end-time", arguments);
+        Optional<Instant> startArgument = parseTimeParameter("start-time", arguments);
+        Instant end;
+        Instant start;
+        if (startArgument.isPresent()) {
+            start = startArgument.get();
+            if (endArgument.isPresent()) {
+                end = endArgument.get();
+            } else {
+                end = timeSupplier.get();
+                if (end.isBefore(start)) {
+                    end = start;
+                }
+            }
+        } else {
+            if (endArgument.isPresent()) {
+                end = endArgument.get();
+            } else {
+                end = timeSupplier.get();
+            }
+            start = end.minus(DEFAULT_PERIOD);
+        }
         return new RangeJobsQuery(start, end);
     }
 

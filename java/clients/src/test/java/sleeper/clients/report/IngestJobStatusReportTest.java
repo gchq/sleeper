@@ -230,9 +230,22 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
+        void shouldQueryJobsWithFutureStartTimeAndNoEndTime() {
+            // When / Then
+            assertThat(queryFromArgumentsAtTime(
+                    Instant.parse("2019-12-25T00:00:00Z"),
+                    "range-fail-instance", "range-fail-table", "-r",
+                    "--start-time", "20200101120000"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RangeJobsQuery(
+                            Instant.parse("2020-01-01T12:00:00Z"),
+                            Instant.parse("2020-01-01T12:00:00Z")));
+        }
+
+        @Test
         void shouldRejectRangeReportWithInvalidDateFormatStartTime() {
             // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
+            assertThatThrownBy(() -> queryFromArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "asdad", "--end-time", "20150411084545"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasCauseInstanceOf(ParseException.class)
@@ -242,7 +255,7 @@ public class IngestJobStatusReportTest {
         @Test
         void shouldRejectRangeReportWithInvalidDateFormatEndTime() {
             // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
+            assertThatThrownBy(() -> queryFromArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "20170404152121", "--end-time", "gdsd"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasCauseInstanceOf(ParseException.class)
@@ -252,7 +265,7 @@ public class IngestJobStatusReportTest {
         @Test
         void shouldRejectRangeReportWithEndTimeBeforeStartTime() {
             // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
+            assertThatThrownBy(() -> queryFromArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "20200101120000", "--end-time", "19700101120000"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasCauseInstanceOf(IllegalArgumentException.class)
