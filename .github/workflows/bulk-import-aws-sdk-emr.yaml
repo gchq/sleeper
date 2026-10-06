@@ -1,0 +1,20 @@
+name: Check bulk import AWS SDK version against EMR
+on:
+  workflow_dispatch: # Allow manual running
+  schedule:
+    - cron: '36 2 * * *'
+  pull_request:
+    paths:
+      - '.github/workflows/bulk-import-aws-sdk-emr.yaml'
+      - '.github/scripts/checkBulkImportAwsSdkAgainstEmr.sh'
+      - 'java/core/src/main/java/sleeper/core/properties/instance/NonPersistentEMRProperty.java'
+      - 'java/bulk-import/bulk-import-eks/docker/eks/Dockerfile'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check bulk import AWS SDK version against EMR
+        run: .github/scripts/checkBulkImportAwsSdkAgainstEmr.sh
