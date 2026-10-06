@@ -35,6 +35,7 @@ import sleeper.core.util.cli.CommandArgumentsException;
 import java.io.ByteArrayInputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Scanner;
@@ -139,6 +140,7 @@ public class IngestJobStatusReportTest {
             // When / Then
             assertThatThrownBy(() -> readArguments("detail-fail-instance", "detail-fail-table", "--detailed="))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
                     .hasMessage("Expected a value for option: detailed");
         }
 
@@ -147,6 +149,7 @@ public class IngestJobStatusReportTest {
             // When / Then
             assertThatThrownBy(() -> readArguments("detail-fail-instance", "detail-fail-table", "-d"))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
                     .hasMessage("Expected an argument for option: detailed");
         }
     }
@@ -232,6 +235,7 @@ public class IngestJobStatusReportTest {
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "asdad", "--end-time", "20150411084545"))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasCauseInstanceOf(ParseException.class)
                     .hasMessage("start-time parameter doesn't match expected format: yyyyMMddHHmmss");
         }
 
@@ -241,6 +245,7 @@ public class IngestJobStatusReportTest {
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "20170404152121", "--end-time", "gdsd"))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasCauseInstanceOf(ParseException.class)
                     .hasMessage("end-time parameter doesn't match expected format: yyyyMMddHHmmss");
         }
 
@@ -250,6 +255,7 @@ public class IngestJobStatusReportTest {
             assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
                     "--start-time", "20200101120000", "--end-time", "19700101120000"))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasCauseInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Range end is before range start. Range start: 2020-01-01T12:00:00Z, range end: 1970-01-01T12:00:00Z");
         }
     }
@@ -329,6 +335,7 @@ public class IngestJobStatusReportTest {
                     "--start-time", "20220417053218",
                     "--end-time", "20241122120001"))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
                     .hasMessage("Cannot combine query types. Options have been set for the following types: ALL, RANGE");
         }
 
@@ -339,6 +346,7 @@ public class IngestJobStatusReportTest {
                     "--start-time", "20251112140000",
                     "--end-time", "20260101152929"))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
                     .hasMessage("Cannot combine query types. Options have been set for the following types: DETAILED, RANGE");
         }
 
@@ -349,6 +357,7 @@ public class IngestJobStatusReportTest {
                     "--start-time", "20231225120000",
                     "--end-time", "20231228120000"))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
                     .hasMessage("Cannot combine query types. Options have been set for the following types: RANGE, REJECTED");
         }
 
@@ -359,6 +368,7 @@ public class IngestJobStatusReportTest {
                     "--start-time", "20260901180000",
                     "--end-time", "20260902175959"))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
                     .hasMessage("Cannot combine query types. Options have been set for the following types: RANGE, UNFINISHED");
         }
     }
@@ -371,6 +381,7 @@ public class IngestJobStatusReportTest {
             // When / Then
             assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--format", "BAD-REPORT"))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
                     .hasMessage("Output format not supported: BAD-REPORT. Valid formats: JSON, STANDARD");
         }
 
@@ -379,6 +390,7 @@ public class IngestJobStatusReportTest {
             // When / Then
             assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "--all", "--unfinished"))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
                     .hasMessage("Cannot combine query types. Options have been set for the following types: ALL, UNFINISHED");
         }
 
@@ -387,6 +399,7 @@ public class IngestJobStatusReportTest {
             // When / Then
             assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "-au"))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
                     .hasMessage("Cannot combine query types. Options have been set for the following types: ALL, UNFINISHED");
         }
 
@@ -397,6 +410,7 @@ public class IngestJobStatusReportTest {
                     Instant.parse("2026-10-05T14:56:00Z"),
                     "multiple-flag-instance", "multiple-flag-table", "-aur"))
                     .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
                     .hasMessage("Cannot combine query types. Options have been set for the following types: ALL, RANGE, UNFINISHED");
         }
     }

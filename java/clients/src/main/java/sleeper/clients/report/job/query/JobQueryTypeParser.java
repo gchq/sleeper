@@ -88,6 +88,8 @@ public class JobQueryTypeParser {
         if (options.stream().anyMatch(arguments::isSet)) {
             try {
                 return Optional.of(byArguments.read(arguments, timeSupplier));
+            } catch (CommandArgumentsException e) {
+                throw e;
             } catch (RuntimeException e) {
                 throw new CommandArgumentsException(e);
             }

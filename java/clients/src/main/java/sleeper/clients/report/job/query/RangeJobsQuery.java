@@ -29,6 +29,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -179,10 +180,21 @@ public class RangeJobsQuery implements JobQuery {
                 .map(string -> {
                     try {
                         return parseTime(string);
-                    } catch (RuntimeException e) {
-                        throw new CommandArgumentsException(name + " parameter doesn't match expected format: " + DATE_FORMAT);
+                    } catch (RuntimeException | ParseException e) {
+                        throw new CommandArgumentsException(name + " parameter doesn't match expected format: " + DATE_FORMAT, e);
                     }
                 });
+    }
+
+    private static Instant parseDate(String input, Supplier<Instant> getDefault) {
+        if ("".equals(input)) {
+            return getDefault.get();
+        }
+        try {
+            return parseTime(input);
+        } catch (ParseException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     /**
@@ -193,24 +205,9 @@ public class RangeJobsQuery implements JobQuery {
      * @return                          the time
      * @throws IllegalArgumentException if the time is not in the expected format
      */
-    public static Instant parseTime(String input) {
-        try {
-            return createDateInputFormat().parse(input).toInstant();
-        } catch (ParseException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    private static Instant parseDate(String input, Supplier<Instant> getDefault) {
-        if ("".equals(input)) {
-            return getDefault.get();
-        }
-        return parseTime(input);
-    }
-
-    private static SimpleDateFormat createDateInputFormat() {
+    private static Instant parseTime(String input) throws ParseException {
         SimpleDateFormat dateInputFormat = new SimpleDateFormat(DATE_FORMAT);
-        dateInputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return dateInputFormat;
+        dateInputFormat.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
+        return dateInputFormat.parse(input).toInstant();
     }
 }
