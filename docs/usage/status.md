@@ -57,6 +57,7 @@ with `./scripts/utility/adminClient.sh ${INSTANCE_ID}`, or with the commands bel
 | Compaction Job Status Report  | Lists the compaction jobs and the number of messages on the queue | ```./scripts/report/compactionJobStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME} ${OPTIONAL_FORMAT} ${OPTIONAL_QUERY_TYPE} ${OPTIONAL_QUERY_PARAMETERS}``` | FORMAT = standard, QUERY_TYPE = prompt |
 | Files Status Report           | Lists all the files managed by the state store    | ```./scripts/report/filesStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME} --max-no-ref-files ${MAXREADY_GC_FILES} --verbose=${VERBOSE} --format ${FORMAT}``` | MAXREADY_GC_FILES = 1000, VERBOSE = false , FORMAT = standard |
 | Partitions Status Report      | Summarises the partitions within the system       | ```./scripts/report/partitionsStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME}```                                                                             |                                                                    |
+| Query Tracker Report          | Lists the queries held in the query tracker       | ```./scripts/report/queryTrackerReport.sh ${INSTANCE_ID} [--format <format>] [<query-type-option>]``` | FORMAT = standard, QUERY_TYPE = prompt. Run with `--help` for the query type options |
 
 ## Retrying messages on DLQs
 

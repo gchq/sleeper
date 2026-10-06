@@ -27,7 +27,7 @@ public class JsonQueryTrackerReporterTest {
     @Test
     void shouldRunReportWithMixedQueries() throws Exception {
         // When/Then
-        assertThat(getJsonReport(TrackerQuery.ALL, mixedQueries()))
+        assertThat(getJsonReport(QueryTrackerQuery.ALL, mixedQueries()))
                 .isEqualTo(example("reports/query/json/mixedQueries.json"));
     }
 }
