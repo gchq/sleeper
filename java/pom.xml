@@ -90,7 +90,7 @@
         Snappy is used by both hadoop-client and parquet-hadoop.
         We were getting multiple versions added to the classpath, and they both have vulnerabilities.
         -->
-        <snappy.version>1.1.10.8</snappy.version>
+        <snappy.version>1.1.10.10</snappy.version>
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.3</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.55.10</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.55.11</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         It's not compatible with the latest version, so we match the version that it provides.
@@ -184,7 +184,7 @@
         <jline.version>4.4.6</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-20</zstd-jni.version>
+        <zstd-jni.version>1.5.7-21</zstd-jni.version>
         <airlift.units.version>1.10</airlift.units.version>
         <airlift.slice.version>2.3</airlift.slice.version>
         <!-- Trino and its dependencies declare different versions of Airlift. -->
@@ -212,7 +212,7 @@
         <slf4j.version>2.0.20</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <aspectj.version>1.9.25.1</aspectj.version>
-        <pty4j.version>0.13.13</pty4j.version>
+        <pty4j.version>0.14.0</pty4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.86</bouncycastle.version>
         <athena.version>2025.15.1</athena.version>

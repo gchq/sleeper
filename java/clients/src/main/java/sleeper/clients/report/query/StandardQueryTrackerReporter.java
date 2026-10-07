@@ -57,19 +57,19 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
     }
 
     @Override
-    public void report(TrackerQuery queryType, List<TrackedQuery> trackedQueries) {
+    public void report(QueryTrackerQuery queryType, List<TrackedQuery> trackedQueries) {
         out.println();
         out.println("Query Tracker Report");
         out.println("--------------------");
-        if (TrackerQuery.ALL == queryType) {
+        if (QueryTrackerQuery.ALL == queryType) {
             printAllSummary(trackedQueries);
-        } else if (TrackerQuery.QUEUED == queryType) {
+        } else if (QueryTrackerQuery.QUEUED == queryType) {
             printQueuedSummary(trackedQueries.size());
-        } else if (TrackerQuery.IN_PROGRESS == queryType) {
+        } else if (QueryTrackerQuery.IN_PROGRESS == queryType) {
             printInProgressSummary(trackedQueries.size());
-        } else if (TrackerQuery.COMPLETED == queryType) {
+        } else if (QueryTrackerQuery.COMPLETED == queryType) {
             printCompletedSummary(trackedQueries.size());
-        } else if (TrackerQuery.FAILED == queryType) {
+        } else if (QueryTrackerQuery.FAILED == queryType) {
             printFailedSummary(trackedQueries);
         }
         tableFactory.tableBuilder().itemsAndWriter(trackedQueries, this::writeQueryFields)
@@ -77,11 +77,11 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
                 .build().write(out);
     }
 
-    private static boolean showErrorsField(TrackerQuery queryType, List<TrackedQuery> trackedQueries) {
-        if (TrackerQuery.FAILED == queryType) {
+    private static boolean showErrorsField(QueryTrackerQuery queryType, List<TrackedQuery> trackedQueries) {
+        if (QueryTrackerQuery.FAILED == queryType) {
             return true;
         } else {
-            return TrackerQuery.ALL == queryType &&
+            return QueryTrackerQuery.ALL == queryType &&
                     trackedQueries.stream().anyMatch(query -> Objects.nonNull(query.getErrorMessage()));
         }
     }

@@ -19,14 +19,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.report.IngestJobStatusReport.Arguments;
-import sleeper.clients.report.ingest.job.JsonIngestJobStatusReporter;
-import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
+import sleeper.clients.report.CompactionJobStatusReport.Arguments;
+import sleeper.clients.report.compaction.job.JsonCompactionJobStatusReporter;
+import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.report.job.query.AllJobsQuery;
 import sleeper.clients.report.job.query.DetailedJobsQuery;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.RangeJobsQuery;
-import sleeper.clients.report.job.query.RejectedJobsQuery;
 import sleeper.clients.report.job.query.UnfinishedJobsQuery;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
@@ -41,7 +40,7 @@ import java.util.function.Supplier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class IngestJobStatusReportTest {
+public class CompactionJobStatusReportTest {
 
     private final ToStringConsoleOutput output = new ToStringConsoleOutput();
     private final TestConsoleInput input = new TestConsoleInput(output.consoleOut());
@@ -57,7 +56,7 @@ public class IngestJobStatusReportTest {
             // Then
             assertThat(args.instanceId()).isEqualTo("my-instance");
             assertThat(args.tableName()).isEqualTo("my-table");
-            assertThat(args.reporter()).isInstanceOf(StandardIngestJobStatusReporter.class);
+            assertThat(args.reporter()).isInstanceOf(StandardCompactionJobStatusReporter.class);
         }
 
         @Test
@@ -66,7 +65,7 @@ public class IngestJobStatusReportTest {
             Arguments args = readArguments("json-instance", "json-table", "--format", "json", "--all");
 
             // Then
-            assertThat(args.reporter()).isInstanceOf(JsonIngestJobStatusReporter.class);
+            assertThat(args.reporter()).isInstanceOf(JsonCompactionJobStatusReporter.class);
         }
     }
 
@@ -295,27 +294,6 @@ public class IngestJobStatusReportTest {
     }
 
     @Nested
-    @DisplayName("Rejected jobs query")
-    class RejectedJobs {
-
-        @Test
-        void shouldQueryRejectedJobs() {
-            // When / Then
-            assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "--rejected"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(new RejectedJobsQuery());
-        }
-
-        @Test
-        void shouldQueryRejectedJobsWithShortFlag() {
-            // When / Then
-            assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "-n"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(new RejectedJobsQuery());
-        }
-    }
-
-    @Nested
     @DisplayName("Prompt for query type")
     class Prompt {
 
@@ -364,14 +342,12 @@ public class IngestJobStatusReportTest {
         }
 
         @Test
-        void shouldRejectRejectedQueryWithTimeFlagsSet() {
+        void shouldRejectRejectedQuery() {
             // When / Then
-            assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--rejected",
-                    "--start-time", "20231225120000",
-                    "--end-time", "20231228120000"))
+            assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--rejected"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasNoCause()
-                    .hasMessage("Cannot combine query types. Options have been set for the following types: RANGE, REJECTED");
+                    .hasMessage("Expected 2 positional arguments, found 3: [detailed-time-instance, detailed-time-table, --rejected]");
         }
 
         @Test
@@ -448,9 +424,8 @@ public class IngestJobStatusReportTest {
     }
 
     private Arguments readArguments(Supplier<Instant> timeSupplier, String... args) {
-        return IngestJobStatusReport.readArguments(
-                CommandArgumentReader.parse(IngestJobStatusReport.USAGE, args),
+        return CompactionJobStatusReport.readArguments(
+                CommandArgumentReader.parse(CompactionJobStatusReport.USAGE, args),
                 timeSupplier, input.consoleIn());
     }
-
 }
