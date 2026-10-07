@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.ConsumedCapacity;
 import software.amazon.awssdk.services.dynamodb.model.Delete;
 import software.amazon.awssdk.services.dynamodb.model.DeleteRequest;
@@ -37,6 +38,9 @@ import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
+import sleeper.core.util.SplitIntoBatches;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
@@ -59,25 +63,33 @@ import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.NOT_ASSIG
 public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestBatcherStore.class);
     // Each job assignment takes two write items, so 50 files at a time stays below the transaction limit of 100 items.
-    private static final int FILES_IN_ASSIGN_JOB_BATCH = 50;
+    static final int FILES_IN_ASSIGN_JOB_BATCH = 50;
+    // Each file takes one write item, and a batch write can have at most 25 items.
+    private static final int FILES_IN_DELETE_BATCH = 25;
+    public static final WaitRange UNPROCESSED_WRITES_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(1, 30);
+    static final int MAX_ATTEMPTS_PER_BATCH_WRITE = 10;
     private final DynamoDbClient dynamoDB;
     private final String requestsTableName;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final int filesInAssignJobBatch;
+    private final ExponentialBackoffWithJitter unprocessedWritesBackoff;
 
     public DynamoDBIngestBatcherStore(
             DynamoDbClient dynamoDB, InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider) {
-        this(dynamoDB, instanceProperties, tablePropertiesProvider, FILES_IN_ASSIGN_JOB_BATCH);
+        this(dynamoDB, instanceProperties, tablePropertiesProvider, FILES_IN_ASSIGN_JOB_BATCH,
+                new ExponentialBackoffWithJitter(UNPROCESSED_WRITES_WAIT_RANGE));
     }
 
-    public DynamoDBIngestBatcherStore(
+    DynamoDBIngestBatcherStore(
             DynamoDbClient dynamoDB, InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider, int filesInAssignJobBatch) {
+            TablePropertiesProvider tablePropertiesProvider, int filesInAssignJobBatch,
+            ExponentialBackoffWithJitter unprocessedWritesBackoff) {
         this.dynamoDB = dynamoDB;
         this.requestsTableName = ingestRequestsTableName(instanceProperties.get(ID));
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.filesInAssignJobBatch = filesInAssignJobBatch;
+        this.unprocessedWritesBackoff = unprocessedWritesBackoff;
     }
 
     public static String ingestRequestsTableName(String instanceId) {
@@ -98,8 +110,7 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     @Override
     public List<String> assignJobGetAssigned(String jobId, List<IngestBatcherTrackedFile> filesInJob) {
         List<IngestBatcherTrackedFile> assignedFiles = new ArrayList<>();
-        for (int i = 0; i < filesInJob.size(); i += filesInAssignJobBatch) {
-            List<IngestBatcherTrackedFile> filesInBatch = filesInJob.subList(i, Math.min(i + filesInAssignJobBatch, filesInJob.size()));
+        for (List<IngestBatcherTrackedFile> filesInBatch : SplitIntoBatches.splitListIntoBatchesOf(filesInAssignJobBatch, filesInJob)) {
             try {
                 TransactWriteItemsRequest request = TransactWriteItemsRequest.builder()
                         .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
@@ -147,8 +158,7 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
     @Override
     public void unassignFiles(String jobId, List<IngestBatcherTrackedFile> filesInJob) {
-        for (int i = 0; i < filesInJob.size(); i += filesInAssignJobBatch) {
-            List<IngestBatcherTrackedFile> filesInBatch = filesInJob.subList(i, Math.min(i + filesInAssignJobBatch, filesInJob.size()));
+        for (List<IngestBatcherTrackedFile> filesInBatch : SplitIntoBatches.splitListIntoBatchesOf(filesInAssignJobBatch, filesInJob)) {
             try {
                 TransactWriteItemsRequest request = TransactWriteItemsRequest.builder()
                         .returnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
@@ -221,17 +231,39 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
     @Override
     public void deleteFiles(List<IngestBatcherTrackedFile> files) {
-        if (!files.isEmpty()) {
-            dynamoDB.batchWriteItem(BatchWriteItemRequest.builder()
-                    .requestItems(Map.of(requestsTableName,
-                            files.stream()
-                                    .map(request -> WriteRequest.builder()
-                                            .deleteRequest(DeleteRequest.builder()
-                                                    .key(DynamoDBIngestRequestFormat.createKey(request))
-                                                    .build())
+        for (List<IngestBatcherTrackedFile> filesInBatch : SplitIntoBatches.splitListIntoBatchesOf(FILES_IN_DELETE_BATCH, files)) {
+            deleteRetryingUnprocessed(Map.of(requestsTableName,
+                    filesInBatch.stream()
+                            .map(request -> WriteRequest.builder()
+                                    .deleteRequest(DeleteRequest.builder()
+                                            .key(DynamoDBIngestRequestFormat.createKey(request))
                                             .build())
-                                    .collect(Collectors.toList())))
-                    .build());
+                                    .build())
+                            .collect(Collectors.toList())));
+        }
+    }
+
+    private void deleteRetryingUnprocessed(Map<String, List<WriteRequest>> deletes) {
+        Map<String, List<WriteRequest>> writesByTable = deletes;
+        try {
+            for (int attempt = 1; !writesByTable.isEmpty(); attempt++) {
+                if (attempt > MAX_ATTEMPTS_PER_BATCH_WRITE) {
+                    throw new RuntimeException("Failed to delete files, too many unprocessed writes " +
+                            "after " + MAX_ATTEMPTS_PER_BATCH_WRITE + " attempts");
+                }
+                unprocessedWritesBackoff.waitBeforeAttempt(attempt);
+                BatchWriteItemResponse response = dynamoDB.batchWriteItem(BatchWriteItemRequest.builder()
+                        .requestItems(writesByTable)
+                        .build());
+                writesByTable = response.unprocessedItems();
+                if (!writesByTable.isEmpty()) {
+                    LOGGER.warn("Found {} unprocessed writes deleting files, retrying",
+                            writesByTable.values().stream().mapToInt(List::size).sum());
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted retrying unprocessed writes deleting files", e);
         }
     }
 }
