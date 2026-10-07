@@ -18,7 +18,7 @@ package sleeper.clients.report.compaction.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.util.Collections;
@@ -35,9 +35,9 @@ public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJo
         List<CompactionJobStatus> statusList = mixedUnfinishedJobStatuses();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQueryType.UNFINISHED))
                 .isEqualTo(example("reports/compaction/job/standard/unfinished/mixedUnfinishedJobs.txt"));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQueryType.UNFINISHED))
                 .isEqualTo(example("reports/compaction/job/json/mixedUnfinishedJobs.json"));
     }
 
@@ -47,9 +47,9 @@ public class CompactionJobStatusReporterUnfinishedQueryTest extends CompactionJo
         List<CompactionJobStatus> statusList = Collections.emptyList();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQueryType.UNFINISHED))
                 .isEqualTo(example("reports/compaction/job/standard/unfinished/noJobs.txt"));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.UNFINISHED))
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQueryType.UNFINISHED))
                 .isEqualTo(example("reports/compaction/job/json/noJobs.json"));
     }
 }
