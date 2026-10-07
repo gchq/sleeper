@@ -148,7 +148,21 @@ public class IngestJobMessageHandler<T> {
         }
         TableStatus table = tableOpt.get();
 
-        ExpandDirectoriesResult expanded = expandDirectories.expandPaths(files);
+        ExpandDirectoriesResult expanded;
+        try {
+            expanded = expandDirectories.expandPaths(files);
+        } catch (RuntimeException e) {
+            LOGGER.warn("Failed expanding directories for job {}", jobId, e);
+            ingestJobTracker.jobValidated(
+                    refusedEventBuilder()
+                            .jobId(jobId)
+                            .tableId(table.getTableUniqueId())
+                            .jsonMessage(message)
+                            .reasons("Error listing files. Reason: " + e.getMessage())
+                            .build());
+            return Optional.empty();
+        }
+
         if (!expanded.missingPaths().isEmpty()) {
             LOGGER.warn("Could not find paths for job {}: {}", jobId, expanded.missingPaths());
             ingestJobTracker.jobValidated(

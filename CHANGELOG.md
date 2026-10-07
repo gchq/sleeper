@@ -6,6 +6,55 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.38.0
+
+### 2nd October 2026
+
+This includes support for running the DataFusion data engine on Amazon Linux 2023. Docker containers now run as a non-root user, and there are several query bug fixes and improvements to make queries work at larger numbers of partitions.
+
+Security:
+- Docker containers now run as a dedicated non-root `sleeper` user instead of root. Custom base images must create a `sleeper` user and set `USER sleeper`.
+
+DataFusion:
+- Support has been added for running the DataFusion data engine on Amazon Linux 2023.
+
+Bulk import:
+- Submitting a bulk import job from the Java client now generates a job ID if one is not set, validates the job ID, and returns it for tracking.
+
+Query:
+- Batched updates to the query tracker when creating subqueries, improving scalability for queries over large numbers of partitions.
+
+Scripts:
+- Improved the ingest job status report with better help text.
+- Improved usability of the demo deployment script.
+- `scripts/deploy/tearDown.sh` now requires an explicit instance ID, rather than defaulting to the last instance you interacted with.
+
+Deployment:
+- CloudFormation teardown now correctly stops ECS tasks before deleting the compaction Auto Scaling Group, preventing deletion from hanging.
+- The configuration templates folder has been removed in favour of a consolidated examples folder [found here](./example/).
+
+Docker tools:
+- Added `install.sh --useLocalOnce` to install the CLI from a local repo without persisting the local-repo path.
+- Added a `sleeper cli set-isolate-mvn` subcommand to control Maven isolation.
+- The Docker tools CLI can now detect the version from a local repository, with new `useLocalRepo` and `useLocalVersion` flags.
+
+Documentation:
+- Updated the developer guide and custom environment documentation for the new Rust builder.
+
+Bugfixes:
+- The DynamoDB query tracker now paginates results correctly, fixing queries that returned incomplete results.
+- Parent queries are now correctly finalised when the last leaf query partially fails.
+- Query results iterators are now closed properly when configured not to output results.
+- Bulk import jobs can now be submitted to a persistent EMR cluster when the AWS account has more than 50 EMR clusters.
+- An ingest source permissions failure when submitting a bulk import job is now recorded as a rejected job in the job tracker.
+- Paths listed in an ingest or bulk import job no longer match other files or directories that start with the same prefix, e.g. `data/day1` no longer matches `data/day10/`.
+- The Python client no longer requires you to explicitly add the `requests` library as a dependency.
+- Fixed bugs in the Spark integration's handling of query filters:
+  - Two ANDed filters over multiple regions are now intersected rather than unioned.
+  - An OR whose branches are themselves ORs no longer results in a full scan.
+  - Queries with non-overlapping filters no longer fail, and nulls in IN filters are handled correctly.
+
+
 ## Version 0.37.5
 
 ### 9th September 2026

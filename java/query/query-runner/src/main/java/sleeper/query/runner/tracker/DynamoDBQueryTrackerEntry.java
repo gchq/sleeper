@@ -34,7 +34,7 @@ import java.util.Objects;
  * A model for entries in the query tracker DynamoDB table. Will be mapped to {@link TrackedQuery} objects.
  */
 class DynamoDBQueryTrackerEntry {
-
+    private static final Long NUM_SECONDS_IN_A_DAY = 60 * 60 * 24L;
     static final String QUERY_ID = "queryId";
     static final String LAST_UPDATE_TIME = "lastUpdateTime";
     static final String LAST_KNOWN_STATE = "lastKnownState";
@@ -43,6 +43,10 @@ class DynamoDBQueryTrackerEntry {
     static final String ERROR_MESSAGE = "errors";
     static final String EXPIRY_DATE = "expiryDate";
     static final String NON_NESTED_QUERY_PLACEHOLDER = "-";
+    static final String EXPECTED_SUB_QUERY_COUNT = "expectedSubQueryCount";
+    static final String SUCCEEDED_SUB_QUERY_COUNT = "succeededSubQueryCount";
+    static final String FAILED_SUB_QUERY_COUNT = "failedSubQueryCount";
+    static final String FINISHED_SUB_QUERY_ROW_COUNT = "finishedSubQueryRowCount";
 
     private final String queryId;
     private final String subQueryId;
@@ -79,6 +83,23 @@ class DynamoDBQueryTrackerEntry {
         return key;
     }
 
+    public Map<String, AttributeValue> getParentKey() {
+        return getParentKey(queryId);
+    }
+
+    /**
+     * Creates the DynamoDB key of the item tracking a parent query.
+     *
+     * @param  queryId the query ID
+     * @return         the key of the item tracking the parent query
+     */
+    public static Map<String, AttributeValue> getParentKey(String queryId) {
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put(QUERY_ID, AttributeValue.fromS(queryId));
+        key.put(SUB_QUERY_ID, AttributeValue.fromS(NON_NESTED_QUERY_PLACEHOLDER));
+        return key;
+    }
+
     public Map<String, AttributeValue> getItem(long queryTrackerTTL) {
         Map<String, AttributeValue> item = new HashMap<>(getKey());
         getValueUpdate(queryTrackerTTL).forEach((attribute, update) -> item.put(attribute, update.value()));
@@ -87,12 +108,15 @@ class DynamoDBQueryTrackerEntry {
 
     public Map<String, AttributeValueUpdate> getValueUpdate(long queryTrackerTTL) {
         Map<String, AttributeValueUpdate> valueUpdate = new HashMap<>();
-        long now = System.currentTimeMillis() / 1000;
-        long expiryDate = now + (3600 * 24 * queryTrackerTTL);
+        long now = System.currentTimeMillis();
+        // Last update time is stored in milliesconds.
         valueUpdate.put(LAST_UPDATE_TIME, AttributeValueUpdate.builder()
                 .value(AttributeValue.fromN(String.valueOf(now)))
                 .action(AttributeAction.PUT)
                 .build());
+        // The expiry date is stored in epoch seconds so divide now by 1000; the queryTrackerTTL is in days
+        // so add NUM_SECONDS_IN_A_DAY * queryTrackerTTL.
+        long expiryDate = (now / 1000) + (NUM_SECONDS_IN_A_DAY * queryTrackerTTL);
         valueUpdate.put(EXPIRY_DATE, AttributeValueUpdate.builder()
                 .value(AttributeValue.fromN(String.valueOf(expiryDate)))
                 .action(AttributeAction.PUT)
@@ -133,21 +157,40 @@ class DynamoDBQueryTrackerEntry {
                 .lastKnownState(state)
                 .rowCount(rowCount)
                 .errorMessage(errorMessage)
+                .expectedSubQueryCount(readOptionalLong(stringAttributeValueMap, EXPECTED_SUB_QUERY_COUNT))
+                .succeededSubQueryCount(readOptionalLong(stringAttributeValueMap, SUCCEEDED_SUB_QUERY_COUNT))
+                .failedSubQueryCount(readOptionalLong(stringAttributeValueMap, FAILED_SUB_QUERY_COUNT))
+                .finishedSubQueryRowCount(readOptionalLong(stringAttributeValueMap, FINISHED_SUB_QUERY_ROW_COUNT))
                 .build();
     }
 
-    public boolean isUpdateParent() {
-        return isSubQuery() &&
-                (state.equals(QueryState.COMPLETED) || state.equals(QueryState.FAILED)
-                        || state.equals(QueryState.PARTIALLY_FAILED));
+    private static Long readOptionalLong(Map<String, AttributeValue> item, String attribute) {
+        AttributeValue value = item.get(attribute);
+        return value != null ? Long.valueOf(value.n()) : null;
     }
 
-    private boolean isSubQuery() {
+    public boolean isFinished() {
+        return state != null && state.isFinished();
+    }
+
+    public boolean isSubQuery() {
         return !NON_NESTED_QUERY_PLACEHOLDER.equals(subQueryId);
     }
 
     public String getQueryId() {
         return queryId;
+    }
+
+    public String getSubQueryId() {
+        return subQueryId;
+    }
+
+    public QueryState getState() {
+        return state;
+    }
+
+    public long getRowCount() {
+        return rowCount;
     }
 
     public DynamoDBQueryTrackerEntry updateParent(QueryState state, long totalRowCount) {
