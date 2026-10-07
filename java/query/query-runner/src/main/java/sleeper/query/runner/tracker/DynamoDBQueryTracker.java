@@ -20,22 +20,16 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
-import software.amazon.awssdk.services.dynamodb.model.BatchWriteItemResponse;
 import software.amazon.awssdk.services.dynamodb.model.ComparisonOperator;
 import software.amazon.awssdk.services.dynamodb.model.Condition;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
-import software.amazon.awssdk.services.dynamodb.model.PutRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 import software.amazon.awssdk.services.dynamodb.model.ReturnValue;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
-import software.amazon.awssdk.services.dynamodb.model.WriteRequest;
 import software.amazon.awssdk.services.dynamodb.paginators.QueryIterable;
 import software.amazon.awssdk.services.dynamodb.paginators.ScanIterable;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
-import sleeper.core.util.SplitIntoBatches;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
@@ -49,6 +43,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -63,9 +58,6 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBQueryTracker.class);
 
     public static final String DESTINATION = "DYNAMODB";
-    public static final WaitRange UNPROCESSED_WRITES_WAIT_RANGE = WaitRange.firstAndMaxWaitCeilingSecs(1, 30);
-    private static final int DYNAMO_MAX_BATCH_WRITE_SIZE = 25;
-    private static final int MAX_ATTEMPTS_PER_BATCH_WRITE = 10;
     public static final String NON_NESTED_QUERY_PLACEHOLDER = DynamoDBQueryTrackerEntry.NON_NESTED_QUERY_PLACEHOLDER;
     public static final String QUERY_ID = DynamoDBQueryTrackerEntry.QUERY_ID;
     public static final String SUB_QUERY_ID = DynamoDBQueryTrackerEntry.SUB_QUERY_ID;
@@ -74,17 +66,11 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     private final DynamoDbClient dynamoClient;
     private final String trackerTableName;
     private final long queryTrackerTTL;
-    private final ExponentialBackoffWithJitter unprocessedWritesBackoff;
 
     public DynamoDBQueryTracker(InstanceProperties instanceProperties, DynamoDbClient dynamoClient) {
-        this(instanceProperties, dynamoClient, new ExponentialBackoffWithJitter(UNPROCESSED_WRITES_WAIT_RANGE));
-    }
-
-    public DynamoDBQueryTracker(InstanceProperties instanceProperties, DynamoDbClient dynamoClient, ExponentialBackoffWithJitter unprocessedWritesBackoff) {
         this.trackerTableName = instanceProperties.get(QUERY_TRACKER_TABLE_NAME);
         this.queryTrackerTTL = instanceProperties.getLong(QUERY_TRACKER_ITEM_TTL_IN_DAYS);
         this.dynamoClient = dynamoClient;
-        this.unprocessedWritesBackoff = unprocessedWritesBackoff;
     }
 
     public DynamoDBQueryTracker(Map<String, String> destinationConfig) {
@@ -92,7 +78,6 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
         String ttl = destinationConfig.get(QUERY_TRACKER_ITEM_TTL_IN_DAYS.getPropertyName());
         this.queryTrackerTTL = Long.parseLong(ttl != null ? ttl : QUERY_TRACKER_ITEM_TTL_IN_DAYS.getDefaultValue());
         this.dynamoClient = DynamoDbClient.create();
-        this.unprocessedWritesBackoff = new ExponentialBackoffWithJitter(UNPROCESSED_WRITES_WAIT_RANGE);
     }
 
     @Override
@@ -176,9 +161,11 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
     @Override
     public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
-        SplitIntoBatches.splitListIntoBatchesOf(DYNAMO_MAX_BATCH_WRITE_SIZE, subQueries)
-                .forEach(this::putQueuedSubQueries);
-        initialiseSubQueryCountersOnParent(query, subQueries.size());
+        String attemptId = subQueries.stream()
+                .map(LeafPartitionQuery::getAttemptId)
+                .filter(Objects::nonNull)
+                .findFirst().orElse(null);
+        initialiseSubQueryCountersOnParent(query, subQueries.size(), attemptId);
     }
 
     /**
@@ -186,53 +173,40 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
      * sub-queries. When a sub-query finishes it increments these counters (this operation is independent of the
      * number of subqueries). This method should be called before any sub-query is submitted for execution, so
      * that the expected count is always recorded by the time a sub-query finishes.
+     * <p>
+     * Subqueries are not written to the tracker here. Writing an entry per subquery could cause too much load
+     * on DynamoDB (as they share a hash key, all updates go one or a small number of partitions).
+     * <p>
+     * The ID of this attempt at processing the query is recorded with the counters. Only subqueries finishing in
+     * the same attempt are counted, so that when the whole query is reprocessed, e.g. from a duplicated message for the
+     * parent query, subqueries finishing under an older attempt cannot be counted against the reset counters.
      *
      * @param query         the parent query
      * @param subQueryCount the number of sub-queries that were created
+     * @param attemptId     an identifier for this attempt at processing the query, null if not set
      */
-    private void initialiseSubQueryCountersOnParent(Query query, int subQueryCount) {
+    private void initialiseSubQueryCountersOnParent(Query query, int subQueryCount, String attemptId) {
+        Map<String, String> attributeNames = new HashMap<>(Map.of(
+                "#Expected", DynamoDBQueryTrackerEntry.EXPECTED_SUB_QUERY_COUNT,
+                "#Succeeded", DynamoDBQueryTrackerEntry.SUCCEEDED_SUB_QUERY_COUNT,
+                "#Failed", DynamoDBQueryTrackerEntry.FAILED_SUB_QUERY_COUNT,
+                "#Rows", DynamoDBQueryTrackerEntry.FINISHED_SUB_QUERY_ROW_COUNT));
+        Map<String, AttributeValue> attributeValues = new HashMap<>(Map.of(
+                ":expected", AttributeValue.fromN(String.valueOf(subQueryCount)),
+                ":zero", AttributeValue.fromN("0")));
+        String updateExpression = "SET #Expected = :expected, #Succeeded = :zero, #Failed = :zero, #Rows = :zero";
+        if (attemptId != null) {
+            attributeNames.put("#AttemptId", DynamoDBQueryTrackerEntry.ATTEMPT_ID);
+            attributeValues.put(":attemptId", AttributeValue.fromS(attemptId));
+            updateExpression += ", #AttemptId = :attemptId";
+        }
+        String setCountersExpression = updateExpression;
         dynamoClient.updateItem(request -> request
                 .tableName(trackerTableName)
                 .key(DynamoDBQueryTrackerEntry.getParentKey(query.getQueryId()))
-                .updateExpression("SET #Expected = :expected, #Succeeded = :zero, #Failed = :zero, #Rows = :zero")
-                .expressionAttributeNames(Map.of(
-                        "#Expected", DynamoDBQueryTrackerEntry.EXPECTED_SUB_QUERY_COUNT,
-                        "#Succeeded", DynamoDBQueryTrackerEntry.SUCCEEDED_SUB_QUERY_COUNT,
-                        "#Failed", DynamoDBQueryTrackerEntry.FAILED_SUB_QUERY_COUNT,
-                        "#Rows", DynamoDBQueryTrackerEntry.FINISHED_SUB_QUERY_ROW_COUNT))
-                .expressionAttributeValues(Map.of(
-                        ":expected", AttributeValue.fromN(String.valueOf(subQueryCount)),
-                        ":zero", AttributeValue.fromN("0"))));
-    }
-
-    private void putQueuedSubQueries(List<LeafPartitionQuery> subQueries) {
-        Map<String, List<WriteRequest>> writesByTable = Map.of(trackerTableName, subQueries.stream()
-                .map(subQuery -> DynamoDBQueryTrackerEntry.withLeafQuery(subQuery).state(QueryState.QUEUED).build())
-                .map(entry -> WriteRequest.builder()
-                        .putRequest(PutRequest.builder()
-                                .item(entry.getItem(queryTrackerTTL))
-                                .build())
-                        .build())
-                .toList());
-        try {
-            for (int attempt = 1; !writesByTable.isEmpty(); attempt++) {
-                if (attempt > MAX_ATTEMPTS_PER_BATCH_WRITE) {
-                    throw new RuntimeException("Failed to track creation of sub-queries, too many unprocessed writes " +
-                            "after " + MAX_ATTEMPTS_PER_BATCH_WRITE + " attempts");
-                }
-                unprocessedWritesBackoff.waitBeforeAttempt(attempt);
-                Map<String, List<WriteRequest>> requestItems = writesByTable;
-                BatchWriteItemResponse response = dynamoClient.batchWriteItem(request -> request.requestItems(requestItems));
-                writesByTable = response.unprocessedItems();
-                if (!writesByTable.isEmpty()) {
-                    LOGGER.warn("Found {} unprocessed writes tracking creation of sub-queries, retrying",
-                            writesByTable.values().stream().mapToInt(List::size).sum());
-                }
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted retrying unprocessed writes tracking creation of sub-queries", e);
-        }
+                .updateExpression(setCountersExpression)
+                .expressionAttributeNames(attributeNames)
+                .expressionAttributeValues(attributeValues));
     }
 
     @Override
@@ -294,7 +268,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
         try {
             updateSubQueryItemUnlessAlreadyFinished(entry);
         } catch (ConditionalCheckFailedException e) {
-            LOGGER.warn("Sub-query {} of query {} was already finished, ignoring update to state {}",
+            LOGGER.warn("Subquery {} of query {} was already finished in the same attempt, ignoring update to state {}",
                     entry.getSubQueryId(), entry.getQueryId(), entry.getState());
             return;
         }
@@ -303,6 +277,15 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
         }
     }
 
+    /**
+     * Applies an update to a subquery's item, creating the item if it does not exist yet. The update is rejected if
+     * the subquery already finished in the same attempt at the parent query. A rejection means a duplicate message for
+     * the subquery, so it must neither revert the state of the finished sub-query, nor be counted against the
+     * parent query a second time. An update for a different attempt is applied, as the whole query was reprocessed and
+     * the counters on the parent query's item were reset, e.g. after a duplicated message for the parent query.
+     *
+     * @param entry the update to the sub-query
+     */
     private void updateSubQueryItemUnlessAlreadyFinished(DynamoDBQueryTrackerEntry entry) {
         Map<String, String> attributeNames = new HashMap<>();
         Map<String, AttributeValue> attributeValues = new HashMap<>();
@@ -320,18 +303,35 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
         attributeValues.put(":completed", AttributeValue.fromS(QueryState.COMPLETED.name()));
         attributeValues.put(":failed", AttributeValue.fromS(QueryState.FAILED.name()));
         attributeValues.put(":partiallyFailed", AttributeValue.fromS(QueryState.PARTIALLY_FAILED.name()));
+        String notFinishedCondition = "attribute_not_exists(#State) OR NOT #State IN (:completed, :failed, :partiallyFailed)";
+        String conditionExpression;
+        if (entry.getAttemptId() != null) {
+            attributeNames.put("#AttemptId", DynamoDBQueryTrackerEntry.ATTEMPT_ID);
+            attributeValues.put(":attemptId", AttributeValue.fromS(entry.getAttemptId()));
+            conditionExpression = notFinishedCondition + " OR #AttemptId <> :attemptId";
+        } else {
+            conditionExpression = notFinishedCondition;
+        }
         String updateExpression = "SET " + String.join(", ", assignments);
         dynamoClient.updateItem(request -> request
                 .tableName(trackerTableName)
                 .key(entry.getKey())
                 .updateExpression(updateExpression)
-                .conditionExpression("attribute_not_exists(#State) OR NOT #State IN (:completed, :failed, :partiallyFailed)")
+                .conditionExpression(conditionExpression)
                 .expressionAttributeNames(attributeNames)
                 .expressionAttributeValues(attributeValues));
     }
 
     private void updateStateOfParent(DynamoDBQueryTrackerEntry leafQueryEntry) {
-        Map<String, AttributeValue> parentItem = incrementFinishedSubQueryCountersOnParent(leafQueryEntry);
+        Map<String, AttributeValue> parentItem;
+        try {
+            parentItem = incrementFinishedSubQueryCountersOnParent(leafQueryEntry);
+        } catch (ConditionalCheckFailedException e) {
+            LOGGER.warn("Subquery {} of query {} finished under attempt {}, which is no longer the current " +
+                    "attempt at the query, not counting it against the parent query",
+                    leafQueryEntry.getSubQueryId(), leafQueryEntry.getQueryId(), leafQueryEntry.getAttemptId());
+            return;
+        }
         if (parentItem.containsKey(DynamoDBQueryTrackerEntry.EXPECTED_SUB_QUERY_COUNT)) {
             updateStateOfParentFromCounters(leafQueryEntry, parentItem);
         } else {
@@ -342,25 +342,39 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
     /**
      * Atomically increments the counters of finished sub-queries held on the parent query's item, recording whether
-     * this sub-query succeeded or failed, and how many rows it returned.
+     * this subquery succeeded or failed, and how many rows it returned. When the subquery holds an attempt ID,
+     * the increment is conditional on the parent query's current attempt being the same one, so that a subquery
+     * finishing under a previous attempt at the query cannot be counted after the counters were reset for a new
+     * attempt.
      *
      * @param  leafQueryEntry the update that finished the sub-query
      * @return                the attributes of the parent query's item after the increment
      */
     private Map<String, AttributeValue> incrementFinishedSubQueryCountersOnParent(DynamoDBQueryTrackerEntry leafQueryEntry) {
         boolean succeeded = leafQueryEntry.getState() == QueryState.COMPLETED;
+        Map<String, String> attributeNames = new HashMap<>(Map.of(
+                "#Succeeded", DynamoDBQueryTrackerEntry.SUCCEEDED_SUB_QUERY_COUNT,
+                "#Failed", DynamoDBQueryTrackerEntry.FAILED_SUB_QUERY_COUNT,
+                "#Rows", DynamoDBQueryTrackerEntry.FINISHED_SUB_QUERY_ROW_COUNT));
+        Map<String, AttributeValue> attributeValues = new HashMap<>(Map.of(
+                ":succeeded", AttributeValue.fromN(succeeded ? "1" : "0"),
+                ":failed", AttributeValue.fromN(succeeded ? "0" : "1"),
+                ":rows", AttributeValue.fromN(String.valueOf(leafQueryEntry.getRowCount()))));
+        String conditionExpression;
+        if (leafQueryEntry.getAttemptId() != null) {
+            attributeNames.put("#AttemptId", DynamoDBQueryTrackerEntry.ATTEMPT_ID);
+            attributeValues.put(":attemptId", AttributeValue.fromS(leafQueryEntry.getAttemptId()));
+            conditionExpression = "attribute_not_exists(#AttemptId) OR #AttemptId = :attemptId";
+        } else {
+            conditionExpression = null;
+        }
         UpdateItemResponse response = dynamoClient.updateItem(request -> request
                 .tableName(trackerTableName)
                 .key(leafQueryEntry.getParentKey())
                 .updateExpression("ADD #Succeeded :succeeded, #Failed :failed, #Rows :rows")
-                .expressionAttributeNames(Map.of(
-                        "#Succeeded", DynamoDBQueryTrackerEntry.SUCCEEDED_SUB_QUERY_COUNT,
-                        "#Failed", DynamoDBQueryTrackerEntry.FAILED_SUB_QUERY_COUNT,
-                        "#Rows", DynamoDBQueryTrackerEntry.FINISHED_SUB_QUERY_ROW_COUNT))
-                .expressionAttributeValues(Map.of(
-                        ":succeeded", AttributeValue.fromN(succeeded ? "1" : "0"),
-                        ":failed", AttributeValue.fromN(succeeded ? "0" : "1"),
-                        ":rows", AttributeValue.fromN(String.valueOf(leafQueryEntry.getRowCount()))))
+                .conditionExpression(conditionExpression)
+                .expressionAttributeNames(attributeNames)
+                .expressionAttributeValues(attributeValues)
                 .returnValues(ReturnValue.ALL_NEW));
         return response.attributes();
     }

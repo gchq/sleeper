@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -89,10 +90,18 @@ public class SqsQueryProcessor {
         });
 
         queryPlanner.initIfNeeded(Instant.now());
-        List<LeafPartitionQuery> subQueries = queryPlanner.splitIntoLeafPartitionQueries(query);
+        // Subquery IDs are deterministic (the leaf partition ID), so an attempt ID identifies this attempt at
+        // processing the query. The query tracker uses it to tell a duplicate message for a subquery within the same
+        // attempt apart from a new attempt at the whole query, e.g. from a duplicated message for the parent query.
+        String attemptId = UUID.randomUUID().toString();
+        List<LeafPartitionQuery> subQueries = queryPlanner.splitIntoLeafPartitionQueries(query).stream()
+                .map(subQuery -> subQuery.withAttemptId(attemptId))
+                .toList();
+        LOGGER.info("Planned query with id {} into {} subqueries (attempt id {})", query.getQueryId(),
+                subQueries.size(), attemptId);
 
         if (subQueries.isEmpty()) {
-            LOGGER.error("Query led to no sub queries");
+            LOGGER.error("Query led to no subqueries (query id {})", query.getQueryId());
             /*
              * Not setting the state to failed because the table may not have contained any data.
              */
@@ -100,12 +109,12 @@ public class SqsQueryProcessor {
             return;
         }
 
-        // Record the creation of the subqueries in the tracker before they are sent to the queue.
-        // If the subqueries were sent to the queue before the tracker was updated then some
-        // subqueries might complete before the tracker was updated and so the query might be marked
-        // as completed when queries were still being submitted.
+        // Record the number of subqueries that have been created for the parent query on the tracker.
+        // If the subqueries were sent to the queue before the tracker was updated then some subqueries might
+        // complete before the tracker was updated, and the query could be marked as completed when subqueries were
+        // still being submitted. Each subquery is tracked individually when it starts running.
         queryTrackers.subQueriesCreated(query, subQueries);
-        LOGGER.info("Added the creation of {} subqueries to the query tracker", subQueries.size());
+        LOGGER.info("Recorded the creation of {} subqueries in the query tracker", subQueries.size());
 
         // Put these subqueries on to the leaf partition query queue so they can be processed independently
         String sqsLeafPartitionQueryQueueURL = instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL);
