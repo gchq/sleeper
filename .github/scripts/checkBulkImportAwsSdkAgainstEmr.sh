@@ -129,7 +129,7 @@ if [ "$OTHER_AWS_VERSION" != "$PINNED_AWS_VERSION" ]; then
 fi
 
 if [ "$REFERENCE_AWS_VERSION" != "$PINNED_AWS_VERSION" ]; then
-    echo "::error::Bulk import AWS SDK version is $PINNED_AWS_VERSION but $REFERENCE_IMAGE provides $REFERENCE_AWS_VERSION. This change can be verified with a successful run of EmrServerlessBulkImportST."
+    echo "::error::Bulk import AWS SDK version is $PINNED_AWS_VERSION but $REFERENCE_IMAGE provides $REFERENCE_AWS_VERSION. This should be updated in both java/pom.xml and in .github/scripts/checkVersionNumber.sh. This change can be verified with a successful run of EmrServerlessBulkImportST."
     exit 1
 else
     echo "Versions match"
