@@ -72,7 +72,6 @@ public class SqsLeafPartitionQueryProcessorTest {
     private final Supplier<Instant> timeSupplier = timePassesAMinuteAtATimeFrom(startTime);
     private final InMemoryQueryTracker queryTracker = new InMemoryQueryTracker(instanceProperties, timeSupplier);
     private final Supplier<String> queryIdSupplier = supplyNumberedUuidsWithPrefix("query");
-    private final Supplier<String> subQueryIdSupplier = supplyNumberedUuidsWithPrefix("subquery");
 
     @Test
     void shouldRetrieveSingleRow() {
@@ -155,7 +154,7 @@ public class SqsLeafPartitionQueryProcessorTest {
     }
 
     private void executeQuery(Query query) {
-        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore, timeSupplier.get(), subQueryIdSupplier);
+        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore, timeSupplier.get());
         planner.init();
         List<LeafPartitionQuery> subQueries = planner.splitIntoLeafPartitionQueries(query);
         SqsLeafPartitionQueryProcessor processor = createProcessor();
@@ -188,7 +187,7 @@ public class SqsLeafPartitionQueryProcessorTest {
         Duration timeOffset = Duration.ofMinutes(queryNumber + updateNumber - 1);
         return TrackedQuery.builder()
                 .queryId(numberedUUID("query", queryNumber))
-                .subQueryId(numberedUUID("subquery", queryNumber))
+                .subQueryId("root")
                 .lastUpdateTime(startTime.plus(timeOffset))
                 .expiryDate(startTime.plus(timeOffset).plus(Duration.ofDays(1)));
     }

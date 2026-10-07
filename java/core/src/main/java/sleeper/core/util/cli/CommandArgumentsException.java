@@ -31,4 +31,8 @@ public class CommandArgumentsException extends RuntimeException {
     public CommandArgumentsException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public CommandArgumentsException(Throwable cause) {
+        this(cause.getMessage(), cause);
+    }
 }

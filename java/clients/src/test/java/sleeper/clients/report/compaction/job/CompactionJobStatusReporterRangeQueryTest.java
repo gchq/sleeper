@@ -18,7 +18,7 @@ package sleeper.clients.report.compaction.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.util.Collections;
@@ -35,9 +35,9 @@ public class CompactionJobStatusReporterRangeQueryTest extends CompactionJobStat
         List<CompactionJobStatus> statusList = mixedJobStatuses();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.RANGE))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQueryType.RANGE))
                 .isEqualTo(example("reports/compaction/job/standard/range/mixedJobs.txt"));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.RANGE))
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQueryType.RANGE))
                 .isEqualTo(example("reports/compaction/job/json/mixedJobs.json"));
     }
 
@@ -47,9 +47,9 @@ public class CompactionJobStatusReporterRangeQueryTest extends CompactionJobStat
         List<CompactionJobStatus> statusList = Collections.emptyList();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.RANGE))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQueryType.RANGE))
                 .isEqualTo(example("reports/compaction/job/standard/range/noJobs.txt"));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.RANGE))
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQueryType.RANGE))
                 .isEqualTo(example("reports/compaction/job/json/noJobs.json"));
     }
 }

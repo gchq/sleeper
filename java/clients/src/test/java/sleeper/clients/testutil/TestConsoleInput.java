@@ -20,9 +20,13 @@ import org.mockito.invocation.InvocationOnMock;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 
+import java.io.ByteArrayInputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Scanner;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -42,6 +46,11 @@ public class TestConsoleInput {
         when(mock.promptLine(any())).thenAnswer(this::invokePrompt);
         when(mock.promptPassword(any())).thenAnswer(this::invokePrompt);
         doAnswer(this::invokeWaitForLine).when(mock).waitForLine();
+    }
+
+    public static ConsoleInput fromInput(String input) {
+        return new ConsoleInput(null, new PrintStream(System.out),
+                new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8))));
     }
 
     private String invokePrompt(InvocationOnMock invocation) {
