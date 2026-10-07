@@ -149,16 +149,10 @@
         saw the following error when BulkImportJobDriver.start tries to create an SqsClient:
         java.lang.NoSuchFieldError: AWS_AUTH_SCHEME_PREFERENCE
         at software.amazon.awssdk.awscore.auth.AuthSchemePreferenceResolver.fromSystemSetting(AuthSchemePreferenceResolver.java:75)
-        The version of the library is coming from this file in the EMR Serverless Docker image:
-        /usr/share/aws/emr/serverless-goodies/lib/emr-serverless-spark-goodies-2.22.0.jar
-        The image must match the EMR release label we deploy with, which defaults to the value of the instance
-        property sleeper.default.table.bulk.import.emr.release.label. To find the version below, pull the image
-        public.ecr.aws/emr-serverless/spark/emr-7.12.0:latest for the platform linux/amd64, then read this file
-        from inside the jar above:
-        META-INF/maven/software.amazon.awssdk/sdk-core/pom.properties
-        This is also checked in .github/scripts/checkVersionNumber.sh so that Dependabot can't upgrade it, and is
-        compared against the EMR images daily by .github/scripts/checkBulkImportAwsSdkAgainstEmr.sh. Only change
-        it when deliberately matching a version from EMR Serverless, and verify with EmrServerlessBulkImportST.
+        The version of the library is checked in .github/scripts/checkVersionNumber.sh so that Dependabot can't upgrade
+        it, and is compared against the EMR images daily by .github/scripts/checkBulkImportAwsSdkAgainstEmr.sh.
+        Only change it when deliberately matching a version from EMR, e.g. based on output from that script.
+        Verify with EmrServerlessBulkImportST.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.35.5</aws-java-sdk-v2.bulk-import.version>
         <aws-crt.version>0.48.5</aws-crt.version>
