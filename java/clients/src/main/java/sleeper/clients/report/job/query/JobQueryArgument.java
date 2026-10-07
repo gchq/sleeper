@@ -28,13 +28,13 @@ public class JobQueryArgument {
     private JobQueryArgument() {
     }
 
-    private static final Map<String, JobQuery.Type> QUERY_TYPES = new HashMap<>();
+    private static final Map<String, JobQueryType> QUERY_TYPES = new HashMap<>();
 
     static {
-        QUERY_TYPES.put("-a", JobQuery.Type.ALL);
-        QUERY_TYPES.put("-d", JobQuery.Type.DETAILED);
-        QUERY_TYPES.put("-r", JobQuery.Type.RANGE);
-        QUERY_TYPES.put("-u", JobQuery.Type.UNFINISHED);
+        QUERY_TYPES.put("-a", JobQueryType.ALL);
+        QUERY_TYPES.put("-d", JobQueryType.DETAILED);
+        QUERY_TYPES.put("-r", JobQueryType.RANGE);
+        QUERY_TYPES.put("-u", JobQueryType.UNFINISHED);
     }
 
     /**
@@ -45,10 +45,10 @@ public class JobQueryArgument {
      * @param  index the index of the query type argument
      * @return       the job tracker query type
      */
-    public static JobQuery.Type readTypeArgument(String[] args, int index) {
+    public static JobQueryType readTypeArgument(String[] args, int index) {
         return optionalArgument(args, index)
                 .map(JobQueryArgument::readType)
-                .orElse(JobQuery.Type.PROMPT);
+                .orElse(JobQueryType.PROMPT);
     }
 
     /**
@@ -57,7 +57,7 @@ public class JobQueryArgument {
      * @param  queryTypeStr the query type argument as specified on the command line
      * @return              the job tracker query type
      */
-    public static JobQuery.Type readType(String queryTypeStr) {
+    public static JobQueryType readType(String queryTypeStr) {
         if (!QUERY_TYPES.containsKey(queryTypeStr)) {
             throw new IllegalArgumentException("Invalid query type " + queryTypeStr + ". Valid query types are -d (Detailed), -r (Range), -u (Unfinished)");
         }

@@ -51,7 +51,7 @@ public class JsonIngestBatcherReporterTest {
             List<IngestBatcherTrackedFile> noFiles = Collections.emptyList();
 
             // When / Then
-            assertThat(getJsonReport(BatcherQuery.Type.ALL, noFiles)).hasToString(
+            assertThat(getJsonReport(BatcherQuery.ALL, noFiles)).hasToString(
                     example("reports/ingest/batcher/json/noFiles.json"));
         }
 
@@ -61,12 +61,12 @@ public class JsonIngestBatcherReporterTest {
             List<IngestBatcherTrackedFile> onePendingAndTwoBatchedFiles = onePendingAndTwoBatchedFiles();
 
             // When / Then
-            assertThat(getJsonReport(BatcherQuery.Type.ALL, onePendingAndTwoBatchedFiles)).hasToString(
+            assertThat(getJsonReport(BatcherQuery.ALL, onePendingAndTwoBatchedFiles)).hasToString(
                     example("reports/ingest/batcher/json/onePendingAndTwoBatchedFiles.json"));
         }
     }
 
-    private String getJsonReport(BatcherQuery.Type queryType, List<IngestBatcherTrackedFile> fileRequestList) {
-        return IngestBatcherReporterTestHelper.getJsonReport(tableIndex, queryType, fileRequestList);
+    private String getJsonReport(BatcherQuery query, List<IngestBatcherTrackedFile> fileRequestList) {
+        return IngestBatcherReporterTestHelper.getJsonReport(tableIndex, query, fileRequestList);
     }
 }

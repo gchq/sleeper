@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package sleeper.clients.report.ingest.batcher;
+package sleeper.clients.report.query;
 
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandOption;
-import sleeper.ingest.batcher.core.IngestBatcherStore;
-import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
+import sleeper.query.core.tracker.QueryState;
+import sleeper.query.core.tracker.QueryTrackerStore;
+import sleeper.query.core.tracker.TrackedQuery;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,30 +31,35 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.joining;
 
 /**
- * A query to generate a report based on files in the ingest batcher store. Different types of query can include files
- * based on their status.
+ * A query to retrieve the status of queries held in the query tracker, to generate a report.
  */
-public enum BatcherQuery {
-    ALL(option("all", 'a', "Reports on all files, whether waiting to be batched or already in jobs."),
-            IngestBatcherStore::getAllFilesNewestFirst),
-    PENDING(option("pending", 'p', "Reports on pending files, which have not yet been added to a job."),
-            IngestBatcherStore::getPendingFilesOldestFirst);
+public enum QueryTrackerQuery {
+    ALL(option("all", 'a', "Reports on all queries."),
+            QueryTrackerStore::getAllQueries),
+    QUEUED(option("queued", 'q', "Reports on queued queries."),
+            store -> store.getQueriesWithState(QueryState.QUEUED)),
+    IN_PROGRESS(option("in-progress", 'i', "Reports on queries in progress."),
+            store -> store.getQueriesWithState(QueryState.IN_PROGRESS)),
+    COMPLETED(option("completed", 'c', "Reports on completed queries."),
+            store -> store.getQueriesWithState(QueryState.COMPLETED)),
+    FAILED(option("failed", 'f', "Reports on failed and partially failed queries."),
+            QueryTrackerStore::getFailedQueries);
 
     private final CommandOption option;
-    private final Function<IngestBatcherStore, List<IngestBatcherTrackedFile>> runner;
+    private final Function<QueryTrackerStore, List<TrackedQuery>> runner;
 
-    BatcherQuery(CommandOption option, Function<IngestBatcherStore, List<IngestBatcherTrackedFile>> runner) {
+    QueryTrackerQuery(CommandOption option, Function<QueryTrackerStore, List<TrackedQuery>> runner) {
         this.option = option;
         this.runner = runner;
     }
 
     /**
-     * Retrieves file tracking information from the store that matches this query.
+     * Retrieves the data for the report.
      *
-     * @param  store the ingest batcher store
-     * @return       the file tracking information
+     * @param  store the tracker store
+     * @return       the status of queries covered by this query
      */
-    public List<IngestBatcherTrackedFile> run(IngestBatcherStore store) {
+    public List<TrackedQuery> run(QueryTrackerStore store) {
         return runner.apply(store);
     }
 
@@ -72,7 +78,7 @@ public enum BatcherQuery {
      * @return the options
      */
     public static List<CommandOption> options() {
-        return Stream.of(values()).map(BatcherQuery::option).toList();
+        return Stream.of(values()).map(QueryTrackerQuery::option).toList();
     }
 
     /**
@@ -82,14 +88,14 @@ public enum BatcherQuery {
      * @param  arguments the command line arguments
      * @return           the query, if exactly one type is set
      */
-    public static Optional<BatcherQuery> readOneOf(CommandArguments arguments) {
-        List<BatcherQuery> queries = Stream.of(values())
+    public static Optional<QueryTrackerQuery> readOneOf(CommandArguments arguments) {
+        List<QueryTrackerQuery> queries = Stream.of(values())
                 .filter(query -> arguments.isSet(query.option()))
                 .toList();
         if (queries.size() > 1) {
             throw new CommandArgumentsException(
                     "Cannot combine query types. Options have been set for the following types: " +
-                            queries.stream().map(BatcherQuery::name).collect(joining(", ")));
+                            queries.stream().map(QueryTrackerQuery::name).collect(joining(", ")));
         }
         return queries.stream().findFirst();
     }
