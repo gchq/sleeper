@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.PropertiesUtils;
@@ -101,7 +101,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
                     .key(key)).asUtf8String();
 
             return new TableProperties(instanceProperties, PropertiesUtils.loadProperties(content));
-        } catch (S3Exception e) {
+        } catch (NoSuchKeyException e) {
             throw TableNotFoundException.withTable(table, e);
         }
     }
