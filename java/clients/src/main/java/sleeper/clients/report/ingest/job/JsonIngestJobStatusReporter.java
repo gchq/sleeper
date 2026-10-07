@@ -24,7 +24,7 @@ import com.google.gson.JsonSerializer;
 
 import sleeper.clients.report.job.JsonJobRunSummary;
 import sleeper.clients.report.job.JsonJobRunTime;
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
@@ -61,7 +61,7 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
 
     @Override
     public void report(
-            List<IngestJobStatus> statusList, JobQuery.Type queryType, IngestQueueMessages queueMessages,
+            List<IngestJobStatus> statusList, JobQueryType queryType, IngestQueueMessages queueMessages,
             Map<String, Integer> persistentEmrStepCount) {
         out.println(gson.toJson(createJsonReport(statusList, queueMessages, persistentEmrStepCount)));
     }
