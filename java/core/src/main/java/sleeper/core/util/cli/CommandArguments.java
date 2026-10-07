@@ -144,6 +144,20 @@ public class CommandArguments {
     }
 
     /**
+     * Checks whether an option was set.
+     *
+     * @param  option the option
+     * @return        true if it was set, false otherwise
+     */
+    public boolean isSet(CommandOption option) {
+        if (option.isFlag()) {
+            return isFlagSet(option.longName());
+        } else {
+            return argByName.containsKey(option.longName());
+        }
+    }
+
+    /**
      * Retrieves unrecognised arguments, if set to pass through unrecognised arguments.
      *
      * @return the pass-through arguments
@@ -173,7 +187,7 @@ public class CommandArguments {
     private CommandArguments exitIfHelpRequested(CommandLineUsage usage) {
         if (isFlagSet("help")) {
             System.out.println(usage.createHelpText());
-            System.exit(1);
+            System.exit(0);
         }
         return this;
     }

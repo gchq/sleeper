@@ -47,7 +47,7 @@ public class JsonQueryTrackerReporter implements QueryTrackerReporter {
     }
 
     @Override
-    public void report(TrackerQuery query, List<TrackedQuery> queries) {
+    public void report(QueryTrackerQuery query, List<TrackedQuery> queries) {
         out.println(gson.toJson(queries));
     }
 

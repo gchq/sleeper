@@ -18,7 +18,7 @@ package sleeper.clients.report.compaction.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.util.Collections;
@@ -35,9 +35,9 @@ public class CompactionJobStatusReporterAllQueryTest extends CompactionJobStatus
         List<CompactionJobStatus> statusList = mixedJobStatuses();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/standard/all/mixedJobs.txt"));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/json/mixedJobs.json"));
     }
 
@@ -47,9 +47,9 @@ public class CompactionJobStatusReporterAllQueryTest extends CompactionJobStatus
         List<CompactionJobStatus> statusList = jobsWithMultipleRuns();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/standard/all/jobWithMultipleRuns.txt"));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/json/jobWithMultipleRuns.json"));
     }
 
@@ -59,9 +59,9 @@ public class CompactionJobStatusReporterAllQueryTest extends CompactionJobStatus
         List<CompactionJobStatus> statusList = jobsWithLargeAndDecimalStatistics();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/standard/all/jobsWithLargeAndDecimalStatistics.txt"));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/json/jobsWithLargeAndDecimalStatistics.json"));
     }
 
@@ -71,9 +71,9 @@ public class CompactionJobStatusReporterAllQueryTest extends CompactionJobStatus
         List<CompactionJobStatus> statusList = Collections.emptyList();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/standard/all/noJobs.txt"));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/json/noJobs.json"));
     }
 
@@ -83,9 +83,9 @@ public class CompactionJobStatusReporterAllQueryTest extends CompactionJobStatus
         List<CompactionJobStatus> statusList = jobWithMultipleInputFiles();
 
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/standard/all/multipleInputFiles.txt"));
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/json/multipleInputFiles.json"));
     }
 }

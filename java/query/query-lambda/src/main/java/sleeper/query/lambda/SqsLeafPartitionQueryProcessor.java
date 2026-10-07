@@ -63,11 +63,19 @@ public class SqsLeafPartitionQueryProcessor {
         ResultsOutputInfo outputInfo = null;
         try {
             TableProperties tableProperties = query.getTableProperties(tablePropertiesProvider);
+            LOGGER.info("Updating tracker to say query in progress (query id {}, subquery id {})",
+                    leafPartitionQuery.getQueryId(), leafPartitionQuery.getSubQueryId());
             queryTrackers.queryInProgress(leafPartitionQuery);
+            LOGGER.info("Finished updating query tracker; beginning query execution (query id {}, subquery id {})",
+                    leafPartitionQuery.getQueryId(), leafPartitionQuery.getSubQueryId());
             try (CloseableIterator<Row> results = getLeafPartitionQueryExecutor(tableProperties).getRows(leafPartitionQuery)) {
                 outputInfo = resultsOutputProvider.getResultsOutput(tableProperties, leafPartitionQuery).publish(query, results);
             }
+            LOGGER.info("Query completed; about to report it as completed (query id {}, subquery id {})",
+                    leafPartitionQuery.getQueryId(), leafPartitionQuery.getSubQueryId());
             query.reportCompleted(queryTrackers, outputInfo);
+            LOGGER.info("Reported query has completed (query id {}, subquery id {})",
+                    leafPartitionQuery.getQueryId(), leafPartitionQuery.getSubQueryId());
         } catch (IOException | QueryException | RuntimeException e) {
             LOGGER.error("Exception thrown executing subquery {} under query {}", leafPartitionQuery.getSubQueryId(), leafPartitionQuery.getQueryId(), e);
             if (outputInfo != null) {
