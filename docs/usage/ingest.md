@@ -49,7 +49,7 @@ Here's an example of how to use the scripts to ingest with the batcher:
 
 ```bash
 ./scripts/table/sendToIngestBatcher.sh <instance-id> <table-name> bucket-name/path/to/file.parquet bucket-name/path/to/folder
-./scripts/report/ingestBatcherReport.sh <instance-id> standard -a
+./scripts/report/ingestBatcherReport.sh <instance-id> --all
 ./scripts/report/ingestJobStatusReport.sh <instance-id> <table-name> --all
 ```
 
@@ -234,13 +234,23 @@ We may add a REST API to serve this purpose in the future. You can also use the 
 of files manually:
 
 ```bash
-./scripts/report/ingestBatcherReport.sh <instance-id> <report-type-standard-or-json> <optional-query-type>
+./scripts/report/ingestBatcherReport.sh <instance-id> [options]
 ```
 
-For example:
+The instance ID is required. The output format is set with `--format`, which accepts `standard` (the default) or
+`json`. The files to include are chosen with one of the query type options below. If you don't set a query type, the
+script will prompt you for one.
 
 ```bash
-./scripts/report/ingestBatcherReport.sh <instance-id> # Prompt for report type
-./scripts/report/ingestBatcherReport.sh <instance-id> standard -a # All files
-./scripts/report/ingestBatcherReport.sh <instance-id> standard -p # Pending files (not yet in a job)
+# Prompt for the query type
+./scripts/report/ingestBatcherReport.sh <instance-id>
+
+# All files
+./scripts/report/ingestBatcherReport.sh <instance-id> --all
+
+# Pending files (not yet in a job)
+./scripts/report/ingestBatcherReport.sh <instance-id> --pending
+
+# All files, as JSON
+./scripts/report/ingestBatcherReport.sh <instance-id> --all --format json
 ```
