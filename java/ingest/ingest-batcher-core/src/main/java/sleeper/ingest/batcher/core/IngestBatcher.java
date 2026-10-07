@@ -77,13 +77,32 @@ public class IngestBatcher {
             LOGGER.info("No pending files found");
         } else {
             LOGGER.info("Found {} pending files", pendingFiles.size());
+            List<RuntimeException> failures = new ArrayList<>();
             pendingFiles.stream()
                     .collect(Collectors.groupingBy(IngestBatcherTrackedFile::getTableId, LinkedHashMap::new, toList()))
-                    .forEach((tableId, inputFiles) -> batchTableFiles(tableId, inputFiles, time));
+                    .forEach((tableId, inputFiles) -> {
+                        try {
+                            batchOrDeleteTableFiles(tableId, inputFiles, time);
+                        } catch (RuntimeException e) {
+                            LOGGER.error("Failed batching {} pending files for table with ID \"{}\", continuing with other tables",
+                                    inputFiles.size(), tableId, e);
+                            failures.add(e);
+                        }
+                    });
+            throwIfAnyFailed(failures);
         }
     }
 
-    private void batchTableFiles(String tableId, List<IngestBatcherTrackedFile> inputFiles, Instant time) {
+    private static void throwIfAnyFailed(List<RuntimeException> failures) {
+        if (failures.isEmpty()) {
+            return;
+        }
+        RuntimeException first = failures.get(0);
+        failures.subList(1, failures.size()).forEach(first::addSuppressed);
+        throw first;
+    }
+
+    private void batchOrDeleteTableFiles(String tableId, List<IngestBatcherTrackedFile> inputFiles, Instant time) {
         try {
             TableProperties properties = tablePropertiesProvider.getById(tableId);
             batchTableFiles(properties, inputFiles, time);
