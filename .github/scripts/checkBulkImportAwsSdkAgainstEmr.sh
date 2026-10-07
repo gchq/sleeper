@@ -40,12 +40,21 @@ DOCKER_PLATFORM=linux/amd64
 # Read the EMR release label from the generated instance properties template, which is kept in sync with the
 # default of sleeper.default.table.bulk.import.emr.release.label. EMR Serverless inherits this as its default.
 EMR_RELEASE=$(grep -oP '(?<=^# sleeper\.default\.table\.bulk\.import\.emr\.release\.label=).*' \
-    "${PROJECT_ROOT}/example/full/instance.properties")
+    "${PROJECT_ROOT}/example/full/instance.properties") || {
+    echo "::error::Could not find default EMR release label in example/full/instance.properties"
+    exit 1
+}
 echo "EMR release label: $EMR_RELEASE"
 
 # The EKS image is set separately in the Dockerfile we build from, so check it uses the same release
-EKS_IMAGE=$(grep -oP '(?<=^ARG BASE_IMAGE=).*' "${PROJECT_ROOT}/java/bulk-import/bulk-import-eks/docker/eks/Dockerfile")
-EKS_RELEASE=$(echo "$EKS_IMAGE" | grep -oP 'emr-[0-9.]+(?=:)')
+EKS_IMAGE=$(grep -oP '(?<=^ARG BASE_IMAGE=).*' "${PROJECT_ROOT}/java/bulk-import/bulk-import-eks/docker/eks/Dockerfile") || {
+    echo "::error::Could not find ARG BASE_IMAGE in java/bulk-import/bulk-import-eks/docker/eks/Dockerfile"
+    exit 1
+}
+EKS_RELEASE=$(echo "$EKS_IMAGE" | grep -oP 'emr-[0-9.]+(?=:)') || {
+    echo "::error::Could not find EMR release in EKS base image $EKS_IMAGE"
+    exit 1
+}
 if [ "$EKS_RELEASE" != "$EMR_RELEASE" ]; then
     echo "::error::EKS Dockerfile uses EMR release $EKS_RELEASE but the default EMR release label is $EMR_RELEASE"
     exit 1
@@ -95,7 +104,10 @@ read_sdk_version() {
     unzip -p "$TMP_DIR/sdk.jar" META-INF/maven/software.amazon.awssdk/sdk-core/pom.properties \
         > "$TMP_DIR/pom.properties"
     cat "$TMP_DIR/pom.properties"
-    SDK_VERSION=$(grep -oP '(?<=^version=).*' "$TMP_DIR/pom.properties")
+    SDK_VERSION=$(grep -oP '(?<=^version=).*' "$TMP_DIR/pom.properties") || {
+        echo "::error::Could not find version in sdk-core pom.properties from $image"
+        exit 1
+    }
 }
 
 read_sdk_version "$SERVERLESS_IMAGE" "$SERVERLESS_JAR_GLOB"
