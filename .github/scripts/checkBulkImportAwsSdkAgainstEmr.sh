@@ -47,7 +47,7 @@ echo "EMR release label: $EMR_RELEASE"
 EKS_IMAGE=$(grep -oP '(?<=^ARG BASE_IMAGE=).*' "${PROJECT_ROOT}/java/bulk-import/bulk-import-eks/docker/eks/Dockerfile")
 EKS_RELEASE=$(echo "$EKS_IMAGE" | grep -oP 'emr-[0-9.]+(?=:)')
 if [ "$EKS_RELEASE" != "$EMR_RELEASE" ]; then
-    echo "EKS Dockerfile uses EMR release $EKS_RELEASE but the default EMR release label is $EMR_RELEASE"
+    echo "::error::EKS Dockerfile uses EMR release $EKS_RELEASE but the default EMR release label is $EMR_RELEASE"
     exit 1
 fi
 
@@ -79,7 +79,7 @@ read_sdk_version() {
     jars=$(docker run --rm --init --platform "$DOCKER_PLATFORM" --entrypoint /bin/bash "$image" -c "ls $jar_glob")
     echo "$jars"
     if [ "$(echo "$jars" | wc -l)" != "1" ]; then
-        echo "Expected exactly one jar matching $jar_glob in $image"
+        echo "::error::Expected exactly one jar matching $jar_glob in $image"
         exit 1
     fi
     echo "Copying $jars out of $image"
@@ -129,8 +129,7 @@ if [ "$OTHER_AWS_VERSION" != "$PINNED_AWS_VERSION" ]; then
 fi
 
 if [ "$REFERENCE_AWS_VERSION" != "$PINNED_AWS_VERSION" ]; then
-    echo "Bulk import AWS SDK version is $PINNED_AWS_VERSION but $REFERENCE_IMAGE provides $REFERENCE_AWS_VERSION."
-    echo "This change can be verified with a successful run of EmrServerlessBulkImportST."
+    echo "::error::Bulk import AWS SDK version is $PINNED_AWS_VERSION but $REFERENCE_IMAGE provides $REFERENCE_AWS_VERSION. This change can be verified with a successful run of EmrServerlessBulkImportST."
     exit 1
 else
     echo "Versions match"
