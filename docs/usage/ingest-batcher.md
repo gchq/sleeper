@@ -58,15 +58,17 @@ For details of the batcher configuration, see the property descriptions in the e
 You can query the files being processed by the ingest batcher by using the following utility script:
 
 ```shell
-./scripts/report/ingestBatcherReport.sh <instance-id> <report-type-standard-or-json> <optional-query-type>
+./scripts/report/ingestBatcherReport.sh <instance-id> [--format <format>] [<query-type-option>]
 ```
 
 The query type can be one of the following options:
 
-- `-a` shows all files, whether waiting to be batched, or already in jobs
-- `-p` shows pending files, which have not yet been added to a job
+- `--all` or `-a` shows all files, whether waiting to be batched, or already in jobs
+- `--pending` or `-p` shows pending files, which have not yet been added to a job
 
-If you do not provide a query type as a parameter to the script you will be prompted to select one.
+If you do not provide a query type as a parameter to the script you will be prompted to select one. The output format
+can be set with `--format`, which accepts `standard` (the default) or `json`. Run the script with `--help` to see all
+options.
 
 ### Manually sending files to the batcher queue
 

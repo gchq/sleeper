@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.37.6-SNAPSHOT</version>
+    <version>0.38.1-SNAPSHOT</version>
 
     <modules>
         <module>analytics-integration</module>
@@ -82,15 +82,15 @@
         Hadoop uses an old version of Woodstox in hadoop-common.
         We upgraded to the latest version from woodstox-core 5.4.0.
         -->
-        <woodstox.version>7.2.2</woodstox.version>
-        <woodstox.stax2.version>4.3.0</woodstox.stax2.version>
+        <woodstox.version>7.3.0</woodstox.version>
+        <woodstox.stax2.version>4.3.1</woodstox.stax2.version>
         <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.1. -->
         <ivy.version>2.6.0</ivy.version>
         <!--
         Snappy is used by both hadoop-client and parquet-hadoop.
         We were getting multiple versions added to the classpath, and they both have vulnerabilities.
         -->
-        <snappy.version>1.1.10.8</snappy.version>
+        <snappy.version>1.1.10.10</snappy.version>
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.3</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
@@ -127,7 +127,7 @@
         <roaringbitmap.version>1.6.23</roaringbitmap.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.6.4</logback.version>
+        <logback.version>1.6.5</logback.version>
         <!--
         Spark declares an old version of Log4J with vulnerabilities. We exclude some of the Log4J dependencies as we use
         SLF4J, but we can't exclude them from EMR.
@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.55.6</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.55.11</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         It's not compatible with the latest version, so we match the version that it provides.
@@ -160,7 +160,7 @@
         it when deliberately matching a version from EMR Serverless, and verify with EmrServerlessBulkImportST.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.35.5</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.48.4</aws-crt.version>
+        <aws-crt.version>0.48.5</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.12.1</aws-lambda-java-runtime-interface-client.version>
@@ -184,7 +184,7 @@
         <jline.version>4.4.6</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-20</zstd-jni.version>
+        <zstd-jni.version>1.5.7-21</zstd-jni.version>
         <airlift.units.version>1.10</airlift.units.version>
         <airlift.slice.version>2.3</airlift.slice.version>
         <!-- Trino and its dependencies declare different versions of Airlift. -->
@@ -199,20 +199,20 @@
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.13.0</jjwt.build.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
-        <guava.version>33.7.1-jre</guava.version>
+        <guava.version>33.7.2-jre</guava.version>
         <google.errorprone.version>2.50.0</google.errorprone.version>
         <google.http-client.version>2.2.0</google.http-client.version>
         <google.grpc.version>1.84.0</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.271.0</cdk.version>
+        <cdk.version>2.272.0</cdk.version>
         <constructs.version>10.8.1</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
-        <jsii.version>1.140.0</jsii.version>
+        <jsii.version>1.141.0</jsii.version>
         <gson.version>2.14.0</gson.version>
         <slf4j.version>2.0.20</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <aspectj.version>1.9.25.1</aspectj.version>
-        <pty4j.version>0.13.13</pty4j.version>
+        <pty4j.version>0.14.0</pty4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.86</bouncycastle.version>
         <athena.version>2025.15.1</athena.version>
@@ -234,7 +234,7 @@
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.3</jgrapht.version>
         <apfloat.version>1.16.0</apfloat.version>
-        <joda-time.version>2.14.4</joda-time.version>
+        <joda-time.version>2.15.0</joda-time.version>
         <json-smart.version>2.6.0</json-smart.version>
         <jnr.ffi.version>2.3.3</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>

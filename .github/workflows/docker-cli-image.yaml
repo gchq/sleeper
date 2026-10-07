@@ -32,8 +32,6 @@ on:
 env:
   DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
   TEMP_IMAGE: localhost:5000/sleeper-temp:current
-  TRIVY_IGNOREFILE: code-style/.trivyignore.tools.yaml
-  TRIVY_SHOW_SUPPRESSED: true
 
 jobs:
   build:
@@ -111,14 +109,18 @@ jobs:
         if: ${{ inputs.runTrivy }}
         run: docker pull ${{ env.TEMP_IMAGE }}
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@v0.36.0
         if: ${{ inputs.runTrivy }}
+        env:
+          TRIVY_IGNOREFILE: code-style/.trivyignore.tools.yaml
+          TRIVY_SHOW_SUPPRESSED: true
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          version: v0.71.2
+          version: v0.74.0
           image-ref: ${{ env.TEMP_IMAGE }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
+          scanners: 'secret,misconfig'
       - name: Push image to GitHub
         if: ${{ inputs.pushImages }}
         uses: docker/build-push-action@v7

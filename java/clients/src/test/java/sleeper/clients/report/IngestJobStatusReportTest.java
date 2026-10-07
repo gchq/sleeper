@@ -15,6 +15,7 @@
  */
 package sleeper.clients.report;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -27,23 +28,23 @@ import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.report.job.query.RangeJobsQuery;
 import sleeper.clients.report.job.query.RejectedJobsQuery;
 import sleeper.clients.report.job.query.UnfinishedJobsQuery;
-import sleeper.clients.util.console.ConsoleInput;
+import sleeper.clients.testutil.TestConsoleInput;
+import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
-import java.io.ByteArrayInputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-import java.time.Clock;
+import java.text.ParseException;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.List;
-import java.util.Scanner;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IngestJobStatusReportTest {
+
+    private final ToStringConsoleOutput output = new ToStringConsoleOutput();
+    private final TestConsoleInput input = new TestConsoleInput(output.consoleOut());
 
     @Nested
     class ParseArguments {
@@ -62,10 +63,326 @@ public class IngestJobStatusReportTest {
         @Test
         void shouldReadReportTypeJson() {
             // When
-            Arguments args = readArguments("json-instance", "json-table", "--report-type", "json", "--all");
+            Arguments args = readArguments("json-instance", "json-table", "--format", "json", "--all");
 
             // Then
             assertThat(args.reporter()).isInstanceOf(JsonIngestJobStatusReporter.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("All jobs query")
+    class AllJobs {
+
+        @Test
+        void shouldQueryAllJobs() {
+            // When / Then
+            assertThat(queryFromArguments("all-job-instance", "all-job-table", "--all"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new AllJobsQuery());
+        }
+
+        @Test
+        void shouldQueryAllJobsWithShortFlag() {
+            // When / Then
+            assertThat(queryFromArguments("all-job-instance", "all-job-table", "-a"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new AllJobsQuery());
+        }
+    }
+
+    @Nested
+    @DisplayName("Job details query")
+    class JobDetails {
+
+        @Test
+        void shouldQueryJobWithGivenId() {
+            // When / Then
+            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "--detailed", "6545"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new DetailedJobsQuery(List.of("6545")));
+        }
+
+        @Test
+        void shouldQueryDetailedJobWithShortFlag() {
+            // When / Then
+            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d", "23"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new DetailedJobsQuery(List.of("23")));
+        }
+
+        @Test
+        void shouldQueryDetailedJobWithIdAttachedToShortOption() {
+            // When / Then
+            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d23"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new DetailedJobsQuery(List.of("23")));
+        }
+
+        @Test
+        void shouldQueryJobWithIdThatLooksLikeAnOption() {
+            // When / Then
+            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d", "-a"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new DetailedJobsQuery(List.of("-a")));
+        }
+
+        @Test
+        void shouldQueryEachJobWhenSeveralIdsGivenSeparatedByCommas() {
+            // When / Then
+            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "--detailed", "6545,8102"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new DetailedJobsQuery(List.of("6545", "8102")));
+        }
+
+        @Test
+        void shouldRejectDetailedReportWithEmptyJobId() {
+            // When / Then
+            assertThatThrownBy(() -> readArguments("detail-fail-instance", "detail-fail-table", "--detailed="))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
+                    .hasMessage("Expected a value for option: detailed");
+        }
+
+        @Test
+        void shouldRejectDetailedReportWithoutJobId() {
+            // When / Then
+            assertThatThrownBy(() -> readArguments("detail-fail-instance", "detail-fail-table", "-d"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
+                    .hasMessage("Expected an argument for option: detailed");
+        }
+    }
+
+    @Nested
+    @DisplayName("Time range query")
+    class TimeRange {
+
+        @Test
+        void shouldQueryJobsInGivenPeriod() {
+            // When / Then
+            assertThat(queryFromArguments("range-job-instance", "range-job-table",
+                    "--start-time", "20201010093000", "--end-time", "20211008150000"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RangeJobsQuery(
+                            Instant.parse("2020-10-10T09:30:00Z"), Instant.parse("2021-10-08T15:00:00Z")));
+        }
+
+        @Test
+        void shouldQueryJobsInGivenPeriodWhenRecentFlagAlsoSet() {
+            // When / Then
+            assertThat(queryFromArguments("range-job-instance", "range-job-table",
+                    "--recent", "--start-time", "20201114120101", "--end-time", "20210407150000"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RangeJobsQuery(
+                            Instant.parse("2020-11-14T12:01:01Z"), Instant.parse("2021-04-07T15:00:00Z")));
+        }
+
+        @Test
+        void shouldQueryJobsInLastFourHoursWhenRecentSetWithNoTimes() {
+            // Given
+            Instant now = Instant.parse("2024-05-01T12:00:00Z");
+            RangeJobsQuery expectedQuery = new RangeJobsQuery(
+                    Instant.parse("2024-05-01T08:00:00Z"), now);
+
+            // When / Then
+            assertThat(queryFromArgumentsAtTime(now, "range-default-instance", "range-default-table", "-r"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(expectedQuery);
+            assertThat(queryFromArgumentsAtTime(now, "range-default-instance", "range-default-table", "--recent"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(expectedQuery);
+        }
+
+        @Test
+        void shouldQueryJobsInDefaultPeriodWhenRecentSetToTrue() {
+            // Given
+            Instant now = Instant.parse("2024-05-01T12:00:00Z");
+
+            // When / Then
+            assertThat(queryFromArgumentsAtTime(now, "range-instance", "range-table", "--recent=true"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RangeJobsQuery(
+                            Instant.parse("2024-05-01T08:00:00Z"), now));
+        }
+
+        @Test
+        void shouldQueryJobsWithStartTimeButNoEndTime() {
+            // When / Then
+            assertThat(queryFromArgumentsAtTime(
+                    Instant.parse("2024-05-01T10:00:00Z"),
+                    "range-instance", "range-table", "--start-time", "20240501080000"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RangeJobsQuery(
+                            Instant.parse("2024-05-01T08:00:00Z"),
+                            Instant.parse("2024-05-01T10:00:00Z")));
+        }
+
+        @Test
+        void shouldQueryJobsWithEndTimeButNoStartTime() {
+            // When / Then
+            assertThat(queryFromArguments(
+                    "range-instance", "range-table", "--end-time", "20240501080000"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RangeJobsQuery(
+                            Instant.parse("2024-05-01T04:00:00Z"),
+                            Instant.parse("2024-05-01T08:00:00Z")));
+        }
+
+        @Test
+        void shouldQueryJobsWithFutureStartTimeAndNoEndTime() {
+            // When / Then
+            assertThat(queryFromArgumentsAtTime(
+                    Instant.parse("2019-12-25T00:00:00Z"),
+                    "range-fail-instance", "range-fail-table", "-r",
+                    "--start-time", "20200101120000"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RangeJobsQuery(
+                            Instant.parse("2020-01-01T12:00:00Z"),
+                            Instant.parse("2020-01-01T12:00:00Z")));
+        }
+
+        @Test
+        void shouldRejectRangeReportWithInvalidDateFormatStartTime() {
+            // When / Then
+            assertThatThrownBy(() -> queryFromArguments("range-fail-instance", "range-fail-table", "-r",
+                    "--start-time", "asdad", "--end-time", "20150411084545"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasCauseInstanceOf(ParseException.class)
+                    .hasMessage("start-time parameter doesn't match expected format: yyyyMMddHHmmss");
+        }
+
+        @Test
+        void shouldRejectRangeReportWithInvalidDateFormatEndTime() {
+            // When / Then
+            assertThatThrownBy(() -> queryFromArguments("range-fail-instance", "range-fail-table", "-r",
+                    "--start-time", "20170404152121", "--end-time", "gdsd"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasCauseInstanceOf(ParseException.class)
+                    .hasMessage("end-time parameter doesn't match expected format: yyyyMMddHHmmss");
+        }
+
+        @Test
+        void shouldRejectRangeReportWithEndTimeBeforeStartTime() {
+            // When / Then
+            assertThatThrownBy(() -> queryFromArguments("range-fail-instance", "range-fail-table", "-r",
+                    "--start-time", "20200101120000", "--end-time", "19700101120000"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasCauseInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Range end is before range start. Range start: 2020-01-01T12:00:00Z, range end: 1970-01-01T12:00:00Z");
+        }
+    }
+
+    @Nested
+    @DisplayName("Unfinished jobs query")
+    class UnfinishedJobs {
+
+        @Test
+        void shouldQueryUnfinishedJobs() {
+            // When / Then
+            assertThat(queryFromArguments("unfinished-job-instance", "unfinished-job-table", "--unfinished"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new UnfinishedJobsQuery());
+        }
+
+        @Test
+        void shouldQueryUnfinishedJobsWithShortFlag() {
+            // When / Then
+            assertThat(queryFromArguments("unfinished-job-instance", "unfinished-job-table", "-u"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new UnfinishedJobsQuery());
+        }
+    }
+
+    @Nested
+    @DisplayName("Rejected jobs query")
+    class RejectedJobs {
+
+        @Test
+        void shouldQueryRejectedJobs() {
+            // When / Then
+            assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "--rejected"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RejectedJobsQuery());
+        }
+
+        @Test
+        void shouldQueryRejectedJobsWithShortFlag() {
+            // When / Then
+            assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "-n"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new RejectedJobsQuery());
+        }
+    }
+
+    @Nested
+    @DisplayName("Prompt for query type")
+    class Prompt {
+
+        @Test
+        void shouldPromptForQueryTypeWhenNoFlagSet() {
+            // When / Then
+            assertThat(queryFromArgumentsWithInput("a\n", "prompt-instance", "prompt-table"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new AllJobsQuery());
+        }
+
+        @Test
+        void shouldPromptForQueryTypeWhenRecentFlagSetToFalse() {
+            // When / Then
+            assertThat(queryFromArgumentsWithInput("a\n", "range-instance", "range-table", "--recent=false"))
+                    .usingRecursiveComparison()
+                    .isEqualTo(new AllJobsQuery());
+        }
+    }
+
+    // Will change as part of work for https://github.com/gchq/sleeper/issues/8061
+    @Nested
+    @DisplayName("Cannot combine range flags with other types")
+    class CombineRangeWithOthers {
+
+        @Test
+        void shouldRejectAllQueryWithTimeFlagsSet() {
+            // When / Then
+            assertThatThrownBy(() -> readArguments("all-time-instance", "all-time-table", "--all",
+                    "--start-time", "20220417053218",
+                    "--end-time", "20241122120001"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
+                    .hasMessage("Cannot combine query types. Options have been set for the following types: ALL, RANGE");
+        }
+
+        @Test
+        void shouldRejectDetailedQueryWithTimeFlagsSet() {
+            // When / Then
+            assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--detailed", "84916",
+                    "--start-time", "20251112140000",
+                    "--end-time", "20260101152929"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
+                    .hasMessage("Cannot combine query types. Options have been set for the following types: DETAILED, RANGE");
+        }
+
+        @Test
+        void shouldRejectRejectedQueryWithTimeFlagsSet() {
+            // When / Then
+            assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--rejected",
+                    "--start-time", "20231225120000",
+                    "--end-time", "20231228120000"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
+                    .hasMessage("Cannot combine query types. Options have been set for the following types: RANGE, REJECTED");
+        }
+
+        @Test
+        void shouldRejectUnfinishedQueryWithTimeFlagsSet() {
+            // When / Then
+            assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--unfinished",
+                    "--start-time", "20260901180000",
+                    "--end-time", "20260902175959"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
+                    .hasMessage("Cannot combine query types. Options have been set for the following types: RANGE, UNFINISHED");
         }
     }
 
@@ -75,9 +392,10 @@ public class IngestJobStatusReportTest {
         @Test
         void shouldRejectUnknownReportType() {
             // When / Then
-            assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--report-type", "BAD-REPORT"))
+            assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--format", "BAD-REPORT"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Report type not supported: BAD-REPORT. Valid types: STANDARD, JSON");
+                    .hasNoCause()
+                    .hasMessage("Output format not supported: BAD-REPORT. Valid formats: JSON, STANDARD");
         }
 
         @Test
@@ -85,7 +403,8 @@ public class IngestJobStatusReportTest {
             // When / Then
             assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "--all", "--unfinished"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Too many query type flags are set, maximum of 1. Flags set: ALL, UNFINISHED");
+                    .hasNoCause()
+                    .hasMessage("Cannot combine query types. Options have been set for the following types: ALL, UNFINISHED");
         }
 
         @Test
@@ -93,303 +412,45 @@ public class IngestJobStatusReportTest {
             // When / Then
             assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "-au"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Too many query type flags are set, maximum of 1. Flags set: ALL, UNFINISHED");
+                    .hasNoCause()
+                    .hasMessage("Cannot combine query types. Options have been set for the following types: ALL, UNFINISHED");
         }
 
         @Test
         void shouldListEveryQueryTypeSetInTheOrderTheyAppearInTheUsage() {
             // When / Then
-            assertThatThrownBy(() -> readArguments("multiple-flag-instance", "multiple-flag-table", "-aur"))
+            assertThatThrownBy(() -> queryFromArgumentsAtTime(
+                    Instant.parse("2026-10-05T14:56:00Z"),
+                    "multiple-flag-instance", "multiple-flag-table", "-aur"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Too many query type flags are set, maximum of 1. Flags set: ALL, RANGE, UNFINISHED");
-        }
-
-        @Test
-        void shouldRejectDetailedReportWithEmptyJobId() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("detail-fail-instance", "detail-fail-table", "--detailed="))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected a value for option: detailed");
-        }
-
-        // Will need be removed as part of work for https://github.com/gchq/sleeper/issues/8061
-        @Test
-        void shouldRejectAllQueryWithTimeFlagsSet() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("all-time-instance", "all-time-table", "--all",
-                    "--start-time", "20220417053218",
-                    "--end-time", "20241122120001"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Range time flags, start-time and end-time are not valid for following query type: ALL");
-        }
-
-        // Will need be removed as part of work for https://github.com/gchq/sleeper/issues/8061
-        @Test
-        void shouldRejectDetailedQueryWithTimeFlagsSet() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--detailed", "84916",
-                    "--start-time", "20251112140000",
-                    "--end-time", "20260101152929"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Range time flags, start-time and end-time are not valid for following query type: DETAILED");
-        }
-
-        // Will need be removed as part of work for https://github.com/gchq/sleeper/issues/8061
-        @Test
-        void shouldRejectRejectedQueryWithTimeFlagsSet() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--rejected",
-                    "--start-time", "20231225120000",
-                    "--end-time", "20231228120000"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Range time flags, start-time and end-time are not valid for following query type: REJECTED");
-        }
-
-        // Will need be removed as part of work for https://github.com/gchq/sleeper/issues/8061
-        @Test
-        void shouldRejectUnfinishedQueryWithTimeFlagsSet() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("detailed-time-instance", "detailed-time-table", "--unfinished",
-                    "--start-time", "20260901180000",
-                    "--end-time", "20260902175959"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Range time flags, start-time and end-time are not valid for following query type: UNFINISHED");
-        }
-
-        @Test
-        void shouldRejectDetailedReportWithoutJobId() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("detail-fail-instance", "detail-fail-table", "-d"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Expected an argument for option: detailed");
-        }
-
-        @Test
-        void shouldRejectRangeReportWithInvalidDateFormatStartTime() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
-                    "--start-time", "asdad", "--end-time", "20150411084545"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("start-time parameter doesn't match expected format: yyyyMMddHHmmss");
-        }
-
-        @Test
-        void shouldRejectRangeReportWithInvalidDateFormatEndTime() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
-                    "--start-time", "20170404152121", "--end-time", "gdsd"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("end-time parameter doesn't match expected format: yyyyMMddHHmmss");
-        }
-
-        @Test
-        void shouldRejectRangeReportWithEndTimeBeforeStartTime() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
-                    "--start-time", "20200101120000", "--end-time", "19700101120000"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Range end is before range start. Range start: 20200101120000, range end: 19700101120000");
-        }
-
-        @Test
-        void shouldRejectRangeReportWithStartTimeButNoEndTime() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
-                    "--start-time", "20221101085959"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Missing parameter of end-time which is required for the Range query type.");
-        }
-
-        @Test
-        void shouldRejectRangeReportWithEndTimeButNoStartTime() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table", "-r",
-                    "--end-time", "20240912093000"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Missing parameter of start-time which is required for the Range query type.");
-        }
-
-        @Test
-        void shouldReportMissingEndTimeWhenOnlyStartTimeGivenWithNoQueryTypeFlag() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table",
-                    "--start-time", "20221101085959"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Missing parameter of end-time which is required for the Range query type.");
-        }
-
-        @Test
-        void shouldReportMissingStartTimeWhenOnlyEndTimeGivenWithNoQueryTypeFlag() {
-            // When / Then
-            assertThatThrownBy(() -> readArguments("range-fail-instance", "range-fail-table",
-                    "--end-time", "20240912093000"))
-                    .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Missing parameter of start-time which is required for the Range query type.");
+                    .hasNoCause()
+                    .hasMessage("Cannot combine query types. Options have been set for the following types: ALL, RANGE, UNFINISHED");
         }
     }
 
-    /**
-     * Checks that the arguments produce a query that asks the job tracker the right question. Asserts directly on the
-     * query object, so that the query type and parameters are all covered together.
-     */
-    @Nested
-    class JobQueryCreation {
-
-        @Test
-        void shouldQueryAllJobs() {
-            assertThat(queryFromArguments("all-job-instance", "all-job-table", "--all"))
-                    .isInstanceOf(AllJobsQuery.class);
-        }
-
-        @Test
-        void shouldQueryAllJobsWithShortFlag() {
-            assertThat(queryFromArguments("all-job-instance", "all-job-table", "-a"))
-                    .isInstanceOf(AllJobsQuery.class);
-        }
-
-        @Test
-        void shouldQueryUnfinishedJobs() {
-            assertThat(queryFromArguments("unfinished-job-instance", "unfinished-job-table", "--unfinished"))
-                    .isInstanceOf(UnfinishedJobsQuery.class);
-        }
-
-        @Test
-        void shouldQueryUnfinishedJobsWithShortFlag() {
-            assertThat(queryFromArguments("unfinished-job-instance", "unfinished-job-table", "-u"))
-                    .isInstanceOf(UnfinishedJobsQuery.class);
-        }
-
-        @Test
-        void shouldQueryRejectedJobs() {
-            assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "--rejected"))
-                    .isInstanceOf(RejectedJobsQuery.class);
-        }
-
-        @Test
-        void shouldQueryRejectedJobsWithShortFlag() {
-            assertThat(queryFromArguments("rejected-job-instance", "rejected-job-table", "-n"))
-                    .isInstanceOf(RejectedJobsQuery.class);
-        }
-
-        @Test
-        void shouldQueryJobWithGivenId() {
-            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "--detailed", "6545"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(new DetailedJobsQuery(List.of("6545")));
-        }
-
-        @Test
-        void shouldQueryDetailedJobWithShortFlag() {
-            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d", "23"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(new DetailedJobsQuery(List.of("23")));
-        }
-
-        @Test
-        void shouldQueryDetailedJobWithIdAttachedToShortOption() {
-            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d23"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(new DetailedJobsQuery(List.of("23")));
-        }
-
-        @Test
-        void shouldQueryJobWithIdThatLooksLikeAnOption() {
-            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "-d", "-a"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(new DetailedJobsQuery(List.of("-a")));
-        }
-
-        @Test
-        void shouldQueryEachJobWhenSeveralIdsGivenSeparatedByCommas() {
-            assertThat(queryFromArguments("detailed-job-instance", "detailed-job-table", "--detailed", "6545,8102"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(new DetailedJobsQuery(List.of("6545", "8102")));
-        }
-
-        @Test
-        void shouldQueryJobsInGivenPeriod() {
-            assertThat(queryFromArguments("range-job-instance", "range-job-table",
-                    "--range", "--start-time", "20201010093000", "--end-time", "20211008150000"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(new RangeJobsQuery(
-                            Instant.parse("2020-10-10T09:30:00Z"), Instant.parse("2021-10-08T15:00:00Z")));
-        }
-
-        @Test
-        void shouldQueryJobsInGivenPeriodWhenOnlyTimeFlagsGiven() {
-            assertThat(queryFromArguments("range-job-instance", "range-job-table",
-                    "--start-time", "20201114120101", "--end-time", "20210407150000"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(new RangeJobsQuery(
-                            Instant.parse("2020-11-14T12:01:01Z"), Instant.parse("2021-04-07T15:00:00Z")));
-        }
-
-        @Test
-        void shouldQueryJobsInLastFourHoursWhenRangeSetWithNoTimes() {
-            // Given
-            Instant now = Instant.parse("2024-05-01T12:00:00Z");
-            RangeJobsQuery expectedQuery = new RangeJobsQuery(
-                    Instant.parse("2024-05-01T08:00:00Z"), now);
-
-            // Then
-            assertThat(queryFromArgumentsAtTime(now, "range-default-instance", "range-default-table", "-r"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(expectedQuery);
-            assertThat(queryFromArgumentsAtTime(now, "range-default-instance", "range-default-table", "--range"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(expectedQuery);
-        }
-
-        @Test
-        void shouldQueryJobsInDefaultPeriodWhenRangeSetToTrue() {
-            // Given
-            Instant now = Instant.parse("2024-05-01T12:00:00Z");
-
-            // Then
-            assertThat(queryFromArgumentsAtTime(now, "range-instance", "range-table", "--range=true"))
-                    .usingRecursiveComparison()
-                    .isEqualTo(new RangeJobsQuery(
-                            Instant.parse("2024-05-01T08:00:00Z"), now));
-        }
-
-        @Test
-        void shouldPromptForQueryTypeWhenNoFlagSet() {
-            assertThat(queryFromArgumentsWithInput("a\n", "prompt-instance", "prompt-table"))
-                    .isInstanceOf(AllJobsQuery.class);
-        }
-
-        @Test
-        void shouldPromptForQueryTypeWhenRangeFlagSetToFalse() {
-            assertThat(queryFromArgumentsWithInput("a\n", "range-instance", "range-table", "--range=false"))
-                    .isInstanceOf(AllJobsQuery.class);
-        }
-
-        private JobQuery queryFromArguments(String... args) {
-            return queryFromArgumentsAtTime(Instant.now(), args);
-        }
-
-        private JobQuery queryFromArgumentsAtTime(Instant now, String... args) {
-            return readArgumentsAtTime(now, ConsoleInput.stdIn(), args).query();
-        }
-
-        private JobQuery queryFromArgumentsWithInput(String input, String... args) {
-            return readArgumentsAtTime(Instant.now(), consoleInputFrom(input), args).query();
-        }
+    private JobQuery queryFromArguments(String... args) {
+        return readArguments(args).query();
     }
 
-    private static Arguments readArguments(String... args) {
-        return readArgumentsAtTime(Instant.now(), ConsoleInput.stdIn(), args);
+    private JobQuery queryFromArgumentsAtTime(Instant now, String... args) {
+        return readArguments(() -> now, args).query();
     }
 
-    private static Arguments readArgumentsAtTime(Instant now, ConsoleInput input, String... args) {
+    private JobQuery queryFromArgumentsWithInput(String inputLines, String... args) {
+        input.enterNextPrompts(inputLines.lines().toArray(String[]::new));
+        return readArguments(args).query();
+    }
+
+    private Arguments readArguments(String... args) {
+        return readArguments(() -> {
+            throw new IllegalStateException("Unexpected time query");
+        }, args);
+    }
+
+    private Arguments readArguments(Supplier<Instant> timeSupplier, String... args) {
         return IngestJobStatusReport.readArguments(
                 CommandArgumentReader.parse(IngestJobStatusReport.USAGE, args),
-                Clock.fixed(now, ZoneId.of("UTC")), input);
-    }
-
-    private static ConsoleInput consoleInputFrom(String input) {
-        return new ConsoleInput(null, new PrintStream(System.out),
-                new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8))));
+                timeSupplier, input.consoleIn());
     }
 
 }
