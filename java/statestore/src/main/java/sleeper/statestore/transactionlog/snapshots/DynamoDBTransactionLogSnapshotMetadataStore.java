@@ -114,6 +114,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
             if (hasConditionalCheckFailure(e)) {
                 throw new DuplicateSnapshotException(snapshot.getPath(), e);
             }
+            throw e;
         }
     }
 
