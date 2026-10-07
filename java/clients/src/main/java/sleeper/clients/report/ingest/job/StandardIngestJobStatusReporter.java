@@ -22,7 +22,7 @@ import com.google.gson.JsonObject;
 
 import sleeper.clients.report.job.AverageRowRateReport;
 import sleeper.clients.report.job.StandardJobRunReporter;
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.util.tablewriter.TableField;
 import sleeper.clients.util.tablewriter.TableRow;
 import sleeper.clients.util.tablewriter.TableWriter;
@@ -77,17 +77,17 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     @Override
     public void report(
-            List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages,
+            List<IngestJobStatus> statusList, JobQueryType query, IngestQueueMessages queueMessages,
             Map<String, Integer> persistentEmrStepCount) {
         out.println();
         out.println("Ingest Job Status Report");
         out.println("------------------------");
         printSummary(statusList, query, queueMessages, persistentEmrStepCount);
-        if (!query.equals(JobQuery.Type.DETAILED)) {
+        if (!query.equals(JobQueryType.DETAILED)) {
             tableFactory.tableBuilder()
-                    .showFields(query != JobQuery.Type.UNFINISHED && query != JobQuery.Type.REJECTED,
+                    .showFields(query != JobQueryType.UNFINISHED && query != JobQueryType.REJECTED,
                             runReporter.getFinishedFields())
-                    .showField(query != JobQuery.Type.REJECTED, addedFilesCount)
+                    .showField(query != JobQueryType.REJECTED, addedFilesCount)
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
 
@@ -99,17 +99,17 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     }
 
     private void printSummary(
-            List<IngestJobStatus> statusList, JobQuery.Type queryType,
+            List<IngestJobStatus> statusList, JobQueryType queryType,
             IngestQueueMessages queueMessages, Map<String, Integer> persistentEmrStepCount) {
-        if (queryType.equals(JobQuery.Type.DETAILED)) {
+        if (queryType.equals(JobQueryType.DETAILED)) {
             printDetailedSummary(statusList);
-        } else if (queryType.equals(JobQuery.Type.ALL)) {
+        } else if (queryType.equals(JobQueryType.ALL)) {
             printAllSummary(statusList, queueMessages, persistentEmrStepCount);
-        } else if (queryType.equals(JobQuery.Type.UNFINISHED)) {
+        } else if (queryType.equals(JobQueryType.UNFINISHED)) {
             printUnfinishedSummary(statusList, queueMessages, persistentEmrStepCount);
-        } else if (queryType.equals(JobQuery.Type.RANGE)) {
+        } else if (queryType.equals(JobQueryType.RANGE)) {
             printRangeSummary(statusList, queueMessages);
-        } else if (queryType.equals(JobQuery.Type.REJECTED)) {
+        } else if (queryType.equals(JobQueryType.REJECTED)) {
             printRejectedSummary(statusList, queueMessages);
         }
     }

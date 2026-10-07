@@ -16,7 +16,7 @@
 
 package sleeper.clients.report.ingest.job;
 
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
@@ -42,7 +42,7 @@ public class IngestJobStatusReporterTestHelper {
      * @param  numberInQueue the number of jobs in the standard ingest job queue
      * @return               the report as a human readable string
      */
-    public static String getStandardReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue) {
+    public static String getStandardReport(JobQueryType query, List<IngestJobStatus> statusList, int numberInQueue) {
         return getStandardReport(query, statusList, numberInQueue, Collections.emptyMap());
     }
 
@@ -58,7 +58,7 @@ public class IngestJobStatusReporterTestHelper {
      * @return                        the report as a human readable string
      */
     public static String getStandardReport(
-            JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
+            JobQueryType query, List<IngestJobStatus> statusList, int numberInQueue,
             Map<String, Integer> persistentEmrStepCount) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         new StandardIngestJobStatusReporter(output.getPrintStream()).report(statusList, query,
@@ -75,7 +75,7 @@ public class IngestJobStatusReporterTestHelper {
      * @param  numberInQueue the number of jobs in the standard ingest job queue
      * @return               the report as a human readable string
      */
-    public static String getJsonReport(JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue) {
+    public static String getJsonReport(JobQueryType query, List<IngestJobStatus> statusList, int numberInQueue) {
         return getJsonReport(query, statusList, numberInQueue, Collections.emptyMap());
     }
 
@@ -91,7 +91,7 @@ public class IngestJobStatusReporterTestHelper {
      * @return                        the report as a human readable string
      */
     public static String getJsonReport(
-            JobQuery.Type query, List<IngestJobStatus> statusList, int numberInQueue,
+            JobQueryType query, List<IngestJobStatus> statusList, int numberInQueue,
             Map<String, Integer> persistentEmrStepCount) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         new JsonIngestJobStatusReporter(output.getPrintStream()).report(statusList, query,
