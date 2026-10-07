@@ -32,10 +32,6 @@ fi
 # Which EMR image the bulk import AWS SDK version must match: serverless or eks.
 # The other image is also checked, but a mismatch there only produces a warning.
 REFERENCE_PLATFORM=serverless
-if [ "$REFERENCE_PLATFORM" != "serverless" ] && [ "$REFERENCE_PLATFORM" != "eks" ]; then
-    echo "Unrecognised reference platform: $REFERENCE_PLATFORM"
-    exit 1
-fi
 
 # The instance property sleeper.bulk.import.emr.serverless.architecture is currently constrained to X86_64,
 # so we only read the amd64 images.
