@@ -21,8 +21,15 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.CancellationReason;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
+import software.amazon.awssdk.services.dynamodb.model.ProvisionedThroughputExceededException;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsRequest;
+import software.amazon.awssdk.services.dynamodb.model.TransactWriteItemsResponse;
+import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
@@ -33,10 +40,13 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
+import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ThreadSleepTestHelper;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.TrackedQuery;
 
@@ -47,12 +57,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.testutils.JitterTestHelper.constantJitterFraction;
 import static sleeper.query.core.tracker.QueryState.COMPLETED;
 import static sleeper.query.core.tracker.QueryState.FAILED;
 import static sleeper.query.core.tracker.QueryState.IN_PROGRESS;
@@ -278,6 +292,7 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
     @DisplayName("Update parent query from counters of finished sub-queries")
     class UpdateParentFromCounters {
         List<QueryRequest> queryRequests = new ArrayList<>();
+        List<Duration> foundWaits = new ArrayList<>();
         Query parent = createQueryWithId("parent");
         LeafPartitionQuery sub1 = createSubQueryWithId("parent", "sub-1");
         LeafPartitionQuery sub2 = createSubQueryWithId("parent", "sub-2");
@@ -339,9 +354,11 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
             tracker.queryCompleted(sub2, new ResultsOutputInfo(25, Collections.emptyList()));
 
             // Then
+            // The subquery items are not read
             assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
             assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(35));
-            assertThat(queryRequests).isEmpty();
+            assertThat(queryRequests).isNotEmpty().allSatisfy(request -> assertThat(request.keyConditionExpression())
+                    .contains("begins_with"));
         }
 
         @Test
@@ -405,6 +422,81 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         }
 
         @Test
+        void shouldCountSubQueryOnRetryWhenFirstCompletionFailed() throws QueryTrackerException {
+            // Given
+            // First transaction fails
+            DynamoDBQueryTracker tracker = trackerFailingFirstTransaction();
+            assertThatThrownBy(() -> tracker.queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList())))
+                    .isInstanceOf(ProvisionedThroughputExceededException.class);
+            // And the subquery was not marked as finished, so a retry can still count it
+            assertThat(queryTracker().getStatus("parent", "sub-1")).isNull();
+
+            // When the completion is retried and the other subquery completes
+            tracker.queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+            tracker.queryCompleted(sub2, new ResultsOutputInfo(5, Collections.emptyList()));
+
+            // Then each subquery was counted exactly once
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
+            assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(15));
+        }
+
+        @Test
+        void shouldRetryCountingSubQueryWhenTransactionConflicts() throws QueryTrackerException {
+            // Given counting a finished subquery conflicts twice with other transactions on the parent query's item
+            DynamoDBQueryTracker tracker = trackerRetryingConflicts(conflictingTransactions(2));
+
+            // When
+            tracker.queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+            tracker.queryCompleted(sub2, new ResultsOutputInfo(5, Collections.emptyList()));
+
+            // Then the subquery was counted after retrying with backoff
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
+            assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(15));
+            assertThat(foundWaits).containsExactly(Duration.ofMillis(500), Duration.ofSeconds(1));
+        }
+
+        @Test
+        void shouldFailCountingSubQueryWhenTransactionConflictsTooManyTimes() throws QueryTrackerException {
+            // Given counting a finished subquery conflicts on every attempt
+            DynamoDBQueryTracker tracker = trackerRetryingConflicts(conflictingTransactions(Integer.MAX_VALUE));
+
+            // When / Then
+            assertThatThrownBy(() -> tracker.queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList())))
+                    .isInstanceOf(TransactionCanceledException.class);
+            assertThat(foundWaits).hasSize(9);
+
+            // And the subquery was not marked as finished, so a retry can still count it
+            assertThat(queryTracker().getStatus("parent", "sub-1")).isNull();
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(IN_PROGRESS);
+        }
+
+        @Test
+        void shouldFinishParentOnDuplicateCompletionWhenFinishingParentWasLost() throws QueryTrackerException {
+            // Given all subqueries finished but the write finishing the parent query was lost
+            queryTracker().queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+            queryTracker().queryCompleted(sub2, new ResultsOutputInfo(25, Collections.emptyList()));
+            setParentState("parent", IN_PROGRESS);
+
+            // When a duplicate message completes a subquery again
+            queryTracker().queryCompleted(sub2, new ResultsOutputInfo(25, Collections.emptyList()));
+
+            // Then the duplicate is not counted, and the parent query is finished from the counters
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
+            assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(35));
+        }
+
+        private void setParentState(String queryId, QueryState state) {
+            dynamoClient.updateItem(request -> request
+                    .tableName(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
+                    .key(Map.of(
+                            DynamoDBQueryTracker.QUERY_ID, AttributeValue.fromS(queryId),
+                            DynamoDBQueryTracker.SUB_QUERY_ID, AttributeValue.fromS(DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER)))
+                    .updateExpression("SET #State = :state")
+                    .expressionAttributeNames(Map.of("#State", DynamoDBQueryTracker.LAST_KNOWN_STATE))
+                    .expressionAttributeValues(Map.of(":state", AttributeValue.fromS(state.name()))));
+        }
+
+        @Test
         void shouldResetCountersWhenSubQueriesAreRecreatedByDuplicateOfParentQuery() throws QueryTrackerException {
             // Given the query ran once already
             queryTracker().queryCompleted(sub1.withAttemptId("attempt-1"), new ResultsOutputInfo(10, Collections.emptyList()));
@@ -449,6 +541,106 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
                 @Override
                 public UpdateItemResponse updateItem(UpdateItemRequest request) {
                     return dynamoClient.updateItem(request);
+                }
+
+                @Override
+                public TransactWriteItemsResponse transactWriteItems(TransactWriteItemsRequest request) {
+                    return dynamoClient.transactWriteItems(request);
+                }
+
+                @Override
+                public GetItemResponse getItem(GetItemRequest request) {
+                    return dynamoClient.getItem(request);
+                }
+
+                @Override
+                public String serviceName() {
+                    return dynamoClient.serviceName();
+                }
+
+                @Override
+                public void close() {
+                }
+            });
+        }
+
+        private DynamoDBQueryTracker trackerRetryingConflicts(DynamoDbClient client) {
+            return new DynamoDBQueryTracker(instanceProperties, client,
+                    new ExponentialBackoffWithJitter(DynamoDBQueryTracker.TRANSACTION_CONFLICT_WAIT_RANGE,
+                            constantJitterFraction(0.5), ThreadSleepTestHelper.recordWaits(foundWaits)));
+        }
+
+        private DynamoDbClient conflictingTransactions(int conflicts) {
+            AtomicInteger transactions = new AtomicInteger(0);
+            return new DynamoDbClient() {
+
+                @Override
+                public TransactWriteItemsResponse transactWriteItems(TransactWriteItemsRequest request) {
+                    if (transactions.incrementAndGet() <= conflicts) {
+                        throw TransactionCanceledException.builder()
+                                .message("Transaction cancelled, please refer cancellation reasons for specific reasons " +
+                                        "[None, TransactionConflict]")
+                                .cancellationReasons(
+                                        CancellationReason.builder().code("None").build(),
+                                        CancellationReason.builder().code("TransactionConflict").build())
+                                .build();
+                    }
+                    return dynamoClient.transactWriteItems(request);
+                }
+
+                @Override
+                public UpdateItemResponse updateItem(UpdateItemRequest request) {
+                    return dynamoClient.updateItem(request);
+                }
+
+                @Override
+                public GetItemResponse getItem(GetItemRequest request) {
+                    return dynamoClient.getItem(request);
+                }
+
+                @Override
+                public QueryResponse query(QueryRequest request) {
+                    return dynamoClient.query(request);
+                }
+
+                @Override
+                public String serviceName() {
+                    return dynamoClient.serviceName();
+                }
+
+                @Override
+                public void close() {
+                }
+            };
+        }
+
+        private DynamoDBQueryTracker trackerFailingFirstTransaction() {
+            AtomicBoolean failed = new AtomicBoolean(false);
+            return new DynamoDBQueryTracker(instanceProperties, new DynamoDbClient() {
+
+                @Override
+                public TransactWriteItemsResponse transactWriteItems(TransactWriteItemsRequest request) {
+                    if (failed.compareAndSet(false, true)) {
+                        throw ProvisionedThroughputExceededException.builder()
+                                .message("Fake failure applying transaction")
+                                .build();
+                    }
+                    return dynamoClient.transactWriteItems(request);
+                }
+
+                @Override
+                public UpdateItemResponse updateItem(UpdateItemRequest request) {
+                    return dynamoClient.updateItem(request);
+                }
+
+                @Override
+                public GetItemResponse getItem(GetItemRequest request) {
+                    return dynamoClient.getItem(request);
+                }
+
+                @Override
+                public QueryResponse query(QueryRequest request) {
+                    return dynamoClient.query(request);
                 }
 
                 @Override
