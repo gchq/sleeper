@@ -82,7 +82,7 @@ public class IngestBatcher {
                     .collect(Collectors.groupingBy(IngestBatcherTrackedFile::getTableId, LinkedHashMap::new, toList()))
                     .forEach((tableId, inputFiles) -> {
                         try {
-                            batchOrDeleteTableFiles(tableId, inputFiles, time);
+                            batchTableFilesDeleteOnNotFound(tableId, inputFiles, time);
                         } catch (RuntimeException e) {
                             LOGGER.error("Failed batching {} pending files for table with ID \"{}\", continuing with other tables",
                                     inputFiles.size(), tableId, e);
@@ -102,7 +102,7 @@ public class IngestBatcher {
         throw first;
     }
 
-    private void batchOrDeleteTableFiles(String tableId, List<IngestBatcherTrackedFile> inputFiles, Instant time) {
+    private void batchTableFilesDeleteOnNotFound(String tableId, List<IngestBatcherTrackedFile> inputFiles, Instant time) {
         try {
             TableProperties properties = tablePropertiesProvider.getById(tableId);
             batchTableFiles(properties, inputFiles, time);
