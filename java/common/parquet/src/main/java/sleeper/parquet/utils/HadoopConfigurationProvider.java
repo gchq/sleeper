@@ -37,7 +37,7 @@ public class HadoopConfigurationProvider {
     public static Configuration getConfigurationForClient() {
         Configuration conf = new Configuration();
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
-            setLocalStackConfiguration(conf);
+            setLocalStackConfiguration(conf); //LocalStack is no longer supported since ticket 8333
         } else {
             conf.set("fs.s3a.aws.credentials.provider", DefaultCredentialsProvider.class.getName());
         }

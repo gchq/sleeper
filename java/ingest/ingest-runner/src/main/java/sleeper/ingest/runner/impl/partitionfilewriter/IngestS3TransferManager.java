@@ -122,7 +122,7 @@ public class IngestS3TransferManager implements AutoCloseable {
     }
 
     private static URI getCustomEndpoint() {
-        String endpoint = System.getenv("AWS_ENDPOINT_URL");
+        String endpoint = System.getenv("AWS_ENDPOINT_URL"); //LocalStack is no longer supported since ticket 8333
         if (endpoint != null) {
             return URI.create(endpoint);
         }

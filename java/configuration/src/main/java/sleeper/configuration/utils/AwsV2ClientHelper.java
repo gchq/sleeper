@@ -29,7 +29,7 @@ import java.net.URI;
  * Applies default configuration to AWS SDK v2 clients.
  */
 public class AwsV2ClientHelper {
-    private static final String AWS_ENDPOINT_ENV_VAR = "AWS_ENDPOINT_URL";
+    private static final String AWS_ENDPOINT_ENV_VAR = "AWS_ENDPOINT_URL"; //LocalStack is no longer supported since ticket 8333
 
     private AwsV2ClientHelper() {
     }
