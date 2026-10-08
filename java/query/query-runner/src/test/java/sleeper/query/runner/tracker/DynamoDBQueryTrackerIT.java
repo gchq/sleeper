@@ -59,9 +59,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
@@ -288,6 +290,42 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         assertThat(queryTracker().getStatus("parent", "sub-1").getLastKnownState()).isEqualTo(IN_PROGRESS);
     }
 
+    @Test
+    public void shouldCountSubQueriesAcrossManyCounterShards() throws QueryTrackerException {
+        // Given more subqueries than counter shards, so that every shard holds part of the counts
+        Query parent = createQueryWithId("parent");
+        List<LeafPartitionQuery> subQueries = IntStream.rangeClosed(1, 40)
+                .mapToObj(i -> createSubQueryWithId("parent", "sub-" + i))
+                .toList();
+        queryTracker().queryInProgress(parent);
+        queryTracker().subQueriesCreated(parent, subQueries);
+
+        // When all but one subquery completes, returning 1, 2, 3... rows
+        for (int i = 0; i < 39; i++) {
+            queryTracker().queryCompleted(subQueries.get(i), new ResultsOutputInfo(i + 1, Collections.emptyList()));
+        }
+
+        // Then the counts are summed across the shards
+        TrackedQuery inProgress = queryTracker().getStatus("parent");
+        assertThat(inProgress.getLastKnownState()).isEqualTo(IN_PROGRESS);
+        assertThat(inProgress.getSucceededSubQueryCount()).isEqualTo(39L);
+        assertThat(inProgress.getRemainingSubQueryCount()).isEqualTo(1L);
+
+        // And the last completion finishes the parent with the rows totalled across the shards
+        queryTracker().queryCompleted(subQueries.get(39), new ResultsOutputInfo(40, Collections.emptyList()));
+        assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
+        assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(820));
+
+        // And the counter shard items carry an expiry date for the table's time to live setting
+        Map<String, AttributeValue> shardItem = dynamoClient.getItem(request -> request
+                .tableName(instanceProperties.get(QUERY_TRACKER_TABLE_NAME))
+                .key(Map.of(
+                        DynamoDBQueryTracker.QUERY_ID, AttributeValue.fromS("parent"),
+                        DynamoDBQueryTracker.SUB_QUERY_ID, AttributeValue.fromS(DynamoDBQueryTrackerEntry.counterShardSortKey(0)))))
+                .item();
+        assertThat(shardItem).containsKey("expiryDate");
+    }
+
     @Nested
     @DisplayName("Update parent query from counters of finished sub-queries")
     class UpdateParentFromCounters {
@@ -494,6 +532,57 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
                     .updateExpression("SET #State = :state")
                     .expressionAttributeNames(Map.of("#State", DynamoDBQueryTracker.LAST_KNOWN_STATE))
                     .expressionAttributeValues(Map.of(":state", AttributeValue.fromS(state.name()))));
+        }
+
+        @Test
+        void shouldNotCountSubQueryFinishingUnderAPreviousAttempt() throws QueryTrackerException {
+            // Given the query was registered and partly processed under a first attempt
+            queryTracker().subQueriesCreated(parent, List.of(
+                    sub1.withAttemptId("attempt-1"), sub2.withAttemptId("attempt-1")));
+            queryTracker().queryCompleted(sub1.withAttemptId("attempt-1"), new ResultsOutputInfo(10, Collections.emptyList()));
+
+            // When the whole query is reprocessed as a new attempt, then a late completion from the first
+            // attempt arrives
+            queryTracker().subQueriesCreated(parent, List.of(
+                    sub1.withAttemptId("attempt-2"), sub2.withAttemptId("attempt-2")));
+            queryTracker().queryCompleted(sub2.withAttemptId("attempt-1"), new ResultsOutputInfo(25, Collections.emptyList()));
+
+            // Then the late completion is neither counted nor recorded against the subquery
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(IN_PROGRESS);
+            assertThat(queryTracker().getStatus("parent").getFinishedSubQueryCount()).isEqualTo(0L);
+            assertThat(queryTracker().getStatus("parent", "sub-2")).isNull();
+
+            // And the new attempt's completions finish the parent with each subquery counted once
+            queryTracker().queryCompleted(sub1.withAttemptId("attempt-2"), new ResultsOutputInfo(10, Collections.emptyList()));
+            queryTracker().queryCompleted(sub2.withAttemptId("attempt-2"), new ResultsOutputInfo(25, Collections.emptyList()));
+            assertThat(queryTracker().getStatus("parent").getLastKnownState()).isEqualTo(COMPLETED);
+            assertThat(queryTracker().getStatus("parent").getRowCount()).isEqualTo(Long.valueOf(35));
+        }
+
+        @Test
+        void shouldHideCounterShardsFromListingsAndSumCountersIntoParent() throws QueryTrackerException {
+            // When
+            queryTracker().queryInProgress(sub1);
+            queryTracker().queryCompleted(sub2, new ResultsOutputInfo(25, Collections.emptyList()));
+
+            // Then the listings show only the parent and subquery entries
+            assertThat(queryTracker().getAllQueries())
+                    .extracting(TrackedQuery::getSubQueryId, TrackedQuery::getLastKnownState)
+                    .containsExactlyInAnyOrder(
+                            tuple("-", IN_PROGRESS),
+                            tuple("sub-1", IN_PROGRESS),
+                            tuple("sub-2", COMPLETED));
+            assertThat(queryTracker().getQueriesWithState(IN_PROGRESS))
+                    .extracting(TrackedQuery::getSubQueryId)
+                    .containsExactlyInAnyOrder("-", "sub-1");
+            assertThat(queryTracker().getFailedQueries()).isEmpty();
+
+            // And the counters are summed into the parent's entry
+            assertThat(queryTracker().getAllQueries())
+                    .filteredOn(query -> "-".equals(query.getSubQueryId()))
+                    .extracting(TrackedQuery::getExpectedSubQueryCount, TrackedQuery::getSucceededSubQueryCount,
+                            TrackedQuery::getFinishedSubQueryRowCount)
+                    .containsExactly(tuple(2L, 1L, 25L));
         }
 
         @Test
