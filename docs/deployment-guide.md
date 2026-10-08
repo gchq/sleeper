@@ -9,10 +9,6 @@ that's configured appropriately. You should either have the dependencies listed 
 builder Docker container in your EC2 with the [Sleeper Docker tools](deployment/docker-tools.md), which comes with those
 dependencies pre-installed.
 
-If you just want a local instance for testing, see the documentation
-on [deploying to localstack](deployment/deploy-to-localstack.md). This has very limited functionality compared to a
-deployed instance.
-
 If your build environment needs to substitute the default container base image, route `cargo` or `rustup` traffic through internal mirrors, or trust a private certificate authority, see [building in a custom environment](development/custom-environment.md) for the available hooks.
 
 ## Deployment
