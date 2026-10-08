@@ -37,7 +37,7 @@ public class HadoopConfigurationProvider {
     public static Configuration getConfigurationForClient() {
         Configuration conf = new Configuration();
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
-            setLocalStackConfiguration(conf); //LocalStack is no longer supported since ticket 8333
+            setLocalStackConfiguration(conf); //As per ticket 8333, this can now only be used by manually setting up a local AWS environment e.g. with DeployDockerInstance
         } else {
             conf.set("fs.s3a.aws.credentials.provider", DefaultCredentialsProvider.class.getName());
         }
