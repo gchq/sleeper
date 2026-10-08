@@ -31,6 +31,19 @@ public record CdkCommand(List<String> command, List<String> arguments) {
                 .build();
     }
 
+    /**
+     * Creates an artefacts deployment command with a cleanup log retention policy.
+     *
+     * @param  deploymentId           the artefacts deployment ID
+     * @param  retainLogsAfterDestroy whether cleanup logs should remain after stack deletion
+     * @return                        the deployment command
+     */
+    public static CdkCommand deployArtefacts(String deploymentId, boolean retainLogsAfterDestroy) {
+        return deployArtefacts(deploymentId).toBuilder()
+                .context("retainLogsAfterDestroy", retainLogsAfterDestroy)
+                .build();
+    }
+
     public static CdkCommand deployPropertiesChange(Path configurationDirectory) {
         return builder().deploy().configurationDirectory(configurationDirectory).build();
     }
