@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.report.compaction.task.StandardCompactionTaskStatusReporter;
+import sleeper.clients.report.filestatus.StandardFileStatusReporter;
 import sleeper.clients.report.job.query.UnfinishedJobsQuery;
 import sleeper.clients.report.partitions.PartitionsStatusReporter;
 import sleeper.clients.util.ClientUtils;
@@ -79,7 +80,7 @@ public class StatusReport {
         new PartitionsStatusReport(stateStore, tableProperties, new PartitionsStatusReporter(System.out)).run();
 
         // Data files
-        new FilesStatusReport(stateStore, 1000, verbose).run();
+        new FilesStatusReport(stateStore, 1000, verbose, new StandardFileStatusReporter()).run();
 
         // Jobs
         new CompactionJobStatusReport(compactionJobTracker,

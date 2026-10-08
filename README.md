@@ -9,6 +9,7 @@ Sleeper
 [![Rust Builders Deployment](https://github.com/gchq/sleeper/actions/workflows/rust-builders-main.yaml/badge.svg)](https://github.com/gchq/sleeper/actions/workflows/rust-builders-main.yaml)
 [![Docker CLI Deployment](https://github.com/gchq/sleeper/actions/workflows/docker-cli-main.yaml/badge.svg)](https://github.com/gchq/sleeper/actions/workflows/docker-cli-main.yaml)
 [![Check for updates to vendored code](https://github.com/gchq/sleeper/actions/workflows/vendored-code-updates.yaml/badge.svg)](https://github.com/gchq/sleeper/actions/workflows/vendored-code-updates.yaml)
+[![Check bulk import AWS SDK version against EMR](https://github.com/gchq/sleeper/actions/workflows/bulk-import-aws-sdk-emr.yaml/badge.svg)](https://github.com/gchq/sleeper/actions/workflows/bulk-import-aws-sdk-emr.yaml)
 
 ## Introduction
 

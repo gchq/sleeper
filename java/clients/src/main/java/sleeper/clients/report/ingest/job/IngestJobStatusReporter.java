@@ -16,7 +16,7 @@
 
 package sleeper.clients.report.ingest.job;
 
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.util.List;
@@ -38,7 +38,7 @@ public interface IngestJobStatusReporter {
      *                               the persistent cluster
      */
     void report(
-            List<IngestJobStatus> statusList, JobQuery.Type query, IngestQueueMessages queueMessages,
+            List<IngestJobStatus> statusList, JobQueryType query, IngestQueueMessages queueMessages,
             Map<String, Integer> persistentEmrStepCount);
 
 }

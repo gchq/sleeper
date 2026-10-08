@@ -21,8 +21,8 @@ import sleeper.clients.util.console.ConsoleInput;
 /**
  * Prompts the user on the command line to create a query to generate a report from a query tracker.
  */
-public class TrackerQueryPrompt {
-    private TrackerQueryPrompt() {
+public class QueryTrackerQueryPrompt {
+    private QueryTrackerQueryPrompt() {
     }
 
     /**
@@ -31,7 +31,7 @@ public class TrackerQueryPrompt {
      * @param  in the console to prompt the user
      * @return    the query
      */
-    public static TrackerQuery from(ConsoleInput in) {
+    public static QueryTrackerQuery from(ConsoleInput in) {
         String type = in.promptLine("Query types are:\n" +
                 "a (All queries)\n" +
                 "q (Queued queries)\n" +
@@ -40,15 +40,15 @@ public class TrackerQueryPrompt {
                 "f (Failed queries)\n\n" +
                 "Enter query type: ");
         if ("a".equalsIgnoreCase(type)) {
-            return TrackerQuery.ALL;
+            return QueryTrackerQuery.ALL;
         } else if ("q".equalsIgnoreCase(type)) {
-            return TrackerQuery.QUEUED;
+            return QueryTrackerQuery.QUEUED;
         } else if ("i".equalsIgnoreCase(type)) {
-            return TrackerQuery.IN_PROGRESS;
+            return QueryTrackerQuery.IN_PROGRESS;
         } else if ("c".equalsIgnoreCase(type)) {
-            return TrackerQuery.COMPLETED;
+            return QueryTrackerQuery.COMPLETED;
         } else if ("f".equalsIgnoreCase(type)) {
-            return TrackerQuery.FAILED;
+            return QueryTrackerQuery.FAILED;
         } else {
             return from(in);
         }
