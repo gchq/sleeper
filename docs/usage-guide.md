@@ -7,9 +7,6 @@ This will assume you have a deployed instance of Sleeper, and you've installed o
 described in the [getting started guide](getting-started.md). See the [deployment guide](deployment-guide.md) for more
 information on deploying an instance.
 
-If you just want to test locally, see the documentation on [deploying to localstack](deployment/deploy-to-localstack.md).
-This has very limited functionality compared to a deployed instance.
-
 ## Configuration
 
 Details of all Sleeper configuration properties are available here: [Properties](usage/property-master.md). These can be
