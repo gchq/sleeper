@@ -157,13 +157,14 @@ public class IngestJobMessageHandler<T> {
         } catch (RuntimeException e) {
             LOGGER.warn("Failed expanding directories for job {}", jobId, e);
             String jobRunId = jobRunIdSupplier.get();
+            Instant validationTime = timeSupplier.get();
             Instant failureTime = timeSupplier.get();
             ingestJobTracker.jobValidated(
                     IngestJobValidatedEvent.builder()
                             .jobId(jobId)
                             .tableId(table.getTableUniqueId())
                             .fileCount(files.size())
-                            .validationTime(failureTime)
+                            .validationTime(validationTime)
                             .reasons(List.of())
                             .jobRunId(jobRunId)
                             .build());

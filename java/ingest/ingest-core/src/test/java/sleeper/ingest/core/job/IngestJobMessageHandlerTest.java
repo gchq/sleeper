@@ -203,11 +203,12 @@ public class IngestJobMessageHandlerTest {
         void shouldFailValidationWhenExpandingDirectoriesThrows() {
             //Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+            Instant failureTime = Instant.parse("2023-07-03T16:14:01Z");
             RuntimeException failure = new RuntimeException("Access Denied");
             IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = IngestJobMessageHandler.forIngestJob()
                     .tableIndex(tableIndex)
                     .ingestJobTracker(tracker)
-                    .timeSupplier(() -> validationTime)
+                    .timeSupplier(List.of(validationTime, failureTime).iterator()::next)
                     .expandDirectories(files -> {
                         throw failure;
                     })
@@ -230,7 +231,7 @@ public class IngestJobMessageHandlerTest {
             assertThat(tracker.getInvalidJobs()).isEmpty();
             assertThat(tracker.getAllJobs(tableId))
                     .containsExactly(ingestJobStatus(expectedJob,
-                            acceptedAndFailedToStartIngestRun(expectedJob, validationTime, validationTime,
+                            acceptedAndFailedToStartIngestRun(expectedJob, validationTime, failureTime,
                                     List.of("Access Denied"))));
         }
 
