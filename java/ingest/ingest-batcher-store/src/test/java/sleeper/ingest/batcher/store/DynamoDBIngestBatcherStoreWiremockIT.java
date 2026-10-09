@@ -16,6 +16,7 @@
 
 package sleeper.ingest.batcher.store;
 
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
@@ -27,26 +28,38 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
+import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper;
 
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.core.testutils.JitterTestHelper.constantJitterFraction;
+import static sleeper.core.util.ThreadSleepTestHelper.recordWaits;
+import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.FILE_PATH;
+import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.JOB_ID;
+import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.NOT_ASSIGNED_TO_JOB;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
 
@@ -58,6 +71,7 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
     private final String tableId = table.get(TABLE_ID);
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(table);
     private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
+    private final List<Duration> foundWaits = new ArrayList<>();
 
     @Test
     void shouldRetryTransactionOnInternalServerError(WireMockRuntimeInfo runtimeInfo) {
@@ -107,15 +121,85 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
                         .collect(Collectors.toUnmodifiableList()));
     }
 
+    @Test
+    void shouldRetryDeleteWhenItemIsUnprocessed(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(batchWriteItem()
+                .inScenario("retry unprocessed")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willSetStateTo("retry success")
+                .willReturn(aResponse().withStatus(200)
+                        .withBody(unprocessedDeletesResponse("file-2.parquet"))));
+        stubFor(batchWriteItem()
+                .inScenario("retry unprocessed")
+                .whenScenarioStateIs("retry success")
+                .willReturn(aResponse().withStatus(200).withBody("{}")));
+
+        // When
+        store(runtimeInfo).deleteFiles(List.of(
+                fileRequest().tableId(tableId).file("file-1.parquet").build(),
+                fileRequest().tableId(tableId).file("file-2.parquet").build()));
+
+        // Then
+        verify(2, batchWriteItemRequested());
+        verify(1, batchWriteItemRequested().withRequestBody(equalToJson(deletesRequest("file-1.parquet", "file-2.parquet"))));
+        verify(1, batchWriteItemRequested().withRequestBody(equalToJson(deletesRequest("file-2.parquet"))));
+        assertThat(foundWaits).containsExactly(Duration.ofMillis(500));
+    }
+
+    @Test
+    void shouldFailWhenItemIsStillUnprocessedAfterMaxAttempts(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(batchWriteItem()
+                .willReturn(aResponse().withStatus(200)
+                        .withBody(unprocessedDeletesResponse("file.parquet"))));
+        IngestBatcherStore store = store(runtimeInfo);
+        List<IngestBatcherTrackedFile> files = List.of(fileRequest().tableId(tableId).file("file.parquet").build());
+
+        // When / Then
+        assertThatThrownBy(() -> store.deleteFiles(files))
+                .hasMessage("Failed to delete files, too many unprocessed writes after 10 attempts");
+        verify(DynamoDBIngestBatcherStore.MAX_ATTEMPTS_PER_BATCH_WRITE, batchWriteItemRequested());
+    }
+
+    private MappingBuilder batchWriteItem() {
+        return post("/").withHeader("X-Amz-Target", equalTo("DynamoDB_20120810.BatchWriteItem"));
+    }
+
     private RequestPatternBuilder writeItemsRequested() {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader("X-Amz-Target", equalTo("DynamoDB_20120810.TransactWriteItems"));
     }
 
+    private RequestPatternBuilder batchWriteItemRequested() {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader("X-Amz-Target", equalTo("DynamoDB_20120810.BatchWriteItem"));
+    }
+
+    private String deletesRequest(String... files) {
+        return "{\"RequestItems\": " + deletesByTable(files) + "}";
+    }
+
+    private String unprocessedDeletesResponse(String... files) {
+        return "{\"UnprocessedItems\": " + deletesByTable(files) + "}";
+    }
+
+    private String deletesByTable(String... files) {
+        return "{\"" + DynamoDBIngestBatcherStore.ingestRequestsTableName(instanceProperties.get(ID)) + "\": [" +
+                Stream.of(files)
+                        .map(file -> "{\"DeleteRequest\": {\"Key\": {" +
+                                "\"" + JOB_ID + "\": {\"S\": \"" + NOT_ASSIGNED_TO_JOB + "\"}, " +
+                                "\"" + FILE_PATH + "\": {\"S\": \"" + tableId + "/" + file + "\"}}}}")
+                        .collect(Collectors.joining(", ")) +
+                "]}";
+    }
+
     private IngestBatcherStore store(WireMockRuntimeInfo runtimeInfo) {
         return new DynamoDBIngestBatcherStore(
                 wiremockAwsV2Client(runtimeInfo, DynamoDbClient.builder()),
-                instanceProperties, tablePropertiesProvider);
+                instanceProperties, tablePropertiesProvider, DynamoDBIngestBatcherStore.FILES_IN_ASSIGN_JOB_BATCH,
+                new ExponentialBackoffWithJitter(DynamoDBIngestBatcherStore.UNPROCESSED_WRITES_WAIT_RANGE,
+                        constantJitterFraction(0.5), recordWaits(foundWaits)));
     }
 
     private IngestBatcherStore storeWithNoRetry(WireMockRuntimeInfo runtimeInfo) {
