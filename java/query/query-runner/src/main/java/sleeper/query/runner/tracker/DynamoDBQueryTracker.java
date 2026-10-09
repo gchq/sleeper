@@ -200,7 +200,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
                 .expressionAttributeNames(Map.of("#LastState", LAST_KNOWN_STATE))
                 .expressionAttributeValues(Map.of(":state", AttributeValue.fromS(state.toString()))));
         return response.items().stream()
-                .map(DynamoDBQueryTrackerEntry::toTrackedQuery)
+                .map(this::toTrackedQueryJoiningCounters)
                 .toList();
     }
 
@@ -214,8 +214,33 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
                         ":failed", AttributeValue.fromS(QueryState.FAILED.toString()),
                         ":partiallyFailed", AttributeValue.fromS(QueryState.PARTIALLY_FAILED.toString()))));
         return response.items().stream()
-                .map(DynamoDBQueryTrackerEntry::toTrackedQuery)
+                .map(this::toTrackedQueryJoiningCounters)
                 .toList();
+    }
+
+    /**
+     * Converts a tracker item to the model, joining in the summed counters of finished subqueries when the item is
+     * a parent query. This is for the state-filtered listings getQueriesWithState and getFailedQueries: their scans
+     * exclude the counter shard items, which hold no state attribute, so the shards are read separately with one
+     * query per parent query in the result.
+     *
+     * @param  item the tracker item
+     * @return      the tracked query
+     */
+    private TrackedQuery toTrackedQueryJoiningCounters(Map<String, AttributeValue> item) {
+        TrackedQuery query = DynamoDBQueryTrackerEntry.toTrackedQuery(item);
+        if (!NON_NESTED_QUERY_PLACEHOLDER.equals(item.get(SUB_QUERY_ID).s())) {
+            return query;
+        }
+        ParentQueryState state = readParentQueryState(query.getQueryId(), false);
+        if (!state.countersFound) {
+            return query;
+        }
+        return query.toBuilder()
+                .succeededSubQueryCount(state.succeeded)
+                .failedSubQueryCount(state.failed)
+                .finishedSubQueryRowCount(state.rowCount)
+                .build();
     }
 
     @Override

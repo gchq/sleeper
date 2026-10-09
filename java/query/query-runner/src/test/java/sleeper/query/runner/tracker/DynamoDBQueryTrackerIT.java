@@ -586,6 +586,34 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         }
 
         @Test
+        void shouldSumCountersIntoParentWhenListingQueriesWithState() throws QueryTrackerException {
+            // When
+            queryTracker().queryInProgress(sub1);
+            queryTracker().queryCompleted(sub2, new ResultsOutputInfo(25, Collections.emptyList()));
+
+            // Then
+            assertThat(queryTracker().getQueriesWithState(IN_PROGRESS))
+                    .filteredOn(query -> "-".equals(query.getSubQueryId()))
+                    .extracting(TrackedQuery::getExpectedSubQueryCount, TrackedQuery::getSucceededSubQueryCount,
+                            TrackedQuery::getFinishedSubQueryRowCount)
+                    .containsExactly(tuple(2L, 1L, 25L));
+        }
+
+        @Test
+        void shouldSumCountersIntoParentWhenListingFailedQueries() throws QueryTrackerException {
+            // When
+            queryTracker().queryFailed(sub1, new Exception("Fail"));
+            queryTracker().queryFailed(sub2, new Exception("Fail"));
+
+            // Then
+            assertThat(queryTracker().getFailedQueries())
+                    .filteredOn(query -> "-".equals(query.getSubQueryId()))
+                    .extracting(TrackedQuery::getLastKnownState, TrackedQuery::getExpectedSubQueryCount,
+                            TrackedQuery::getFailedSubQueryCount)
+                    .containsExactly(tuple(FAILED, 2L, 2L));
+        }
+
+        @Test
         void shouldResetCountersWhenSubQueriesAreRecreatedByDuplicateOfParentQuery() throws QueryTrackerException {
             // Given the query ran once already
             queryTracker().queryCompleted(sub1.withAttemptId("attempt-1"), new ResultsOutputInfo(10, Collections.emptyList()));
