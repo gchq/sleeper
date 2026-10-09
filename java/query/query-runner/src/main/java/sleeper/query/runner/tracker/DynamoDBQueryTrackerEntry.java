@@ -48,6 +48,7 @@ class DynamoDBQueryTrackerEntry {
     static final String FAILED_SUB_QUERY_COUNT = "failedSubQueryCount";
     static final String FINISHED_SUB_QUERY_ROW_COUNT = "finishedSubQueryRowCount";
     static final String ATTEMPT_ID = "attemptId";
+    static final String COUNTER_SHARD_PREFIX = "-#counters#";
 
     private final String queryId;
     private final String subQueryId;
@@ -102,6 +103,32 @@ class DynamoDBQueryTrackerEntry {
         key.put(QUERY_ID, AttributeValue.fromS(queryId));
         key.put(SUB_QUERY_ID, AttributeValue.fromS(NON_NESTED_QUERY_PLACEHOLDER));
         return key;
+    }
+
+    /**
+     * Creates the DynamoDB key of an item holding one shard of a parent query's counters of finished subqueries.
+     * The counters are sharded over several items to spread the transactional write load when many subqueries of
+     * the same query finish at once.
+     *
+     * @param  queryId the query ID
+     * @param  shard   the index of the counter shard
+     * @return         the key of the counter shard item
+     */
+    public static Map<String, AttributeValue> getCounterShardKey(String queryId, int shard) {
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put(QUERY_ID, AttributeValue.fromS(queryId));
+        key.put(SUB_QUERY_ID, AttributeValue.fromS(counterShardSortKey(shard)));
+        return key;
+    }
+
+    /**
+     * Creates the sort key of an item holding one shard of a parent query's counters of finished subqueries.
+     *
+     * @param  shard the index of the counter shard
+     * @return       the sort key of the counter shard item
+     */
+    public static String counterShardSortKey(int shard) {
+        return String.format("%s%02d", COUNTER_SHARD_PREFIX, shard);
     }
 
     public Map<String, AttributeValue> getItem(long queryTrackerTTL) {
