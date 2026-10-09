@@ -1,0 +1,54 @@
+{
+  "queueMessages": {
+    "ingestMessages": 0
+  },
+  "jobList": [
+    {
+      "jobId": "job99999-9999-9999-9999-999999999999",
+      "jobRuns": [
+        {
+          "taskId": "bulk-import-cluster-9",
+          "updates": [
+            {
+              "validationTime": "2026-10-09T13:34:12.001Z",
+              "updateTime": "2026-10-09T13:34:12.123Z",
+              "inputFileCount": 9,
+              "type": "ACCEPTED"
+            },
+            {
+              "inputFileCount": 9,
+              "startTime": "2026-10-09T13:39:12.001Z",
+              "updateTime": "2026-10-09T13:39:12.123Z",
+              "type": "STARTED"
+            },
+            {
+              "updateTime": "2026-10-09T13:44:12.123Z",
+              "finishTime": "2026-10-09T13:44:12.001Z",
+              "rowsProcessed": {
+                "rowsRead": 3000,
+                "rowsWritten": 1500
+              },
+              "numFilesWrittenByJob": 1,
+              "committedBySeparateFileUpdates": true,
+              "type": "FINISHED_WHEN_FILES_COMMITTED"
+            },
+            {
+              "writtenTime": "2026-10-09T13:45:12.001Z",
+              "updateTime": "2026-10-09T13:45:12.123Z",
+              "fileCount": 1,
+              "type": "ADDED_FILES"
+            },
+            {
+              "updateTime": "2026-10-09T13:46:12.123Z",
+              "failureTime": "2026-10-09T13:46:12.001Z",
+              "failureReasons": [
+                "File already exists"
+              ],
+              "type": "FAILED"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

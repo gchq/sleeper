@@ -130,7 +130,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
 
             // When / Then
             assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.ALL, jobs, 0)).hasToString(
-                    example("reports/ingest/job/standard/all/bulkImport/succededWithFailureJob.txt"));
+                    example("reports/ingest/job/standard/all/bulkImport/succeededWithFailureJob.txt"));
         }
     }
 
