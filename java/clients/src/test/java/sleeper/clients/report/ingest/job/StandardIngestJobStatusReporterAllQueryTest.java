@@ -34,6 +34,7 @@ import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestData.
 import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
 import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
 import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestData.rejectedJobWithOneReason;
+import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestData.succeededWithFailureBulkImportJob;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
 public class StandardIngestJobStatusReporterAllQueryTest {
@@ -120,6 +121,16 @@ public class StandardIngestJobStatusReporterAllQueryTest {
             // When / Then
             assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.ALL, rejectedJob, 0)).hasToString(
                     example("reports/ingest/job/standard/all/bulkImport/rejectedJob.txt"));
+        }
+
+        @Test
+        void shouldReportBulkImportJobSucceededWithFailure() throws Exception {
+            // Given
+            List<IngestJobStatus> jobs = succeededWithFailureBulkImportJob();
+
+            // When / Then
+            assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.ALL, jobs, 0)).hasToString(
+                    example("reports/ingest/job/standard/all/bulkImport/succededWithFailureJob.txt"));
         }
     }
 

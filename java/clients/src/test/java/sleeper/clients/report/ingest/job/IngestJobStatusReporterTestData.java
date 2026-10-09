@@ -21,6 +21,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
@@ -236,7 +237,7 @@ public class IngestJobStatusReporterTestData {
     }
 
     /**
-     * Creates example data for jobs from the ingest job tracker with a single bulk import job that has fully completed.
+     * Creates example data for with a single bulk import job that has fully completed.
      *
      * @return the job status list with a single job
      */
@@ -248,6 +249,27 @@ public class IngestJobStatusReporterTestData {
                 validatedIngestStartedStatus(job8, startTime8.plus(Duration.ofMinutes(5))),
                 ingestFinishedStatusUncommitted(startTime8.plus(Duration.ofMinutes(10)), 1, new RowsProcessed(3000, 1500)),
                 ingestAddedFilesStatus(startTime8.plus(Duration.ofMinutes(11)), 1))));
+    }
+
+    /**
+     * Creates example with a single bulk import job that has fully completed, but had a duplicate state store
+     * transaction that did not validate.
+     *
+     * @return the job status list with a single job
+     */
+    public static List<IngestJobStatus> succeededWithFailureBulkImportJob() {
+        IngestJob job = createJob(9, 9);
+        Instant startTime = Instant.parse("2026-10-09T13:34:12.001Z");
+        return List.of(ingestJobStatus(job, jobRunOnTask("bulk-import-cluster-9",
+                ingestAcceptedStatus(startTime, 9),
+                validatedIngestStartedStatus(job, startTime.plus(Duration.ofMinutes(5))),
+                ingestFinishedStatusUncommitted(startTime.plus(Duration.ofMinutes(10)), 1, new RowsProcessed(3000, 1500)),
+                ingestAddedFilesStatus(startTime.plus(Duration.ofMinutes(11)), 1),
+                JobRunFailedStatus.builder()
+                        .updateTime(defaultUpdateTime(startTime.plus(Duration.ofMinutes(12))))
+                        .failureTime(startTime.plus(Duration.ofMinutes(12)))
+                        .failureReasons(List.of("File already exists"))
+                        .build())));
     }
 
     /**
