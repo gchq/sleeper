@@ -171,10 +171,6 @@ Apache Commons Logging (commons-logging:commons-logging:1.*)
 
 - Apache License, Version 2.0
 
-Apache Commons BeanUtils (commons-beanutils:commons-beanutils:1.*)
-
-- Apache License, Version 2.0
-
 Apache HttpClient (org.apache.httpcomponents:httpcore:4.*, org.apache.httpcomponents:httpclient:4.*, org.apache.httpcomponents:httpclient4:4.*, org.apache.httpcomponents.client5:*:5.*, org.apache.httpcomponents.core5:*:5.*)
 
 - Apache License, Version 2.0
