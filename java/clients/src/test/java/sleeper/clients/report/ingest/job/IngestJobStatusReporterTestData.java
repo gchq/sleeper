@@ -21,7 +21,6 @@ import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RowsProcessed;
-import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
@@ -40,6 +39,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFini
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.failedIngestJob;
@@ -265,11 +265,7 @@ public class IngestJobStatusReporterTestData {
                 validatedIngestStartedStatus(job, startTime.plus(Duration.ofMinutes(5))),
                 ingestFinishedStatusUncommitted(startTime.plus(Duration.ofMinutes(10)), 1, new RowsProcessed(3000, 1500)),
                 ingestAddedFilesStatus(startTime.plus(Duration.ofMinutes(11)), 1),
-                JobRunFailedStatus.builder()
-                        .updateTime(defaultUpdateTime(startTime.plus(Duration.ofMinutes(12))))
-                        .failureTime(startTime.plus(Duration.ofMinutes(12)))
-                        .failureReasons(List.of("File already exists"))
-                        .build())));
+                failedStatus(startTime.plus(Duration.ofMinutes(12)), List.of("File already exists")))));
     }
 
     /**
