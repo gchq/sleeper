@@ -29,6 +29,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.getStandardReport;
 import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.mixedQueries;
 import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.queryWithSubqueries;
+import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.singleQueryWithFailure;
+import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.singleQueryWithProgress;
+import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.singleQueryWithoutCounters;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryCompleted;
 import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryFailed;
@@ -62,6 +65,38 @@ public class StandardQueryTrackerReporterTest {
             // When/Then
             assertThat(getStandardReport(QueryTrackerQuery.ALL, queryWithSubqueries()))
                     .isEqualTo(example("reports/query/standard/all/queryWithSubqueries.txt"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Single query by ID")
+    class SingleQueryById {
+        @Test
+        void shouldRunReportForSingleQueryWithProgress() throws Exception {
+            // When/Then
+            assertThat(getStandardReport(QueryTrackerQuery.FOR_QUERY, singleQueryWithProgress()))
+                    .isEqualTo(example("reports/query/standard/forQuery/queryWithProgress.txt"));
+        }
+
+        @Test
+        void shouldRunReportForSingleQueryWithFailedSubquery() throws Exception {
+            // When/Then
+            assertThat(getStandardReport(QueryTrackerQuery.FOR_QUERY, singleQueryWithFailure()))
+                    .isEqualTo(example("reports/query/standard/forQuery/queryWithFailure.txt"));
+        }
+
+        @Test
+        void shouldRunReportForSingleQueryWithoutSubqueryCounters() throws Exception {
+            // When/Then
+            assertThat(getStandardReport(QueryTrackerQuery.FOR_QUERY, singleQueryWithoutCounters()))
+                    .isEqualTo(example("reports/query/standard/forQuery/queryWithoutCounters.txt"));
+        }
+
+        @Test
+        void shouldRunReportWhenQueryNotFound() throws Exception {
+            // When/Then
+            assertThat(getStandardReport(QueryTrackerQuery.FOR_QUERY, List.of()))
+                    .isEqualTo(example("reports/query/standard/forQuery/queryNotFound.txt"));
         }
     }
 

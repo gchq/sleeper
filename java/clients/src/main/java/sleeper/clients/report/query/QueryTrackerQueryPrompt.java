@@ -35,20 +35,23 @@ public class QueryTrackerQueryPrompt {
         String type = in.promptLine("Query types are:\n" +
                 "a (All queries)\n" +
                 "q (Queued queries)\n" +
-                "i (In progress queries)\n" +
+                "p (In progress queries)\n" +
                 "c (Completed queries)\n" +
-                "f (Failed queries)\n\n" +
+                "f (Failed queries)\n" +
+                "i (Specific query by ID)\n\n" +
                 "Enter query type: ");
         if ("a".equalsIgnoreCase(type)) {
             return QueryTrackerQuery.ALL;
         } else if ("q".equalsIgnoreCase(type)) {
             return QueryTrackerQuery.QUEUED;
-        } else if ("i".equalsIgnoreCase(type)) {
+        } else if ("p".equalsIgnoreCase(type)) {
             return QueryTrackerQuery.IN_PROGRESS;
         } else if ("c".equalsIgnoreCase(type)) {
             return QueryTrackerQuery.COMPLETED;
         } else if ("f".equalsIgnoreCase(type)) {
             return QueryTrackerQuery.FAILED;
+        } else if ("i".equalsIgnoreCase(type)) {
+            return QueryTrackerQuery.FOR_QUERY;
         } else {
             return from(in);
         }
