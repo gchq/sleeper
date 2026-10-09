@@ -345,6 +345,22 @@ public class IngestJobStatusFromJobTestData {
     }
 
     /**
+     * Creates a process run for an ingest job that failed during validation, before it started.
+     *
+     * @param  failureTime    the failure time
+     * @param  failureReasons a list of failure reasons
+     * @return                a job run
+     */
+    public static JobRun failedIngestRunBeforeStart(Instant failureTime, List<String> failureReasons) {
+        return validationRun(
+                JobRunFailedStatus.builder()
+                        .updateTime(defaultUpdateTime(failureTime))
+                        .failureTime(failureTime)
+                        .failureReasons(failureReasons)
+                        .build());
+    }
+
+    /**
      * Creates an ingest job accepted status update.
      *
      * @param  job            the ingest job

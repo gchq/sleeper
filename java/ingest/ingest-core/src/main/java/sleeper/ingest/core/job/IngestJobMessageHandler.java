@@ -45,7 +45,6 @@ import static sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent.ing
  */
 public class IngestJobMessageHandler<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobMessageHandler.class);
-    private final Supplier<String> jobRunIdSupplier;
     private final TableIndex tableIndex;
     private final IngestJobTracker ingestJobTracker;
     private final Function<String, T> deserialiser;
@@ -53,10 +52,10 @@ public class IngestJobMessageHandler<T> {
     private final BiFunction<T, IngestJob, T> applyIngestJobChanges;
     private final ExpandDirectories expandDirectories;
     private final Supplier<String> jobIdSupplier;
+    private final Supplier<String> jobRunIdSupplier;
     private final Supplier<Instant> timeSupplier;
 
     private IngestJobMessageHandler(Builder<T> builder) {
-        jobRunIdSupplier = Objects.requireNonNull(builder.jobRunIdSupplier, "jobRunIdSupplier must not be null");
         tableIndex = Objects.requireNonNull(builder.tableIndex, "tableIndex must not be null");
         ingestJobTracker = Objects.requireNonNull(builder.ingestJobTracker, "ingestJobTracker must not be null");
         deserialiser = Objects.requireNonNull(builder.deserialiser, "deserialiser must not be null");
@@ -64,6 +63,7 @@ public class IngestJobMessageHandler<T> {
         applyIngestJobChanges = Objects.requireNonNull(builder.applyIngestJobChanges, "applyIngestJobChanges must not be null");
         expandDirectories = Objects.requireNonNull(builder.expandDirectories, "expandDirectories must not be null");
         jobIdSupplier = Objects.requireNonNull(builder.jobIdSupplier, "jobIdSupplier must not be null");
+        jobRunIdSupplier = Objects.requireNonNull(builder.jobRunIdSupplier, "jobRunIdSupplier must not be null");
         timeSupplier = Objects.requireNonNull(builder.timeSupplier, "timeSupplier must not be null");
     }
 
@@ -92,6 +92,8 @@ public class IngestJobMessageHandler<T> {
      * job will be rejected.
      * - Generates a random job ID if one was not provided by the job. Jobs that have been deserialised without a job ID
      * will not fail validation.
+     * - If listing the files fails (for example an S3 error reading the input bucket), the job is recorded as failed in
+     * the tracker and the exception is rethrown, so the message can be retried via the dead letter queue.
      *
      * @param  message the JSON string
      * @return         an optional containing the validated job, or an empty optional if the deserialisation or
@@ -156,24 +158,12 @@ public class IngestJobMessageHandler<T> {
             expanded = expandDirectories.expandPaths(files);
         } catch (RuntimeException e) {
             LOGGER.warn("Failed expanding directories for job {}", jobId, e);
-            String jobRunId = jobRunIdSupplier.get();
-            Instant validationTime = timeSupplier.get();
-            Instant failureTime = timeSupplier.get();
-            ingestJobTracker.jobValidated(
-                    IngestJobValidatedEvent.builder()
-                            .jobId(jobId)
-                            .tableId(table.getTableUniqueId())
-                            .fileCount(files.size())
-                            .validationTime(validationTime)
-                            .reasons(List.of())
-                            .jobRunId(jobRunId)
-                            .build());
             ingestJobTracker.jobFailed(
                     IngestJobFailedEvent.builder()
                             .jobId(jobId)
                             .tableId(table.getTableUniqueId())
-                            .jobRunId(jobRunId)
-                            .failureTime(failureTime)
+                            .jobRunId(jobRunIdSupplier.get())
+                            .failureTime(timeSupplier.get())
                             .failure(e)
                             .build());
             throw e;

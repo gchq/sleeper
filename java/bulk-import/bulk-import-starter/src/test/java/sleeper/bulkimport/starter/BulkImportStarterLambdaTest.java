@@ -28,7 +28,6 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.ingest.core.job.ExpandDirectories;
 import sleeper.ingest.core.job.ExpandDirectoriesResult;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 
@@ -152,9 +151,11 @@ public class BulkImportStarterLambdaTest {
         SQSEvent event = getSqsEvent(json);
         RuntimeException failure = new RuntimeException("Access Denied");
         BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
-                messageHandlerBuilder(files -> {
-                    throw failure;
-                }).build());
+                messageHandlerBuilder()
+                        .expandDirectories(files -> {
+                            throw failure;
+                        })
+                        .build());
 
         // When / Then
         assertThatThrownBy(() -> bulkImportStarter.handleRequest(event, mock(Context.class)))
@@ -162,13 +163,9 @@ public class BulkImportStarterLambdaTest {
     }
 
     private IngestJobMessageHandler.Builder<BulkImportJob> messageHandlerBuilder() {
-        return messageHandlerBuilder(files -> new ExpandDirectoriesResult(files, List.of()));
-    }
-
-    private IngestJobMessageHandler.Builder<BulkImportJob> messageHandlerBuilder(ExpandDirectories expandDirectories) {
         return BulkImportStarterLambda.messageHandlerBuilder()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(tracker)
-                .expandDirectories(expandDirectories);
+                .expandDirectories(files -> new ExpandDirectoriesResult(files, List.of()));
     }
 }
