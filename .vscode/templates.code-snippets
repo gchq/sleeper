@@ -7,7 +7,7 @@
             "    $0",
             "}"
         ],
-        "description": "A JUnit 5 test"
+        "description": "A JUnit 6 test"
     },
     "Test setup": {
         "prefix": "setup",
@@ -17,7 +17,7 @@
             "    $0",
             "}"
         ],
-        "description": "A JUnit 5 test setup method"
+        "description": "A JUnit 6 test setup method"
     },
     "Nested test class": {
         "prefix": "nestedtest",
@@ -28,7 +28,7 @@
             "    $0",
             "}"
         ],
-        "description": "A JUnit 5 nested test class"
+        "description": "A JUnit 6 nested test class"
     },
     "Logger": {
         "prefix": "logger",
