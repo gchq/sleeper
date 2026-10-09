@@ -40,19 +40,24 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.failedInge
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.finishedIngestRunUncommitted;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAcceptedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestRejectedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.singleIngestJobStatusFrom;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.startedIngestRun;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.validatedIngestStartedStatus;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.ACCEPTED;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FINISHED;
+import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FINISHED_WITH_FAILURE;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.UNCOMMITTED;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.run.JobRunTestData.validationRun;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnNoTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnTask;
@@ -487,6 +492,24 @@ public class IngestJobStatusTest {
             assertThat(status)
                     .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(FINISHED);
+        }
+
+        @Test
+        void shouldReportFinishedWithFailure() {
+            Instant startTime = Instant.parse("2026-10-09T13:34:12.001Z");
+
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("some-run", "some-task",
+                            ingestAcceptedStatus(startTime, 9),
+                            validatedIngestStartedStatus(startTime.plus(Duration.ofMinutes(5)), 9),
+                            ingestFinishedStatusUncommitted(startTime.plus(Duration.ofMinutes(10)), 1, new RowsProcessed(3000, 1500)),
+                            ingestAddedFilesStatus(startTime.plus(Duration.ofMinutes(11)), 1),
+                            failedStatus(startTime.plus(Duration.ofMinutes(12)), List.of("File already exists")))));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
+                    .isEqualTo(FINISHED_WITH_FAILURE);
         }
     }
 

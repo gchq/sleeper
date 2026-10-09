@@ -1,0 +1,15 @@
+
+Ingest Job Status Report
+------------------------
+Jobs waiting in ingest queue (excluded from report): 0
+Total jobs waiting across all queues: 0
+Total jobs in report: 1
+Total jobs in progress: 0
+Total jobs finished: 0
+Average ingest rate: NaN read/s, NaN write/s
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| STATE                 | JOB_ID                               | INPUT_FILES | ADDED_FILES | TASK_ID               | START_TIME               | FINISH_TIME              | DURATION | ROWS_READ | ROWS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) | FAILURE_REASONS      |
+| FINISHED_WITH_FAILURE | job99999-9999-9999-9999-999999999999 |           9 |           1 | bulk-import-cluster-9 | 2026-10-09T13:34:12.001Z | 2026-10-09T13:46:12.001Z |       7m |         0 |            0 |          0.00 |           0.00 | File already exists. |
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+For more information concerning any failure reasons, please consult the more detailed report.
