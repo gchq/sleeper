@@ -195,6 +195,34 @@ public class QueryTrackerReportTest {
             assertThat(args.query()).isEqualTo(QueryTrackerQuery.FOR_QUERY);
             assertThat(args.queryId()).isEqualTo("prompted-query");
         }
+
+        @Test
+        void shouldRepromptForQueryIdWhenBlankQueryIdEntered() {
+            // When the query ID prompt is given an empty line and a whitespace line before a query ID
+            Arguments args = readArguments(consoleInputFrom("i\n\n   \nprompted-query\n"), "prompt-instance");
+
+            // Then
+            assertThat(args.queryId()).isEqualTo("prompted-query");
+        }
+
+        @Test
+        void shouldTrimWhitespaceAroundPromptedQueryId() {
+            // When
+            Arguments args = readArguments(consoleInputFrom("i\n  prompted-query  \n"), "prompt-instance");
+
+            // Then
+            assertThat(args.queryId()).isEqualTo("prompted-query");
+        }
+
+        @Test
+        void shouldPromptForQueryIdWhenOptionSetWithBlankValue() {
+            // When
+            Arguments args = readArguments(consoleInputFrom("prompted-query\n"), "prompt-instance", "--query", " ");
+
+            // Then
+            assertThat(args.query()).isEqualTo(QueryTrackerQuery.FOR_QUERY);
+            assertThat(args.queryId()).isEqualTo("prompted-query");
+        }
     }
 
     @Nested

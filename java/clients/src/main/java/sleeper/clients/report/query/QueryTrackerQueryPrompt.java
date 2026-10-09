@@ -56,4 +56,19 @@ public class QueryTrackerQueryPrompt {
             return from(in);
         }
     }
+
+    /**
+     * Prompts the user for the ID of the query to report on. Re-prompts until a non-blank query ID is entered.
+     * Surrounding whitespace is removed.
+     *
+     * @param  in the console to prompt the user
+     * @return    the query ID
+     */
+    public static String promptQueryId(ConsoleInput in) {
+        String queryId = in.promptLine("Enter query ID: ");
+        if (queryId == null || queryId.isBlank()) {
+            return promptQueryId(in);
+        }
+        return queryId.trim();
+    }
 }

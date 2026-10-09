@@ -108,10 +108,11 @@ public class QueryTrackerReport {
     public static Arguments readArguments(CommandArguments arguments, ConsoleInput input) {
         QueryTrackerQuery query = QueryTrackerQuery.readOneOf(arguments)
                 .orElseGet(() -> QueryTrackerQueryPrompt.from(input));
-        String queryId = arguments.getOptionalString(QueryTrackerQuery.FOR_QUERY.option().longName())
-                .orElseGet(() -> query == QueryTrackerQuery.FOR_QUERY
-                        ? input.promptLine("Enter query ID: ")
-                        : null);
+        String queryId = query == QueryTrackerQuery.FOR_QUERY
+                ? arguments.getOptionalString(QueryTrackerQuery.FOR_QUERY.option().longName())
+                        .filter(id -> !id.isBlank())
+                        .orElseGet(() -> QueryTrackerQueryPrompt.promptQueryId(input))
+                : null;
         return new Arguments(arguments.getString("instance-id"),
                 OUTPUT_FORMAT.read(arguments),
                 query, queryId);
