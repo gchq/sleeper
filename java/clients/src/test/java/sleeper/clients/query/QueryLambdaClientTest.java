@@ -240,6 +240,11 @@ public class QueryLambdaClientTest {
             }
 
             @Override
+            public List<TrackedQuery> getQueryAndSubQueries(String queryId) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
             public List<TrackedQuery> getQueriesWithState(QueryState state) {
                 throw new UnsupportedOperationException();
             }

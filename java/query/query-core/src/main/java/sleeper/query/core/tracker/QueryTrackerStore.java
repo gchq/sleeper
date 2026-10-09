@@ -49,6 +49,14 @@ public interface QueryTrackerStore {
     List<TrackedQuery> getAllQueries();
 
     /**
+     * Retrieves the status of a query and all of its subqueries.
+     *
+     * @param  queryId the query ID
+     * @return         the parent query first if it is tracked, then its subqueries; empty if the query is not found
+     */
+    List<TrackedQuery> getQueryAndSubQueries(String queryId);
+
+    /**
      * Retrieves any queries that are in a specific state.
      *
      * @param  state the query state

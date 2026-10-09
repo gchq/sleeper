@@ -1,0 +1,12 @@
+
+Query Tracker Report
+--------------------
+Query parent-query-1 is PARTIALLY_FAILED
+Subqueries finished: 2 of 2 (1 failed)
+Rows returned by finished subqueries: 456
+------------------------------------------------------------------------------------------------------------------
+| STATE            | QUERY_ID       | SUB_QUERY_ID | LAST_UPDATE_TIME     | ROW_COUNT | ERRORS                   |
+| PARTIALLY_FAILED | parent-query-1 | -            | 2023-09-28T19:15:00Z | 456       | Error: 1 subquery failed |
+| COMPLETED        | parent-query-1 | sub-query-1  | 2023-09-28T19:16:00Z | 456       |                          |
+| FAILED           | parent-query-1 | sub-query-2  | 2023-09-28T19:17:00Z | 0         | Error: Subquery failed   |
+------------------------------------------------------------------------------------------------------------------

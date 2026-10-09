@@ -17,6 +17,7 @@
 package sleeper.clients.report.query;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
+import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.TrackedQuery;
 
 import java.time.Instant;
@@ -48,6 +49,66 @@ public class QueryTrackerReporterTestHelper {
                 queryCompleted("test-query-3", Instant.parse("2023-09-28T18:54:00Z"), 456L),
                 queryPartiallyFailed("test-query-4", Instant.parse("2023-09-28T18:56:00Z"), 123L, "Error: Query partially failed"),
                 queryFailed("test-query-5", Instant.parse("2023-09-28T18:58:00Z"), "Error: Query failed"));
+    }
+
+    /**
+     * Creates data for a single query with subquery progress counters, as reported on by query ID. The parent query
+     * carries the counters of its finished subqueries.
+     *
+     * @return the query tracker data
+     */
+    public static List<TrackedQuery> singleQueryWithProgress() {
+        return List.of(
+                queryInProgress("parent-query-1", Instant.parse("2023-09-28T19:15:00Z")).toBuilder()
+                        .expectedSubQueryCount(3L)
+                        .succeededSubQueryCount(1L)
+                        .failedSubQueryCount(0L)
+                        .finishedSubQueryRowCount(456L)
+                        .build(),
+                TrackedQuery.builder()
+                        .queryId("parent-query-1").subQueryId("sub-query-1")
+                        .lastKnownState(QueryState.COMPLETED)
+                        .lastUpdateTime(Instant.parse("2023-09-28T19:16:00Z"))
+                        .rowCount(456L)
+                        .build(),
+                subQueryInProgress("parent-query-1", "sub-query-2", Instant.parse("2023-09-28T19:17:00Z")),
+                subQueryInProgress("parent-query-1", "sub-query-3", Instant.parse("2023-09-28T19:18:00Z")));
+    }
+
+    /**
+     * Creates data for a single query with a failed subquery, as reported on by query ID.
+     *
+     * @return the query tracker data
+     */
+    public static List<TrackedQuery> singleQueryWithFailure() {
+        return List.of(
+                queryPartiallyFailed("parent-query-1", Instant.parse("2023-09-28T19:15:00Z"), 456L, "Error: 1 subquery failed").toBuilder()
+                        .expectedSubQueryCount(2L)
+                        .succeededSubQueryCount(1L)
+                        .failedSubQueryCount(1L)
+                        .finishedSubQueryRowCount(456L)
+                        .build(),
+                TrackedQuery.builder()
+                        .queryId("parent-query-1").subQueryId("sub-query-1")
+                        .lastKnownState(QueryState.COMPLETED)
+                        .lastUpdateTime(Instant.parse("2023-09-28T19:16:00Z"))
+                        .rowCount(456L)
+                        .build(),
+                TrackedQuery.builder()
+                        .queryId("parent-query-1").subQueryId("sub-query-2")
+                        .lastKnownState(QueryState.FAILED)
+                        .lastUpdateTime(Instant.parse("2023-09-28T19:17:00Z"))
+                        .errorMessage("Error: Subquery failed")
+                        .build());
+    }
+
+    /**
+     * Creates data for a single query that was never split into subqueries, so it has no progress counters.
+     *
+     * @return the query tracker data
+     */
+    public static List<TrackedQuery> singleQueryWithoutCounters() {
+        return List.of(queryCompleted("parent-query-1", Instant.parse("2023-09-28T19:15:00Z"), 456L));
     }
 
     /**
