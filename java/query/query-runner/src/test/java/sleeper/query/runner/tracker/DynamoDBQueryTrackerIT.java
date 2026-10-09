@@ -586,6 +586,27 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         }
 
         @Test
+        void shouldSumCountersIntoParentWhenGettingStatusBySubQueryIdPlaceholder() throws QueryTrackerException {
+            // When
+            queryTracker().queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+
+            // Then
+            TrackedQuery status = queryTracker().getStatus("parent", "-");
+            assertThat(status.getExpectedSubQueryCount()).isEqualTo(2L);
+            assertThat(status.getSucceededSubQueryCount()).isEqualTo(1L);
+            assertThat(status.getFinishedSubQueryRowCount()).isEqualTo(10L);
+        }
+
+        @Test
+        void shouldNotReturnCounterShardWhenGettingStatusByItsSortKey() throws QueryTrackerException {
+            // When
+            queryTracker().queryCompleted(sub1, new ResultsOutputInfo(10, Collections.emptyList()));
+
+            // Then
+            assertThat(queryTracker().getStatus("parent", DynamoDBQueryTrackerEntry.counterShardSortKey(0))).isNull();
+        }
+
+        @Test
         void shouldSumCountersIntoParentWhenListingQueriesWithState() throws QueryTrackerException {
             // When
             queryTracker().queryInProgress(sub1);

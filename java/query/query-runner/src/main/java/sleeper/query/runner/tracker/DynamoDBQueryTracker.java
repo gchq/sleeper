@@ -123,6 +123,13 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
     @Override
     public TrackedQuery getStatus(String queryId, String subQueryId) throws QueryTrackerException {
+        if (NON_NESTED_QUERY_PLACEHOLDER.equals(subQueryId)) {
+            return getStatus(queryId);
+        }
+        if (subQueryId.startsWith(DynamoDBQueryTrackerEntry.COUNTER_SHARD_PREFIX)) {
+            // Counter shard items are internal to the tracker and are not tracked queries.
+            return null;
+        }
         QueryResponse response = dynamoClient.query(request -> request
                 .tableName(trackerTableName)
                 .keyConditions(Map.of(
