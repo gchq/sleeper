@@ -22,31 +22,29 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.when;
 
 public class JobQueryTest extends JobQueryTestBase {
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
         JobQueryType queryType = JobQueryType.ALL;
-        when(tracker.getAllJobs(tableId)).thenReturn(exampleStatusList);
+        List<CompactionJobStatus> expected = createAllQueryJobs();
 
         // When
         List<CompactionJobStatus> statuses = queryStatuses(queryType);
 
         // Then
-        assertThat(statuses).isEqualTo(exampleStatusList);
+        assertThat(statuses).containsExactlyElementsOf(expected);
     }
 
     @Test
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
         JobQueryType queryType = JobQueryType.UNFINISHED;
-        when(tracker.getUnfinishedJobs(tableId)).thenReturn(exampleStatusList);
+        createAllQueryJobs();
 
         // When
         List<CompactionJobStatus> statuses = queryStatuses(queryType);
@@ -60,8 +58,7 @@ public class JobQueryTest extends JobQueryTestBase {
         // Given
         JobQueryType queryType = JobQueryType.DETAILED;
         String queryParameters = "job1,job2";
-        when(tracker.getJob("job1")).thenReturn(Optional.of(exampleStatus1));
-        when(tracker.getJob("job2")).thenReturn(Optional.of(exampleStatus2));
+        createDetailedQueryJobs();
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesWithParams(queryType, queryParameters);
@@ -84,30 +81,29 @@ public class JobQueryTest extends JobQueryTestBase {
         // Given
         JobQueryType queryType = JobQueryType.RANGE;
         String queryParameters = "20221123115442,20221130115442";
-        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
-        Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(tracker.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
+        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-23T11:54:42.000Z"),
+                Instant.parse("2022-11-30T11:54:42.000Z"));
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesWithParams(queryType, queryParameters);
 
         // Then
-        assertThat(statuses).isEqualTo(exampleStatusList);
+        assertThat(statuses).containsExactlyElementsOf(expected);
     }
 
     @Test
     public void shouldCreateRangeQueryWithDefaultDates() {
         // Given
         JobQueryType queryType = JobQueryType.RANGE;
-        Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(tracker.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
+        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-30T07:54:42.000Z"),
+                Instant.parse("2022-11-30T11:54:42.000Z"));
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesAtTime(queryType, end);
 
         // Then
-        assertThat(statuses).isEqualTo(exampleStatusList);
+        assertThat(statuses).containsExactlyElementsOf(expected);
     }
 
     @Test

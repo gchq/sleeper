@@ -24,15 +24,20 @@ import sleeper.compaction.core.job.CompactionJobTestDataHelper;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static org.mockito.Mockito.mock;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -44,17 +49,67 @@ public class JobQueryTestBase {
     private final TableProperties tableProperties = createTableProperties();
     protected static final String TABLE_NAME = "test-table";
     protected final String tableId = tableProperties.get(TABLE_ID);
-    protected final CompactionJobTracker tracker = mock(CompactionJobTracker.class);
+    protected final InMemoryCompactionJobTracker tracker = new InMemoryCompactionJobTracker();
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(instanceProperties, tableProperties);
-    protected final CompactionJob exampleJob1 = dataHelper.singleFileCompaction();
-    protected final CompactionJob exampleJob2 = dataHelper.singleFileCompaction();
+    protected final CompactionJob exampleJob1 = dataHelper.singleFileCompaction("job1");
+    protected final CompactionJob exampleJob2 = dataHelper.singleFileCompaction("job2");
     protected final CompactionJobStatus exampleStatus1 = compactionJobCreated(
-            exampleJob1, Instant.parse("2022-09-22T13:33:12.001Z"));
+            exampleJob1, Instant.parse("2022-11-30T08:33:12.001Z"));
     protected final CompactionJobStatus exampleStatus2 = compactionJobCreated(
-            exampleJob2, Instant.parse("2022-09-22T13:53:12.001Z"));
+            exampleJob2, Instant.parse("2022-11-30T08:53:12.001Z"));
     protected final List<CompactionJobStatus> exampleStatusList = Arrays.asList(exampleStatus2, exampleStatus1);
     protected final ToStringConsoleOutput out = new ToStringConsoleOutput();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
+
+    protected void createExampleJobs() {
+        tracker.jobCreated(exampleJob1.createCreatedEvent(), exampleStatus1.getCreateUpdateTime());
+        tracker.jobCreated(exampleJob2.createCreatedEvent(), exampleStatus2.getCreateUpdateTime());
+    }
+
+    protected List<CompactionJobStatus> createAllQueryJobs() {
+        createExampleJobs();
+        CompactionJobStatus finished = createFinishedJob("finished-job", tableId,
+                Instant.parse("2022-11-30T09:00:00Z"), Instant.parse("2022-11-30T10:00:00Z"));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T09:30:00Z"));
+        return List.of(finished, exampleStatus2, exampleStatus1);
+    }
+
+    protected void createDetailedQueryJobs() {
+        createExampleJobs();
+        createJob("unrequested-job", tableId, Instant.parse("2022-11-30T09:00:00Z"));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T09:30:00Z"));
+    }
+
+    protected List<CompactionJobStatus> createRangeQueryJobs(Instant start, Instant end) {
+        createExampleJobs();
+        CompactionJobStatus insideStart = createFinishedJob("inside-start", tableId, start.plusSeconds(1), start.plusSeconds(2));
+        // A completed job before the start detects a missing or incorrect lower bound.
+        createFinishedJob("before-range", tableId, start.minusSeconds(2), start.minusSeconds(1));
+        // An unfinished job after the end detects a missing or incorrect upper bound.
+        createJob("after-range", tableId, end.plusSeconds(1));
+        createJob("other-table-job", "other-table", exampleStatus1.getCreateUpdateTime());
+        return List.of(exampleStatus2, exampleStatus1, insideStart);
+    }
+
+    private void createJob(String jobId, String jobTableId, Instant time) {
+        tracker.jobCreated(CompactionJobCreatedEvent.builder()
+                .jobId(jobId).tableId(jobTableId).partitionId("test-partition").inputFilesCount(1)
+                .build(), time);
+    }
+
+    private CompactionJobStatus createFinishedJob(String jobId, String jobTableId, Instant start, Instant end) {
+        createJob(jobId, jobTableId, start);
+        tracker.jobStarted(CompactionJobStartedEvent.builder()
+                .jobId(jobId).tableId(jobTableId).taskId("test-task").jobRunId("test-run")
+                .startTime(start).build());
+        tracker.jobFinished(CompactionJobFinishedEvent.builder()
+                .jobId(jobId).tableId(jobTableId).taskId("test-task").jobRunId("test-run")
+                .summary(new JobRunSummary(RowsProcessed.NONE, start, end)).build());
+        tracker.jobCommitted(CompactionJobCommittedEvent.builder()
+                .jobId(jobId).tableId(jobTableId).taskId("test-task").jobRunId("test-run")
+                .commitTime(end).build());
+        return tracker.getJob(jobId).orElseThrow();
+    }
 
     protected List<CompactionJobStatus> queryStatuses(JobQueryType queryType) {
         return queryStatusesWithParams(queryType, null);

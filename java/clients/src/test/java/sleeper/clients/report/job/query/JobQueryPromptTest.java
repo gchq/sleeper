@@ -22,10 +22,8 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 public class JobQueryPromptTest extends JobQueryTestBase {
 
@@ -37,7 +35,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
-        when(tracker.getAllJobs(tableId)).thenReturn(exampleStatusList);
+        List<CompactionJobStatus> expected = createAllQueryJobs();
         in.enterNextPrompt("a");
 
         // When
@@ -45,13 +43,13 @@ public class JobQueryPromptTest extends JobQueryTestBase {
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT);
-        assertThat(statuses).isEqualTo(exampleStatusList);
+        assertThat(statuses).containsExactlyElementsOf(expected);
     }
 
     @Test
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
-        when(tracker.getUnfinishedJobs(tableId)).thenReturn(exampleStatusList);
+        createAllQueryJobs();
         in.enterNextPrompt("u");
 
         // When
@@ -66,8 +64,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     public void shouldCreateDetailedQueryWithSpecifiedJobIds() {
         // Given
         String queryParameters = "job1,job2";
-        when(tracker.getJob("job1")).thenReturn(Optional.of(exampleStatus1));
-        when(tracker.getJob("job2")).thenReturn(Optional.of(exampleStatus2));
+        createDetailedQueryJobs();
         in.enterNextPrompts("d", queryParameters);
 
         // When
@@ -95,9 +92,8 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     @Test
     public void shouldCreateRangeQueryWithSpecifiedDates() {
         // Given
-        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
-        Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(tracker.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
+        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-23T11:54:42.000Z"),
+                Instant.parse("2022-11-30T11:54:42.000Z"));
         in.enterNextPrompts("r", "20221123115442", "20221130115442");
 
         // When
@@ -105,15 +101,15 @@ public class JobQueryPromptTest extends JobQueryTestBase {
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT + RANGE_START_PROMPT + RANGE_END_PROMPT);
-        assertThat(statuses).isEqualTo(exampleStatusList);
+        assertThat(statuses).containsExactlyElementsOf(expected);
     }
 
     @Test
     public void shouldCreateRangeQueryWithDefaultEndTime() {
         // Given
-        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(tracker.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
+        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-23T11:54:42.000Z"),
+                Instant.parse("2022-11-30T11:54:42.000Z"));
         in.enterNextPrompts("r", "20221123115442", "");
 
         // When
@@ -121,15 +117,15 @@ public class JobQueryPromptTest extends JobQueryTestBase {
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT + RANGE_START_PROMPT + RANGE_END_PROMPT);
-        assertThat(statuses).isEqualTo(exampleStatusList);
+        assertThat(statuses).containsExactlyElementsOf(expected);
     }
 
     @Test
     public void shouldCreateRangeQueryWithDefaultStartTime() {
         // Given
-        Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(tracker.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
+        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-30T07:54:42.000Z"),
+                Instant.parse("2022-11-30T11:54:42.000Z"));
         in.enterNextPrompts("r", "", "20221130115442");
 
         // When
@@ -137,15 +133,15 @@ public class JobQueryPromptTest extends JobQueryTestBase {
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT + RANGE_START_PROMPT + RANGE_END_PROMPT);
-        assertThat(statuses).isEqualTo(exampleStatusList);
+        assertThat(statuses).containsExactlyElementsOf(expected);
     }
 
     @Test
     public void shouldRepeatRangeQueryPromptWithInvalidStartTime() {
         // Given
-        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(tracker.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
+        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-23T11:54:42.000Z"),
+                Instant.parse("2022-11-30T11:54:42.000Z"));
         in.enterNextPrompts("r", "abc", "20221123115442", "20221130115442");
 
         // When
@@ -153,15 +149,15 @@ public class JobQueryPromptTest extends JobQueryTestBase {
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT + RANGE_START_PROMPT + RANGE_START_PROMPT + RANGE_END_PROMPT);
-        assertThat(statuses).isEqualTo(exampleStatusList);
+        assertThat(statuses).containsExactlyElementsOf(expected);
     }
 
     @Test
     public void shouldRepeatRangeQueryPromptWithInvalidEndTime() {
         // Given
-        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(tracker.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
+        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-23T11:54:42.000Z"),
+                Instant.parse("2022-11-30T11:54:42.000Z"));
         in.enterNextPrompts("r", "20221123115442", "abc", "20221130115442");
 
         // When
@@ -169,13 +165,13 @@ public class JobQueryPromptTest extends JobQueryTestBase {
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT + RANGE_START_PROMPT + RANGE_END_PROMPT + RANGE_END_PROMPT);
-        assertThat(statuses).isEqualTo(exampleStatusList);
+        assertThat(statuses).containsExactlyElementsOf(expected);
     }
 
     @Test
     public void shouldRepeatQueryTypePromptWithInvalidQueryType() {
         // Given
-        when(tracker.getAllJobs(tableId)).thenReturn(exampleStatusList);
+        List<CompactionJobStatus> expected = createAllQueryJobs();
         in.enterNextPrompts("abc", "a");
 
         // When
@@ -183,7 +179,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT + QUERY_TYPE_PROMPT);
-        assertThat(statuses).isEqualTo(exampleStatusList);
+        assertThat(statuses).containsExactlyElementsOf(expected);
     }
 
     @Test
