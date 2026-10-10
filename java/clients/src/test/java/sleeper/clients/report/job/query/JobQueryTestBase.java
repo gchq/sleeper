@@ -26,6 +26,12 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -58,6 +64,51 @@ public class JobQueryTestBase {
     protected void createExampleJobs() {
         tracker.jobCreated(exampleJob1.createCreatedEvent(), exampleStatus1.getCreateUpdateTime());
         tracker.jobCreated(exampleJob2.createCreatedEvent(), exampleStatus2.getCreateUpdateTime());
+    }
+
+    protected List<CompactionJobStatus> createAllQueryJobs() {
+        createExampleJobs();
+        CompactionJobStatus finished = createFinishedJob("finished-job", tableId,
+                Instant.parse("2022-11-30T09:00:00Z"), Instant.parse("2022-11-30T10:00:00Z"));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T09:30:00Z"));
+        return List.of(finished, exampleStatus2, exampleStatus1);
+    }
+
+    protected void createDetailedQueryJobs() {
+        createExampleJobs();
+        createJob("unrequested-job", tableId, Instant.parse("2022-11-30T09:00:00Z"));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T09:30:00Z"));
+    }
+
+    protected List<CompactionJobStatus> createRangeQueryJobs(Instant start, Instant end) {
+        createExampleJobs();
+        CompactionJobStatus insideStart = createFinishedJob("inside-start", tableId, start.plusSeconds(1), start.plusSeconds(2));
+        // A completed job before the start detects a missing or incorrect lower bound.
+        createFinishedJob("before-range", tableId, start.minusSeconds(2), start.minusSeconds(1));
+        // An unfinished job after the end detects a missing or incorrect upper bound.
+        createJob("after-range", tableId, end.plusSeconds(1));
+        createJob("other-table-job", "other-table", exampleStatus1.getCreateUpdateTime());
+        return List.of(exampleStatus2, exampleStatus1, insideStart);
+    }
+
+    private void createJob(String jobId, String jobTableId, Instant time) {
+        tracker.jobCreated(CompactionJobCreatedEvent.builder()
+                .jobId(jobId).tableId(jobTableId).partitionId("test-partition").inputFilesCount(1)
+                .build(), time);
+    }
+
+    private CompactionJobStatus createFinishedJob(String jobId, String jobTableId, Instant start, Instant end) {
+        createJob(jobId, jobTableId, start);
+        tracker.jobStarted(CompactionJobStartedEvent.builder()
+                .jobId(jobId).tableId(jobTableId).taskId("test-task").jobRunId("test-run")
+                .startTime(start).build());
+        tracker.jobFinished(CompactionJobFinishedEvent.builder()
+                .jobId(jobId).tableId(jobTableId).taskId("test-task").jobRunId("test-run")
+                .summary(new JobRunSummary(RowsProcessed.NONE, start, end)).build());
+        tracker.jobCommitted(CompactionJobCommittedEvent.builder()
+                .jobId(jobId).tableId(jobTableId).taskId("test-task").jobRunId("test-run")
+                .commitTime(end).build());
+        return tracker.getJob(jobId).orElseThrow();
     }
 
     protected List<CompactionJobStatus> queryStatuses(JobQueryType queryType) {
