@@ -6,6 +6,47 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.38.1
+
+### 12th October 2026
+
+This includes improvements to the reliability and scalability of queries over large numbers of partitions, an upgrade to EMR 7.14.0, and more consistent command line options for the report scripts.
+
+Query:
+- Improved tracking of queries split over many subqueries, so they are reliably marked as finished and update the query tracker with less contention.
+- Lambda-based queries no longer wait for every subquery to be recorded in the query tracker before they start running, which made queries over many partitions slow to start.
+- Subquery IDs are now based on the leaf partition ID they run against.
+- Query clients now report how many subqueries have completed and how many are remaining while a query is in progress.
+
+Bulk import:
+- Upgraded to EMR 7.14.0, including Spark 3.5.8 and Hadoop 3.4.2. This is the new default for EMR, EMR Serverless and bulk import on EKS.
+
+Scripts:
+- Improved usability of command line options and added `--help`, for:
+  - `scripts/report/compactionJobStatusReport.sh`
+  - `scripts/report/ingestBatcherReport.sh`, which no longer takes a table name
+  - `scripts/report/queryTrackerReport.sh`
+- Renamed command line options on the job status reports:
+  - `--report-type` is now `--format`.
+  - `--range` is now `--recent`.
+
+Deployment:
+- Removed support for deploying a Sleeper instance into LocalStack.
+
+Docker tools:
+- Added `sleeper environment start` and `sleeper environment stop` to start and stop the EC2 instance of an environment.
+
+Documentation:
+- Corrected references to "row fields" in the design document to "row key fields".
+
+Bugfixes:
+- The query tracker report no longer shows a last update time in 1970.
+- The ingest batcher no longer deletes its records of files for a table when it fails to load that table's properties from S3 for a reason other than the table not existing.
+- The ingest batcher now correctly removes its records of files for deleted tables when there are more than 25 files, and no longer gets stuck on that table when it fails.
+- Failures saving a state store snapshot to DynamoDB are now reported rather than silently ignored.
+- The Java client now closes its AWS STS client when it is closed.
+
+
 ## Version 0.38.0
 
 ### 2nd October 2026
