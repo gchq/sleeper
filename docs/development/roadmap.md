@@ -4,8 +4,9 @@ Roadmap
 This section documents some of the improvements that we plan to make to Sleeper.
 
 The following improvements are actively being worked on:
-
-- https://github.com/gchq/sleeper/issues/7833 Improve usability of commonly used scripts.
+- https://github.com/gchq/sleeper/issues/8348 Review transaction log follower handling of failed entries
+- https://github.com/gchq/sleeper/issues/8363 Partial batch failures reported but the event source mappings ignore them
+- https://github.com/gchq/sleeper/issues/8418 Compaction task can rerun committed jobs committed and overwrite its output file
 
 The following are likely to be worked on in the near future:
 
