@@ -15,7 +15,7 @@ This includes improvements to the reliability and scalability of queries over la
 Query:
 - Improved tracking of queries split over many subqueries, so they are reliably marked as finished and update the query tracker with less contention.
 - Lambda-based queries no longer wait for every subquery to be recorded in the query tracker before they start running, which made queries over many partitions slow to start.
-- Subquery IDs are now based on the leaf partition ID they run against.
+- Subquery IDs are now the ID of the leaf partition ID they are querying. This ensures that if a subquery runs twice it is only reported on once.
 - Query clients now report how many subqueries have completed and how many are remaining while a query is in progress.
 
 Bulk import:
