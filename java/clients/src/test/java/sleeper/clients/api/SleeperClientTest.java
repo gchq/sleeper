@@ -41,6 +41,8 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputLocation;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.tracker.QueryState;
+import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.websocket.QueryWebSocketMessage;
 import sleeper.query.runner.websocket.QueryWebSocketMessageSerDe;
 
@@ -52,6 +54,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -92,6 +95,50 @@ class SleeperClientTest {
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("bulkExportQuerySender");
         assertThatThrownBy(() -> instance.sleeperClientBuilder().queryWebSocketSender(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("queryWebSocketSender");
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().querySender(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("querySender");
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().queryTrackerStore(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("queryTrackerStore");
+    }
+
+    @Test
+    void shouldSubmitQueryForProcessing() {
+        // Given
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_NAME, "query-table");
+        sleeperClient.addTable(tableProperties, List.of());
+        Query query = exactQuery("test-query", "A", "query-table");
+
+        // When
+        String queryId = sleeperClient.submitQuery(query);
+
+        // Then
+        assertThat(queryId).isEqualTo("test-query");
+        assertThat(instance.queryQueue()).containsExactly(query);
+    }
+
+    @Test
+    void shouldGetStatusOfQueryAndItsSubqueries() {
+        // Given
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_NAME, "query-table");
+        sleeperClient.addTable(tableProperties, List.of());
+        Query query = exactQuery("test-query", "A", "query-table");
+        instance.queryTracker().queryInProgress(query);
+
+        // When
+        List<TrackedQuery> status = sleeperClient.getQueryStatus("test-query");
+
+        // Then
+        assertThat(status)
+                .extracting(TrackedQuery::getQueryId, TrackedQuery::getLastKnownState)
+                .containsExactly(tuple("test-query", QueryState.IN_PROGRESS));
+    }
+
+    @Test
+    void shouldGetNoStatusForUntrackedQuery() {
+        // When / Then
+        assertThat(sleeperClient.getQueryStatus("not-a-query")).isEmpty();
     }
 
     @Test

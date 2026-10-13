@@ -41,6 +41,8 @@ import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
+import sleeper.query.core.tracker.QueryTrackerStore;
+import sleeper.query.core.tracker.TrackedQuery;
 
 import java.util.List;
 import java.util.Objects;
@@ -74,6 +76,8 @@ public class SleeperClient implements AutoCloseable {
     private final BulkExportQuerySender bulkExportQuerySender;
     private final BulkImportJobSender bulkImportJobSender;
     private final QueryWebSocketSender queryWebSocketSender;
+    private final QuerySender querySender;
+    private final QueryTrackerStore queryTrackerStore;
     private final IngestBatcherSender ingestBatcherSender;
     private final Runnable shutdown;
 
@@ -89,6 +93,8 @@ public class SleeperClient implements AutoCloseable {
         bulkExportQuerySender = Objects.requireNonNull(builder.bulkExportQuerySender, "bulkExportQuerySender must not be null");
         bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
         queryWebSocketSender = Objects.requireNonNull(builder.queryWebSocketSender, "queryWebSocketSender must not be null");
+        querySender = Objects.requireNonNull(builder.querySender, "querySender must not be null");
+        queryTrackerStore = Objects.requireNonNull(builder.queryTrackerStore, "queryTrackerStore must not be null");
         ingestBatcherSender = Objects.requireNonNull(builder.ingestBatcherSender, "ingestBatcherSender must not be null");
         shutdown = Objects.requireNonNull(builder.shutdown, "shutdown must not be null");
     }
@@ -325,6 +331,36 @@ public class SleeperClient implements AutoCloseable {
     }
 
     /**
+     * Submits a query to be processed by the query lambdas. The query is sent to an SQS queue. This triggers a lambda
+     * which plans the query, creates subqueries and sends those to a second SQS queure from where they trigger a
+     * lambda for processing. The results are published to the results output set in the query's processing config, by
+     * default as Parquet files in the query results bucket under the query ID.
+     * <p>
+     * Progress is recorded in the query tracker against the query ID, which can be checked
+     * with {@link #getQueryStatus}.
+     *
+     * @param  query the query to run
+     * @return       the ID of the query for tracking
+     */
+    public String submitQuery(Query query) {
+        querySender.sendQuery(query);
+        return query.getQueryId();
+    }
+
+    /**
+     * Reads the status of a query and its subqueries from the query tracker. The entry for the query itself comes
+     * first when it is tracked. THis includes its progress (counts of the expected, succeeded and failed subquery
+     * counts), and the number of rows returned by finished subqueries. Entries for the subqueries follow; note that
+     * an entry for a subquery is only written to the tracker when processing begins.
+     *
+     * @param  queryId the query ID
+     * @return         the tracked query first, then its subqueries; empty if the query is not tracked
+     */
+    public List<TrackedQuery> getQueryStatus(String queryId) {
+        return queryTrackerStore.getQueryAndSubQueries(queryId);
+    }
+
+    /**
      * Submits files to the ingest batcher, to be ingested to a Sleeper table. Once the files are in the ingest batcher,
      * they will be added to an ingest or bulk import job at some point in the future, depending on the configuration of
      * the batcher. The files can be tracked individually by their filename in the ingest batcher store, which will
@@ -395,6 +431,8 @@ public class SleeperClient implements AutoCloseable {
         private BulkExportQuerySender bulkExportQuerySender;
         private BulkImportJobSender bulkImportJobSender;
         private QueryWebSocketSender queryWebSocketSender;
+        private QuerySender querySender;
+        private QueryTrackerStore queryTrackerStore;
         private IngestBatcherSender ingestBatcherSender;
         private Runnable shutdown = () -> {
         };
@@ -528,6 +566,28 @@ public class SleeperClient implements AutoCloseable {
          */
         public Builder queryWebSocketSender(QueryWebSocketSender queryWebSocketSender) {
             this.queryWebSocketSender = queryWebSocketSender;
+            return this;
+        }
+
+        /**
+         * Sets the client to submit a query to be processed by the query lambdas.
+         *
+         * @param  querySender the client
+         * @return             this builder for chaining
+         */
+        public Builder querySender(QuerySender querySender) {
+            this.querySender = querySender;
+            return this;
+        }
+
+        /**
+         * Sets the store to read the status of queries from the query tracker.
+         *
+         * @param  queryTrackerStore the store
+         * @return                   this builder for chaining
+         */
+        public Builder queryTrackerStore(QueryTrackerStore queryTrackerStore) {
+            this.queryTrackerStore = queryTrackerStore;
             return this;
         }
 
