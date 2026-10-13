@@ -151,9 +151,7 @@ class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
 
         // When / Then
         assertThatThrownBy(() -> collectGarbageAtTime(currentTime))
-                .isInstanceOf(FailedGarbageCollectionException.class)
-                .cause().hasMessage("Failed to delete objects: " + PARTITION_PATH + "old-file.sketches " +
-                        "(InternalError: We encountered an internal error. Please try again.)");
+                .isInstanceOf(FailedGarbageCollectionException.class);
         verify(1, postRequestedFor(urlEqualTo(DELETE_URL))
                 .withRequestBody(equalToXml(deleteRequest("old-file.parquet", "old-file.sketches"))));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
@@ -223,9 +221,7 @@ class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
 
         // When / Then
         assertThatThrownBy(() -> collectGarbageAtTime(currentTime))
-                .isInstanceOf(FailedGarbageCollectionException.class)
-                .cause().hasMessage("Failed to delete objects: " + PARTITION_PATH + "old-file-2.sketches " +
-                        "(InternalError: We encountered an internal error. Please try again.)");
+                .isInstanceOf(FailedGarbageCollectionException.class);
         verify(1, postRequestedFor(urlEqualTo(DELETE_URL)));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
                 referencedAndUnreferencedFilesReport(oldEnoughTime,

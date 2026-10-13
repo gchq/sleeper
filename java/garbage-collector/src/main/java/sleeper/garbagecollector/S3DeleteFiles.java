@@ -28,11 +28,10 @@ import software.amazon.awssdk.services.s3.model.S3Error;
 import sleeper.core.util.ThreadSleep;
 import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.joining;
 
 /**
  * Deletes files from S3 by their filename in the state store. Used during garbage collection.
@@ -57,13 +56,22 @@ public class S3DeleteFiles implements DeleteFiles {
     @Override
     public void deleteFiles(List<String> filenames, TableFilesDeleted deleted) {
         FilesToDelete files = FilesToDelete.from(filenames);
+        List<String> deleteFiles = new ArrayList<>();
+        Map<String, Exception> errorsByFilename = new HashMap<>();
         for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
             filesInBucket.objectKeysInBatchesOf(s3BatchSize)
-                    .forEach(batch -> deleteS3Batch(filesInBucket, batch, deleted));
+                    .forEach(batch -> deleteS3Batch(filesInBucket, batch, deleteFiles, errorsByFilename));
         }
+        deleteFiles.stream().distinct()
+                .filter(filename -> !errorsByFilename.containsKey(filename))
+                .forEach(deleted::deleted);
+
+        errorsByFilename
+                .forEach((filename, failure) -> deleted.failed(List.of(filename), failure));
     }
 
-    private void deleteS3Batch(FilesToDeleteInBucket filesInBucket, List<String> objectKeys, TableFilesDeleted deleted) {
+    private void deleteS3Batch(FilesToDeleteInBucket filesInBucket, List<String> objectKeys, List<String> deletedFiles,
+            Map<String, Exception> errorsByFileName) {
         DeleteObjectsRequest deleteRequest = createDeleteObjectsRequest(filesInBucket, objectKeys);
         boolean retry;
         do {
@@ -71,18 +79,14 @@ public class S3DeleteFiles implements DeleteFiles {
             try {
                 LOGGER.debug("Sending request to delete {} objects", objectKeys.size());
                 DeleteObjectsResponse response = s3Client.deleteObjects(deleteRequest);
-                // Group by filename since a file's .parquet and .sketches objects both map to it, giving one failure per file
-                Map<String, List<S3Error>> errorsByFilename = response.errors().stream()
-                        .collect(groupingBy(error -> filesInBucket.getFilenameForObjectKey(error.key())));
 
-                // Record each file once as deleted, only if none of its objects failed to delete
-                response.deleted().stream()
+                response.errors().stream()
+                        .forEach(error -> errorsByFileName.putIfAbsent(filesInBucket.getFilenameForObjectKey(error.key()), deleteFailure(error)));
+
+                deletedFiles.addAll(response.deleted().stream()
                         .map(object -> filesInBucket.getFilenameForObjectKey(object.key()))
-                        .distinct()
-                        .filter(filename -> !errorsByFilename.containsKey(filename))
-                        .forEach(deleted::deleted);
+                        .toList());
 
-                errorsByFilename.forEach((filename, errors) -> deleted.failed(List.of(filename), deleteFailure(errors)));
             } catch (Exception e) {
                 if (isSlowDownException(e)) {
                     retry = true;
@@ -90,16 +94,14 @@ public class S3DeleteFiles implements DeleteFiles {
                     sleep.waitForMillisWrappingInterrupt(1000);
                 } else {
                     LOGGER.error("Failed to delete batch: {}", objectKeys, e);
-                    deleted.failed(filesInBucket.getAllFilenamesInBatch(objectKeys), e);
+                    objectKeys.stream().forEach(key -> errorsByFileName.putIfAbsent(filesInBucket.getFilenameForObjectKey(key), e));
                 }
             }
         } while (retry);
     }
 
-    private static RuntimeException deleteFailure(List<S3Error> errors) {
-        return new RuntimeException("Failed to delete objects: " + errors.stream()
-                .map(error -> error.key() + " (" + error.code() + ": " + error.message() + ")")
-                .collect(joining(", ")));
+    private static RuntimeException deleteFailure(S3Error error) {
+        return new RuntimeException("Failed to delete object " + error.key() + ": " + error.code() + " - " + error.message());
     }
 
     private static boolean isSlowDownException(Exception e) {
@@ -107,7 +109,8 @@ public class S3DeleteFiles implements DeleteFiles {
                 && "SlowDown".equals(s3e.awsErrorDetails().errorCode());
     }
 
-    private static DeleteObjectsRequest createDeleteObjectsRequest(FilesToDeleteInBucket filesInBucket, List<String> objectKeys) {
+    private static DeleteObjectsRequest createDeleteObjectsRequest(FilesToDeleteInBucket filesInBucket,
+            List<String> objectKeys) {
         return DeleteObjectsRequest.builder()
                 .bucket(filesInBucket.bucketName())
                 .delete(Delete.builder()
