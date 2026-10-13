@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.ingest.core.job.IngestJob;
 
@@ -55,7 +55,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
         List<IngestJobStatus> noJobs = Collections.emptyList();
 
         // When / Then
-        assertThat(getStandardReport(JobQuery.Type.DETAILED, noJobs, 0)).isEqualTo(
+        assertThat(getStandardReport(JobQueryType.DETAILED, noJobs, 0)).isEqualTo(
                 example("reports/ingest/job/standard/detailed/noJobFound.txt"));
     }
 
@@ -65,7 +65,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
         List<IngestJobStatus> mixedJobs = mixedJobStatuses();
 
         // When / Then
-        assertThat(getStandardReport(JobQuery.Type.DETAILED, mixedJobs, 0))
+        assertThat(getStandardReport(JobQueryType.DETAILED, mixedJobs, 0))
                 .isEqualTo(example("reports/ingest/job/standard/detailed/mixedJobs.txt"));
     }
 
@@ -75,7 +75,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
         List<IngestJobStatus> jobWithMultipleRuns = jobWithMultipleRuns();
 
         // When / Then
-        assertThat(getStandardReport(JobQuery.Type.DETAILED, jobWithMultipleRuns, 0))
+        assertThat(getStandardReport(JobQueryType.DETAILED, jobWithMultipleRuns, 0))
                 .isEqualTo(example("reports/ingest/job/standard/detailed/jobWithMultipleRuns.txt"));
     }
 
@@ -85,7 +85,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
         List<IngestJobStatus> jobsWithLargeAndDecimalStatistics = jobsWithLargeAndDecimalStatistics();
 
         // When / Then
-        assertThat(getStandardReport(JobQuery.Type.DETAILED, jobsWithLargeAndDecimalStatistics, 0))
+        assertThat(getStandardReport(JobQueryType.DETAILED, jobsWithLargeAndDecimalStatistics, 0))
                 .isEqualTo(example("reports/ingest/job/standard/detailed/jobsWithLargeAndDecimalStatistics.txt"));
     }
 
@@ -99,7 +99,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
             List<IngestJobStatus> jobs = finishedBulkImportJob();
 
             // When / Then
-            assertThat(getStandardReport(JobQuery.Type.DETAILED, jobs, 0)).hasToString(
+            assertThat(getStandardReport(JobQueryType.DETAILED, jobs, 0)).hasToString(
                     example("reports/ingest/job/standard/detailed/bulkImport/finishedJob.txt"));
         }
 
@@ -109,7 +109,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
             List<IngestJobStatus> acceptedJob = acceptedJob();
 
             // When / Then
-            assertThat(getStandardReport(JobQuery.Type.DETAILED, acceptedJob, 0))
+            assertThat(getStandardReport(JobQueryType.DETAILED, acceptedJob, 0))
                     .isEqualTo(example("reports/ingest/job/standard/detailed/bulkImport/acceptedJob.txt"));
         }
 
@@ -119,7 +119,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
             List<IngestJobStatus> acceptedJob = acceptedJobWhichStarted();
 
             // When / Then
-            assertThat(getStandardReport(JobQuery.Type.DETAILED, acceptedJob, 0))
+            assertThat(getStandardReport(JobQueryType.DETAILED, acceptedJob, 0))
                     .isEqualTo(example("reports/ingest/job/standard/detailed/bulkImport/acceptedJobWhichStarted.txt"));
         }
 
@@ -129,7 +129,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
             List<IngestJobStatus> rejectedJob = rejectedJobWithOneReason();
 
             // When / Then
-            assertThat(getStandardReport(JobQuery.Type.DETAILED, rejectedJob, 0))
+            assertThat(getStandardReport(JobQueryType.DETAILED, rejectedJob, 0))
                     .isEqualTo(example("reports/ingest/job/standard/detailed/bulkImport/rejectedJobWithOneReason.txt"));
         }
 
@@ -139,7 +139,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
             List<IngestJobStatus> rejectedJob = rejectedJobWithMultipleReasons();
 
             // When / Then
-            assertThat(getStandardReport(JobQuery.Type.DETAILED, rejectedJob, 0))
+            assertThat(getStandardReport(JobQueryType.DETAILED, rejectedJob, 0))
                     .isEqualTo(example("reports/ingest/job/standard/detailed/bulkImport/rejectedJobWithMultipleReasons.txt"));
         }
 
@@ -154,7 +154,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
                             rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:30:00Z")))));
 
             // When / Then
-            assertThat(getStandardReport(JobQuery.Type.DETAILED, status, 0))
+            assertThat(getStandardReport(JobQueryType.DETAILED, status, 0))
                     .isEqualTo(example("reports/ingest/job/standard/detailed/bulkImport/acceptedThenRejectedJob.txt"));
         }
 
@@ -172,7 +172,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
                     rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"), json)));
 
             // When / Then
-            assertThat(getStandardReport(JobQuery.Type.DETAILED, status, 0))
+            assertThat(getStandardReport(JobQueryType.DETAILED, status, 0))
                     .isEqualTo(example("reports/ingest/job/standard/detailed/bulkImport/rejectedWithJson.txt"));
         }
 
@@ -184,7 +184,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
                     rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"), json)));
 
             // When / Then
-            assertThat(getStandardReport(JobQuery.Type.DETAILED, status, 0))
+            assertThat(getStandardReport(JobQueryType.DETAILED, status, 0))
                     .isEqualTo(example("reports/ingest/job/standard/detailed/bulkImport/rejectedWithInvalidJson.txt"));
         }
     }

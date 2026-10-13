@@ -33,8 +33,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
@@ -49,21 +47,19 @@ public class QueryPlanner {
 
     private final TableProperties tableProperties;
     private final StateStore stateStore;
-    private final Supplier<String> subQueryIdSupplier;
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
     private Instant nextInitialiseTime;
 
     public QueryPlanner(TableProperties tableProperties, StateStore stateStore) {
-        this(tableProperties, stateStore, Instant.now(), () -> UUID.randomUUID().toString());
+        this(tableProperties, stateStore, Instant.now());
     }
 
-    public QueryPlanner(TableProperties tableProperties, StateStore stateStore, Instant timeNow, Supplier<String> subQueryIdSupplier) {
+    public QueryPlanner(TableProperties tableProperties, StateStore stateStore, Instant timeNow) {
         this.tableProperties = tableProperties;
         this.stateStore = stateStore;
         this.nextInitialiseTime = timeNow;
-        this.subQueryIdSupplier = subQueryIdSupplier;
     }
 
     /**
@@ -184,10 +180,15 @@ public class QueryPlanner {
             // requested and to the range of that leaf partition, this ensures
             // that rows are not returned twice if they are in a non-leaf
             // partition).
+            // The subquery ID is set to the leaf partition ID so that it is
+            // deterministic. If the same query is processed more than once,
+            // e.g. when it is retried after a failure, the subqueries map to
+            // the same entries in the query tracker rather than creating new
+            // ones.
             LeafPartitionQuery leafQuery = LeafPartitionQuery.builder()
                     .parentQuery(query)
                     .tableId(tableProperties.get(TABLE_ID))
-                    .subQueryId(subQueryIdSupplier.get())
+                    .subQueryId(partition.getId())
                     .regions(regions)
                     .leafPartitionId(partition.getId())
                     .partitionRegion(partition.getRegion())

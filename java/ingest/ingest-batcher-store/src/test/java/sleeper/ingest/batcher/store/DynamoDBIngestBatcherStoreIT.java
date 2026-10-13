@@ -26,6 +26,7 @@ import sleeper.ingest.batcher.core.testutil.FileIngestRequestTestHelper;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
@@ -536,6 +537,24 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(request3);
+        }
+
+        @Test
+        void shouldDeleteMoreFilesThanFitInOneBatchWrite() {
+            // Given
+            List<IngestBatcherTrackedFile> files = IntStream.range(0, 30)
+                    .mapToObj(i -> fileRequest()
+                            .file("test-bucket/file" + i + ".parquet")
+                            .build())
+                    .toList();
+            files.forEach(store::addFile);
+
+            // When
+            store.deleteFiles(files);
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .isEmpty();
         }
 
         @Test

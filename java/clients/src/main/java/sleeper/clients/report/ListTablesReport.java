@@ -17,32 +17,25 @@
 package sleeper.clients.report;
 
 import sleeper.clients.api.SleeperClient;
+import sleeper.clients.report.arguments.OutputFormatArgument;
 import sleeper.clients.report.tables.JsonListTablesReporter;
 import sleeper.clients.report.tables.ListTablesReporter;
 import sleeper.clients.report.tables.StandardListTablesReporter;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.cli.CommandArguments;
-import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
-import sleeper.core.util.cli.CommandOption;
 
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * Lists all tables in a Sleeper instance with ID, either in standard or JSON format.
  */
 public class ListTablesReport {
-    private static final String DEFAULT_REPORTER = "STANDARD";
-    private static final Map<String, ListTablesReporter> REPORTERS = new HashMap<>();
-
-    static {
-        REPORTERS.put(DEFAULT_REPORTER, new StandardListTablesReporter());
-        REPORTERS.put("JSON", new JsonListTablesReporter());
-    }
+    private static final OutputFormatArgument<ListTablesReporter> OUTPUT_FORMAT = OutputFormatArgument
+            .<ListTablesReporter>withDefault("STANDARD", new StandardListTablesReporter())
+            .addReporter("JSON", new JsonListTablesReporter())
+            .build();
 
     private final SleeperClient client;
     private final ListTablesReporter reporter;
@@ -63,18 +56,14 @@ public class ListTablesReport {
         Arguments arguments = CommandArguments.parseAndValidateOrExit(USAGE, args, ListTablesReport::readArguments);
 
         try (SleeperClient client = SleeperClient.builder().instanceId(arguments.instanceId()).build()) {
-            new ListTablesReport(client, REPORTERS.get(arguments.reportType())).run();
+            new ListTablesReport(client, arguments.reporter()).run();
         }
     }
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
             .positionalArguments(List.of("instance-id"))
-            .options(List.of(CommandOption.longOption("report-type")))
-            .helpSummary("" +
-                    "Creates a report listing all the tables within a Sleeper instance.\n" +
-                    "\n" +
-                    "--report-type <type>\n" +
-                    "Output format. One of STANDARD, JSON. Defaults to STANDARD.")
+            .options(List.of(OUTPUT_FORMAT.option()))
+            .helpSummary("Creates a report listing all the tables within a Sleeper instance.")
             .build();
 
     /**
@@ -86,22 +75,15 @@ public class ListTablesReport {
     public static Arguments readArguments(CommandArguments arguments) {
         return new Arguments(
                 arguments.getString("instance-id"),
-                arguments.getOptionalString("report-type")
-                        .map(s -> s.toUpperCase(Locale.ROOT))
-                        .orElse(DEFAULT_REPORTER));
+                OUTPUT_FORMAT.read(arguments));
     }
 
     /**
      * Holds the arguments for the list tables report command.
      *
      * @param instanceId the Sleeper instance ID
-     * @param reportType the output format, either STANDARD or JSON
+     * @param reporter   the reporter to output in the requested format
      */
-    public record Arguments(String instanceId, String reportType) {
-        public Arguments {
-            if (!REPORTERS.containsKey(reportType)) {
-                throw new CommandArgumentsException("Report type not supported: " + reportType + ". Valid types: " + String.join(", ", REPORTERS.keySet()));
-            }
-        }
+    public record Arguments(String instanceId, ListTablesReporter reporter) {
     }
 }

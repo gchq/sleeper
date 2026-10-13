@@ -12,18 +12,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 set -e
 unset CDPATH
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-docker compose -f "$THIS_DIR/docker-compose.yml" up -d
-echo "Running localstack container on port 4566"
-echo "To use sleeper with this container, set the AWS_ENDPOINT_URL environment variable:"
-if [ "$IN_CLI_CONTAINER" = "true" ]; then
-  echo "export AWS_ENDPOINT_URL=http://host.docker.internal:4566"
-else
-  echo "export AWS_ENDPOINT_URL=http://localhost:4566"
-fi
-echo ""
-echo "To revert to using the default AWS endpoint, you can unset this environment variable:"
-echo "unset AWS_ENDPOINT_URL"
+ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
+ENVIRONMENT_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
+ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
+OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
+
+INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-SleeperEnvironment\"].BuildEC2Id" "$OUTPUTS_FILE" --raw-output)
+
+echo "Starting instance $INSTANCE_ID in environment $ENVIRONMENT_ID"
+
+aws ec2 start-instances --instance-ids "$INSTANCE_ID" "$@"

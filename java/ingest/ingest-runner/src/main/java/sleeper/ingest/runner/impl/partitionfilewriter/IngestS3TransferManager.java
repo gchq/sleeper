@@ -122,7 +122,7 @@ public class IngestS3TransferManager implements AutoCloseable {
     }
 
     private static URI getCustomEndpoint() {
-        String endpoint = System.getenv("AWS_ENDPOINT_URL");
+        String endpoint = System.getenv("AWS_ENDPOINT_URL"); //As per ticket 8333, this can now only be used by manually setting up a local AWS environment e.g. with DeployDockerInstance
         if (endpoint != null) {
             return URI.create(endpoint);
         }

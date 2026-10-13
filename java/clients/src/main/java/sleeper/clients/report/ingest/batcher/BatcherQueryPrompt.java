@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package sleeper.clients.report.ingest.batcher.query;
+package sleeper.clients.report.ingest.batcher;
 
-import sleeper.clients.report.ingest.batcher.BatcherQuery;
 import sleeper.clients.util.console.ConsoleInput;
 
 /**
@@ -35,9 +34,9 @@ public class BatcherQueryPrompt {
     public static BatcherQuery from(ConsoleInput in) {
         String type = in.promptLine("All (a) or Pending (p) query? ");
         if ("a".equalsIgnoreCase(type)) {
-            return new AllFilesQuery();
+            return BatcherQuery.ALL;
         } else if ("p".equalsIgnoreCase(type)) {
-            return new PendingFilesQuery();
+            return BatcherQuery.PENDING;
         } else {
             return from(in);
         }

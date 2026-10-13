@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 /**
  * A CSV implementation of FileStatusReporter that returns file status information to the user on the console as a CSV.
  */
-public class CVSFileStatusReporter implements FileStatusReporter {
+public class CsvFileStatusReporter implements FileStatusReporter {
     List<Object> outputData = new ArrayList<>();
 
     @Override

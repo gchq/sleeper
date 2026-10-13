@@ -22,10 +22,12 @@ import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.report.IngestJobStatusReport;
 import sleeper.clients.report.IngestTaskStatusReport;
 import sleeper.clients.report.TableNamesReport;
+import sleeper.clients.report.arguments.JobTrackerReportOptions;
 import sleeper.clients.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.report.ingest.task.StandardIngestTaskStatusReporter;
 import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.util.console.ConsoleHelper;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -35,7 +37,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 
-import java.time.Clock;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -91,11 +93,11 @@ public class IngestStatusReportScreen {
         if (tableOpt.isPresent()) {
             TableStatus table = tableOpt.get().getStatus();
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
-                    new MenuOption("All", () -> runIngestJobStatusReport(properties, table, JobQuery.Type.ALL)),
-                    new MenuOption("Unfinished", () -> runIngestJobStatusReport(properties, table, JobQuery.Type.UNFINISHED)),
-                    new MenuOption("Detailed", () -> runIngestJobStatusReport(properties, table, JobQuery.Type.DETAILED, promptForJobId(in))),
-                    new MenuOption("Range", () -> runIngestJobStatusReport(properties, table, JobQuery.Type.RANGE, promptForRange(in))),
-                    new MenuOption("Rejected", () -> runIngestJobStatusReport(properties, table, JobQuery.Type.REJECTED))).run();
+                    new MenuOption("All", () -> runIngestJobStatusReport(properties, table, JobQueryType.ALL)),
+                    new MenuOption("Unfinished", () -> runIngestJobStatusReport(properties, table, JobQueryType.UNFINISHED)),
+                    new MenuOption("Detailed", () -> runIngestJobStatusReport(properties, table, JobQueryType.DETAILED, promptForJobId(in))),
+                    new MenuOption("Range", () -> runIngestJobStatusReport(properties, table, JobQueryType.RANGE, promptForRange(in))),
+                    new MenuOption("Rejected", () -> runIngestJobStatusReport(properties, table, JobQueryType.REJECTED))).run();
         }
     }
 
@@ -106,13 +108,13 @@ public class IngestStatusReportScreen {
     }
 
     private void runIngestJobStatusReport(InstanceProperties properties, TableStatus table,
-            JobQuery.Type queryType) {
+            JobQueryType queryType) {
         runIngestJobStatusReport(properties, table, queryType, "");
     }
 
     private void runIngestJobStatusReport(InstanceProperties properties, TableStatus table,
-            JobQuery.Type queryType, String queryParameters) {
-        JobQuery query = IngestJobStatusReport.queryfromParametersOrPrompt(queryType, queryParameters, Clock.systemUTC(), in);
+            JobQueryType queryType, String queryParameters) {
+        JobQuery query = JobTrackerReportOptions.ingestJobQueryFromParametersOrPrompt(queryType, queryParameters, Instant::now, in);
         new IngestJobStatusReport(trackers.loadIngestJobTracker(properties), table, query,
                 new StandardIngestJobStatusReporter(out.printStream()),
                 queueClient, properties, getStepCount.apply(properties)).run();

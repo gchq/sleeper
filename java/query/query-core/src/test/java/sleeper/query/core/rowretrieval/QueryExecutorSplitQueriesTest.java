@@ -233,6 +233,30 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
                                 .build());
     }
 
+    @Test
+    void shouldCreateSameSubQueryIdsWhenSplittingTheSameQueryTwice() throws Exception {
+        // Given
+        PartitionTree tree = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 5L)
+                .buildTree();
+        update(stateStore).initialise(tree);
+        addPartitionFile("left", "left.parquet", List.of(new Row(Map.of("key", 1L))));
+        addPartitionFile("right", "right.parquet", List.of(new Row(Map.of("key", 7L))));
+        Query query = queryRegions(range(0L, 10L));
+
+        // When
+        List<LeafPartitionQuery> firstAttempt = planner().splitIntoLeafPartitionQueries(query);
+        List<LeafPartitionQuery> secondAttempt = planner().splitIntoLeafPartitionQueries(query);
+
+        // Then
+        assertThat(firstAttempt)
+                .extracting(LeafPartitionQuery::getSubQueryId)
+                .containsExactlyInAnyOrder("left", "right");
+        assertThat(secondAttempt)
+                .containsExactlyInAnyOrderElementsOf(firstAttempt);
+    }
+
     private static Row createRowMultidimensionalKey(String key1, String key2) {
         Row row = new Row();
         row.put("key1", key1);

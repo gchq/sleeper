@@ -19,6 +19,9 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
+import sleeper.core.util.cli.CommandArgumentsException;
+import sleeper.core.util.cli.CommandOption;
+import sleeper.core.util.cli.CommandOption.NumArgs;
 
 import java.util.Arrays;
 import java.util.List;
@@ -31,10 +34,26 @@ import java.util.stream.Collectors;
  */
 public class DetailedJobsQuery implements JobQuery {
 
+    public static final CommandOption COMMAND_OPTION = CommandOption
+            .withLongName("detailed").shortName('d').numArgs(NumArgs.ONE)
+            .helpText("Reports in detail on the jobs with the given IDs. Separate several IDs with commas.")
+            .argsHelpText("<job-id>[,<more-ids>]")
+            .build();
+
     private final List<String> jobIds;
 
     public DetailedJobsQuery(List<String> jobIds) {
         this.jobIds = jobIds;
+    }
+
+    /**
+     * Creates a parser for this query type.
+     *
+     * @return this parser
+     */
+    public static JobQueryTypeParser parser() {
+        return new JobQueryTypeParser(COMMAND_OPTION, (parameters, timeSupplier) -> fromParameters(parameters),
+                (arguments, timeSupplier) -> fromCommandLine(arguments.getString("detailed")));
     }
 
     @Override
@@ -48,8 +67,8 @@ public class DetailedJobsQuery implements JobQuery {
     }
 
     @Override
-    public Type getType() {
-        return Type.DETAILED;
+    public JobQueryType getType() {
+        return JobQueryType.DETAILED;
     }
 
     private <T> List<T> run(Function<String, Optional<T>> getJob) {
@@ -66,9 +85,16 @@ public class DetailedJobsQuery implements JobQuery {
      * @return                 the query for a detailed report on those jobs
      */
     public static JobQuery fromParameters(String queryParameters) {
-        if ("".equals(queryParameters)) {
+        if (queryParameters == null || "".equals(queryParameters)) {
             return null;
         }
         return new DetailedJobsQuery(Arrays.asList(queryParameters.split(",")));
+    }
+
+    private static JobQuery fromCommandLine(String jobIds) {
+        if ("".equals(jobIds)) {
+            throw new CommandArgumentsException("Expected a value for option: detailed");
+        }
+        return new DetailedJobsQuery(Arrays.asList(jobIds.split(",")));
     }
 }

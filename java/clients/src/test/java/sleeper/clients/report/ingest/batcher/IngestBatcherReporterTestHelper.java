@@ -109,14 +109,14 @@ public class IngestBatcherReporterTestHelper {
      * Creates a report on the state of the ingest batcher in the standard, human readable format.
      *
      * @param  tableIndex      the index of Sleeper tables
-     * @param  queryType       the type of query used to generate the report
+     * @param  query           the query used to generate the report
      * @param  fileRequestList the data from the ingest batcher store
      * @return                 the report as a human readable string
      */
-    public static String getStandardReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<IngestBatcherTrackedFile> fileRequestList) {
+    public static String getStandardReport(TableIndex tableIndex, BatcherQuery query, List<IngestBatcherTrackedFile> fileRequestList) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         new StandardIngestBatcherReporter(output.getPrintStream())
-                .report(fileRequestList, queryType, new TableStatusProvider(tableIndex));
+                .report(fileRequestList, query, new TableStatusProvider(tableIndex));
         return output.toString();
     }
 
@@ -124,14 +124,14 @@ public class IngestBatcherReporterTestHelper {
      * Creates a report on the state of the ingest batcher in JSON format.
      *
      * @param  tableIndex      the index of Sleeper tables
-     * @param  queryType       the type of query used to generate the report
+     * @param  query           the query used to generate the report
      * @param  fileRequestList the data from the ingest batcher store
      * @return                 the report as a JSON string
      */
-    public static String getJsonReport(TableIndex tableIndex, BatcherQuery.Type queryType, List<IngestBatcherTrackedFile> fileRequestList) {
+    public static String getJsonReport(TableIndex tableIndex, BatcherQuery query, List<IngestBatcherTrackedFile> fileRequestList) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         new JsonIngestBatcherReporter(output.getPrintStream())
-                .report(fileRequestList, queryType, new TableStatusProvider(tableIndex));
+                .report(fileRequestList, query, new TableStatusProvider(tableIndex));
         return output.toString();
     }
 }

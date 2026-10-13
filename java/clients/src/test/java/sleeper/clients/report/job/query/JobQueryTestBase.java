@@ -16,7 +16,7 @@
 
 package sleeper.clients.report.job.query;
 
-import sleeper.clients.report.job.query.JobQuery.Type;
+import sleeper.clients.report.arguments.JobTrackerReportOptions;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.core.job.CompactionJob;
@@ -27,11 +27,10 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static org.mockito.Mockito.mock;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
@@ -57,29 +56,29 @@ public class JobQueryTestBase {
     protected final ToStringConsoleOutput out = new ToStringConsoleOutput();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
 
-    protected List<CompactionJobStatus> queryStatuses(Type queryType) {
+    protected List<CompactionJobStatus> queryStatuses(JobQueryType queryType) {
         return queryStatusesWithParams(queryType, null);
     }
 
-    protected List<CompactionJobStatus> queryStatusesWithParams(Type queryType, String queryParameters) {
-        return queryStatuses(queryType, queryParameters, Clock.systemUTC());
+    protected List<CompactionJobStatus> queryStatusesWithParams(JobQueryType queryType, String queryParameters) {
+        return queryStatuses(queryType, queryParameters, Instant::now);
     }
 
-    protected List<CompactionJobStatus> queryStatusesAtTime(Type queryType, Instant time) {
+    protected List<CompactionJobStatus> queryStatusesAtTime(JobQueryType queryType, Instant time) {
         return queryStatuses(queryType, null,
-                Clock.fixed(time, ZoneId.of("UTC")));
+                () -> time);
     }
 
-    protected JobQuery queryFrom(Type queryType) {
-        return queryFrom(queryType, null, Clock.systemUTC());
+    protected JobQuery queryFrom(JobQueryType queryType) {
+        return queryFrom(queryType, null, Instant::now);
     }
 
-    private List<CompactionJobStatus> queryStatuses(Type queryType, String queryParameters, Clock clock) {
-        return queryFrom(queryType, queryParameters, clock).run(tracker, tableId);
+    private List<CompactionJobStatus> queryStatuses(JobQueryType queryType, String queryParameters, Supplier<Instant> timeSupplier) {
+        return queryFrom(queryType, queryParameters, timeSupplier).run(tracker, tableId);
     }
 
-    private JobQuery queryFrom(Type queryType, String queryParameters, Clock clock) {
-        return JobQuery.fromParametersOrPrompt(queryType, queryParameters, clock, in.consoleIn());
+    private JobQuery queryFrom(JobQueryType queryType, String queryParameters, Supplier<Instant> timeSupplier) {
+        return JobTrackerReportOptions.compactionJobQueryFromParametersOrPrompt(queryType, queryParameters, timeSupplier, in.consoleIn());
     }
 
     private TableProperties createTableProperties() {

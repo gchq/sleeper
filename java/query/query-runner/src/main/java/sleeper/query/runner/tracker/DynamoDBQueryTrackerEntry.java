@@ -34,7 +34,7 @@ import java.util.Objects;
  * A model for entries in the query tracker DynamoDB table. Will be mapped to {@link TrackedQuery} objects.
  */
 class DynamoDBQueryTrackerEntry {
-
+    private static final Long NUM_SECONDS_IN_A_DAY = 60 * 60 * 24L;
     static final String QUERY_ID = "queryId";
     static final String LAST_UPDATE_TIME = "lastUpdateTime";
     static final String LAST_KNOWN_STATE = "lastKnownState";
@@ -43,12 +43,19 @@ class DynamoDBQueryTrackerEntry {
     static final String ERROR_MESSAGE = "errors";
     static final String EXPIRY_DATE = "expiryDate";
     static final String NON_NESTED_QUERY_PLACEHOLDER = "-";
+    static final String EXPECTED_SUB_QUERY_COUNT = "expectedSubQueryCount";
+    static final String SUCCEEDED_SUB_QUERY_COUNT = "succeededSubQueryCount";
+    static final String FAILED_SUB_QUERY_COUNT = "failedSubQueryCount";
+    static final String FINISHED_SUB_QUERY_ROW_COUNT = "finishedSubQueryRowCount";
+    static final String ATTEMPT_ID = "attemptId";
+    static final String COUNTER_SHARD_PREFIX = "-#counters#";
 
     private final String queryId;
     private final String subQueryId;
     private final QueryState state;
     private final long rowCount;
     private final String errorMessage;
+    private final String attemptId;
 
     private DynamoDBQueryTrackerEntry(Builder builder) {
         queryId = builder.queryId;
@@ -56,6 +63,7 @@ class DynamoDBQueryTrackerEntry {
         state = builder.state;
         rowCount = builder.rowCount;
         errorMessage = builder.errorMessage;
+        attemptId = builder.attemptId;
     }
 
     public static Builder withQuery(Query query) {
@@ -65,7 +73,8 @@ class DynamoDBQueryTrackerEntry {
     public static Builder withLeafQuery(LeafPartitionQuery query) {
         return builder()
                 .queryId(query.getQueryId())
-                .subQueryId(query.getSubQueryId());
+                .subQueryId(query.getSubQueryId())
+                .attemptId(query.getAttemptId());
     }
 
     public static Builder builder() {
@@ -79,6 +88,49 @@ class DynamoDBQueryTrackerEntry {
         return key;
     }
 
+    public Map<String, AttributeValue> getParentKey() {
+        return getParentKey(queryId);
+    }
+
+    /**
+     * Creates the DynamoDB key of the item tracking a parent query.
+     *
+     * @param  queryId the query ID
+     * @return         the key of the item tracking the parent query
+     */
+    public static Map<String, AttributeValue> getParentKey(String queryId) {
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put(QUERY_ID, AttributeValue.fromS(queryId));
+        key.put(SUB_QUERY_ID, AttributeValue.fromS(NON_NESTED_QUERY_PLACEHOLDER));
+        return key;
+    }
+
+    /**
+     * Creates the DynamoDB key of an item holding one shard of a parent query's counters of finished subqueries.
+     * The counters are sharded over several items to spread the transactional write load when many subqueries of
+     * the same query finish at once.
+     *
+     * @param  queryId the query ID
+     * @param  shard   the index of the counter shard
+     * @return         the key of the counter shard item
+     */
+    public static Map<String, AttributeValue> getCounterShardKey(String queryId, int shard) {
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put(QUERY_ID, AttributeValue.fromS(queryId));
+        key.put(SUB_QUERY_ID, AttributeValue.fromS(counterShardSortKey(shard)));
+        return key;
+    }
+
+    /**
+     * Creates the sort key of an item holding one shard of a parent query's counters of finished subqueries.
+     *
+     * @param  shard the index of the counter shard
+     * @return       the sort key of the counter shard item
+     */
+    public static String counterShardSortKey(int shard) {
+        return String.format("%s%02d", COUNTER_SHARD_PREFIX, shard);
+    }
+
     public Map<String, AttributeValue> getItem(long queryTrackerTTL) {
         Map<String, AttributeValue> item = new HashMap<>(getKey());
         getValueUpdate(queryTrackerTTL).forEach((attribute, update) -> item.put(attribute, update.value()));
@@ -87,12 +139,15 @@ class DynamoDBQueryTrackerEntry {
 
     public Map<String, AttributeValueUpdate> getValueUpdate(long queryTrackerTTL) {
         Map<String, AttributeValueUpdate> valueUpdate = new HashMap<>();
-        long now = System.currentTimeMillis() / 1000;
-        long expiryDate = now + (3600 * 24 * queryTrackerTTL);
+        long now = System.currentTimeMillis();
+        // Last update time is stored in milliesconds.
         valueUpdate.put(LAST_UPDATE_TIME, AttributeValueUpdate.builder()
                 .value(AttributeValue.fromN(String.valueOf(now)))
                 .action(AttributeAction.PUT)
                 .build());
+        // The expiry date is stored in epoch seconds so divide now by 1000; the queryTrackerTTL is in days
+        // so add NUM_SECONDS_IN_A_DAY * queryTrackerTTL.
+        long expiryDate = (now / 1000) + (NUM_SECONDS_IN_A_DAY * queryTrackerTTL);
         valueUpdate.put(EXPIRY_DATE, AttributeValueUpdate.builder()
                 .value(AttributeValue.fromN(String.valueOf(expiryDate)))
                 .action(AttributeAction.PUT)
@@ -108,6 +163,12 @@ class DynamoDBQueryTrackerEntry {
         if (Objects.nonNull(errorMessage)) {
             valueUpdate.put(ERROR_MESSAGE, AttributeValueUpdate.builder()
                     .value(AttributeValue.fromS(errorMessage))
+                    .action(AttributeAction.PUT)
+                    .build());
+        }
+        if (Objects.nonNull(attemptId)) {
+            valueUpdate.put(ATTEMPT_ID, AttributeValueUpdate.builder()
+                    .value(AttributeValue.fromS(attemptId))
                     .action(AttributeAction.PUT)
                     .build());
         }
@@ -133,21 +194,44 @@ class DynamoDBQueryTrackerEntry {
                 .lastKnownState(state)
                 .rowCount(rowCount)
                 .errorMessage(errorMessage)
+                .expectedSubQueryCount(readOptionalLong(stringAttributeValueMap, EXPECTED_SUB_QUERY_COUNT))
+                .succeededSubQueryCount(readOptionalLong(stringAttributeValueMap, SUCCEEDED_SUB_QUERY_COUNT))
+                .failedSubQueryCount(readOptionalLong(stringAttributeValueMap, FAILED_SUB_QUERY_COUNT))
+                .finishedSubQueryRowCount(readOptionalLong(stringAttributeValueMap, FINISHED_SUB_QUERY_ROW_COUNT))
                 .build();
     }
 
-    public boolean isUpdateParent() {
-        return isSubQuery() &&
-                (state.equals(QueryState.COMPLETED) || state.equals(QueryState.FAILED)
-                        || state.equals(QueryState.PARTIALLY_FAILED));
+    private static Long readOptionalLong(Map<String, AttributeValue> item, String attribute) {
+        AttributeValue value = item.get(attribute);
+        return value != null ? Long.valueOf(value.n()) : null;
     }
 
-    private boolean isSubQuery() {
+    public boolean isFinished() {
+        return state != null && state.isFinished();
+    }
+
+    public boolean isSubQuery() {
         return !NON_NESTED_QUERY_PLACEHOLDER.equals(subQueryId);
     }
 
     public String getQueryId() {
         return queryId;
+    }
+
+    public String getSubQueryId() {
+        return subQueryId;
+    }
+
+    public String getAttemptId() {
+        return attemptId;
+    }
+
+    public QueryState getState() {
+        return state;
+    }
+
+    public long getRowCount() {
+        return rowCount;
     }
 
     public DynamoDBQueryTrackerEntry updateParent(QueryState state, long totalRowCount) {
@@ -165,6 +249,7 @@ class DynamoDBQueryTrackerEntry {
         private QueryState state;
         private long rowCount;
         private String errorMessage;
+        private String attemptId;
 
         private Builder() {
         }
@@ -191,6 +276,11 @@ class DynamoDBQueryTrackerEntry {
 
         public Builder errorMessage(String errorMessage) {
             this.errorMessage = errorMessage;
+            return this;
+        }
+
+        public Builder attemptId(String attemptId) {
+            this.attemptId = attemptId;
             return this;
         }
 

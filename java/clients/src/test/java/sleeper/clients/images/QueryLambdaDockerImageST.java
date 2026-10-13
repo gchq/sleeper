@@ -17,6 +17,7 @@ package sleeper.clients.images;
 
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -41,6 +42,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
+@Tag("image") // Tag for exclusion by IDEs
 public class QueryLambdaDockerImageST extends DockerImageTestBase {
 
     @BeforeEach

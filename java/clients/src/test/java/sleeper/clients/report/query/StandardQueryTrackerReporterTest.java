@@ -46,21 +46,21 @@ public class StandardQueryTrackerReporterTest {
             List<TrackedQuery> noQueries = List.of();
 
             // Then
-            assertThat(getStandardReport(TrackerQuery.ALL, noQueries))
+            assertThat(getStandardReport(QueryTrackerQuery.ALL, noQueries))
                     .isEqualTo(example("reports/query/standard/all/noQueries.txt"));
         }
 
         @Test
         void shouldRunReportWithMixedQueries() throws Exception {
             // When/Then
-            assertThat(getStandardReport(TrackerQuery.ALL, mixedQueries()))
+            assertThat(getStandardReport(QueryTrackerQuery.ALL, mixedQueries()))
                     .isEqualTo(example("reports/query/standard/all/mixedQueries.txt"));
         }
 
         @Test
         void shouldRunReportWithSubQueries() throws Exception {
             // When/Then
-            assertThat(getStandardReport(TrackerQuery.ALL, queryWithSubqueries()))
+            assertThat(getStandardReport(QueryTrackerQuery.ALL, queryWithSubqueries()))
                     .isEqualTo(example("reports/query/standard/all/queryWithSubqueries.txt"));
         }
     }
@@ -75,7 +75,7 @@ public class StandardQueryTrackerReporterTest {
                     queryQueued("test-query-1", Instant.parse("2023-09-28T18:50:00Z")));
 
             // When/Then
-            assertThat(getStandardReport(TrackerQuery.QUEUED, queuedQueries))
+            assertThat(getStandardReport(QueryTrackerQuery.QUEUED, queuedQueries))
                     .isEqualTo(example("reports/query/standard/state/queuedQueries.txt"));
         }
 
@@ -86,7 +86,7 @@ public class StandardQueryTrackerReporterTest {
                     queryInProgress("test-query-1", Instant.parse("2023-09-28T18:50:00Z")));
 
             // When/Then
-            assertThat(getStandardReport(TrackerQuery.IN_PROGRESS, inProgressQueries))
+            assertThat(getStandardReport(QueryTrackerQuery.IN_PROGRESS, inProgressQueries))
                     .isEqualTo(example("reports/query/standard/state/inProgressQueries.txt"));
         }
 
@@ -97,7 +97,7 @@ public class StandardQueryTrackerReporterTest {
                     queryCompleted("test-query-1", Instant.parse("2023-09-28T18:50:00Z"), 456L));
 
             // When/Then
-            assertThat(getStandardReport(TrackerQuery.COMPLETED, completedQueries))
+            assertThat(getStandardReport(QueryTrackerQuery.COMPLETED, completedQueries))
                     .isEqualTo(example("reports/query/standard/state/completedQueries.txt"));
         }
 
@@ -109,7 +109,7 @@ public class StandardQueryTrackerReporterTest {
                     queryFailed("test-query-2", Instant.parse("2023-09-28T18:52:00Z"), "Test failure 2"));
 
             // When/Then
-            assertThat(getStandardReport(TrackerQuery.FAILED, failedQueries))
+            assertThat(getStandardReport(QueryTrackerQuery.FAILED, failedQueries))
                     .isEqualTo(example("reports/query/standard/state/failedQueries.txt"));
         }
     }

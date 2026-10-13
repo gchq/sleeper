@@ -16,8 +16,13 @@
 set -e
 unset CDPATH
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
-VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
+ENVIRONMENT_ID=$(cat "$ENVIRONMENTS_DIR/current.txt")
+ENVIRONMENT_DIR="$ENVIRONMENTS_DIR/$ENVIRONMENT_ID"
+OUTPUTS_FILE="$ENVIRONMENT_DIR/outputs.json"
 
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.deploy.localstack.DeployDockerInstance "$@"
+INSTANCE_ID=$(jq ".[\"$ENVIRONMENT_ID-SleeperEnvironment\"].BuildEC2Id" "$OUTPUTS_FILE" --raw-output)
+
+echo "Stopping instance $INSTANCE_ID in environment $ENVIRONMENT_ID"
+
+aws ec2 stop-instances --instance-ids "$INSTANCE_ID" "$@"

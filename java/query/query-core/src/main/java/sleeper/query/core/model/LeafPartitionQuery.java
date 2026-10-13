@@ -41,6 +41,7 @@ public class LeafPartitionQuery {
     private final String leafPartitionId;
     private final Region partitionRegion;
     private final List<String> files;
+    private final String attemptId;
 
     private LeafPartitionQuery(Builder builder) {
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
@@ -51,6 +52,7 @@ public class LeafPartitionQuery {
         leafPartitionId = Objects.requireNonNull(builder.leafPartitionId, "leafPartitionId must not be null");
         partitionRegion = Objects.requireNonNull(builder.partitionRegion, "partitionRegion must not be null");
         files = Objects.requireNonNull(builder.files, "files must not be null");
+        attemptId = builder.attemptId;
     }
 
     public static Builder builder() {
@@ -109,6 +111,10 @@ public class LeafPartitionQuery {
         return files;
     }
 
+    public String getAttemptId() {
+        return attemptId;
+    }
+
     /**
      * Creates a copy of this query that will include the values of the given fields in the result.
      *
@@ -117,6 +123,16 @@ public class LeafPartitionQuery {
      */
     public LeafPartitionQuery withRequestedValueFields(List<String> requestedValueFields) {
         return toBuilder().processingConfig(processingConfig.withRequestedValueFields(requestedValueFields)).build();
+    }
+
+    /**
+     * Creates a copy of this query with an attempt id.
+     *
+     * @param  attemptId an identifier for one attempt at processing the parent query
+     * @return           a copy of the original query with the attempt id set
+     */
+    public LeafPartitionQuery withAttemptId(String attemptId) {
+        return toBuilder().attemptId(attemptId).build();
     }
 
     private Builder toBuilder() {
@@ -128,7 +144,8 @@ public class LeafPartitionQuery {
                 .processingConfig(processingConfig)
                 .leafPartitionId(leafPartitionId)
                 .partitionRegion(partitionRegion)
-                .files(files);
+                .files(files)
+                .attemptId(attemptId);
     }
 
     @Override
@@ -147,12 +164,13 @@ public class LeafPartitionQuery {
                 && Objects.equals(processingConfig, that.processingConfig)
                 && Objects.equals(leafPartitionId, that.leafPartitionId)
                 && Objects.equals(partitionRegion, that.partitionRegion)
-                && Objects.equals(files, that.files);
+                && Objects.equals(files, that.files)
+                && Objects.equals(attemptId, that.attemptId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableId, queryId, subQueryId, regions, processingConfig, leafPartitionId, partitionRegion, files);
+        return Objects.hash(tableId, queryId, subQueryId, regions, processingConfig, leafPartitionId, partitionRegion, files, attemptId);
     }
 
     @Override
@@ -166,6 +184,7 @@ public class LeafPartitionQuery {
                 ", leafPartitionId='" + leafPartitionId + '\'' +
                 ", partitionRegion=" + partitionRegion +
                 ", files=" + files +
+                ", attemptId='" + attemptId + '\'' +
                 '}';
     }
 
@@ -181,6 +200,7 @@ public class LeafPartitionQuery {
         private String leafPartitionId;
         private Region partitionRegion;
         private List<String> files;
+        private String attemptId;
 
         private Builder() {
         }
@@ -287,6 +307,18 @@ public class LeafPartitionQuery {
          */
         public Builder files(List<String> files) {
             this.files = files;
+            return this;
+        }
+
+        /**
+         * Provides an identifier for the attempt at processing the parent query that
+         * created this subquery.
+         *
+         * @param  attemptId the attempt ID
+         * @return           the builder
+         */
+        public Builder attemptId(String attemptId) {
+            this.attemptId = attemptId;
             return this;
         }
 

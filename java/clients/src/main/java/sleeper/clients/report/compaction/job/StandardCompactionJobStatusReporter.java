@@ -18,7 +18,7 @@ package sleeper.clients.report.compaction.job;
 
 import sleeper.clients.report.job.AverageRowRateReport;
 import sleeper.clients.report.job.StandardJobRunReporter;
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.util.tablewriter.TableField;
 import sleeper.clients.util.tablewriter.TableFieldDefinition;
 import sleeper.clients.util.tablewriter.TableRow;
@@ -81,14 +81,14 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     @Override
-    public void report(List<CompactionJobStatus> jobStatusList, JobQuery.Type queryType) {
+    public void report(List<CompactionJobStatus> jobStatusList, JobQueryType queryType) {
         out.println();
         out.println("Compaction Job Status Report");
         out.println("----------------------------");
         printSummary(jobStatusList, queryType);
-        if (!queryType.equals(JobQuery.Type.DETAILED)) {
+        if (!queryType.equals(JobQueryType.DETAILED)) {
             tableFactory.tableBuilder()
-                    .showFields(queryType != JobQuery.Type.UNFINISHED, finishedFields)
+                    .showFields(queryType != JobQueryType.UNFINISHED, finishedFields)
                     .itemsAndSplittingWriter(jobStatusList, this::writeJob)
                     .build().write(out);
 
@@ -99,14 +99,14 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         }
     }
 
-    private void printSummary(List<CompactionJobStatus> jobStatusList, JobQuery.Type queryType) {
-        if (queryType == JobQuery.Type.RANGE) {
+    private void printSummary(List<CompactionJobStatus> jobStatusList, JobQueryType queryType) {
+        if (queryType == JobQueryType.RANGE) {
             printRangeSummary(jobStatusList);
-        } else if (queryType == JobQuery.Type.DETAILED) {
+        } else if (queryType == JobQueryType.DETAILED) {
             printDetailedSummary(jobStatusList);
-        } else if (queryType == JobQuery.Type.UNFINISHED) {
+        } else if (queryType == JobQueryType.UNFINISHED) {
             printUnfinishedSummary(jobStatusList);
-        } else if (queryType == JobQuery.Type.ALL) {
+        } else if (queryType == JobQueryType.ALL) {
             printAllSummary(jobStatusList);
         }
     }

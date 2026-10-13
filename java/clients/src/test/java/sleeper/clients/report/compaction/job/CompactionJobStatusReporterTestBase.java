@@ -16,7 +16,7 @@
 
 package sleeper.clients.report.compaction.job;
 
-import sleeper.clients.report.job.query.JobQuery.Type;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
@@ -188,7 +188,7 @@ public abstract class CompactionJobStatusReporterTestBase {
 
     protected static String verboseReportString(
             Function<PrintStream, CompactionJobStatusReporter> getReporter,
-            List<CompactionJobStatus> statusList, Type queryType) {
+            List<CompactionJobStatus> statusList, JobQueryType queryType) {
         ToStringConsoleOutput out = new ToStringConsoleOutput();
         getReporter.apply(out.getPrintStream())
                 .report(statusList, queryType);

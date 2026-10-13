@@ -18,7 +18,6 @@ package sleeper.clients.report.job.query;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.report.job.query.JobQuery.Type;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Instant;
@@ -33,7 +32,7 @@ public class JobQueryTest extends JobQueryTestBase {
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
-        Type queryType = Type.ALL;
+        JobQueryType queryType = JobQueryType.ALL;
         when(tracker.getAllJobs(tableId)).thenReturn(exampleStatusList);
 
         // When
@@ -46,7 +45,7 @@ public class JobQueryTest extends JobQueryTestBase {
     @Test
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
-        Type queryType = Type.UNFINISHED;
+        JobQueryType queryType = JobQueryType.UNFINISHED;
         when(tracker.getUnfinishedJobs(tableId)).thenReturn(exampleStatusList);
 
         // When
@@ -59,7 +58,7 @@ public class JobQueryTest extends JobQueryTestBase {
     @Test
     public void shouldCreateDetailedQueryWithSpecifiedJobIds() {
         // Given
-        Type queryType = Type.DETAILED;
+        JobQueryType queryType = JobQueryType.DETAILED;
         String queryParameters = "job1,job2";
         when(tracker.getJob("job1")).thenReturn(Optional.of(exampleStatus1));
         when(tracker.getJob("job2")).thenReturn(Optional.of(exampleStatus2));
@@ -72,19 +71,18 @@ public class JobQueryTest extends JobQueryTestBase {
     }
 
     @Test
-    public void shouldFailDetailedQueryWithNoJobIds() {
+    public void shouldReturnNoDetailedQueryWithNoJobIds() {
         // Given
-        Type queryType = Type.DETAILED;
+        JobQueryType queryType = JobQueryType.DETAILED;
 
         // When
-        assertThatThrownBy(() -> queryStatuses(queryType))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(queryFrom(queryType)).isNull();
     }
 
     @Test
     public void shouldCreateRangeQueryWithSpecifiedDates() {
         // Given
-        Type queryType = Type.RANGE;
+        JobQueryType queryType = JobQueryType.RANGE;
         String queryParameters = "20221123115442,20221130115442";
         Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
@@ -100,7 +98,7 @@ public class JobQueryTest extends JobQueryTestBase {
     @Test
     public void shouldCreateRangeQueryWithDefaultDates() {
         // Given
-        Type queryType = Type.RANGE;
+        JobQueryType queryType = JobQueryType.RANGE;
         Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
         when(tracker.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
@@ -115,7 +113,7 @@ public class JobQueryTest extends JobQueryTestBase {
     @Test
     public void shouldFailRangeQueryWhenStartIsAfterEnd() {
         // Given
-        Type queryType = Type.RANGE;
+        JobQueryType queryType = JobQueryType.RANGE;
         String queryParameters = "20221130125442,20221130115442";
 
         // When / Then

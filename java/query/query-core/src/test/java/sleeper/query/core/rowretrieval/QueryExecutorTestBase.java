@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Spliterators;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -49,14 +48,12 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedUuidsWithPrefix;
 
 public class QueryExecutorTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final InMemoryRowStore rowStore = new InMemoryRowStore();
     protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new LongType()));
     protected final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
-    protected Supplier<String> subQueryIdSupplier = supplyNumberedUuidsWithPrefix("subquery");
 
     protected void addRootFile(String filename, List<Row> rows) {
         addFile(fileReferenceFactory().rootFile(filename, rows.size()), rows);
@@ -101,7 +98,7 @@ public class QueryExecutorTestBase {
     }
 
     private QueryPlanner plannerAtTime(Instant time) throws Exception {
-        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore, time, subQueryIdSupplier);
+        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore, time);
         planner.init(time);
         return planner;
     }

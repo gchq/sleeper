@@ -68,14 +68,14 @@ public class IngestBatcherReportScreen {
             }
             out.clearScreen("");
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
-                    new MenuOption("All files", () -> runBatcherReport(ingestBatcherStoreOpt.get(), BatcherQuery.Type.ALL)),
-                    new MenuOption("Pending files", () -> runBatcherReport(ingestBatcherStoreOpt.get(), BatcherQuery.Type.PENDING))).run();
+                    new MenuOption("All files", () -> runBatcherReport(ingestBatcherStoreOpt.get(), BatcherQuery.ALL)),
+                    new MenuOption("Pending files", () -> runBatcherReport(ingestBatcherStoreOpt.get(), BatcherQuery.PENDING))).run();
         }
     }
 
-    private void runBatcherReport(IngestBatcherStore ingestBatcherStore, BatcherQuery.Type queryType) {
+    private void runBatcherReport(IngestBatcherStore ingestBatcherStore, BatcherQuery query) {
         new IngestBatcherReport(ingestBatcherStore,
-                new StandardIngestBatcherReporter(out.printStream()), BatcherQuery.from(queryType, in),
+                new StandardIngestBatcherReporter(out.printStream()), query,
                 new TableStatusProvider(tableIndex))
                 .run();
         confirmReturnToMainScreen(out, in);

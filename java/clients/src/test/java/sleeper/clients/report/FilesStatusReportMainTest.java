@@ -19,6 +19,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.report.FilesStatusReport.Arguments;
+import sleeper.clients.report.filestatus.CsvFileStatusReporter;
+import sleeper.clients.report.filestatus.JsonFileStatusReporter;
+import sleeper.clients.report.filestatus.StandardFileStatusReporter;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
@@ -38,7 +41,9 @@ public class FilesStatusReportMainTest {
             assertThat(args.tableName()).isEqualTo("my-table");
             assertThat(args.maxNoRefFiles()).isEqualTo(1000);
             assertThat(args.verbose()).isFalse();
-            assertThat(args.reporterType()).isEqualTo("STANDARD");
+            assertThat(args.reporter())
+                    .usingRecursiveComparison()
+                    .isEqualTo(new StandardFileStatusReporter());
         }
 
         @Test
@@ -57,16 +62,21 @@ public class FilesStatusReportMainTest {
 
         @Test
         void shouldReadReportTypeJson() {
-            Arguments args = readArguments("my-instance", "my-table", "--report-type", "json");
+            Arguments args = readArguments("my-instance", "my-table", "--format", "json");
 
-            assertThat(args.reporterType()).isEqualTo("JSON");
+            assertThat(args.reporter())
+                    .usingRecursiveComparison()
+                    .ignoringFields("gson")
+                    .isEqualTo(new JsonFileStatusReporter());
         }
 
         @Test
         void shouldReadReportTypeCsv() {
-            Arguments args = readArguments("my-instance", "my-table", "--report-type", "csv");
+            Arguments args = readArguments("my-instance", "my-table", "--format", "csv");
 
-            assertThat(args.reporterType()).isEqualTo("CSV");
+            assertThat(args.reporter())
+                    .usingRecursiveComparison()
+                    .isEqualTo(new CsvFileStatusReporter());
         }
     }
 
@@ -75,9 +85,9 @@ public class FilesStatusReportMainTest {
 
         @Test
         void shouldRejectUnknownReportType() {
-            assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--report-type", "unknown"))
+            assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--format", "unknown"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Report type not supported: UNKNOWN. Valid types: CSV, JSON, STANDARD");
+                    .hasMessage("Output format not supported: unknown. Valid formats: CSV, JSON, STANDARD");
         }
     }
 

@@ -18,8 +18,9 @@ package sleeper.clients.report.job.query;
 
 import sleeper.clients.util.console.ConsoleInput;
 
-import java.time.Clock;
+import java.time.Instant;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Prompts the user on the command line to create a query to generate a report from a job tracker.
@@ -32,12 +33,12 @@ public class JobQueryPrompt {
     /**
      * Creates a query by prompting the user. This can be used to generate a report from a job tracker.
      *
-     * @param  clock        a clock to get the current time (can be fixed for tests)
+     * @param  timeSupplier a supplier of the current time (can be fixed for tests)
      * @param  in           the console to prompt the user
      * @param  extraQueries specific queries to allow for this prompt
      * @return              the query
      */
-    public static JobQuery from(Clock clock, ConsoleInput in, Map<String, JobQuery> extraQueries) {
+    public static JobQuery from(Supplier<Instant> timeSupplier, ConsoleInput in, Map<String, JobQuery> extraQueries) {
         String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
         if ("".equals(type)) {
             return null;
@@ -49,11 +50,11 @@ public class JobQueryPrompt {
             String jobIds = in.promptLine("Enter job IDs to get detailed information about, separated by commas: ");
             return DetailedJobsQuery.fromParameters(jobIds);
         } else if ("r".equalsIgnoreCase(type)) {
-            return RangeJobsQuery.prompt(in, clock);
+            return RangeJobsQuery.prompt(in, timeSupplier);
         } else if (extraQueries.containsKey(type)) {
             return extraQueries.get(type);
         } else {
-            return from(clock, in, extraQueries);
+            return from(timeSupplier, in, extraQueries);
         }
     }
 }

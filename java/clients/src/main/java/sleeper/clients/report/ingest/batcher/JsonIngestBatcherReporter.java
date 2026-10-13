@@ -44,7 +44,7 @@ public class JsonIngestBatcherReporter implements IngestBatcherReporter {
     }
 
     @Override
-    public void report(List<IngestBatcherTrackedFile> fileList, BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
+    public void report(List<IngestBatcherTrackedFile> fileList, BatcherQuery query, TableStatusProvider tableProvider) {
         Gson gson = createGson(tableProvider);
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("fileList", gson.toJsonTree(fileList));

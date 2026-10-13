@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.report;
+package sleeper.clients.report.arguments;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,9 +28,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class ReportTypeArgumentTest {
+public class OutputFormatArgumentTest {
 
-    private final ReportTypeArgument<String> reportType = ReportTypeArgument
+    private final OutputFormatArgument<String> reportType = OutputFormatArgument
             .withDefault("STANDARD", "standard-reporter")
             .addReporter("JSON", "json-reporter")
             .addReporter("CSV", "csv-reporter")
@@ -38,7 +38,7 @@ public class ReportTypeArgumentTest {
 
     private final CommandLineUsage usage = CommandLineUsage.builder()
             .positionalArguments(List.of("instance-id"))
-            .options(List.of(ReportTypeArgument.option()))
+            .options(List.of(reportType.option()))
             .build();
 
     @Test
@@ -50,40 +50,34 @@ public class ReportTypeArgumentTest {
     @Test
     void shouldReadReporterWhenOptionSet() {
         // When / Then
-        assertThat(read("my-instance", "--report-type", "JSON")).isEqualTo("json-reporter");
+        assertThat(read("my-instance", "--format", "JSON")).isEqualTo("json-reporter");
     }
 
     @Test
     void shouldReadReporterIgnoringCase() {
         // When / Then
-        assertThat(read("my-instance", "--report-type", "json")).isEqualTo("json-reporter");
+        assertThat(read("my-instance", "--format", "json")).isEqualTo("json-reporter");
     }
 
     @Test
     void shouldFailWhenReportTypeIsNotSupported() {
         // When / Then
-        assertThatThrownBy(() -> read("my-instance", "--report-type", "xml"))
+        assertThatThrownBy(() -> read("my-instance", "--format", "xml"))
                 .isInstanceOf(CommandArgumentsException.class)
-                .hasMessage("Report type not supported: xml. Valid types: STANDARD, JSON, CSV");
+                .hasMessage("Output format not supported: xml. Valid formats: CSV, JSON, STANDARD");
     }
 
     @Test
     void shouldDeclareOptionWithSharedName() {
         // When
-        CommandOption option = ReportTypeArgument.option();
+        CommandOption option = reportType.option();
 
         // Then
-        assertThat(option.longName()).isEqualTo("report-type");
+        assertThat(option.longName()).isEqualTo("format");
         assertThat(option.shortName()).isEmpty();
         assertThat(option.isFlag()).isFalse();
-    }
-
-    @Test
-    void shouldCreateHelpTextListingTypesWithTheDefaultFirst() {
-        // When / Then
-        assertThat(reportType.helpText()).isEqualTo("" +
-                "--report-type <type>\n" +
-                "Output format. One of STANDARD, JSON, CSV. Defaults to STANDARD.");
+        assertThat(option.helpText()).get().isEqualTo("Output format. One of CSV, JSON, STANDARD. Defaults to STANDARD.");
+        assertThat(option.argsHelpText()).get().isEqualTo("<format>");
     }
 
     private String read(String... args) {

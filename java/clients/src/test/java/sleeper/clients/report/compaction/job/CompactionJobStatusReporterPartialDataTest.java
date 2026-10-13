@@ -17,7 +17,7 @@ package sleeper.clients.report.compaction.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.util.List;
@@ -32,21 +32,21 @@ public class CompactionJobStatusReporterPartialDataTest extends CompactionJobSta
     @Test
     void shouldReportPartialJobsWithStandardReporter() throws Exception {
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/standard/all/partialJobs.txt"));
     }
 
     @Test
     void shouldReportPartialJobsWithDetailedReporter() throws Exception {
         // When / Then
-        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQuery.Type.DETAILED))
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQueryType.DETAILED))
                 .isEqualTo(example("reports/compaction/job/standard/detailed/partialJobs.txt"));
     }
 
     @Test
     void shouldReportPartialJobsWithJsonReporter() throws Exception {
         // When / Then
-        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQuery.Type.ALL))
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/json/partialJobs.json"));
     }
 

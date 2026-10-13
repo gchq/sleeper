@@ -18,7 +18,7 @@ package sleeper.clients.report.ingest.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.io.IOException;
@@ -36,7 +36,7 @@ class StandardIngestJobStatusReporterRangeQueryTest {
         List<IngestJobStatus> mixedJobs = mixedJobStatuses();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, mixedJobs, 2))
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.RANGE, mixedJobs, 2))
                 .isEqualTo(example("reports/ingest/job/standard/range/mixedJobs.txt"));
     }
 
@@ -46,7 +46,7 @@ class StandardIngestJobStatusReporterRangeQueryTest {
         List<IngestJobStatus> mixedJobs = mixedUnfinishedJobStatuses();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, mixedJobs, 2))
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.RANGE, mixedJobs, 2))
                 .isEqualTo(example("reports/ingest/job/standard/range/unfinishedJobs.txt"));
     }
 
@@ -56,7 +56,7 @@ class StandardIngestJobStatusReporterRangeQueryTest {
         List<IngestJobStatus> noJobs = List.of();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, noJobs, 0))
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.RANGE, noJobs, 0))
                 .isEqualTo(example("reports/ingest/job/standard/range/noJobs.txt"));
     }
 }

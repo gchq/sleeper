@@ -135,6 +135,22 @@ public class QuerySerDeTest {
             assertThat(found).isEqualTo(leafPartitionQuery);
         }
 
+        @ParameterizedTest
+        @MethodSource("serDeConstructors")
+        void shouldSerDeLeafQueryWithAttemptId(QuerySerDeConstructor constructor) {
+            // Given
+            LeafPartitionQuery queryWithAttemptId = leafPartitionQuery.withAttemptId("test-attempt");
+
+            // When
+            QuerySerDe serDe = constructor.createSerDe(tableProperties);
+            String json = serDe.toJson(queryWithAttemptId);
+            LeafPartitionQuery found = serDe.fromJsonOrLeafQuery(json).asLeafQuery();
+
+            // Then
+            assertThat(found).isEqualTo(queryWithAttemptId);
+            assertThat(found.getAttemptId()).isEqualTo("test-attempt");
+        }
+
         @Test
         void shouldGenerateExpectedJsonForParentQuery() {
             Approvals.verify(

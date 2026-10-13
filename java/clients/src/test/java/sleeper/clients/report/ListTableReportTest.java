@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.report.ListTablesReport.Arguments;
+import sleeper.clients.report.tables.JsonListTablesReporter;
+import sleeper.clients.report.tables.StandardListTablesReporter;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
 
@@ -35,14 +37,19 @@ public class ListTableReportTest {
             Arguments args = readArguments("test-instance");
 
             assertThat(args.instanceId()).isEqualTo("test-instance");
-            assertThat(args.reportType()).isEqualTo("STANDARD");
+            assertThat(args.reporter())
+                    .usingRecursiveComparison()
+                    .isEqualTo(new StandardListTablesReporter());
         }
 
         @Test
         void shouldReadReportType() {
-            Arguments args = readArguments("json-instance", "--report-type", "json");
+            Arguments args = readArguments("json-instance", "--format", "json");
 
-            assertThat(args.reportType()).isEqualTo("JSON");
+            assertThat(args.reporter())
+                    .usingRecursiveComparison()
+                    .ignoringFields("gson")
+                    .isEqualTo(new JsonListTablesReporter());
         }
     }
 
@@ -51,9 +58,9 @@ public class ListTableReportTest {
 
         @Test
         void shouldRejectUnknownReportType() {
-            assertThatThrownBy(() -> readArguments("fail-instance", "--report-type", "broken-report-type"))
+            assertThatThrownBy(() -> readArguments("fail-instance", "--format", "broken-report-type"))
                     .isInstanceOf(CommandArgumentsException.class)
-                    .hasMessage("Report type not supported: BROKEN-REPORT-TYPE. Valid types: JSON, STANDARD");
+                    .hasMessage("Output format not supported: broken-report-type. Valid formats: JSON, STANDARD");
         }
     }
 

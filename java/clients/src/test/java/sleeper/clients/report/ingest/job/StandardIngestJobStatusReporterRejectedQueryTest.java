@@ -18,7 +18,7 @@ package sleeper.clients.report.ingest.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.util.Collections;
@@ -35,7 +35,7 @@ public class StandardIngestJobStatusReporterRejectedQueryTest {
         List<IngestJobStatus> statusList = rejectedJobWithOneReason();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.REJECTED, statusList, 0)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.REJECTED, statusList, 0)).hasToString(
                 example("reports/ingest/job/standard/rejected/rejectedJob.txt"));
     }
 
@@ -45,7 +45,7 @@ public class StandardIngestJobStatusReporterRejectedQueryTest {
         List<IngestJobStatus> statusList = Collections.emptyList();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.REJECTED, statusList, 0)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.REJECTED, statusList, 0)).hasToString(
                 example("reports/ingest/job/standard/rejected/noJobs.txt"));
     }
 }

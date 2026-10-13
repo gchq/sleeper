@@ -42,6 +42,7 @@ import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
@@ -79,27 +80,32 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         submitQuery(query);
 
         try {
-            QueryState state = QueryState.IN_PROGRESS;
+            QueryState state;
             int count = 0;
+            TrackedQuery trackedQuery;
 
-            do {
+            while (true) {
                 out.println("Polling query tracker");
 
-                TrackedQuery trackedQuery = queryTracker.getStatus(queryId);
+                trackedQuery = queryTracker.getStatus(queryId);
                 if (trackedQuery != null) {
                     state = trackedQuery.getLastKnownState();
+                    if (!state.equals(QueryState.IN_PROGRESS)) {
+                        break;
+                    }
+                    describeProgress(trackedQuery).ifPresent(out::println);
                 }
+                count++;
 
-                if (state.equals(QueryState.IN_PROGRESS)) {
-                    count++;
-
-                    long sleepTime = sleepTimeForPollCount(count);
-                    out.println("Sleeping for " + (sleepTime / 1000) + " seconds");
-                    Thread.sleep(sleepTime);
-                }
-            } while (state.equals(QueryState.IN_PROGRESS));
+                long sleepTime = sleepTimeForPollCount(count);
+                out.println("Sleeping for " + (sleepTime / 1000) + " seconds");
+                Thread.sleep(sleepTime);
+            }
 
             out.println("Finished query processing with final state of: " + state);
+            if (trackedQuery.getRowCount() != null) {
+                out.println("Query returned " + trackedQuery.getRowCount() + " rows");
+            }
         } catch (QueryTrackerException | InterruptedException e) {
             out.println("Failed to get status");
             out.printStackTrace(e);
@@ -145,6 +151,28 @@ public class QueryLambdaClient extends QueryCommandLineClient {
      */
     public void submitQuery(Query query) {
         querySender.sendQuery(query.withResultsPublisherConfig(resultsPublisherConfig));
+    }
+
+    /**
+     * Describes the progress of a query that is still in progress. The counts are only tracked
+     * on a parent query that was split into sub-queries.
+     *
+     * @param  trackedQuery the status of the query held in the query tracker
+     * @return              a description of how many sub-queries have finished, if that is known
+     */
+    static Optional<String> describeProgress(TrackedQuery trackedQuery) {
+        Long expected = trackedQuery.getExpectedSubQueryCount();
+        Long finished = trackedQuery.getFinishedSubQueryCount();
+        if (expected == null || finished == null) {
+            return Optional.empty();
+        }
+        String progress = "Query in progress: " + finished + " of " + expected + " subqueries finished, "
+                + trackedQuery.getRemainingSubQueryCount() + " remaining";
+        Long rowCount = trackedQuery.getFinishedSubQueryRowCount();
+        if (rowCount != null) {
+            progress += ", " + rowCount + " rows output so far";
+        }
+        return Optional.of(progress);
     }
 
     private static long sleepTimeForPollCount(int count) {

@@ -32,5 +32,5 @@ public interface QueryTrackerReporter {
      * @param query   the query that was made against the tracker to retrieve the statuses
      * @param queries the status of queries retrieved from the tracker
      */
-    void report(TrackerQuery query, List<TrackedQuery> queries);
+    void report(QueryTrackerQuery query, List<TrackedQuery> queries);
 }

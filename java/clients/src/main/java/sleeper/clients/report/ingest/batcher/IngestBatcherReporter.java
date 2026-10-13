@@ -31,8 +31,8 @@ public interface IngestBatcherReporter {
      * Creates a report on the status of files tracked by the ingest batcher.
      *
      * @param statusList    the file tracking information retrieved from the ingest batcher store
-     * @param queryType     the type of query to produce the report
+     * @param query         the query used to produce the report
      * @param tableProvider a provider to retrieve the status of a Sleeper table
      */
-    void report(List<IngestBatcherTrackedFile> statusList, BatcherQuery.Type queryType, TableStatusProvider tableProvider);
+    void report(List<IngestBatcherTrackedFile> statusList, BatcherQuery query, TableStatusProvider tableProvider);
 }

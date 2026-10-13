@@ -16,6 +16,7 @@
 package sleeper.clients.images;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
@@ -41,6 +42,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRA
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
+@Tag("image") // Tag for exclusion by IDEs
 public class CompactionTaskDockerImageST extends DockerImageTestBase {
 
     @BeforeEach

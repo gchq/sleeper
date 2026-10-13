@@ -18,16 +18,26 @@ package sleeper.configuration.properties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.awscore.retry.AwsRetryStrategy;
+import software.amazon.awssdk.core.interceptor.Context;
+import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
+import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
+import software.amazon.awssdk.http.SdkHttpResponse;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 class S3TablePropertiesStoreIT extends TablePropertiesITBase {
 
@@ -194,6 +204,33 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
         void shouldFindNoTableById() {
             assertThatThrownBy(() -> store.loadById("not-a-table"))
                     .isInstanceOf(TableNotFoundException.class);
+        }
+
+        @Test
+        void shouldNotTreatS3ServerErrorAsTableNotFound() {
+            // Given
+            store.save(tableProperties);
+
+            // When / Then
+            try (S3Client failingS3Client = buildS3ClientReturningStatusCode(503)) {
+                TablePropertiesStore failingStore = S3TableProperties.createStore(instanceProperties, failingS3Client, dynamoClient);
+                assertThatThrownBy(() -> failingStore.loadById(tableId))
+                        .isInstanceOfSatisfying(S3Exception.class,
+                                e -> assertThat(e.statusCode()).isEqualTo(503))
+                        .isNotInstanceOf(TableNotFoundException.class);
+            }
+        }
+
+        private S3Client buildS3ClientReturningStatusCode(int statusCode) {
+            return buildAwsV2Client(SleeperLocalStackContainer.INSTANCE, S3Client.builder()
+                    .overrideConfiguration(config -> config
+                            .retryStrategy(AwsRetryStrategy.doNotRetry())
+                            .addExecutionInterceptor(new ExecutionInterceptor() {
+                                @Override
+                                public SdkHttpResponse modifyHttpResponse(Context.ModifyHttpResponse context, ExecutionAttributes executionAttributes) {
+                                    return context.httpResponse().toBuilder().statusCode(statusCode).build();
+                                }
+                            })));
         }
     }
 }

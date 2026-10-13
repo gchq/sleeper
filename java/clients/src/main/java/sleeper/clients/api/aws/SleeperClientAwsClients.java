@@ -114,7 +114,7 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
 
     @Override
     public void close() {
-        UncheckedAutoCloseables.close(List.of(sqsClientWrapper, dynamoClientWrapper, s3ClientWrapper));
+        UncheckedAutoCloseables.close(List.of(sqsClientWrapper, dynamoClientWrapper, s3ClientWrapper, stsClientWrapper));
     }
 
     /**
@@ -206,6 +206,26 @@ public class SleeperClientAwsClients implements UncheckedAutoCloseable {
          */
         public Builder awsCredentialsProvider(AwsCredentialsProvider awsCredentialsProvider) {
             this.awsCredentialsProvider = awsCredentialsProvider;
+            return this;
+        }
+
+        Builder s3ClientWrapper(ShutdownWrapper<S3Client> s3ClientWrapper) {
+            this.s3ClientWrapper = s3ClientWrapper;
+            return this;
+        }
+
+        Builder dynamoClientWrapper(ShutdownWrapper<DynamoDbClient> dynamoClientWrapper) {
+            this.dynamoClientWrapper = dynamoClientWrapper;
+            return this;
+        }
+
+        Builder sqsClientWrapper(ShutdownWrapper<SqsClient> sqsClientWrapper) {
+            this.sqsClientWrapper = sqsClientWrapper;
+            return this;
+        }
+
+        Builder stsClientWrapper(ShutdownWrapper<StsClient> stsClientWrapper) {
+            this.stsClientWrapper = stsClientWrapper;
             return this;
         }
 

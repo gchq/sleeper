@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.util.Collections;
@@ -43,7 +43,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> noJobs = Collections.emptyList();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, noJobs, 0)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.ALL, noJobs, 0)).hasToString(
                 example("reports/ingest/job/standard/all/noJobs.txt"));
     }
 
@@ -53,7 +53,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> mixedJobs = mixedJobStatuses();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, mixedJobs, 2)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.ALL, mixedJobs, 2)).hasToString(
                 example("reports/ingest/job/standard/all/mixedJobs.txt"));
     }
 
@@ -63,7 +63,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> jobWithMultipleRuns = jobWithMultipleRuns();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, jobWithMultipleRuns, 0)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.ALL, jobWithMultipleRuns, 0)).hasToString(
                 example("reports/ingest/job/standard/all/jobWithMultipleRuns.txt"));
     }
 
@@ -73,7 +73,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> jobsWithLargeAndDecimalStatistics = jobsWithLargeAndDecimalStatistics();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
                 example("reports/ingest/job/standard/all/jobsWithLargeAndDecimalStatistics.txt"));
     }
 
@@ -84,7 +84,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
         Map<String, Integer> stepCount = Map.of("PENDING", 2, "RUNNING", 1);
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, noJobs, 0, stepCount))
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.ALL, noJobs, 0, stepCount))
                 .hasToString(example("reports/ingest/job/standard/all/noJobsWithEmrStepsUnfinished.txt"));
     }
 
@@ -98,7 +98,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
             List<IngestJobStatus> jobs = finishedBulkImportJob();
 
             // When / Then
-            assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, jobs, 0)).hasToString(
+            assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.ALL, jobs, 0)).hasToString(
                     example("reports/ingest/job/standard/all/bulkImport/finishedJob.txt"));
         }
 
@@ -108,7 +108,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
             List<IngestJobStatus> acceptedJob = acceptedJob();
 
             // When / Then
-            assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, acceptedJob, 0)).hasToString(
+            assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.ALL, acceptedJob, 0)).hasToString(
                     example("reports/ingest/job/standard/all/bulkImport/acceptedJob.txt"));
         }
 
@@ -118,7 +118,7 @@ public class StandardIngestJobStatusReporterAllQueryTest {
             List<IngestJobStatus> rejectedJob = rejectedJobWithOneReason();
 
             // When / Then
-            assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, rejectedJob, 0)).hasToString(
+            assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQueryType.ALL, rejectedJob, 0)).hasToString(
                     example("reports/ingest/job/standard/all/bulkImport/rejectedJob.txt"));
         }
     }

@@ -59,21 +59,21 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
     }
 
     @Override
-    public void report(List<IngestBatcherTrackedFile> statusList, BatcherQuery.Type queryType, TableStatusProvider tableProvider) {
+    public void report(List<IngestBatcherTrackedFile> statusList, BatcherQuery query, TableStatusProvider tableProvider) {
         out.println();
         out.println("Ingest Batcher Report");
         out.println("---------------------");
-        printSummary(statusList, queryType);
+        printSummary(statusList, query);
         tableFactory.tableBuilder()
                 .itemsAndWriter(statusList, (item, builder) -> writeFileRequest(item, builder, tableProvider))
-                .showField(queryType == BatcherQuery.Type.ALL, jobIdField)
+                .showField(query == BatcherQuery.ALL, jobIdField)
                 .build().write(out);
     }
 
-    private void printSummary(List<IngestBatcherTrackedFile> statusList, BatcherQuery.Type queryType) {
+    private void printSummary(List<IngestBatcherTrackedFile> statusList, BatcherQuery query) {
         long batchedFiles = statusList.stream().filter(IngestBatcherTrackedFile::isAssignedToJob).count();
         out.println("Total pending files: " + (statusList.size() - batchedFiles));
-        if (queryType == BatcherQuery.Type.ALL) {
+        if (query == BatcherQuery.ALL) {
             out.println("Total batched files: " + batchedFiles);
         }
     }

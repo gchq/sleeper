@@ -16,7 +16,7 @@
 
 package sleeper.clients.report.compaction.job;
 
-import sleeper.clients.report.job.query.JobQuery;
+import sleeper.clients.report.job.query.JobQueryType;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.util.List;
@@ -33,6 +33,6 @@ public interface CompactionJobStatusReporter {
      * @param jobStatusList the status updates retrieved from the job tracker
      * @param queryType     the type of query made for the report
      */
-    void report(List<CompactionJobStatus> jobStatusList, JobQuery.Type queryType);
+    void report(List<CompactionJobStatus> jobStatusList, JobQueryType queryType);
 
 }

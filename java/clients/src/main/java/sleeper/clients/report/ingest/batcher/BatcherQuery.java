@@ -16,20 +16,36 @@
 
 package sleeper.clients.report.ingest.batcher;
 
-import sleeper.clients.report.ingest.batcher.query.AllFilesQuery;
-import sleeper.clients.report.ingest.batcher.query.BatcherQueryPrompt;
-import sleeper.clients.report.ingest.batcher.query.PendingFilesQuery;
-import sleeper.clients.util.console.ConsoleInput;
+import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandArgumentsException;
+import sleeper.core.util.cli.CommandOption;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.joining;
 
 /**
  * A query to generate a report based on files in the ingest batcher store. Different types of query can include files
- * based on their status or other parameters.
+ * based on their status.
  */
-public interface BatcherQuery {
+public enum BatcherQuery {
+    ALL(option("all", 'a', "Reports on all files, whether waiting to be batched or already in jobs."),
+            IngestBatcherStore::getAllFilesNewestFirst),
+    PENDING(option("pending", 'p', "Reports on pending files, which have not yet been added to a job."),
+            IngestBatcherStore::getPendingFilesOldestFirst);
+
+    private final CommandOption option;
+    private final Function<IngestBatcherStore, List<IngestBatcherTrackedFile>> runner;
+
+    BatcherQuery(CommandOption option, Function<IngestBatcherStore, List<IngestBatcherTrackedFile>> runner) {
+        this.option = option;
+        this.runner = runner;
+    }
 
     /**
      * Retrieves file tracking information from the store that matches this query.
@@ -37,41 +53,48 @@ public interface BatcherQuery {
      * @param  store the ingest batcher store
      * @return       the file tracking information
      */
-    List<IngestBatcherTrackedFile> run(IngestBatcherStore store);
-
-    /**
-     * Retrieves the type of this query.
-     *
-     * @return the type
-     */
-    Type getType();
-
-    /**
-     * Creates a query from a query type, prompting the user for more information if necessary.
-     *
-     * @param  queryType the query type
-     * @param  in        the console to prompt the user for more information
-     * @return           the query
-     */
-    static BatcherQuery from(BatcherQuery.Type queryType, ConsoleInput in) {
-        if (queryType == Type.PROMPT) {
-            return BatcherQueryPrompt.from(in);
-        } else if (queryType == Type.ALL) {
-            return new AllFilesQuery();
-        } else if (queryType == Type.PENDING) {
-            return new PendingFilesQuery();
-        } else {
-            throw new IllegalArgumentException("Unexpected query type: " + queryType);
-        }
-
+    public List<IngestBatcherTrackedFile> run(IngestBatcherStore store) {
+        return runner.apply(store);
     }
 
     /**
-     * The type of a query for a report on files tracked in the ingest batcher store.
+     * Retrieves the command line option that selects this query type.
+     *
+     * @return the option
      */
-    enum Type {
-        PROMPT,
-        ALL,
-        PENDING
+    public CommandOption option() {
+        return option;
+    }
+
+    /**
+     * Retrieves the command line options for all query types.
+     *
+     * @return the options
+     */
+    public static List<CommandOption> options() {
+        return Stream.of(values()).map(BatcherQuery::option).toList();
+    }
+
+    /**
+     * Reads the query type set on the command line. If none is set, an empty optional will be returned, in which case
+     * some default behaviour should happen, e.g. prompting.
+     *
+     * @param  arguments the command line arguments
+     * @return           the query, if exactly one type is set
+     */
+    public static Optional<BatcherQuery> readOneOf(CommandArguments arguments) {
+        List<BatcherQuery> queries = Stream.of(values())
+                .filter(query -> arguments.isSet(query.option()))
+                .toList();
+        if (queries.size() > 1) {
+            throw new CommandArgumentsException(
+                    "Cannot combine query types. Options have been set for the following types: " +
+                            queries.stream().map(BatcherQuery::name).collect(joining(", ")));
+        }
+        return queries.stream().findFirst();
+    }
+
+    private static CommandOption option(String longName, char shortName, String helpText) {
+        return CommandOption.withLongName(longName).shortName(shortName).helpText(helpText).build();
     }
 }
