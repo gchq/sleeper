@@ -1,0 +1,8 @@
+
+Query Tracker Report
+--------------------
+Query parent-query-1 is COMPLETED
+--------------------------------------------------------------------------------
+| STATE     | QUERY_ID       | SUB_QUERY_ID | LAST_UPDATE_TIME     | ROW_COUNT |
+| COMPLETED | parent-query-1 | -            | 2023-09-28T19:15:00Z | 456       |
+--------------------------------------------------------------------------------

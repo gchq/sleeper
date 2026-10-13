@@ -63,6 +63,10 @@ public class JsonQueryTrackerReporter implements QueryTrackerReporter {
         jsonObject.addProperty("lastKnownState", query.getLastKnownState().toString());
         jsonObject.addProperty("rowCount", query.getRowCount());
         jsonObject.addProperty("errorMessage", query.getErrorMessage());
+        jsonObject.addProperty("expectedSubQueryCount", query.getExpectedSubQueryCount());
+        jsonObject.addProperty("succeededSubQueryCount", query.getSucceededSubQueryCount());
+        jsonObject.addProperty("failedSubQueryCount", query.getFailedSubQueryCount());
+        jsonObject.addProperty("finishedSubQueryRowCount", query.getFinishedSubQueryRowCount());
         return jsonObject;
     }
 }
