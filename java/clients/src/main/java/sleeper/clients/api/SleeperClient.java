@@ -34,6 +34,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.query.core.model.Query;
@@ -41,9 +42,11 @@ import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
+import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -64,6 +67,8 @@ import java.util.stream.Stream;
 public class SleeperClient implements AutoCloseable {
 
     private static final Predicate<String> LOWER_ALPHANUMERICS_AND_DASHES = Pattern.compile("^[a-z0-9-]+$").asPredicate();
+    private static final PollWithRetries DEFAULT_QUERY_POLL = PollWithRetries.intervalAndPollingTimeout(
+            Duration.ofSeconds(2), Duration.ofMinutes(15));
 
     private final InstanceProperties instanceProperties;
     private final TableIndex tableIndex;
@@ -332,7 +337,7 @@ public class SleeperClient implements AutoCloseable {
 
     /**
      * Submits a query to be processed by the query lambdas. The query is sent to an SQS queue. This triggers a lambda
-     * which plans the query, creates subqueries and sends those to a second SQS queure from where they trigger a
+     * which plans the query, creates subqueries and sends those to a second SQS queue from where they trigger a
      * lambda for processing. The results are published to the results output set in the query's processing config, by
      * default as Parquet files in the query results bucket under the query ID.
      * <p>
@@ -349,7 +354,7 @@ public class SleeperClient implements AutoCloseable {
 
     /**
      * Reads the status of a query and its subqueries from the query tracker. The entry for the query itself comes
-     * first when it is tracked. THis includes its progress (counts of the expected, succeeded and failed subquery
+     * first when it is tracked. This includes its progress (counts of the expected, succeeded and failed subquery
      * counts), and the number of rows returned by finished subqueries. Entries for the subqueries follow; note that
      * an entry for a subquery is only written to the tracker when processing begins.
      *
@@ -358,6 +363,46 @@ public class SleeperClient implements AutoCloseable {
      */
     public List<TrackedQuery> getQueryStatus(String queryId) {
         return queryTrackerStore.getQueryAndSubQueries(queryId);
+    }
+
+    /**
+     * Waits for a query submitted for processing by the query lambdas to finish, by polling the query tracker with
+     * default settings. A query is finished when it has completed, failed or partially failed.
+     *
+     * @param  queryId                            the query ID
+     * @return                                    the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException               if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     */
+    public TrackedQuery waitForQuery(String queryId) throws InterruptedException {
+        return waitForQuery(queryId, DEFAULT_QUERY_POLL);
+    }
+
+    /**
+     * Waits for a query submitted for processing by the query lambdas to finish, by polling the query tracker. A
+     * query is finished when it has completed, failed or partially failed. The returned entry includes the query's
+     * progress: the expected, succeeded and failed subquery counts, and the number of rows returned by finished
+     * subqueries. A query that is not yet tracked is polled until it appears, as its entry is only written when the
+     * query lambda starts processing it.
+     *
+     * @param  queryId                            the query ID
+     * @param  poll                               the polling interval and timeout
+     * @return                                    the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException               if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     */
+    public TrackedQuery waitForQuery(String queryId, PollWithRetries poll) throws InterruptedException {
+        return poll.queryUntil("query " + queryId + " is finished",
+                () -> getTrackedQuery(queryId),
+                status -> status != null && status.getLastKnownState().isFinished());
+    }
+
+    private TrackedQuery getTrackedQuery(String queryId) {
+        try {
+            return queryTrackerStore.getStatus(queryId);
+        } catch (QueryTrackerException e) {
+            throw new RuntimeException("Failed reading status of query " + queryId + " from the query tracker", e);
+        }
     }
 
     /**
