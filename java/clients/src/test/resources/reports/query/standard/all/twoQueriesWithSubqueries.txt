@@ -1,0 +1,24 @@
+
+Query Tracker Report
+--------------------
+Queries queued: 0, subqueries queued: 0
+Queries in progress: 2, subqueries in progress: 4
+Queries completed: 0, subqueries completed: 0
+Queries partially failed: 0, subqueries partially failed: 0
+Queries failed: 0, subqueries failed: 0
+
+Queries:
+-------------------------------------------------------------------------------------------------------------
+| STATE       | QUERY_ID       | LAST_UPDATE_TIME     | SUBQUERIES_FINISHED | SUBQUERIES_FAILED | ROW_COUNT |
+| IN_PROGRESS | parent-query-1 | 2023-09-28T19:15:00Z |                     |                   | 0         |
+| IN_PROGRESS | parent-query-2 | 2023-09-28T19:19:00Z |                     |                   | 0         |
+-------------------------------------------------------------------------------------------------------------
+
+Subqueries:
+-----------------------------------------------------------------------------------------------
+| STATE       | QUERY_ID       | SUB_QUERY_ID | ATTEMPT_ID | LAST_UPDATE_TIME     | ROW_COUNT |
+| IN_PROGRESS | parent-query-1 | sub-query-a  |            | 2023-09-28T19:16:00Z | 0         |
+| IN_PROGRESS | parent-query-1 | sub-query-b  |            | 2023-09-28T19:17:00Z | 0         |
+| IN_PROGRESS | parent-query-2 | sub-query-a  |            | 2023-09-28T19:21:00Z | 0         |
+| IN_PROGRESS | parent-query-2 | sub-query-b  |            | 2023-09-28T19:20:00Z | 0         |
+-----------------------------------------------------------------------------------------------

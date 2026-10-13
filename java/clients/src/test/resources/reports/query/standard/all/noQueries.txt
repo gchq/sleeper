@@ -1,14 +1,18 @@
 
 Query Tracker Report
 --------------------
-Total queries: 0
+Queries queued: 0, subqueries queued: 0
+Queries in progress: 0, subqueries in progress: 0
+Queries completed: 0, subqueries completed: 0
+Queries partially failed: 0, subqueries partially failed: 0
+Queries failed: 0, subqueries failed: 0
 
-Total queries queued: 0
-Total queries in progress: 0
-Total queries completed: 0
+Queries:
+---------------------------------------------------------------------------------------------
+| STATE | QUERY_ID | LAST_UPDATE_TIME | SUBQUERIES_FINISHED | SUBQUERIES_FAILED | ROW_COUNT |
+---------------------------------------------------------------------------------------------
 
-Total queries partially failed: 0
-Total queries failed: 0
-------------------------------------------------------------------
-| STATE | QUERY_ID | SUB_QUERY_ID | LAST_UPDATE_TIME | ROW_COUNT |
-------------------------------------------------------------------
+Subqueries:
+-------------------------------------------------------------------------------
+| STATE | QUERY_ID | SUB_QUERY_ID | ATTEMPT_ID | LAST_UPDATE_TIME | ROW_COUNT |
+-------------------------------------------------------------------------------
