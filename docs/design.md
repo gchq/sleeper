@@ -39,14 +39,14 @@ with 3 fields: `id -> "abc"`, `timestamp -> 1234567980`, `value -> "hello"`.
 ## Schema
 
 A schema specifies the fields that will be found in rows in a table. Each field has a name and a type. There are
-three different classes of fields: row fields, sort fields, and value fields. The row fields are used to partition
-and sort the data, i.e. all rows with the same values of the row fields are within the same partition, and a
-partition contains a range of values of the row fields. Within a partition, rows are stored sorted by the row
+three different classes of fields: row key fields, sort fields, and value fields. The row key fields are used to partition
+and sort the data, i.e. all rows with the same values of the row key fields are within the same partition, and a
+partition contains a range of values of the row key fields. Within a partition, rows are stored sorted by the row
 fields and then the sort fields. The following types are supported for row and sort fields: int, long, string,
 byte array. Value fields can be one of these primitive types but can also be of map or list type.
 
 Sleeper is designed to allow quick retrieval of rows where the key field is a given value, or where the key
-field is in a certain range. Note that the row fields and sort fields are ordered, e.g. if there are two row key
+field is in a certain range. Note that the row key fields and sort fields are ordered, e.g. if there are two row key
 fields id1 and id2, then rows are stored sorted by id1 and, in the case of ties, by id2. This means that queries
 for rows where id1 = x and id2 = y will be quick, as will queries that just specify id1. But queries that just
 specify id2 will not be quick as they will require a full scan of the table (although file-level statistics can

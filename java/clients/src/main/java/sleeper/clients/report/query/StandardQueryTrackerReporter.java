@@ -26,6 +26,7 @@ import java.io.PrintStream;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Creates reports in human-readable string format on the status of queries. This produces a table.
@@ -71,6 +72,8 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
             printCompletedSummary(trackedQueries.size());
         } else if (QueryTrackerQuery.FAILED == queryType) {
             printFailedSummary(trackedQueries);
+        } else if (QueryTrackerQuery.FOR_QUERY == queryType) {
+            printForQuerySummary(trackedQueries);
         }
         tableFactory.tableBuilder().itemsAndWriter(trackedQueries, this::writeQueryFields)
                 .showField(showErrorsField(queryType, trackedQueries), errorMessage)
@@ -81,7 +84,7 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
         if (QueryTrackerQuery.FAILED == queryType) {
             return true;
         } else {
-            return QueryTrackerQuery.ALL == queryType &&
+            return (QueryTrackerQuery.ALL == queryType || QueryTrackerQuery.FOR_QUERY == queryType) &&
                     trackedQueries.stream().anyMatch(query -> Objects.nonNull(query.getErrorMessage()));
         }
     }
@@ -106,6 +109,23 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
 
     private void printCompletedSummary(long queryCount) {
         out.printf("Total queries completed: %d%n", queryCount);
+    }
+
+    private void printForQuerySummary(List<TrackedQuery> trackedQueries) {
+        Optional<TrackedQuery> parent = trackedQueries.stream()
+                .filter(query -> "-".equals(query.getSubQueryId()))
+                .findFirst();
+        if (parent.isEmpty()) {
+            out.println("Query not found");
+            return;
+        }
+        TrackedQuery query = parent.get();
+        out.printf("Query %s is %s%n", query.getQueryId(), query.getLastKnownState());
+        if (query.getExpectedSubQueryCount() != null) {
+            out.printf("Subqueries finished: %d of %d (%d failed)%n",
+                    query.getFinishedSubQueryCount(), query.getExpectedSubQueryCount(), query.getFailedSubQueryCount());
+            out.printf("Rows returned by finished subqueries: %d%n", query.getFinishedSubQueryRowCount());
+        }
     }
 
     private void printFailedSummary(List<TrackedQuery> failedQueries) {

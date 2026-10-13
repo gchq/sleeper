@@ -49,10 +49,12 @@ public class QueryTrackerReport {
     private final QueryTrackerReporter reporter;
     private final QueryTrackerStore queryTrackerStore;
     private final QueryTrackerQuery queryType;
+    private final String queryId;
 
-    public QueryTrackerReport(QueryTrackerStore queryTrackerStore, QueryTrackerQuery queryType, QueryTrackerReporter reporter) {
+    public QueryTrackerReport(QueryTrackerStore queryTrackerStore, QueryTrackerQuery queryType, String queryId, QueryTrackerReporter reporter) {
         this.queryTrackerStore = queryTrackerStore;
         this.queryType = queryType;
+        this.queryId = queryId;
         this.reporter = reporter;
     }
 
@@ -60,7 +62,7 @@ public class QueryTrackerReport {
      * Creates a report.
      */
     public void run() {
-        reporter.report(queryType, queryType.run(queryTrackerStore));
+        reporter.report(queryType, queryType.run(queryTrackerStore, queryId));
     }
 
     public static void main(String[] args) {
@@ -73,7 +75,7 @@ public class QueryTrackerReport {
             String accountName = stsClient.getCallerIdentity().account();
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenAccountAndInstanceId(s3Client, accountName, reportArgs.instanceId());
             QueryTrackerStore queryTrackerStore = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-            new QueryTrackerReport(queryTrackerStore, reportArgs.query(), reportArgs.reporter()).run();
+            new QueryTrackerReport(queryTrackerStore, reportArgs.query(), reportArgs.queryId(), reportArgs.reporter()).run();
         }
     }
 
@@ -104,10 +106,16 @@ public class QueryTrackerReport {
      * @return           the arguments
      */
     public static Arguments readArguments(CommandArguments arguments, ConsoleInput input) {
+        QueryTrackerQuery query = QueryTrackerQuery.readOneOf(arguments)
+                .orElseGet(() -> QueryTrackerQueryPrompt.from(input));
+        String queryId = query == QueryTrackerQuery.FOR_QUERY
+                ? arguments.getOptionalString(QueryTrackerQuery.FOR_QUERY.option().longName())
+                        .filter(id -> !id.isBlank())
+                        .orElseGet(() -> QueryTrackerQueryPrompt.promptQueryId(input))
+                : null;
         return new Arguments(arguments.getString("instance-id"),
                 OUTPUT_FORMAT.read(arguments),
-                QueryTrackerQuery.readOneOf(arguments)
-                        .orElseGet(() -> QueryTrackerQueryPrompt.from(input)));
+                query, queryId);
     }
 
     /**
@@ -116,7 +124,8 @@ public class QueryTrackerReport {
      * @param instanceId the Sleeper instance ID
      * @param reporter   the reporter format, either STANDARD or JSON
      * @param query      the query to execute against the query tracker
+     * @param queryId    the ID of the query to report on, only set when reporting on a single query
      */
-    public record Arguments(String instanceId, QueryTrackerReporter reporter, QueryTrackerQuery query) {
+    public record Arguments(String instanceId, QueryTrackerReporter reporter, QueryTrackerQuery query, String queryId) {
     }
 }
