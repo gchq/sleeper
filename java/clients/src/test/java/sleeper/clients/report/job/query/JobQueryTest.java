@@ -31,7 +31,12 @@ public class JobQueryTest extends JobQueryTestBase {
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
         JobQueryType queryType = JobQueryType.ALL;
-        List<CompactionJobStatus> expected = createAllQueryJobs();
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        CompactionJobStatus finished = createFinishedJob("finished-job", tableId,
+                Instant.parse("2022-11-30T09:00:00Z"), Instant.parse("2022-11-30T10:00:00Z"));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T09:30:00Z"));
+        List<CompactionJobStatus> expected = List.of(finished, status2, status1);
 
         // When
         List<CompactionJobStatus> statuses = queryStatuses(queryType);
@@ -44,13 +49,17 @@ public class JobQueryTest extends JobQueryTestBase {
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
         JobQueryType queryType = JobQueryType.UNFINISHED;
-        createAllQueryJobs();
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        createFinishedJob("finished-job", tableId,
+                Instant.parse("2022-11-30T09:00:00Z"), Instant.parse("2022-11-30T10:00:00Z"));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T09:30:00Z"));
 
         // When
         List<CompactionJobStatus> statuses = queryStatuses(queryType);
 
         // Then
-        assertThat(statuses).isEqualTo(exampleStatusList);
+        assertThat(statuses).containsExactly(status2, status1);
     }
 
     @Test
@@ -58,13 +67,16 @@ public class JobQueryTest extends JobQueryTestBase {
         // Given
         JobQueryType queryType = JobQueryType.DETAILED;
         String queryParameters = "job1,job2";
-        createDetailedQueryJobs();
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        createJob("unrequested-job", tableId, Instant.parse("2022-11-30T09:00:00Z"));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T09:30:00Z"));
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesWithParams(queryType, queryParameters);
 
         // Then
-        assertThat(statuses).containsExactly(exampleStatus1, exampleStatus2);
+        assertThat(statuses).containsExactly(status1, status2);
     }
 
     @Test
@@ -81,8 +93,15 @@ public class JobQueryTest extends JobQueryTestBase {
         // Given
         JobQueryType queryType = JobQueryType.RANGE;
         String queryParameters = "20221123115442,20221130115442";
-        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-23T11:54:42.000Z"),
-                Instant.parse("2022-11-30T11:54:42.000Z"));
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
+        CompactionJobStatus insideStart = createFinishedJob("inside-start", tableId,
+                start.plusSeconds(1), start.plusSeconds(2));
+        createFinishedJob("before-range", tableId, start.minusSeconds(2), start.minusSeconds(1));
+        createJob("after-range", tableId, Instant.parse("2022-11-30T11:54:42.000Z").plusSeconds(1));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T08:33:12.001Z"));
+        List<CompactionJobStatus> expected = List.of(status2, status1, insideStart);
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesWithParams(queryType, queryParameters);
@@ -96,8 +115,15 @@ public class JobQueryTest extends JobQueryTestBase {
         // Given
         JobQueryType queryType = JobQueryType.RANGE;
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-30T07:54:42.000Z"),
-                Instant.parse("2022-11-30T11:54:42.000Z"));
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
+        CompactionJobStatus insideStart = createFinishedJob("inside-start", tableId,
+                start.plusSeconds(1), start.plusSeconds(2));
+        createFinishedJob("before-range", tableId, start.minusSeconds(2), start.minusSeconds(1));
+        createJob("after-range", tableId, Instant.parse("2022-11-30T11:54:42.000Z").plusSeconds(1));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T08:33:12.001Z"));
+        List<CompactionJobStatus> expected = List.of(status2, status1, insideStart);
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesAtTime(queryType, end);

@@ -35,7 +35,12 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
-        List<CompactionJobStatus> expected = createAllQueryJobs();
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        CompactionJobStatus finished = createFinishedJob("finished-job", tableId,
+                Instant.parse("2022-11-30T09:00:00Z"), Instant.parse("2022-11-30T10:00:00Z"));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T09:30:00Z"));
+        List<CompactionJobStatus> expected = List.of(finished, status2, status1);
         in.enterNextPrompt("a");
 
         // When
@@ -49,7 +54,11 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     @Test
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
-        createAllQueryJobs();
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        createFinishedJob("finished-job", tableId,
+                Instant.parse("2022-11-30T09:00:00Z"), Instant.parse("2022-11-30T10:00:00Z"));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T09:30:00Z"));
         in.enterNextPrompt("u");
 
         // When
@@ -57,14 +66,17 @@ public class JobQueryPromptTest extends JobQueryTestBase {
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT);
-        assertThat(statuses).isEqualTo(exampleStatusList);
+        assertThat(statuses).containsExactly(status2, status1);
     }
 
     @Test
     public void shouldCreateDetailedQueryWithSpecifiedJobIds() {
         // Given
         String queryParameters = "job1,job2";
-        createDetailedQueryJobs();
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        createJob("unrequested-job", tableId, Instant.parse("2022-11-30T09:00:00Z"));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T09:30:00Z"));
         in.enterNextPrompts("d", queryParameters);
 
         // When
@@ -72,7 +84,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
 
         // Then
         assertThat(out).hasToString(QUERY_TYPE_PROMPT + DETAILED_JOB_ID_PROMPT);
-        assertThat(statuses).containsExactly(exampleStatus1, exampleStatus2);
+        assertThat(statuses).containsExactly(status1, status2);
     }
 
     @Test
@@ -92,8 +104,15 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     @Test
     public void shouldCreateRangeQueryWithSpecifiedDates() {
         // Given
-        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-23T11:54:42.000Z"),
-                Instant.parse("2022-11-30T11:54:42.000Z"));
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
+        CompactionJobStatus insideStart = createFinishedJob("inside-start", tableId,
+                start.plusSeconds(1), start.plusSeconds(2));
+        createFinishedJob("before-range", tableId, start.minusSeconds(2), start.minusSeconds(1));
+        createJob("after-range", tableId, Instant.parse("2022-11-30T11:54:42.000Z").plusSeconds(1));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T08:33:12.001Z"));
+        List<CompactionJobStatus> expected = List.of(status2, status1, insideStart);
         in.enterNextPrompts("r", "20221123115442", "20221130115442");
 
         // When
@@ -108,8 +127,15 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     public void shouldCreateRangeQueryWithDefaultEndTime() {
         // Given
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-23T11:54:42.000Z"),
-                Instant.parse("2022-11-30T11:54:42.000Z"));
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
+        CompactionJobStatus insideStart = createFinishedJob("inside-start", tableId,
+                start.plusSeconds(1), start.plusSeconds(2));
+        createFinishedJob("before-range", tableId, start.minusSeconds(2), start.minusSeconds(1));
+        createJob("after-range", tableId, Instant.parse("2022-11-30T11:54:42.000Z").plusSeconds(1));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T08:33:12.001Z"));
+        List<CompactionJobStatus> expected = List.of(status2, status1, insideStart);
         in.enterNextPrompts("r", "20221123115442", "");
 
         // When
@@ -124,8 +150,15 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     public void shouldCreateRangeQueryWithDefaultStartTime() {
         // Given
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-30T07:54:42.000Z"),
-                Instant.parse("2022-11-30T11:54:42.000Z"));
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
+        CompactionJobStatus insideStart = createFinishedJob("inside-start", tableId,
+                start.plusSeconds(1), start.plusSeconds(2));
+        createFinishedJob("before-range", tableId, start.minusSeconds(2), start.minusSeconds(1));
+        createJob("after-range", tableId, Instant.parse("2022-11-30T11:54:42.000Z").plusSeconds(1));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T08:33:12.001Z"));
+        List<CompactionJobStatus> expected = List.of(status2, status1, insideStart);
         in.enterNextPrompts("r", "", "20221130115442");
 
         // When
@@ -140,8 +173,15 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     public void shouldRepeatRangeQueryPromptWithInvalidStartTime() {
         // Given
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-23T11:54:42.000Z"),
-                Instant.parse("2022-11-30T11:54:42.000Z"));
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
+        CompactionJobStatus insideStart = createFinishedJob("inside-start", tableId,
+                start.plusSeconds(1), start.plusSeconds(2));
+        createFinishedJob("before-range", tableId, start.minusSeconds(2), start.minusSeconds(1));
+        createJob("after-range", tableId, Instant.parse("2022-11-30T11:54:42.000Z").plusSeconds(1));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T08:33:12.001Z"));
+        List<CompactionJobStatus> expected = List.of(status2, status1, insideStart);
         in.enterNextPrompts("r", "abc", "20221123115442", "20221130115442");
 
         // When
@@ -156,8 +196,15 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     public void shouldRepeatRangeQueryPromptWithInvalidEndTime() {
         // Given
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        List<CompactionJobStatus> expected = createRangeQueryJobs(Instant.parse("2022-11-23T11:54:42.000Z"),
-                Instant.parse("2022-11-30T11:54:42.000Z"));
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
+        CompactionJobStatus insideStart = createFinishedJob("inside-start", tableId,
+                start.plusSeconds(1), start.plusSeconds(2));
+        createFinishedJob("before-range", tableId, start.minusSeconds(2), start.minusSeconds(1));
+        createJob("after-range", tableId, Instant.parse("2022-11-30T11:54:42.000Z").plusSeconds(1));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T08:33:12.001Z"));
+        List<CompactionJobStatus> expected = List.of(status2, status1, insideStart);
         in.enterNextPrompts("r", "20221123115442", "abc", "20221130115442");
 
         // When
@@ -171,7 +218,12 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     @Test
     public void shouldRepeatQueryTypePromptWithInvalidQueryType() {
         // Given
-        List<CompactionJobStatus> expected = createAllQueryJobs();
+        CompactionJobStatus status1 = createJob("job1", tableId, Instant.parse("2022-11-30T08:33:12.001Z"));
+        CompactionJobStatus status2 = createJob("job2", tableId, Instant.parse("2022-11-30T08:53:12.001Z"));
+        CompactionJobStatus finished = createFinishedJob("finished-job", tableId,
+                Instant.parse("2022-11-30T09:00:00Z"), Instant.parse("2022-11-30T10:00:00Z"));
+        createJob("other-table-job", "other-table", Instant.parse("2022-11-30T09:30:00Z"));
+        List<CompactionJobStatus> expected = List.of(finished, status2, status1);
         in.enterNextPrompts("abc", "a");
 
         // When
