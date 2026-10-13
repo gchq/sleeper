@@ -115,7 +115,13 @@ public class IngestJobQueueConsumer implements MessageReceiver {
             Message message = messages.get(0);
             LOGGER.info("Received message {}", message.body());
 
-            Optional<IngestJob> ingestJobOpt = ingestJobMessageHandler.deserialiseAndValidate(message.body());
+            Optional<IngestJob> ingestJobOpt;
+            try {
+                ingestJobOpt = ingestJobMessageHandler.deserialiseAndValidate(message.body());
+            } catch (RuntimeException e) {
+                LOGGER.warn("Failed validating ingest job, skipping: {}", message.body(), e);
+                continue;
+            }
             if (ingestJobOpt.isPresent()) {
                 IngestJob ingestJob = ingestJobOpt.get();
                 MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
