@@ -383,6 +383,37 @@ public class SleeperClient implements AutoCloseable {
     }
 
     /**
+     * Submits a query to be processed by the query lambdas and waits for it to finish, by polling the query tracker
+     * with default settings. This behaves like {@link #submitQuery} followed by {@link #waitForQuery}. The results
+     * are published to the results output set in the query's processing config, by default as Parquet files in the
+     * query results bucket under the query ID.
+     *
+     * @param  query                              the query to run
+     * @return                                    the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException               if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     */
+    public TrackedQuery submitQueryAndWait(Query query) throws InterruptedException {
+        return submitQueryAndWait(query, DEFAULT_QUERY_POLL);
+    }
+
+    /**
+     * Submits a query to be processed by the query lambdas and waits for it to finish, by polling the query tracker.
+     * This behaves like {@link #submitQuery} followed by {@link #waitForQuery}. The results are published to the
+     * results output set in the query's processing config, by default as Parquet files in the query results bucket
+     * under the query ID. The query's progress is logged on each poll.
+     *
+     * @param  query                              the query to run
+     * @param  poll                               the polling interval and timeout
+     * @return                                    the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException               if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     */
+    public TrackedQuery submitQueryAndWait(Query query, PollWithRetries poll) throws InterruptedException {
+        return waitForQuery(submitQuery(query), poll);
+    }
+
+    /**
      * Waits for a query submitted for processing by the query lambdas to finish, by polling the query tracker. A
      * query is finished when it has completed, failed or partially failed. The returned entry includes the query's
      * progress: the expected, succeeded and failed subquery counts, and the number of rows returned by finished

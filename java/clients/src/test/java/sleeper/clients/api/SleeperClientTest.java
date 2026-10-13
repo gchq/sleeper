@@ -196,6 +196,24 @@ class SleeperClientTest {
     }
 
     @Test
+    void shouldSubmitQueryAndWaitUntilItFinishes() throws Exception {
+        // Given a query that completes during the first wait between polls, after it was submitted
+        Query query = exactQuery("test-query", "A", "query-table");
+        List<Duration> foundWaits = new ArrayList<>();
+        PollWithRetries poll = pollWithWaitAction(foundWaits,
+                () -> instance.queryTracker().queryCompleted(query, new ResultsOutputInfo(456L, List.of())));
+
+        // When
+        TrackedQuery status = sleeperClient.submitQueryAndWait(query, poll);
+
+        // Then the query was submitted for processing and polled until it finished
+        assertThat(instance.queryQueue()).containsExactly(query);
+        assertThat(status.getLastKnownState()).isEqualTo(QueryState.COMPLETED);
+        assertThat(status.getRowCount()).isEqualTo(456L);
+        assertThat(foundWaits).hasSize(1);
+    }
+
+    @Test
     void shouldTimeOutWaitingForQueryThatDoesNotFinish() {
         // Given
         Query query = exactQuery("test-query", "A", "query-table");
