@@ -15,6 +15,9 @@
  */
 package sleeper.clients.api;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -66,6 +69,7 @@ import java.util.stream.Stream;
  */
 public class SleeperClient implements AutoCloseable {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperClient.class);
     private static final Predicate<String> LOWER_ALPHANUMERICS_AND_DASHES = Pattern.compile("^[a-z0-9-]+$").asPredicate();
     private static final PollWithRetries DEFAULT_QUERY_POLL = PollWithRetries.intervalAndPollingTimeout(
             Duration.ofSeconds(2), Duration.ofMinutes(15));
@@ -383,7 +387,7 @@ public class SleeperClient implements AutoCloseable {
      * query is finished when it has completed, failed or partially failed. The returned entry includes the query's
      * progress: the expected, succeeded and failed subquery counts, and the number of rows returned by finished
      * subqueries. A query that is not yet tracked is polled until it appears, as its entry is only written when the
-     * query lambda starts processing it.
+     * query lambda starts processing it. The query's progress is logged on each poll.
      *
      * @param  queryId                            the query ID
      * @param  poll                               the polling interval and timeout
@@ -394,7 +398,30 @@ public class SleeperClient implements AutoCloseable {
     public TrackedQuery waitForQuery(String queryId, PollWithRetries poll) throws InterruptedException {
         return poll.queryUntil("query " + queryId + " is finished",
                 () -> getTrackedQuery(queryId),
-                status -> status != null && status.getLastKnownState().isFinished());
+                status -> {
+                    if (status == null) {
+                        LOGGER.info("Query {} is not yet in the query tracker, waiting for it to start", queryId);
+                        return false;
+                    }
+                    if (status.getLastKnownState().isFinished()) {
+                        LOGGER.info("Query {} finished with state {}, rows returned: {}",
+                                queryId, status.getLastKnownState(), status.getRowCount());
+                        return true;
+                    }
+                    logProgress(status);
+                    return false;
+                });
+    }
+
+    private static void logProgress(TrackedQuery status) {
+        if (status.getExpectedSubQueryCount() != null) {
+            LOGGER.info("Query {} is {}: {} of {} subqueries finished ({} failed), {} rows returned so far",
+                    status.getQueryId(), status.getLastKnownState(),
+                    status.getFinishedSubQueryCount(), status.getExpectedSubQueryCount(),
+                    status.getFailedSubQueryCount(), status.getFinishedSubQueryRowCount());
+        } else {
+            LOGGER.info("Query {} is {}", status.getQueryId(), status.getLastKnownState());
+        }
     }
 
     private TrackedQuery getTrackedQuery(String queryId) {
