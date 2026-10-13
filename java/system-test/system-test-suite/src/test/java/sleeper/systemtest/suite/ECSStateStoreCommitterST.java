@@ -45,11 +45,11 @@ public class ECSStateStoreCommitterST {
 
     @Test
     void shouldAddManyFiles(SleeperDsl sleeper) throws Exception {
-        // Given
+        // Given a table with a single root partition
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
-        // When
+        // When 1000 file references are added to the state store in batches
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
@@ -57,7 +57,7 @@ public class ECSStateStoreCommitterST {
                         .map(StateStoreCommitMessage::addFile))
                 .waitForCommitLogs();
 
-        // Then
+        // Then all 1000 files are stored with their expected row counts
         assertThat(sleeper.tableFiles().rowsByFilename()).isEqualTo(
                 LongStream.rangeClosed(1, 1000).mapToObj(i -> i)
                         .collect(toMap(i -> "file-" + i + ".parquet", i -> i)));
