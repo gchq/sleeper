@@ -172,7 +172,7 @@
         <commons-logging.version>1.4.0</commons-logging.version>
         <httpcore4.version>4.4.16</httpcore4.version>
         <httpclient4.version>4.5.14</httpclient4.version>
-        <httpclient5.version>5.6.4</httpclient5.version>
+        <httpclient5.version>5.6.5</httpclient5.version>
         <httpcore5.version>5.4.4</httpcore5.version>
         <jaxb.version>2.3.1</jaxb.version>
         <jline.version>4.4.6</jline.version>
