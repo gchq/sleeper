@@ -32,6 +32,7 @@ import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.queryW
 import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.singleQueryWithFailure;
 import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.singleQueryWithProgress;
 import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.singleQueryWithoutCounters;
+import static sleeper.clients.report.query.QueryTrackerReporterTestHelper.twoQueriesWithInterleavedSubqueries;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryCompleted;
 import static sleeper.query.runner.tracker.TrackedQueryTestHelper.queryFailed;
@@ -65,6 +66,13 @@ public class StandardQueryTrackerReporterTest {
             // When/Then
             assertThat(getStandardReport(QueryTrackerQuery.ALL, queryWithSubqueries()))
                     .isEqualTo(example("reports/query/standard/all/queryWithSubqueries.txt"));
+        }
+
+        @Test
+        void shouldGroupSubqueriesByQueryWhenReturnedInterleaved() throws Exception {
+            // When/Then
+            assertThat(getStandardReport(QueryTrackerQuery.ALL, twoQueriesWithInterleavedSubqueries()))
+                    .isEqualTo(example("reports/query/standard/all/twoQueriesWithSubqueries.txt"));
         }
     }
 

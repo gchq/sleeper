@@ -59,7 +59,7 @@ public class CompactionOnEC2ST {
 
     @Test
     void shouldCompactFilesUsingDefaultCompactionStrategy(SleeperDsl sleeper) {
-        // Given
+        // Given a scenario that would match the SizeRatioStrategy compaction criteria
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 COMPACTION_FILES_BATCH_SIZE, "5"));
@@ -72,10 +72,10 @@ public class CompactionOnEC2ST {
                 .numberedRows(numbers.range(27, 36))
                 .numberedRows(numbers.range(36, 46));
 
-        // When
+        // When the compaction job successfully completes
         sleeper.compaction().createJobs(1).waitForTasks(1).waitForJobs();
 
-        // Then
+        // Then no data is lost from the compaction and the file structure is correct
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows()
                         .iterableOverRange(0, 46));

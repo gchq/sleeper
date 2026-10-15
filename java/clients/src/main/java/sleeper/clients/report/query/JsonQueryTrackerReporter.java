@@ -48,7 +48,14 @@ public class JsonQueryTrackerReporter implements QueryTrackerReporter {
 
     @Override
     public void report(QueryTrackerQuery query, List<TrackedQuery> queries) {
-        out.println(gson.toJson(queries));
+        JsonObject json = new JsonObject();
+        json.add("queries", gson.toJsonTree(queries.stream()
+                .filter(trackedQuery -> "-".equals(trackedQuery.getSubQueryId()))
+                .toList()));
+        json.add("subQueries", gson.toJsonTree(queries.stream()
+                .filter(trackedQuery -> !"-".equals(trackedQuery.getSubQueryId()))
+                .toList()));
+        out.println(gson.toJson(json));
     }
 
     private static JsonSerializer<TrackedQuery> trackedQueryJsonSerializer() {
@@ -67,6 +74,7 @@ public class JsonQueryTrackerReporter implements QueryTrackerReporter {
         jsonObject.addProperty("succeededSubQueryCount", query.getSucceededSubQueryCount());
         jsonObject.addProperty("failedSubQueryCount", query.getFailedSubQueryCount());
         jsonObject.addProperty("finishedSubQueryRowCount", query.getFinishedSubQueryRowCount());
+        jsonObject.addProperty("attemptId", query.getAttemptId());
         return jsonObject;
     }
 }
