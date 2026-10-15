@@ -51,6 +51,7 @@ public class AutoStopEcsTaskST {
 
     @Test
     void shouldRemoveIngestStackWhileTaskIsRunning(SleeperDsl sleeper) {
+
         // Given an ingest task is running
         sleeper.enableOptionalStacks(List.of(OptionalStack.IngestStack));
         sleeper.systemTestCluster()
@@ -64,7 +65,7 @@ public class AutoStopEcsTaskST {
         // When I remove the ingest stack
         sleeper.disableOptionalStacks(List.of(OptionalStack.IngestStack));
 
-        // Then the ingest does not complete
+        // Then the ingest does not complete successfully
         assertThat(sleeper.tableFiles().references())
                 .satisfies(files -> {
                     long totalRows = files.stream().mapToLong(FileReference::getNumberOfRows).sum();

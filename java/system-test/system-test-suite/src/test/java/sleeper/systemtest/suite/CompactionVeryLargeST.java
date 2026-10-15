@@ -92,12 +92,13 @@ public class CompactionVeryLargeST {
                 .waitForTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
-        // Then
+        // Then each file has 2 billion rows
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
         assertThat(files.streamFileReferences())
                 .hasSize(10)
                 .extracting(FileReference::getNumberOfRows)
                 .allMatch(rows -> rows == 2_000_000_000L, "each file has 2 billion rows");
+        // And the compactions finish with one run each and they meet the expected performance range
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10),
                         "compactions finished with one run each")
