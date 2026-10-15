@@ -40,6 +40,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.testutils.printers.PartitionsPrinter;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -94,6 +95,63 @@ class BulkImportJobDriverTest {
     void setUp() {
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 1);
         stateStore.fixFileUpdateTime(null);
+    }
+
+    @Test
+    void shouldRunJobAfterTableIsRenamed() throws Exception {
+        // Given
+        BulkImportJob job = singleFileImportJob();
+        tableProperties.set(TABLE_NAME, "renamed-table");
+        List<FileReference> outputFiles = List.of(defaultFileOnRootPartitionWithRows("output.parquet", 100));
+        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+
+        // When
+        runJob(job, "test-run", "test-task", validationTime,
+                driver(successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
+
+        // Then
+        assertThat(stateStore.getFileReferences())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .isEqualTo(outputFiles);
+        assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
+    }
+
+    @Test
+    void shouldRunJobWithOnlyTableId() throws Exception {
+        // Given
+        BulkImportJob job = singleFileImportJob().toBuilder().tableName(null).build();
+        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+
+        // When
+        runJob(job, "test-run", "test-task", validationTime,
+                driver(successfulWithOutput(List.of()), startAndFinishTime(startTime, finishTime)));
+
+        // Then
+        assertThat(jobContextsClosed).extracting(FakeBulkImportContext::job).containsExactly(job);
+    }
+
+    @Test
+    void shouldReportMissingTableIdWithoutImportingIntoTableWithSameName() throws Exception {
+        // Given
+        BulkImportJob job = singleFileImportJob().toBuilder().tableId("deleted-table-id").build();
+        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+        Instant failureTime = Instant.parse("2023-04-06T12:40:01Z");
+        var driver = driver(successfulWithOutput(List.of()), failureTime(failureTime));
+
+        // When / Then
+        assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
+                .isInstanceOf(TableNotFoundException.class);
+        assertThat(tracker.getAllJobs("deleted-table-id"))
+                .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
+                        ingestAcceptedStatus(validationTime, 1),
+                        failedStatus(failureTime, List.of(TableNotFoundException.withTableId("deleted-table-id").getMessage())))));
+        assertThat(jobContextsCreated).isEmpty();
+        assertThat(stateStore.getFileReferences()).isEmpty();
+        assertThat(commitRequestQueue).isEmpty();
     }
 
     @Nested

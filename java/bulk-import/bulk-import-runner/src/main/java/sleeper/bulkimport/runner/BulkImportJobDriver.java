@@ -113,20 +113,20 @@ public class BulkImportJobDriver<C extends BulkImportContext<C>> {
      * {@link org.apache.spark.SparkException}, which extends {@link Exception} but is thrown unchecked at runtime
      * because Spark is implemented in Scala, which does not enforce checked exceptions.
      *
-     * @param  job       the bulk import job to run
+     * @param  job       the bulk import job to run, identifying the table by its unique ID
      * @param  jobRunId  the ID of this run of the job
      * @param  taskId    the ID of the task running the job
      * @throws Exception if the job fails for any reason, including Spark failures
      */
     public void run(BulkImportJob job, String jobRunId, String taskId) throws Exception {
-        LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
-        TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
-        TableStatus table = tableProperties.getStatus();
-        IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(table.getTableUniqueId()).jobId(job.getId()).jobRunId(jobRunId).taskId(taskId).build();
+        IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(job.getTableId()).jobId(job.getId()).jobRunId(jobRunId).taskId(taskId).build();
         LOGGER.info("Received bulk import job: {}", runIds);
-        LOGGER.info("Job is for table {}: {}", table, job);
 
         try {
+            LOGGER.info("Loading table properties and schema for table ID {}", job.getTableId());
+            TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
+            LOGGER.info("Job is for table {}: {}", tableProperties.getStatus(), job);
+
             LOGGER.info("Loading partitions");
             List<Partition> allPartitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
 
