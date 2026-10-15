@@ -76,11 +76,11 @@ public class GenerateConfigExamples {
         writeFile(basicExampleDir.resolve("instance.properties"),
                 writer -> writeBasicPropertiesTemplate(writer,
                         new InstanceProperties(),
-                        InstancePropertyGroup.getAll()));
+                        InstancePropertyGroup.getAll(), false));
         writeFile(basicExampleDir.resolve("table.properties"),
                 writer -> writeBasicPropertiesTemplate(writer,
                         new TableProperties(new InstanceProperties()),
-                        TablePropertyGroup.getAll()));
+                        TablePropertyGroup.getAll(), true));
     }
 
     private static void writeLightExample(Path lightExampleDir) throws IOException {
@@ -89,7 +89,7 @@ public class GenerateConfigExamples {
         writeFile(lightExampleDir.resolve("table.properties"),
                 writer -> writeBasicPropertiesTemplate(writer,
                         new TableProperties(new InstanceProperties()),
-                        TablePropertyGroup.getAll()));
+                        TablePropertyGroup.getAll(), true));
     }
 
     private static void writeDemoDeploymentTemplates(Path demoDeploymentDir) throws IOException {
@@ -115,13 +115,15 @@ public class GenerateConfigExamples {
     }
 
     private static <T extends SleeperProperty> void writeBasicPropertiesTemplate(
-            Writer writer, SleeperProperties<T> properties, List<PropertyGroup> propertyGroups) {
-        SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
+            Writer writer, SleeperProperties<T> properties, List<PropertyGroup> propertyGroups, boolean printGroupHeaders) {
+        SleeperPropertiesPrettyPrinter.builderForPropertiesTemplate(
                 properties.getPropertiesIndex().getUserDefined().stream()
                         .filter(SleeperProperty::isIncludedInBasicTemplate)
                         .filter(SleeperProperty::isIncludedInTemplate)
                         .collect(Collectors.toList()),
                 propertyGroups, new PrintWriter(writer))
+                .printGroupHeaders(printGroupHeaders)
+                .build()
                 .print(properties);
     }
 
