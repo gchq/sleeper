@@ -607,6 +607,15 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
         }
 
         @Test
+        void shouldTrackAttemptIdOnSubQuery() throws QueryTrackerException {
+            // When
+            queryTracker().queryInProgress(sub1.withAttemptId("attempt-1"));
+
+            // Then
+            assertThat(queryTracker().getStatus("parent", "sub-1").getAttemptId()).isEqualTo("attempt-1");
+        }
+
+        @Test
         void shouldGetQueryAndSubQueries() throws QueryTrackerException {
             // When
             queryTracker().queryInProgress(sub1);
