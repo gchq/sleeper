@@ -56,19 +56,31 @@ public enum IngestJobUpdateType {
     }
 
     /**
-     * Finds the status type of an ingest job after an update of this type during the given run of the job.
+     * Checks if a run has been committed, based on its update types.
      *
      * @param  run the run
-     * @return     the status type
+     * @return     true if the run has been committed to the state store
      */
-    public IngestJobStatusType statusTypeAfterThisInRun(JobRun run) {
+    public static boolean isRunCommitted(JobRun run) {
+        return run.getStatusUpdates().stream()
+                .map(IngestJobUpdateType::typeOfUpdate)
+                .anyMatch(type -> type.isCommitted(run));
+    }
+
+    public IngestJobStatusType getJobStatusTypeAfterUpdate() {
+        return jobStatusTypeAfterUpdate;
+    }
+
+    private boolean isCommitted(JobRun run) {
         if (this == FINISHED_WHEN_FILES_COMMITTED) {
-            return IngestJobFilesWrittenAndAdded.from(run).haveAllFilesBeenAdded()
-                    ? IngestJobStatusType.FINISHED
-                    : IngestJobStatusType.UNCOMMITTED;
+            return IngestJobFilesWrittenAndAdded.from(run).haveAllFilesBeenAdded();
         } else {
-            return jobStatusTypeAfterUpdate;
+            return this == FINISHED;
         }
+    }
+
+    public boolean isFailed() {
+        return this == FAILED || this == REJECTED;
     }
 
     /**

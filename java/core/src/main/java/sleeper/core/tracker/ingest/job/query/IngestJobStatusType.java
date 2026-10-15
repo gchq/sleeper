@@ -31,7 +31,8 @@ public enum IngestJobStatusType {
     FAILED(3),
     IN_PROGRESS(4),
     UNCOMMITTED(5),
-    FINISHED(6);
+    FINISHED(6),
+    FINISHED_WITH_FAILURE(7);
 
     private final int order;
 
@@ -68,8 +69,13 @@ public enum IngestJobStatusType {
      * @return     the status type
      */
     public static IngestJobStatusType statusTypeOfJobRun(JobRun run) {
-        return IngestJobUpdateType.typeOfFurthestUpdateInRun(run)
-                .statusTypeAfterThisInRun(run);
+        IngestJobUpdateType furthestType = IngestJobUpdateType.typeOfFurthestUpdateInRun(run);
+        boolean committed = IngestJobUpdateType.isRunCommitted(run);
+        if (committed) {
+            return furthestType.isFailed() ? FINISHED_WITH_FAILURE : FINISHED;
+        } else {
+            return furthestType.getJobStatusTypeAfterUpdate();
+        }
     }
 
     /**
