@@ -38,6 +38,7 @@ import java.nio.file.Path;
 
 import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.model.SleeperInternalCdkApp.ARTEFACTS;
@@ -76,7 +77,7 @@ public class DeployInstance implements InstanceDeployer {
         LOGGER.info("vpcId: {}", instanceProperties.get(VPC_ID));
         LOGGER.info("subnetIds: {}", instanceProperties.get(SUBNETS));
         if (!instanceProperties.isSet(ARTEFACTS_DEPLOYMENT_ID)) {
-            invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID)));
+            invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID), instanceProperties.getBoolean(RETAIN_LOGS_AFTER_DESTROY)));
         }
         syncJars.sync(SyncJarsRequest.from(instanceProperties));
         dockerImageUploader.upload(
