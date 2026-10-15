@@ -17,6 +17,8 @@ package sleeper.cdk.artefacts.containers;
 
 import software.constructs.Construct;
 
+import sleeper.core.deploy.DockerDeployment;
+
 /**
  * Code to refer to container images during deployment.
  */
@@ -37,5 +39,13 @@ public interface SleeperContainerImages {
      * @return       the helper
      */
     SleeperLambdaImages lambdaImagesAtScope(Construct scope);
+
+    /**
+     * Retrieves the full image name for a container deployment.
+     *
+     * @param  deployment the container deployment
+     * @return            the image name, including registry and tag or digest
+     */
+    String getDockerImageName(DockerDeployment deployment);
 
 }

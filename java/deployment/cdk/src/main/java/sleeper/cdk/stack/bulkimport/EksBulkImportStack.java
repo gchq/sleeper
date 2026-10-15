@@ -194,7 +194,7 @@ public final class EksBulkImportStack extends NestedStack {
         coreStacks.grantIngest(sparkServiceAccount.getRole());
         coreStacks.grantReadWritePartitions(sparkServiceAccount.getRole());
 
-        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, coreStacks);
+        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, artefacts, coreStacks);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
 
         // Replace AmazonEKSEditPolicy with .groups(List.of("step-function")) when available:
@@ -299,8 +299,10 @@ public final class EksBulkImportStack extends NestedStack {
                 .build());
     }
 
-    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
-        String imageName = DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties);
+    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties,
+            SleeperInstanceArtefacts artefacts, SleeperCoreStacks coreStacks) {
+        String imageName = artefacts.getDockerImageName(DockerDeployment.EKS_BULK_IMPORT);
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_IMAGE, imageName);
         Optional<String> jobLookupTableName = coreStacks.getIngestJobLookupTableName(instanceProperties.get(ID));
 
         Map<String, Object> runJobState = parseEksStepDefinition(
