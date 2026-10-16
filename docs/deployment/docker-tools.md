@@ -14,7 +14,7 @@ way you can avoid needing to install any dependencies other than Docker on your 
 These tools have the following dependencies, please install these first:
 
 * [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
-* [Docker](https://docs.docker.com/get-docker/)
+* [Docker Engine](https://docs.docker.com/engine/install/)
 
 ## Installation
 
