@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.restapi.addTable;
+package sleeper.core.table;
 
+import com.google.gson.JsonParser;
 import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +36,6 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.List;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -72,8 +72,8 @@ class AddTableRequestSerDeTest {
             String json = serDe.toJson(createAddTableRequest());
 
             // Then
-            assertThatJson(json).inPath("$.properties")
-                    .isEqualTo("{\"sleeper.table.name\":\"my-table\"}");
+            assertThat(JsonParser.parseString(json).getAsJsonObject().get("properties"))
+                    .isEqualTo(JsonParser.parseString("{\"sleeper.table.name\":\"my-table\"}"));
         }
 
         @Test
