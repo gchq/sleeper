@@ -1,7 +1,7 @@
 Test Strategy
 =============
 
-The Java code includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
+The Java code includes unit tests, integration tests and system tests. We use JUnit 6, with AssertJ for assertions.
 
 The Rust code includes unit tests and integration tests. We use the built-in test framework.
 
