@@ -19,7 +19,10 @@ package sleeper.clients.table;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -66,6 +69,19 @@ public class AddTableClientTest {
 
     @Nested
     class AddTable {
+
+        @ParameterizedTest
+        @ValueSource(strings = {"sleeper.table.filters=unknown(key,1000)", "sleeper.table.aggregations=sum(missing)"})
+        void shouldNotSaveTableWithInvalidIteratorConfig(String config) {
+            // Given
+            saveFile("./table.properties", "sleeper.table.name=file-table\n" + config + "\n");
+
+            // When / Then
+            assertThatThrownBy(() -> addTable("my-instance", "--table-properties", "./table.properties", "--schema", "./schema.json"))
+                    .isInstanceOf(SleeperPropertiesInvalidException.class)
+                    .hasMessageContaining(config.split("=")[0]);
+            assertThat(tablePropertiesStore.streamAllTables()).isEmpty();
+        }
 
         @Test
         void shouldAddTableByNameAndSchema() throws Exception {
