@@ -19,21 +19,22 @@ package sleeper.clients.report.job.query;
 import sleeper.clients.report.arguments.JobTrackerReportOptions;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobTestDataHelper;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static org.mockito.Mockito.mock;
-import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -44,17 +45,30 @@ public class JobQueryTestBase {
     private final TableProperties tableProperties = createTableProperties();
     protected static final String TABLE_NAME = "test-table";
     protected final String tableId = tableProperties.get(TABLE_ID);
-    protected final CompactionJobTracker tracker = mock(CompactionJobTracker.class);
-    private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(instanceProperties, tableProperties);
-    protected final CompactionJob exampleJob1 = dataHelper.singleFileCompaction();
-    protected final CompactionJob exampleJob2 = dataHelper.singleFileCompaction();
-    protected final CompactionJobStatus exampleStatus1 = compactionJobCreated(
-            exampleJob1, Instant.parse("2022-09-22T13:33:12.001Z"));
-    protected final CompactionJobStatus exampleStatus2 = compactionJobCreated(
-            exampleJob2, Instant.parse("2022-09-22T13:53:12.001Z"));
-    protected final List<CompactionJobStatus> exampleStatusList = Arrays.asList(exampleStatus2, exampleStatus1);
+    protected final InMemoryCompactionJobTracker tracker = new InMemoryCompactionJobTracker();
     protected final ToStringConsoleOutput out = new ToStringConsoleOutput();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
+
+    protected CompactionJobStatus createJob(String jobId, String jobTableId, Instant time) {
+        tracker.jobCreated(CompactionJobCreatedEvent.builder()
+                .jobId(jobId).tableId(jobTableId).partitionId("test-partition").inputFilesCount(1)
+                .build(), time);
+        return tracker.getJob(jobId).orElseThrow();
+    }
+
+    protected CompactionJobStatus createFinishedJob(String jobId, String jobTableId, Instant start, Instant end) {
+        createJob(jobId, jobTableId, start);
+        tracker.jobStarted(CompactionJobStartedEvent.builder()
+                .jobId(jobId).tableId(jobTableId).taskId("test-task").jobRunId("test-run")
+                .startTime(start).build());
+        tracker.jobFinished(CompactionJobFinishedEvent.builder()
+                .jobId(jobId).tableId(jobTableId).taskId("test-task").jobRunId("test-run")
+                .summary(new JobRunSummary(RowsProcessed.NONE, start, end)).build());
+        tracker.jobCommitted(CompactionJobCommittedEvent.builder()
+                .jobId(jobId).tableId(jobTableId).taskId("test-task").jobRunId("test-run")
+                .commitTime(end).build());
+        return tracker.getJob(jobId).orElseThrow();
+    }
 
     protected List<CompactionJobStatus> queryStatuses(JobQueryType queryType) {
         return queryStatusesWithParams(queryType, null);

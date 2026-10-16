@@ -27,18 +27,18 @@ import sleeper.common.task.QueueMessageCount;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
+import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
-import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_STATUS_REPORT_OPTION;
@@ -58,17 +58,14 @@ import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.common.task.InMemoryQueueMessageCounts.visibleMessages;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRun;
-import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
+import static sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent.ingestJobRejected;
 
 class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
     @DisplayName("Ingest job status report")
     @Nested
     class IngestJobStatusReport {
         private static final String INGEST_JOB_QUEUE_URL = "test-ingest-queue";
-        private final IngestJobTracker tracker = mock(IngestJobTracker.class);
+        private final InMemoryIngestJobTracker tracker = new InMemoryIngestJobTracker();
         private final InstanceProperties instanceProperties = createInstancePropertiesWithJobQueueUrl();
         private final TableProperties tableProperties = createValidTableProperties(instanceProperties, "test-table");
         private final QueueMessageCount.Client queueCounts = visibleMessages(INGEST_JOB_QUEUE_URL, 10);
@@ -76,8 +73,10 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
         @Test
         void shouldRunReportWithQueryTypeAll() throws Exception {
             // Given
-            when(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                    .thenReturn(oneStartedJobStatus());
+            startExampleJob();
+            finishJob("finished-job", Instant.parse("2023-03-15T16:00:00Z"),
+                    Instant.parse("2023-03-15T17:00:00Z"));
+            startJob("other-table-job", "other-table", Instant.parse("2023-03-15T17:00:00Z"));
 
             // When/Then
             String output = runIngestJobStatusReport()
@@ -91,9 +90,9 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
                             "------------------------\n" +
                             "Jobs waiting in ingest queue (excluded from report): 10\n" +
                             "Total jobs waiting across all queues: 10\n" +
-                            "Total jobs in report: 1\n" +
+                            "Total jobs in report: 2\n" +
                             "Total jobs in progress: 1\n" +
-                            "Total jobs finished: 0");
+                            "Total jobs finished: 1");
 
             verifyWithNumberOfPromptsBeforeExit(4);
         }
@@ -101,8 +100,10 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
         @Test
         void shouldRunReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            when(tracker.getUnfinishedJobs(tableProperties.get(TABLE_ID)))
-                    .thenReturn(oneStartedJobStatus());
+            startExampleJob();
+            finishJob("finished-job", Instant.parse("2023-03-15T16:00:00Z"),
+                    Instant.parse("2023-03-15T17:00:00Z"));
+            startJob("other-table-job", "other-table", Instant.parse("2023-03-15T17:00:00Z"));
 
             // When/Then
             String output = runIngestJobStatusReport()
@@ -118,7 +119,8 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
                             "Total jobs waiting across all queues: 10\n" +
                             "Total jobs in report: 1\n" +
                             "Total jobs in progress: 1\n" +
-                            "-");
+                            "-")
+                    .doesNotContain("finished-job", "other-table-job");
 
             verifyWithNumberOfPromptsBeforeExit(4);
         }
@@ -126,8 +128,8 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
         @Test
         void shouldRunReportWithQueryTypeDetailed() throws Exception {
             // Given
-            when(tracker.getJob("test-job"))
-                    .thenReturn(Optional.of(startedJobStatus("test-job")));
+            startExampleJob();
+            startJob("unrequested-job", tableProperties.get(TABLE_ID), Instant.parse("2023-03-15T17:00:00Z"));
 
             // When/Then
             String output = runIngestJobStatusReport()
@@ -139,7 +141,8 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
                     .contains("" +
                             "Ingest Job Status Report\n" +
                             "------------------------\n" +
-                            "Details for job test-job");
+                            "Details for job test-job")
+                    .doesNotContain("unrequested-job");
 
             verifyWithNumberOfPromptsBeforeExit(5);
         }
@@ -147,9 +150,11 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
         @Test
         void shouldRunReportWithQueryTypeRange() throws Exception {
             // Given
-            when(tracker.getJobsInTimePeriod(tableProperties.get(TABLE_ID),
-                    Instant.parse("2023-03-15T14:00:00Z"), Instant.parse("2023-03-15T18:00:00Z")))
-                    .thenReturn(oneStartedJobStatus());
+            startExampleJob();
+            finishJob("before-range", Instant.parse("2023-03-15T13:59:58Z"),
+                    Instant.parse("2023-03-15T13:59:59Z"));
+            startJob("after-range", tableProperties.get(TABLE_ID), Instant.parse("2023-03-15T18:00:01Z"));
+            startJob("other-table-job", "other-table", Instant.parse("2023-03-15T17:00:00Z"));
 
             // When/Then
             String output = runIngestJobStatusReport()
@@ -164,7 +169,8 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
                             "------------------------\n" +
                             "Jobs waiting in ingest queue (excluded from report): 10\n" +
                             "Total jobs waiting across all queues: 10\n" +
-                            "Total jobs in defined range: 1\n");
+                            "Total jobs in defined range: 1\n")
+                    .doesNotContain("before-range", "after-range", "other-table-job");
 
             verifyWithNumberOfPromptsBeforeExit(6);
         }
@@ -172,8 +178,9 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
         @Test
         void shouldRunReportWithQueryTypeRejected() throws Exception {
             // Given
-            when(tracker.getInvalidJobs())
-                    .thenReturn(oneRejectedJobStatus());
+            startJob("valid-job", tableProperties.get(TABLE_ID), Instant.parse("2023-07-05T11:59:00Z"));
+            tracker.jobValidated(ingestJobRejected("test-job", "{}",
+                    Instant.parse("2023-07-05T11:59:00Z"), "Test reason"));
 
             // When/Then
             String output = runIngestJobStatusReport()
@@ -187,7 +194,8 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
                             "------------------------\n" +
                             "Jobs waiting in ingest queue (excluded from report): 10\n" +
                             "Total jobs waiting across all queues: 10\n" +
-                            "Total jobs rejected: 1");
+                            "Total jobs rejected: 1")
+                    .doesNotContain("valid-job");
 
             verifyWithNumberOfPromptsBeforeExit(4);
         }
@@ -199,19 +207,29 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
                     .queueClient(queueCounts).tracker(tracker);
         }
 
-        private List<IngestJobStatus> oneStartedJobStatus() {
-            return List.of(startedJobStatus("test-job"));
+        private void startExampleJob() {
+            startJob("test-job", tableProperties.get(TABLE_ID), Instant.parse("2023-03-15T17:52:12.001Z"));
         }
 
-        private List<IngestJobStatus> oneRejectedJobStatus() {
-            return List.of(ingestJobStatus("test-job",
-                    rejectedRun("test-job", "{}", Instant.parse("2023-07-05T11:59:00Z"),
-                            "Test reason")));
+        private void startJob(String jobId, String jobTableId, Instant start) {
+            tracker.jobStarted(IngestJobStartedEvent.builder()
+                    .jobId(jobId)
+                    .tableId(jobTableId)
+                    .jobRunId("test-run")
+                    .taskId("test-task")
+                    .startTime(start)
+                    .fileCount(1)
+                    .build());
         }
 
-        private IngestJobStatus startedJobStatus(String jobId) {
-            return ingestJobStatus(jobId, jobRunOnTask("test-task",
-                    ingestStartedStatus(Instant.parse("2023-03-15T17:52:12.001Z"), 1)));
+        private void finishJob(String jobId, Instant start, Instant end) {
+            String jobTableId = tableProperties.get(TABLE_ID);
+            startJob(jobId, jobTableId, start);
+            tracker.jobFinished(IngestJobFinishedEvent.builder()
+                    .jobId(jobId).tableId(jobTableId).jobRunId("test-run").taskId("test-task")
+                    .summary(new JobRunSummary(RowsProcessed.NONE, start, end))
+                    .numFilesWrittenByJob(0)
+                    .build());
         }
 
         private InstanceProperties createInstancePropertiesWithJobQueueUrl() {
@@ -224,7 +242,7 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
     @DisplayName("Ingest task status report")
     @Nested
     class IngestTaskStatusReport {
-        private final IngestTaskTracker tracker = mock(IngestTaskTracker.class);
+        private final InMemoryIngestTaskTracker tracker = new InMemoryIngestTaskTracker();
 
         private List<IngestTaskStatus> exampleTaskStatuses() {
             return List.of(
@@ -234,8 +252,10 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
         @Test
         void shouldRunIngestTaskStatusReportWithQueryTypeAll() throws Exception {
             // Given
-            when(tracker.getAllTasks())
-                    .thenReturn(exampleTaskStatuses());
+            exampleTaskStatuses().forEach(tracker::taskStarted);
+            tracker.taskStarted(IngestTaskStatusReportTestHelper.startedTask("finished-task", "2023-03-15T16:00:00Z"));
+            tracker.taskFinished(IngestTaskStatusReportTestHelper.finishedTask(
+                    "finished-task", "2023-03-15T16:00:00Z", "2023-03-15T17:00:00Z", 10, 10));
 
             // When/Then
             String output = runIngestTaskStatusReport()
@@ -247,9 +267,9 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
                     .contains("" +
                             "Ingest Task Status Report\n" +
                             "-------------------------\n" +
-                            "Total tasks: 1\n" +
+                            "Total tasks: 2\n" +
                             "Total tasks in progress: 1\n" +
-                            "Total tasks finished: 0");
+                            "Total tasks finished: 1");
 
             verifyWithNumberOfPromptsBeforeExit(3);
         }
@@ -257,8 +277,10 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
         @Test
         void shouldRunIngestTaskStatusReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            when(tracker.getTasksInProgress())
-                    .thenReturn(exampleTaskStatuses());
+            exampleTaskStatuses().forEach(tracker::taskStarted);
+            tracker.taskStarted(IngestTaskStatusReportTestHelper.startedTask("finished-task", "2023-03-15T16:00:00Z"));
+            tracker.taskFinished(IngestTaskStatusReportTestHelper.finishedTask(
+                    "finished-task", "2023-03-15T16:00:00Z", "2023-03-15T17:00:00Z", 10, 10));
 
             // When/Then
             String output = runIngestTaskStatusReport()
@@ -270,7 +292,8 @@ class IngestStatusReportScreenTest extends AdminClientInMemoryTestBase {
                     .contains("" +
                             "Ingest Task Status Report\n" +
                             "-------------------------\n" +
-                            "Total tasks in progress: 1\n");
+                            "Total tasks in progress: 1\n")
+                    .doesNotContain("finished-task");
 
             verifyWithNumberOfPromptsBeforeExit(3);
         }
