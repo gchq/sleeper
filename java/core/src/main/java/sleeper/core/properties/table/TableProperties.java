@@ -18,10 +18,13 @@ package sleeper.core.properties.table;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import sleeper.core.iterator.AgeOffFilter;
+import sleeper.core.iterator.Aggregation;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
+import sleeper.core.properties.SleeperPropertiesValidationCriteria;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.schema.Schema;
@@ -29,10 +32,14 @@ import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.table.TableStatus;
 
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.SleeperPropertiesValidationCriteria.forProperties;
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -141,6 +148,35 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     @Override
     public SleeperPropertyIndex<TableProperty> getPropertiesIndex() {
         return TableProperty.getIndex();
+    }
+
+    @Override
+    protected List<SleeperPropertiesValidationCriteria<TableProperty>> getValidationCriteria() {
+        return List.of(
+                forProperties(List.of(AGGREGATION_CONFIG), properties -> isAggregationConfigValid(properties.get(AGGREGATION_CONFIG))),
+                forProperties(List.of(FILTERING_CONFIG), properties -> isFilteringConfigValid(properties.get(FILTERING_CONFIG))));
+    }
+
+    private boolean isAggregationConfigValid(String config) {
+        // A missing or invalid schema is reported by schema validation separately.
+        if (schema == null) {
+            return true;
+        }
+        try {
+            Aggregation.parseConfig(config, schema);
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    private static boolean isFilteringConfigValid(String config) {
+        try {
+            AgeOffFilter.parseConfig(config);
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     @Override
