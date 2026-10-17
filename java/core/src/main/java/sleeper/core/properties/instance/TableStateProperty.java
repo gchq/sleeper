@@ -284,12 +284,14 @@ public interface TableStateProperty {
                     "even when concurrency is used up in the account.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .defaultValue("10")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.statestore.committer.concurrency.max")
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the state store committer lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
+            .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty STATESTORE_COMMITTER_EC2_INSTANCE_TYPE = Index.propertyBuilder("sleeper.statestore.committer.ec2.type")

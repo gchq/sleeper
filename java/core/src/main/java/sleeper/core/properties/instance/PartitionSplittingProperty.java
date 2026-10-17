@@ -89,6 +89,7 @@ public interface PartitionSplittingProperty {
                     "that needs to be split. If the reserved concurrency is less than the number of partitions that " +
                     "need to be split across all Sleeper tables in the instance, these invocations may queue up.")
             .defaultValue("10")
+            .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.default.table.partition.splitting.threshold")

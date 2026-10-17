@@ -123,3 +123,31 @@ sleeper.optional.stacks=CompactionStack,IngestStack,QueryStack
 ```
 
 Note that the system test stacks do not need to be specified. They will be included if you use the system test CDK app.
+
+## Lambda concurrency validation
+
+Reserved concurrency limits the total concurrent executions of a Lambda function. Maximum concurrency limits
+invocations from an individual SQS event source. For Sleeper functions with both settings, the SQS maximum must be
+less than or equal to the reserved concurrency. Validation uses the effective values after applying property defaults
+and overrides, and reports both properties when they conflict.
+
+The default maximum is `sleeper.default.lambda.concurrency.max` (10). Most functions use
+`sleeper.default.lambda.concurrency.reserved`, which is unset by default. The state store committer instead reserves
+10 by default through `sleeper.statestore.committer.concurrency.reserved`. For example, raising the default maximum
+to 20 also requires setting the committer's reserved concurrency to at least 20, or overriding its maximum to 10.
+The compaction commit batcher has its own maximum and reserved defaults of 2.
+
+SQS maximum concurrency must be between 2 and 1,000 when set. Reserved concurrency must be a nonnegative integer
+when set; 0 stops the function from processing events. A configured SQS maximum still cannot exceed that reserved
+value. Other limits on reserved concurrency depend on the AWS account's quota and are checked by AWS.
+
+The relationship is validated for the table metrics, garbage collector, partition finder, compaction job creation,
+compaction dispatch, compaction commit batcher, state store committer, snapshot creation, snapshot deletion and
+transaction deletion functions. The transaction follower uses a DynamoDB stream, so it is not subject to an SQS
+maximum-concurrency comparison.
+
+See the AWS documentation for [SQS concurrency settings](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html)
+and [reserved concurrency](https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html).
+
+The partition-splitting handler uses `sleeper.partition.splitting.reserved.concurrency` for both its reserved
+concurrency and its SQS maximum. This setting must therefore also be between 2 and 1,000.
