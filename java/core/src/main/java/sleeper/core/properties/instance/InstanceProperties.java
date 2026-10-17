@@ -21,12 +21,14 @@ import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
 import sleeper.core.properties.SleeperPropertiesValidationCriteria;
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.model.LambdaConcurrencyLimits;
 import sleeper.core.properties.model.PersistentEMRManagedScalingBounds;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -80,7 +82,10 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
     @Override
     protected List<SleeperPropertiesValidationCriteria<InstanceProperty>> getValidationCriteria() {
-        return List.of(PersistentEMRManagedScalingBounds.validationCriteria());
+        List<SleeperPropertiesValidationCriteria<InstanceProperty>> criteria = new ArrayList<>();
+        criteria.add(PersistentEMRManagedScalingBounds.validationCriteria());
+        criteria.addAll(LambdaConcurrencyLimits.validationCriteria());
+        return criteria;
     }
 
     /**

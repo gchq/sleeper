@@ -193,6 +193,7 @@ public class SleeperPropertyValueUtils {
 
     /**
      * Checks if a property value is a valid value for the maximum concurrency for an AWS Lambda SQS event source.
+     * A set value must be between 2 and 1,000 inclusive.
      * Also see the AWS documentation:
      * <p>
      * https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
@@ -203,7 +204,7 @@ public class SleeperPropertyValueUtils {
      * @return        true if the value meets the requirement
      */
     public static boolean isValidSqsLambdaMaximumConcurrency(String string) {
-        return string == null || parseAndCheckInteger(string, num -> num >= 2);
+        return string == null || parseAndCheckInteger(string, num -> num >= 2 && num <= 1000);
     }
 
     /**
