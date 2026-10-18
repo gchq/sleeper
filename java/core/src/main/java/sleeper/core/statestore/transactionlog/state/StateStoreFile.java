@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.transactionlog.state;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 
@@ -33,6 +35,7 @@ import java.util.TreeMap;
  * <p>
  * The transaction log state store caches this in memory and updates the state by applying each transaction from the log
  * in sequence. This class should allow these transactions to be applied efficiently in-place with few copy operations.
+ * File references share this object's filename string to avoid retaining duplicate copies in the cached state.
  * <p>
  * The methods to update this object should only ever be called by a state store implementation. As such, this object
  * should not be exposed outside of the state store. Instead, it should be converted to an {@link AllReferencesToAFile}
@@ -47,7 +50,8 @@ public class StateStoreFile {
     public StateStoreFile(String filename, Instant lastStateStoreUpdateTime, Collection<FileReference> references) {
         this.filename = filename;
         this.lastStateStoreUpdateTime = lastStateStoreUpdateTime;
-        references.forEach(reference -> referenceByPartitionId.put(reference.getPartitionId(), reference));
+        references.forEach(reference -> referenceByPartitionId.put(reference.getPartitionId(),
+                withSharedFilename(filename, reference)));
     }
 
     /**
@@ -112,7 +116,7 @@ public class StateStoreFile {
             String partitionId, Collection<FileReference> newReferences, Instant updateTime) {
         referenceByPartitionId.remove(partitionId);
         newReferences.forEach(reference -> referenceByPartitionId.put(reference.getPartitionId(),
-                reference.toBuilder().lastStateStoreUpdateTime(updateTime).build()));
+                reference.toBuilder().filename(filename).lastStateStoreUpdateTime(updateTime).build()));
         lastStateStoreUpdateTime = updateTime;
     }
 
@@ -143,6 +147,12 @@ public class StateStoreFile {
                 referenceByPartitionId.get(partitionId).toBuilder()
                         .jobId(jobId).lastStateStoreUpdateTime(updateTime).build());
         lastStateStoreUpdateTime = updateTime;
+    }
+
+    @SuppressFBWarnings(value = "ES_COMPARING_PARAMETER_STRING_WITH_EQ",
+            justification = "Compare filename identity to avoid copying references that already share the same String")
+    private static FileReference withSharedFilename(String filename, FileReference reference) {
+        return reference.getFilename() == filename ? reference : reference.toBuilder().filename(filename).build();
     }
 
     public String getFilename() {
