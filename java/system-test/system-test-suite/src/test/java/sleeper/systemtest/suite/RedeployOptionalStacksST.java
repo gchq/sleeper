@@ -54,8 +54,14 @@ public class RedeployOptionalStacksST {
 
     @Test
     void shouldDisableAndReenableAllOptionalStacks(SleeperDsl sleeper) {
+
+        // Given all redeployable optional stacks are available
+
+        // When the optional stacks are enabled, disabled and enabled again
         sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
         sleeper.disableOptionalStacks(OptionalStack.all());
         sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
+
+        // Then all optional stack operations complete successfully
     }
 }

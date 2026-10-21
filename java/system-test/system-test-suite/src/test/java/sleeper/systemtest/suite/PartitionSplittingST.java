@@ -58,7 +58,8 @@ public class PartitionSplittingST {
 
     @Test
     void shouldSplitPartitionsWith100RowsAndThresholdOf20(SleeperDsl sleeper) {
-        // Given
+
+        // Given a table configured to split partitions during ingestion
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 PARTITION_SPLIT_THRESHOLD, "20"));
@@ -66,9 +67,11 @@ public class PartitionSplittingST {
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.updateTableProperties(Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
+
+        // And data has been ingested into the table
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
-        // When
+        // When partition splitting and compaction are run repeatedly
         sleeper.partitioning().split();
         sleeper.compaction().splitFilesAndRunJobs(2);
         sleeper.partitioning().split();
@@ -76,9 +79,11 @@ public class PartitionSplittingST {
         sleeper.partitioning().split();
         sleeper.compaction().splitFilesAndRunJobs(8);
 
-        // Then
+        // Then all rows remain available for query
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 100));
+
+        // And the partition tree and file layout match the expected structure
         Schema schema = sleeper.tableProperties().getSchema();
         PartitionTree partitions = sleeper.partitioning().tree();
         AllReferencesToAllFiles files = sleeper.tableFiles().all();

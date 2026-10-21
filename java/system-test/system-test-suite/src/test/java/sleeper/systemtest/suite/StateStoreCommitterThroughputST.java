@@ -55,12 +55,13 @@ public class StateStoreCommitterThroughputST {
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given an offline table with a single partition
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
-        // When
+        // When file additions are committed to the state store
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
@@ -68,20 +69,23 @@ public class StateStoreCommitterThroughputST {
                         .map(StateStoreCommitMessage::addFile))
                 .waitForCommitLogs();
 
-        // Then
+        // Then all files are committed successfull
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
+
+        // And commit throughput meets the expected transaction log performance
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
     }
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithIngestJobOnOneTable(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given an offline table with a single partition
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
-        // When
+        // When file additions with ingest job information are committed to the state store
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
@@ -89,20 +93,23 @@ public class StateStoreCommitterThroughputST {
                         .map(StateStoreCommitMessage::addFileWithJob))
                 .waitForCommitLogs();
 
-        // Then
+        // Then all files are committed successfully
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
+
+        // And commit throughput meets the expected transaction log and tracking performance
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogAndTracker());
     }
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingLargeRequestsOnOneTable(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given an offline table with a single partition
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition(UUID.randomUUID().toString()).buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
-        // When
+        // When large commit requests are written to the state store
         FileReferenceFactory fileFactory = FileReferenceFactory.from(sleeper.instanceProperties(), sleeper.tableProperties(), partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 100)
@@ -112,21 +119,24 @@ public class StateStoreCommitterThroughputST {
                         .map(StateStoreCommitMessage::addFiles))
                 .waitForCommitLogs();
 
-        // Then
+        // Then all files are committed successfully
         assertThat(sleeper.tableFiles().references()).hasSize(1_000_000);
+
+        // And commit throughput meets the expected performance for large requests
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogWith10kFilesPerCommit());
     }
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given multiple tables with a single partition
         sleeper.connectToInstanceNoTables(COMMITTER_THROUGHPUT);
         sleeper.tables().createMany(10, DEFAULT_SCHEMA);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.tables().forEach(() -> sleeper.partitioning().setPartitions(partitions));
 
-        // When
+        // When file additions are committed across all tables
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatchedForEachTable(IntStream.rangeClosed(1, 1000)
@@ -134,10 +144,12 @@ public class StateStoreCommitterThroughputST {
                         .map(StateStoreCommitMessage::addFile))
                 .waitForCommitLogs();
 
-        // Then
+        // Then all files are committed successfully for each table
         assertThat(sleeper.tableFiles().referencesByTable())
                 .hasSize(10)
                 .allSatisfy((table, files) -> assertThat(files).hasSize(1000));
+
+        // And commit throughput meets the expected performance across tables
         assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)
@@ -146,7 +158,8 @@ public class StateStoreCommitterThroughputST {
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingCompactionJobIdAssignment(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given files exist in the state store for compaction
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
@@ -158,25 +171,28 @@ public class StateStoreCommitterThroughputST {
                             .collect(toUnmodifiableList()));
         });
 
-        // When
+        // When compaction job assignments are committed
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.assignJobOnPartitionToFiles(jobId(i), "root", List.of(filename(i)))))
                 .waitForCommitLogs();
 
-        // Then
+        // Then the files are updated with the expected job assignments
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
                 .isEqualTo(printFiles(partitions, referencedFiles(
                         IntStream.rangeClosed(1, 1000)
                                 .mapToObj(i -> withJobId(jobId(i), fileFactory.rootFile(filename(i), i)))
                                 .collect(toUnmodifiableList()))));
+
+        // And commit throughput meets the expected transaction log and tracking performance
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogAndTracker());
     }
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingCompaction(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given files are assigned to compaction jobs
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
@@ -193,7 +209,7 @@ public class StateStoreCommitterThroughputST {
                     .collect(toUnmodifiableList()));
         });
 
-        // When
+        // When compaction results are committed to the state store
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.commitCompactionForPartitionOnTaskInRun(
@@ -201,7 +217,7 @@ public class StateStoreCommitterThroughputST {
                                 "test-task", jobRunId(i), summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2))))
                 .waitForCommitLogs();
 
-        // Then
+        // Then the compacted files replace the source files
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
                 .isEqualTo(printFiles(partitions, referencedAndUnreferencedFiles(
                         IntStream.rangeClosed(1, 1000)
@@ -210,13 +226,16 @@ public class StateStoreCommitterThroughputST {
                         IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
                                 .flatMap(i -> Stream.of(filename(i), filename(i + 1000)))
                                 .collect(toUnmodifiableList()))));
+
+        // And commit throughput meets the expected transaction log and tracking performance
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogAndTracker());
     }
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingDeletedFiles(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given compacted files are ready for source file cleanup
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
@@ -237,31 +256,34 @@ public class StateStoreCommitterThroughputST {
                     .collect(toUnmodifiableList()));
         });
 
-        // When
+        // When file deletions are committed to the state store
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.filesDeleted(List.of(filename(i), filename(i + 1000)))))
                 .waitForCommitLogs();
 
-        // Then
+        // Then only the active files remain
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
                 .isEqualTo(printFiles(partitions, referencedFiles(
                         IntStream.rangeClosed(1, 1000)
                                 .mapToObj(i -> fileFactory.rootFile(filename(i + 2000), i * 2))
                                 .collect(toUnmodifiableList()))));
+
+        // And commit throughput meets the expected transaction log performance
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
     }
 
     @Test
     void shouldMeetExpectedThroughputWhenPerformingManyOperationsOnMultipleTables(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given multiple tables with a single partition
         sleeper.connectToInstanceNoTables(COMMITTER_THROUGHPUT);
         sleeper.tables().createMany(10, DEFAULT_SCHEMA);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.tables().forEach(() -> sleeper.partitioning().setPartitions(partitions));
 
-        // When
+        // When file additions, job assignments, compaction commits and file deletions are performed across all tables
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatchedInOrderForEachTable(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
@@ -277,10 +299,12 @@ public class StateStoreCommitterThroughputST {
                                 factory -> factory.filesDeleted(List.of(filename(i), filename(i + 1000))))))
                 .waitForCommitLogs();
 
-        // Then
+        // Then all operations are committed successfully for each table
         assertThat(sleeper.tableFiles().referencesByTable())
                 .hasSize(10)
                 .allSatisfy((table, files) -> assertThat(files).hasSize(1000));
+
+        // And commit throughput meets the expected performance across tables
         assertThat(sleeper.stateStore().commitsPerSecondByTable())
                 .hasSize(10)
                 .allSatisfy((table, commitsPerSecond) -> assertThat(commitsPerSecond)

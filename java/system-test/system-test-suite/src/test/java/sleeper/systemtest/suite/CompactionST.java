@@ -94,14 +94,14 @@ public class CompactionST {
                 .createWithNumberedRows("file.parquet", LongStream.range(50, 100));
         sleeper.ingest().toStateStore().addFileOnPartition("file.parquet", "root", 50);
 
-        // When
+        // When compaction jobs are created and completed across multiple partitions
         sleeper.compaction()
                 // Merge files A and B on LL and LR, split C one level down to L and R
                 .createJobs(2).waitForTasks(1).waitForJobs()
                 // Split C another level to LL and LR, merge it with the existing data
                 .createJobs(4).waitForTasks(1).waitForJobs();
 
-        // Then
+        // Then all data is preserved
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows().iterableFrom(
                         () -> LongStream.range(0, 100)
@@ -142,14 +142,14 @@ public class CompactionST {
                 .createWithNumberedRows("file.parquet", LongStream.range(50, 100));
         sleeper.ingest().toStateStore().addFileOnPartition("file.parquet", "root", 50);
 
-        // When
+        // When compaction jobs are created and completed across multiple partitions
         sleeper.compaction()
                 // Merge files A and B on LL and LR, split C one level down to L and R
                 .createJobs(2).waitForTasks(1).waitForJobs()
                 // Split C another level to LL and LR, merge it with the existing data
                 .createJobs(4).waitForTasks(1).waitForJobs();
 
-        // Then
+        // Then all data is preserved
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows().iterableFrom(
                         () -> LongStream.range(0, 100)

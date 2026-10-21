@@ -48,7 +48,9 @@ public class IngestPerformanceST {
 
     @Test
     void shouldMeetIngestPerformanceStandardsAcrossManyPartitions(SleeperDsl sleeper) {
+        // Given a table with many partitions and data generation jobs configured for queued ingest
         sleeper.partitioning().setPartitions(create128StringPartitions(sleeper));
+        // When the data generation and ingest jobs are run to completion
         sleeper.systemTestCluster()
                 .runDataGenerationJobs(11,
                         builder -> builder.ingestMode(QUEUE)
@@ -58,11 +60,12 @@ public class IngestPerformanceST {
                 .waitForStandardIngestTasks(11,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
                 .waitForIngestJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
-
+        // Then all generated rows are ingested successfully
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1408)
                 .matches(files -> numberOfRowsIn(files) == 440_000_000,
                         "contain 440 million rows");
+        // And the ingest jobs complete within the expected performance range
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(11),
                         "jobs finished with one run each")

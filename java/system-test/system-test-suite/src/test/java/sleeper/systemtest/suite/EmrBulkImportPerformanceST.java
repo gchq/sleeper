@@ -51,14 +51,17 @@ public class EmrBulkImportPerformanceST {
     // See issue: https://github.com/gchq/sleeper/issues/7420
     // We can consider turning it back on after we save the EMR bulk import logs in the following issue:
     // https://github.com/gchq/sleeper/issues/5912
+
     @Test
     @Disabled
     void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions(SleeperDsl sleeper) {
+        // Given a table with many partitions and generated source files for bulk import
         sleeper.partitioning().setPartitions(create512StringPartitions(sleeper));
         sleeper.systemTestCluster()
                 .runDataGenerationJobs(100,
                         builder -> builder.ingestMode(GENERATE_ONLY).rowsPerIngest(10_000_000),
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5)))
+                // When the generated files are bulk imported
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
@@ -66,10 +69,12 @@ public class EmrBulkImportPerformanceST {
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .waitForBulkImportJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
+        // Then all generated data is imported successfully
         assertThat(sleeper.tableFiles().references())
                 .hasSize(2560)
                 .matches(files -> numberOfRowsIn(files) == 5_000_000_000L,
                         "contain 5 billion rows");
+        // And the bulk import jobs meet the expected performance standards
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(5),
                         "jobs finished with one run each")

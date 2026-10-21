@@ -52,7 +52,7 @@ public class CompactionCommitThroughputST {
 
     @Test
     void shouldFakeCompactionCommits(SleeperDsl sleeper) throws Exception {
-        // Given
+        // Given a table with pending fake compactions commits is prepared in the state store
         sleeper.tables().createWithProperties("compaction", DEFAULT_SCHEMA,
                 Map.of(TABLE_ONLINE, "false"));
         sleeper.partitioning().setPartitions(partitions);
@@ -67,12 +67,12 @@ public class CompactionCommitThroughputST {
             compactions.streamAssignJobIds().forEach(update(store)::addTransaction);
         });
 
-        // When
+        // When the fake compaction commits are sent and processed
         sleeper.compaction()
                 .sendFakeCommits(compactions)
                 .waitForJobsToCommit(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(6)));
 
-        // Then
+        // Then all compaction output files are committed with the expected row counts
         assertThat(sleeper.tableFiles().rowsByFilename())
                 .isEqualTo(compactions.streamOutputFiles()
                         .collect(groupingBy(FileReference::getFilename,

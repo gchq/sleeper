@@ -42,20 +42,23 @@ public class PythonBulkImportST {
 
     @Test
     void shouldBulkImportFilesFromS3(SleeperDsl sleeper) {
-        // Given
+
+        // Given multiple source files ready for bulk import
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         sleeper.sourceFiles()
                 .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
                 .createWithNumberedRows("file2.parquet", LongStream.range(100, 200));
 
-        // When
+        // When the source files are bulk imported
         sleeper.pythonApi()
                 .bulkImport().fromS3("file1.parquet", "file2.parquet")
                 .waitForJobs();
 
-        // Then
+        // Then all rows are imported successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 200));
+
+        // And the data is stored in a single table file
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 }

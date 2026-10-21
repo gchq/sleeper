@@ -55,30 +55,35 @@ public class EksBulkImportPerformanceST {
 
     @Test
     void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions(SleeperDsl sleeper) {
+        // Given a table with many partitions and generated source files for bulk import
         sleeper.partitioning().setPartitions(create512StringPartitions(sleeper));
         sleeper.systemTestCluster()
                 .runDataGenerationJobs(100,
                         builder -> builder.ingestMode(GENERATE_ONLY).rowsPerIngest(10_000_000),
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5)))
+                // When the generated files are bulk imported
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EKS_JOB_QUEUE_URL)
                 .waitForBulkImportJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
-
+        // Then all generated data is imported successfully
         assertThat(sleeper.tableFiles().references())
                 .hasSize(2560)
                 .matches(files -> numberOfRowsIn(files) == 5_000_000_000L,
                         "contain 5 billion rows");
+        // And the bulk import jobs meet the expected performance standards
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(5),
                         "jobs finished with one run each")
                 .matches(stats -> stats.isAverageRunRowsPerSecondInRange(8_000_000, 11_000_000),
                         "meets expected performance");
+        // And all bulk import executions complete successfully
         assertThat(sleeper.eksBulkImportCheck().waitUntilExecutionsFinishedGetStatuses(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5))))
                 .containsOnly("SUCCEEDED");
+        // And no bulk import resources remain running
         assertThat(sleeper.eksBulkImportCheck().getDriverPods())
                 .isEmpty();
         assertThat(sleeper.eksBulkImportCheck().getJobs())

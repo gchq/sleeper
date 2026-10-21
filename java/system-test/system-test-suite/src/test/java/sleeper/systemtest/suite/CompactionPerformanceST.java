@@ -57,18 +57,19 @@ public class CompactionPerformanceST {
 
     @Test
     void shouldMeetCompactionPerformanceStandards(SleeperDsl sleeper) {
-        // Given
+        // Given ingest jobs have generated a high number of rows each
+        // And the high number is a number deliberately chosen as part of a performance testing strategy
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"));
         sleeper.systemTestCluster().runDataGenerationJobs(110,
                 builder -> builder.ingestMode(DIRECT).rowsPerIngest(40_000_000),
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .waitForTotalFileReferences(110);
 
-        // When
+        // When compaction has run and all compaction jobs have completed
         sleeper.compaction().putCurrentTablesOnlineUntilJobsAreCreated(10).waitForTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)));
 
-        // Then
+        // Then no data is lost, the output files remain sorted, and the compaction meets the expected performance standards
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
         assertThat(sumFileReferenceRowCounts(files)).isEqualTo(4_400_000_000L);
         assertThat(files.streamFileReferences()).hasSize(10);

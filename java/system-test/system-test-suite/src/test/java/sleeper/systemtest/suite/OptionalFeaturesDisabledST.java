@@ -52,30 +52,36 @@ public class OptionalFeaturesDisabledST {
 
     @Test
     void shouldIngest1FileFromDataBucketWhenSourceBucketAndTrackerAreDisabled(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given a source file in the table data bucket
         sleeper.sourceFiles().inDataBucket()
                 .createWithNumberedRows("file.parquet", LongStream.range(0, 100));
 
-        // When
+        // When the source file is submitted for ingestion
         sleeper.ingest().byQueue().sendSourceFiles("file.parquet");
 
-        // Then
+        // Then all rows are ingested successfully
         sleeper.tableFiles().waitForState(
                 files -> files.countFileReferences() > 0,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(6)));
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 100));
+
+        // And the data is stored in a single table file
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
     @Test
     void shouldAllowForCompactionWhenTrackerIsDisabled(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given a table configured for compaction
         sleeper.updateTableProperties(Map.of(COMPACTION_FILES_BATCH_SIZE, "5"));
+
+        // And ingested data spread across multiple files
         // Files with rows 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
         RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 46));
 
-        // When
+        // When the data is ingested
         sleeper.ingest().direct(tempDir)
                 .numberedRows(numbers.range(0, 9))
                 .numberedRows(numbers.range(9, 18))
@@ -83,11 +89,13 @@ public class OptionalFeaturesDisabledST {
                 .numberedRows(numbers.range(27, 36))
                 .numberedRows(numbers.range(36, 46));
 
-        // Then
+        // Then the ingested files are compacted into a single table file
         sleeper.tableFiles().waitForState(
                 files -> sumFileReferenceRowCounts(files) == 46
                         && files.getFilesWithReferences().size() == 1,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(10)));
+
+        // And all rows remain available for query
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 46));
     }
