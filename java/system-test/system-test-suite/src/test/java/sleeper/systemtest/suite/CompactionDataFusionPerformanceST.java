@@ -58,7 +58,7 @@ public class CompactionDataFusionPerformanceST {
 
     @Test
     void shouldMeetCompactionPerformanceStandards(SleeperDsl sleeper) {
-        // Given
+        // Given 110 ingest jobs have generated 40 million rows each
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 DATA_ENGINE, DataEngine.DATAFUSION.toString()));
@@ -67,11 +67,11 @@ public class CompactionDataFusionPerformanceST {
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .waitForTotalFileReferences(110);
 
-        // When
+        // When the compaction jobs are run and fully complete
         sleeper.compaction().putCurrentTablesOnlineUntilJobsAreCreated(10).waitForTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)));
 
-        // Then
+        // Then the compactions complete successfully within the expected performance range
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
         assertThat(sumFileReferenceRowCounts(files)).isEqualTo(4_400_000_000L);
         assertThat(files.streamFileReferences()).hasSize(10);

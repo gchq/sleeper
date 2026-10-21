@@ -108,7 +108,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
 
     @Override
     public void jobFailed(IngestJobFailedEvent event) {
-        existingJobRecords(event.getTableId(), event.getJobId())
+        tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs()).jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(JobStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
                         .statusUpdate(JobRunFailedStatus.builder()

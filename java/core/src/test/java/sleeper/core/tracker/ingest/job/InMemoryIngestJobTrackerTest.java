@@ -25,6 +25,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
@@ -484,6 +485,29 @@ public class InMemoryIngestJobTrackerTest {
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId, jobRunId);
+        }
+
+        @Test
+        void shouldReportFailedJobWithNoOtherUpdates() {
+            // Given
+            String jobRunId = "test-run";
+            String taskId = "test-task";
+            Instant failureTime = Instant.parse("2022-09-22T12:00:25.000Z");
+            List<String> failureReasons = List.of("Something went wrong");
+            IngestJobFailedEvent job = IngestJobFailedEvent.builder()
+                    .jobId("test-job-1").tableId(tableId).jobRunId(jobRunId).taskId(taskId)
+                    .failureTime(failureTime).failureReasons(failureReasons).build();
+
+            // When
+            tracker.jobFailed(job);
+
+            // Then
+            assertThat(tracker.getAllJobs(tableId))
+                    .containsExactly(ingestJobStatus(job, jobRunOnTask(taskId,
+                            failedStatus(failureTime, failureReasons))));
+            assertThat(tracker.streamTableRecords(tableId))
+                    .extracting(JobStatusUpdateRecord::getJobRunId)
+                    .containsExactly(jobRunId);
         }
 
         @Test

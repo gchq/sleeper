@@ -6,6 +6,51 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.38.1
+
+### 12th October 2026
+
+This includes improvements to the reliability and scalability of queries over large numbers of partitions, an upgrade to EMR 7.14.0, and more consistent command line options for the report scripts.
+
+Query:
+- Subquery IDs are now the ID of the leaf partition ID they are querying. This ensures that if a subquery runs twice it is only reported on once.
+- Query clients now report how many subqueries have completed and how many are remaining while a query is in progress.
+
+Bulk import:
+- Upgraded to EMR 7.14.0, including Spark 3.5.8 and Hadoop 3.4.2. This is the new default for EMR, EMR Serverless and bulk import on EKS.
+
+Scripts:
+- Improved usability of command line options and added `--help`, for:
+  - `scripts/report/compactionJobStatusReport.sh`
+  - `scripts/report/ingestBatcherReport.sh`
+  - `scripts/report/queryTrackerReport.sh`
+- Renamed command line options on the job status reports:
+  - `--report-type` is now `--format`.
+  - `--range` is now `--recent`.
+
+Deployment:
+- Removed support for deploying a Sleeper instance into LocalStack.
+
+Docker tools:
+- Added `sleeper environment start` and `sleeper environment stop` to start and stop the EC2 instance of an environment.
+
+Documentation:
+- Corrected references to "row fields" in the design document to "row key fields".
+
+Bugfixes:
+- A query split over many subqueries is no longer marked as finished while some of its subqueries are still running.
+  - Previously, subqueries could be sent for processing before all of them were recorded in the query tracker. When one finished, the parent query was marked as finished if every subquery the tracker knew about had finished.
+  - The parent query now records how many subqueries it has before any are sent, and is only marked as finished when that many have completed. Only this count is recorded up front, so the query is not delayed by recording every subquery in the tracker before it starts.
+- A query with a large number of subqueries no longer occasionally stays in progress forever after all its subqueries have finished.
+  - Previously, when many subqueries finished at about the same time, their concurrent updates to the parent query in the query tracker could conflict, and some completions were lost.
+  - Progress on the parent query is now spread over several records in the query tracker, which reduces conflicts between subqueries finishing at the same time.
+- The query tracker report no longer shows a last update time in 1970.
+- The ingest batcher no longer deletes its records of files for a table when it fails to load that table's properties from S3 for a reason other than the table not existing.
+- The ingest batcher now correctly removes its records of files for deleted tables when there are more than 25 files, and no longer gets stuck on that table when it fails.
+- When a state store snapshot is created but fails to be recorded in DynamoDB, the snapshot file is now deleted from S3 rather than being left there indefinitely.
+- The Java client now closes its AWS STS client when it is closed.
+
+
 ## Version 0.38.0
 
 ### 2nd October 2026
