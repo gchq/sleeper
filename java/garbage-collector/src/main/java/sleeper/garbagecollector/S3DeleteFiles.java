@@ -28,7 +28,7 @@ import software.amazon.awssdk.services.s3.model.S3Error;
 import sleeper.core.util.ThreadSleep;
 import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +58,7 @@ public class S3DeleteFiles implements DeleteFiles {
     public void deleteFiles(List<String> filenames, TableFilesDeleted deleted) {
         FilesToDelete files = FilesToDelete.from(filenames);
         Set<String> deletedFiles = new LinkedHashSet<>();
-        Map<String, Exception> errorsByFilename = new HashMap<>();
+        Map<String, Exception> errorsByFilename = new LinkedHashMap<>();
 
         for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
             filesInBucket.objectKeysInBatchesOf(s3BatchSize)
@@ -83,8 +83,11 @@ public class S3DeleteFiles implements DeleteFiles {
                 LOGGER.debug("Sending request to delete {} objects", objectKeys.size());
                 DeleteObjectsResponse response = s3Client.deleteObjects(deleteRequest);
 
-                response.errors().forEach(error -> errorsByFilename.putIfAbsent(
-                        filesInBucket.getFilenameForObjectKey(error.key()), deleteFailure(error)));
+                response.errors().forEach(error -> {
+                    LOGGER.error("Failed to delete object {}: {} - {}", error.key(), error.code(), error.message());
+                    errorsByFilename.putIfAbsent(
+                            filesInBucket.getFilenameForObjectKey(error.key()), deleteFailure(error));
+                });
 
                 deletedFiles.addAll(response.deleted().stream()
                         .map(object -> filesInBucket.getFilenameForObjectKey(object.key()))
