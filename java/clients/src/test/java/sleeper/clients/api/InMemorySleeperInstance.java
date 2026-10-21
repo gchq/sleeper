@@ -34,7 +34,9 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
+import sleeper.query.core.model.Query;
 import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
+import sleeper.query.core.tracker.InMemoryQueryTracker;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 
 import java.util.HashMap;
@@ -59,6 +61,8 @@ public class InMemorySleeperInstance {
     private final Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
     private final Queue<IngestBatcherSubmitRequest> ingestBatcherQueue = new LinkedList<>();
     private final Queue<BulkExportQuery> bulkExportQueue = new LinkedList<>();
+    private final Queue<Query> queryQueue = new LinkedList<>();
+    private final InMemoryQueryTracker queryTracker;
     private final FakeWebSocketConnection webSocketConnection;
 
     public InMemorySleeperInstance(InstanceProperties properties) {
@@ -66,6 +70,7 @@ public class InMemorySleeperInstance {
         this.tablePropertiesProvider = new TablePropertiesProvider(properties, tablePropertiesStore);
         this.stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(properties, transactionLogsPerTable);
         this.webSocketConnection = new FakeWebSocketConnection();
+        this.queryTracker = new InMemoryQueryTracker(properties);
     }
 
     public FakeWebSocketConnection getFakeWebSocketConnection() {
@@ -89,7 +94,9 @@ public class InMemorySleeperInstance {
                 .bulkImportJobSender(bulkImportSender())
                 .ingestBatcherSender(ingestBatcherQueue::add)
                 .bulkExportQuerySender(bulkExportQueue::add)
-                .queryWebSocketSender(queryWebSocketSender());
+                .queryWebSocketSender(queryWebSocketSender())
+                .querySender(queryQueue::add)
+                .queryTrackerStore(queryTracker);
     }
 
     /**
@@ -215,6 +222,24 @@ public class InMemorySleeperInstance {
      */
     public Queue<IngestJob> ingestQueue() {
         return ingestQueue;
+    }
+
+    /**
+     * Retrieves the in-memory queue of queries submitted for processing.
+     *
+     * @return the queue
+     */
+    public Queue<Query> queryQueue() {
+        return queryQueue;
+    }
+
+    /**
+     * Retrieves the in-memory query tracker.
+     *
+     * @return the tracker
+     */
+    public InMemoryQueryTracker queryTracker() {
+        return queryTracker;
     }
 
     /**

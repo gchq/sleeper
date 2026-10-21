@@ -56,21 +56,14 @@ public class InMemoryQueryTracker implements QueryStatusReportListener, QueryTra
 
     @Override
     public TrackedQuery getStatus(String queryId) throws QueryTrackerException {
-        TrackedQuery status = queryIdToStatus.get(queryId);
-        if (status == null) {
-            throw new RuntimeException("Query ID was not found: " + queryId);
-        }
-        return status;
+        return queryIdToStatus.get(queryId);
     }
 
     @Override
     public TrackedQuery getStatus(String queryId, String subQueryId) throws QueryTrackerException {
         TrackedQuery status = subQueryIdToStatus.get(subQueryId);
-        if (status == null) {
-            throw new RuntimeException("Sub-query ID was not found: " + subQueryId);
-        }
-        if (!Objects.equals(status.getQueryId(), queryId)) {
-            throw new RuntimeException("Sub-query ID was found but query ID was not found: " + queryId);
+        if (status == null || !Objects.equals(status.getQueryId(), queryId)) {
+            return null;
         }
         return status;
     }
@@ -91,6 +84,15 @@ public class InMemoryQueryTracker implements QueryStatusReportListener, QueryTra
      */
     public Stream<TrackedQuery> streamAllQueries() {
         return Stream.concat(queryIdToStatus.values().stream(), subQueryIdToStatus.values().stream());
+    }
+
+    @Override
+    public List<TrackedQuery> getQueryAndSubQueries(String queryId) {
+        return Stream.concat(
+                Optional.ofNullable(queryIdToStatus.get(queryId)).stream(),
+                subQueryIdToStatus.values().stream()
+                        .filter(query -> queryId.equals(query.getQueryId())))
+                .toList();
     }
 
     @Override

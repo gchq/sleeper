@@ -57,7 +57,7 @@ public class CompactionCreationST {
 
     @Test
     void shouldCreateLargeQuantitiesOfCompactionJobsAtOnce(SleeperDsl sleeper) throws Exception {
-        // Given
+        // Given 65,536 partitions each contain two files eligible for compaction
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
@@ -71,13 +71,13 @@ public class CompactionCreationST {
                 .addFileOnEveryPartition("file1.parquet", 655360)
                 .addFileOnEveryPartition("file2.parquet", 655360);
 
-        // When
+        // When we start compaction
         FoundCompactionJobs jobs = sleeper.compaction()
                 .putCurrentTablesOnlineWaitForJobCreation(65536,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .drainJobsQueueForWholeInstance(65536);
 
-        // Then
+        // Then a compaction job is created for every partition
         assertThat(jobs.checkFullCompactionWithPartitionsAndInputFiles(
                 partitions, "file1.parquet", "file2.parquet"))
                 .isEqualTo(FoundCompactionJobs.expectedFullCompactionCheckWithJobs(65536));
@@ -85,7 +85,7 @@ public class CompactionCreationST {
 
     @Test
     void shouldSendBadCompactionBatchToDeadLetterQueue(SleeperDsl sleeper) throws Exception {
-        // Given
+        // Given a parquet file for compaction is assigned to job Id job-1 in the state store
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"));
         FileReference inputFile = fileFactory(sleeper).rootFile("input.parquet", 100);
         sleeper.stateStore().fakeCommits().setupStateStore(store -> {
@@ -93,10 +93,10 @@ public class CompactionCreationST {
             update(store).assignJobId("job-1", List.of(inputFile));
         });
 
-        // When
+        // When a compaction batch is received for the same file with job Id job-2
         sleeper.compaction()
                 .sendSingleCompactionBatch("job-2", List.of(inputFile))
-                // Then
+                // Then the compaction batch is sent to the dead letter queue because it is a mismatch
                 .waitForCompactionBatchOnDeadLetterQueue();
     }
 }

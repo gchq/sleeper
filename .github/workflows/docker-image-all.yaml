@@ -11,12 +11,13 @@ jobs:
     with:
       imageName: ingest
       mavenOptions: -DskipRust
-  bulk-import-runner:
-    uses: ./.github/workflows/docker-image-test.yaml
-    with:
-      imageName: bulk-import-runner
-      enableTrivy: false
-      mavenOptions: -DskipRust
+  # Disabled because GitHub Actions gets rate limited on public ECR, where the EMR base image is held
+  # bulk-import-runner:
+  #   uses: ./.github/workflows/docker-image-test.yaml
+  #   with:
+  #     imageName: bulk-import-runner
+  #     enableTrivy: false
+  #     mavenOptions: -DskipRust
   compaction-job-execution:
     uses: ./.github/workflows/docker-image-test.yaml
     with:

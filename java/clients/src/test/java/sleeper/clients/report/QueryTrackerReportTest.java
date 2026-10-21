@@ -106,7 +106,7 @@ public class QueryTrackerReportTest {
 
         @Test
         void shouldQueryInProgressQueriesWithShortFlag() {
-            assertThat(queryFromArguments("in-progress-instance", "-i"))
+            assertThat(queryFromArguments("in-progress-instance", "-p"))
                     .isEqualTo(QueryTrackerQuery.IN_PROGRESS);
         }
     }
@@ -146,6 +146,37 @@ public class QueryTrackerReportTest {
     }
 
     @Nested
+    @DisplayName("Single query by ID")
+    class SingleQueryById {
+
+        @Test
+        void shouldQuerySingleQueryById() {
+            // When
+            Arguments args = readArguments("for-query-instance", "--query", "my-query");
+
+            // Then
+            assertThat(args.query()).isEqualTo(QueryTrackerQuery.FOR_QUERY);
+            assertThat(args.queryId()).isEqualTo("my-query");
+        }
+
+        @Test
+        void shouldQuerySingleQueryByIdWithShortOption() {
+            // When
+            Arguments args = readArguments("for-query-instance", "-i", "my-query");
+
+            // Then
+            assertThat(args.query()).isEqualTo(QueryTrackerQuery.FOR_QUERY);
+            assertThat(args.queryId()).isEqualTo("my-query");
+        }
+
+        @Test
+        void shouldNotSetQueryIdForOtherQueryTypes() {
+            // When / Then
+            assertThat(readArguments("all-instance", "--all").queryId()).isNull();
+        }
+    }
+
+    @Nested
     @DisplayName("Prompt for query type")
     class Prompt {
 
@@ -153,6 +184,44 @@ public class QueryTrackerReportTest {
         void shouldPromptForQueryTypeWhenNoFlagSet() {
             assertThat(queryFromArgumentsWithInput("c\n", "prompt-instance"))
                     .isEqualTo(QueryTrackerQuery.COMPLETED);
+        }
+
+        @Test
+        void shouldPromptForQueryIdWhenSingleQueryChosenInteractively() {
+            // When
+            Arguments args = readArguments(consoleInputFrom("i\nprompted-query\n"), "prompt-instance");
+
+            // Then
+            assertThat(args.query()).isEqualTo(QueryTrackerQuery.FOR_QUERY);
+            assertThat(args.queryId()).isEqualTo("prompted-query");
+        }
+
+        @Test
+        void shouldRepromptForQueryIdWhenBlankQueryIdEntered() {
+            // When the query ID prompt is given an empty line and a whitespace line before a query ID
+            Arguments args = readArguments(consoleInputFrom("i\n\n   \nprompted-query\n"), "prompt-instance");
+
+            // Then
+            assertThat(args.queryId()).isEqualTo("prompted-query");
+        }
+
+        @Test
+        void shouldTrimWhitespaceAroundPromptedQueryId() {
+            // When
+            Arguments args = readArguments(consoleInputFrom("i\n  prompted-query  \n"), "prompt-instance");
+
+            // Then
+            assertThat(args.queryId()).isEqualTo("prompted-query");
+        }
+
+        @Test
+        void shouldPromptForQueryIdWhenOptionSetWithBlankValue() {
+            // When
+            Arguments args = readArguments(consoleInputFrom("prompted-query\n"), "prompt-instance", "--query", " ");
+
+            // Then
+            assertThat(args.query()).isEqualTo(QueryTrackerQuery.FOR_QUERY);
+            assertThat(args.queryId()).isEqualTo("prompted-query");
         }
     }
 
@@ -177,10 +246,26 @@ public class QueryTrackerReportTest {
 
         @Test
         void shouldRejectMultipleFlagsSetAsCombinedShortFlags() {
-            assertThatThrownBy(() -> readArguments("multiple-flag-instance", "-qi"))
+            assertThatThrownBy(() -> readArguments("multiple-flag-instance", "-qp"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasNoCause()
                     .hasMessage("Cannot combine query types. Options have been set for the following types: QUEUED, IN_PROGRESS");
+        }
+
+        @Test
+        void shouldRejectQueryIdCombinedWithAnotherQueryType() {
+            assertThatThrownBy(() -> readArguments("multiple-flag-instance", "--all", "--query", "my-query"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
+                    .hasMessage("Cannot combine query types. Options have been set for the following types: ALL, FOR_QUERY");
+        }
+
+        @Test
+        void shouldRejectQueryIdOptionWithNoValue() {
+            assertThatThrownBy(() -> readArguments("for-query-instance", "--query"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasNoCause()
+                    .hasMessage("Expected an argument for option: query");
         }
 
         @Test
