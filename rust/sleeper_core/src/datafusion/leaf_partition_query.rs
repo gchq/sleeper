@@ -32,7 +32,7 @@ use datafusion::{
     logical_expr::{Expr, ident},
     physical_plan::displayable,
 };
-use log::{debug, info};
+use log::debug;
 use objectstore_ext::s3::ObjectStoreFactory;
 use query_sql::add_sql_stage;
 use std::{
