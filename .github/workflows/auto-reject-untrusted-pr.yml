@@ -18,7 +18,17 @@ jobs:
     steps:
 
       - name: Close PRs from non-collaborators
-        if: ${{ !contains(fromJSON('["COLLABORATOR","MEMBER","OWNER"]'), github.event.pull_request.author_association) }}
+        if: >-
+          ${{
+            !(
+              github.event.pull_request.user.login == 'dependabot[bot]' &&
+              github.event.pull_request.user.type == 'Bot'
+            ) &&
+            !contains(
+              fromJSON('["COLLABORATOR","MEMBER","OWNER"]'),
+              github.event.pull_request.author_association
+            )
+          }}
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
