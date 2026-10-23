@@ -50,6 +50,7 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +78,13 @@ import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Clie
  * different recreations of the localstack container. It would be good to fix this in future.
  */
 public class PopulatedSleeperExternalResource implements BeforeAllCallback, AfterAllCallback {
+    private static final String MAX_WRITER_COUNT_PROPERTY = "task.max-writer-count";
+    /**
+     * The default number of Trino writers to allow during these tests. Each writer reserves 128MB from the Arrow root
+     * allocator, which is limited to 2GB by {@link SleeperConfig}, so this must stay well below that limit.
+     */
+    private static final int DEFAULT_MAX_WRITER_COUNT = 4;
+
     private final Map<String, String> extraPropertiesForQueryRunner;
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;
@@ -99,6 +107,25 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         this.extraPropertiesForQueryRunner = requireNonNull(extraPropertiesForQueryRunner);
         this.tableDefinitions = requireNonNull(tableDefinitions);
         this.sleeperConfig = requireNonNull(sleeperConfig);
+    }
+
+    /**
+     * Builds the properties for the Trino query runner, applying a default cap on the number of writers.
+     * <p>
+     * Each writer builds its own Arrow row batch, which reserves a fixed amount of memory up front from the shared
+     * Arrow root allocator. By default Trino scales the writer count with the number of available cores, so on a
+     * machine with enough cores the writers exhaust the root allocator and ingest fails with an Arrow
+     * OutOfMemoryException. Capping the writer count keeps the total reservation within the root allocator limit
+     * regardless of the size of the machine the tests run on.
+     *
+     * @return the properties to pass to the query runner
+     */
+    private Map<String, String> queryRunnerProperties() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put(MAX_WRITER_COUNT_PROPERTY, String.valueOf(DEFAULT_MAX_WRITER_COUNT));
+        // Any value set by an individual test takes precedence over the default above.
+        properties.putAll(extraPropertiesForQueryRunner);
+        return properties;
     }
 
     private void ingestData(
@@ -174,7 +201,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
         sleeperConfig.setConfigBucket(instanceProperties.get(CONFIG_BUCKET));
         DistributedQueryRunner distributedQueryRunner = SleeperQueryRunner.createSleeperQueryRunner(
-                extraPropertiesForQueryRunner,
+                queryRunnerProperties(),
                 sleeperConfig,
                 buildAwsV2Client(localStackContainer, S3Client.builder()),
                 buildAwsV2Client(localStackContainer, S3AsyncClient.builder()),
