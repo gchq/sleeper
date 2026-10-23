@@ -2,6 +2,12 @@
 
 In the `/scripts/dev` folder are some scripts that can assist you while working on Sleeper:
 
+#### `buildClientsJar.sh`
+
+This rebuilds just the clients jar and copies it into `scripts/jars`, so that scripts using it pick up your changes
+without a full build. This needs `scripts/templates/version.txt`, which is created by a full build with
+`scripts/build/build.sh`.
+
 #### `buildDockerImage.sh`
 
 This will build a single Docker image, and can be used to prepare for execution of the local Docker image tests, e.g.
@@ -72,10 +78,6 @@ properties, Docker images, or the slow and expensive system test suite annotatio
 
 Publishes Docker images to a remote repository, see [publishing artefacts](publishing.md). For hooks that adjust how the images are built (e.g. substituting a custom base image), see [building in a custom environment](custom-environment.md).
 
-#### `publishMaven.sh`
-
-Publishes Maven artifacts to a remote repository, see [publishing artefacts](publishing.md).
-
 #### `runTest.sh`
 
 Runs a single integration or unit test. Cannot be used with system tests.
@@ -84,6 +86,15 @@ Runs a single integration or unit test. Cannot be used with system tests.
 
 This will display a graph of the dependencies between Sleeper's Maven modules. You can use this to explore how the
 modules relate to one another.
+
+#### `updateVendoredDataSketches.sh`
+
+This replaces the vendored copy of Apache DataSketches C++ under `vendored/datasketches-cpp` with the given release tag
+from GitHub, and updates the version used by the Rust build in `rust/Cargo.toml`. You can run it like this:
+
+```bash
+./scripts/dev/updateVendoredDataSketches.sh 5.2.0
+```
 
 #### `updateVersionNumber.sh`
 

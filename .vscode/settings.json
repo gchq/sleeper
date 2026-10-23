@@ -12,7 +12,7 @@
   "files.trimTrailingWhitespace": true,
   "java.checkstyle.configuration": "${workspaceFolder}/code-style/checkstyle-idea/checkstyle.xml",
   "java.checkstyle.version": "12.3.1",
-  "java.compile.nullAnalysis.mode": "automatic",
+  "java.compile.nullAnalysis.mode": "disabled",
   "java.completion.importOrder": [
     "",
     "sleeper",

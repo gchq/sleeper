@@ -6,18 +6,16 @@ build Sleeper yourself. We do not currently publish artefacts publicly.
 
 ### Publishing Maven artifacts
 
-There is a script [`scripts/dev/publishMaven.sh`](/scripts/dev/publishMaven.sh) to publish the Maven artifacts,
-including all modules and the fat jars used to deploy from and run scripts.
-
-This accepts options to pass through to Maven, including `-DaltDeploymentRepository`, documented
-against [the Maven plugin](https://maven.apache.org/plugins/maven-deploy-plugin/deploy-mojo.html). If you don't set a
-deployment repository it will publish the files to the local file system at `/tmp/sleeper/m2`.
-
-Here's an example of running this script:
+You can publish the Maven artifacts with `mvn deploy`, including all modules and the fat jars used to deploy from and
+run scripts. The `release` profile also publishes source jars. Run it from the `java` directory like this:
 
 ```bash
-./scripts/dev/publishMaven.sh -DaltDeploymentRepository=my-repo-id::https://my.repository.com/path
+mvn clean deploy -Pquick,release -DskipRust -DaltDeploymentRepository=my-repo-id::https://my.repository.com/path
 ```
+
+The `-DaltDeploymentRepository` option is documented
+against [the Maven plugin](https://maven.apache.org/plugins/maven-deploy-plugin/deploy-mojo.html). If you don't set a
+deployment repository it will publish the files to the local file system at `/tmp/sleeper/m2`.
 
 Your Maven settings file will need to have this repository declared, with a matching ID and any necessary
 authentication. Here's a guide to set this up: https://www.baeldung.com/maven-settings-xml#5-servers

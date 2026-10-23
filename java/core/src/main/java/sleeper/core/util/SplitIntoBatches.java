@@ -106,6 +106,14 @@ public class SplitIntoBatches {
      * @param <T> the item type
      */
     private static class BatchSpliterator<T> implements Spliterator<List<T>> {
+        /**
+         * The fewest batches each piece of a split must still be able to fill. Every piece ends
+         * with one partial batch, so this limits how much of the output can be partial batches:
+         * at 32, around one batch in 32 at worst. Raising it wastes fewer batches, but stops
+         * smaller inputs from being split across processors.
+         */
+        private static final int MIN_BATCHES_PER_SPLIT = 32;
+
         private final int batchSize;
         private final Spliterator<T> source;
 
@@ -130,9 +138,13 @@ public class SplitIntoBatches {
 
         @Override
         public Spliterator<List<T>> trySplit() {
-            // Multiple here aims to limit the number of incomplete batches
-            int minSplitSize = batchSize * 8;
-            if (source.estimateSize() <= minSplitSize) {
+            // Splitting divides the remaining items in two, and each piece goes on to produce
+            // its own trailing partial batch. Splitting too far therefore fills the output with
+            // undersized batches. Require enough items that both pieces stay above the minimum,
+            // rather than just the piece being split, or a split just above the minimum leaves
+            // two pieces well below it.
+            long minItemsPerPiece = (long) batchSize * MIN_BATCHES_PER_SPLIT;
+            if (source.estimateSize() < 2 * minItemsPerPiece) {
                 return null;
             }
             Spliterator<T> split = source.trySplit();
