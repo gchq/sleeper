@@ -535,7 +535,7 @@ impl<T: ObjectStore> ReadaheadStore<T> {
 
 impl<T: ObjectStore> Drop for ReadaheadStore<T> {
     fn drop(&mut self) {
-        info!(
+        debug!(
             "ReadaheadStore made {} GET and {} HEAD requests to underlying location {}",
             self.underlying_gets
                 .load(Ordering::Relaxed)

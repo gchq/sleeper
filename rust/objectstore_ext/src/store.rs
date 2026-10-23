@@ -116,7 +116,7 @@ impl<T: ObjectStore> std::fmt::Display for LoggingObjectStore<T> {
 
 impl<T: ObjectStore> Drop for LoggingObjectStore<T> {
     fn drop(&mut self) {
-        info!(
+        debug!(
             "LoggingObjectStore \"{}\" to \"{}\" made {} GET and {} HEAD requests and requested a total of {} bytes (range bounded)",
             self.prefix,
             self.path_prefix,

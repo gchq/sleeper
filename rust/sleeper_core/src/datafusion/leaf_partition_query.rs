@@ -101,7 +101,7 @@ impl<'a> LeafPartitionQuery<'a> {
             return plan_err!("No query regions specified");
         }
         let ops = SleeperOperations::new(&self.config.common);
-        info!("DataFusion query: {}", self.config);
+        debug!("DataFusion query: {}", self.config);
         // Create query frame and sketches if it has been enabled
         let (sketcher, frame, ctx) = self.build_query_dataframe(&ops).await?;
 
