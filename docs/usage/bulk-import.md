@@ -209,7 +209,6 @@ configuration. The following properties are instance properties that can be over
 the `platformSpec` part of the job specification:
 
 ```properties
-sleeper.default.bulk.import.emr.release.label=emr-6.10.0 # The EMR release label to be used when creating an EMR cluster for bulk importing data using Spark running on EMR. This default can be overridden by a table property or by a property in the bulk import job specification.
 sleeper.default.bulk.import.emr.instance.architecture=x86_64 # The architectures to use for instances of the cluster. This determines which instance type properties will be read.
 sleeper.default.bulk.import.emr.master.x86.instance.types=m6i.xlarge # The EC2 x86_64 instance types to be used for the master node of the EMR cluster.
 sleeper.default.bulk.import.emr.executor.x86.instance.types=m6i.4xlarge # The EC2 x86_64 instance types to be used for the executor nodes of the EMR cluster.
@@ -222,7 +221,6 @@ values will be used instead of the default values in the instance properties, un
 are overridden by properties in the job specification.
 
 ```properties
-sleeper.table.bulk.import.emr.release.label=emr-6.10.0 # The EMR release label to be used when creating an EMR cluster for bulk importing data using Spark running on EMR. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
 sleeper.table.bulk.import.emr.instance.architecture=x86_64 # The architectures to use for instances of the cluster. This determines which instance type properties will be read.
 sleeper.table.bulk.import.emr.master.x86.instance.types=m6i.xlarge # The EC2 instance types to be used for the master node of the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
 sleeper.table.bulk.import.emr.executor.x86.instance.types=m6i.4xlarge # The EC2 instance types to be used for the executor nodes of the EMR cluster. This value overrides the default value in the instance properties. It can be overridden by a value in the bulk import job specification.
@@ -290,7 +288,6 @@ and `sleeper.bulk.import.persistent.emr.max.instances`.
 The other properties of the cluster are controlled using similar properties to the non-persistent EMR cluster, e.g.
 
 ```properties
-sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
 sleeper.bulk.import.persistent.emr.instance.architecture=x86_64
 sleeper.bulk.import.persistent.emr.master.x86.instance.types=m6i.xlarge
 sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m6i.4xlarge
@@ -383,7 +380,6 @@ A persistent EMR cluster consisting of 10 core nodes of instance type m6i.4xlarg
 created by setting the following instance properties:
 
 ```properties
-sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
 sleeper.bulk.import.persistent.emr.master.x86.instance.types=m6i.xlarge
 sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m6i.4xlarge
 sleeper.bulk.import.persistent.emr.use.managed.scaling=false
