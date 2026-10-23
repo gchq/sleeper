@@ -41,6 +41,13 @@ import java.util.Map;
 public class NexusRepositoryContainer extends GenericContainer<NexusRepositoryContainer> {
     private static final Logger LOGGER = LoggerFactory.getLogger(NexusRepositoryContainer.class);
 
+    /**
+     * How long to wait for Nexus to finish starting up. Nexus takes around a minute to start on an otherwise idle
+     * machine, so this needs plenty of headroom for when the host is under load, eg. during a parallel Maven build
+     * where many modules run containers at the same time.
+     */
+    private static final Duration STARTUP_TIMEOUT = Duration.ofMinutes(4);
+
     private final Gson gson = new Gson();
     private final HttpClient client = HttpClient.newHttpClient();
     private String adminPassword;
@@ -50,7 +57,7 @@ public class NexusRepositoryContainer extends GenericContainer<NexusRepositoryCo
         super(DockerImageName.parse("sonatype/nexus3:3.89.1"));
         setExposedPorts(List.of(8081));
         setLogConsumers(List.of(outputFrame -> LOGGER.info("{}", outputFrame.getUtf8StringWithoutLineEnding())));
-        setStartupCheckStrategy(new NexusRepositoryStartupCheckStrategy().withTimeout(Duration.ofMinutes(1)));
+        setStartupCheckStrategy(new NexusRepositoryStartupCheckStrategy().withTimeout(STARTUP_TIMEOUT));
     }
 
     public void checkHealth() {
