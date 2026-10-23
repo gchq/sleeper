@@ -68,7 +68,6 @@ use futures::{
     stream::{BoxStream, empty},
 };
 use log::debug;
-use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
     Attributes, CopyMode, CopyOptions, GetOptions, GetRange, GetResult, GetResultPayload,

@@ -17,7 +17,7 @@
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::{StreamExt, TryStreamExt, future::ready, stream::BoxStream};
-use log::{debug, info};
+use log::debug;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
     CopyMode, CopyOptions, GetOptions, GetRange, GetResult, ListResult, MultipartUpload,
@@ -489,7 +489,7 @@ mod tests {
                 captured_logs[2].body,
                 "LoggingObjectStore \"TEST\" to \"memory:/\" made 1 GET and 0 HEAD requests and requested a total of 4 bytes (range bounded)"
             );
-            assert_eq!(captured_logs[2].level, Level::Info);
+            assert_eq!(captured_logs[2].level, Level::Debug);
         });
 
         Ok(())
