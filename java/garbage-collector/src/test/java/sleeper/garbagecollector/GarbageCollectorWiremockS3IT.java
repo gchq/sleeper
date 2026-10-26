@@ -135,6 +135,38 @@ class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
     }
 
     @Test
+    void shouldRecordOneFailureForAllFilesInFailedBatch() throws Exception {
+        // Given
+        Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+        Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
+        stateStore.fixFileUpdateTime(oldEnoughTime);
+        table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+        createFileWithNoReferencesByCompaction(stateStore, "old-file-1", "new-file-1");
+        createFileWithNoReferencesByCompaction(stateStore, "old-file-2", "new-file-2");
+        stubFor(post(DELETE_URL)
+                .willReturn(aResponse()
+                        .withStatus(503)
+                        .withBody(errorResponse("ServiceUnavailable", "Service is unable to handle request."))));
+
+        // When / Then
+        assertThatThrownBy(() -> collectGarbageAtTime(currentTime))
+                .isInstanceOfSatisfying(FailedGarbageCollectionException.class,
+                        e -> assertThat(e.getTableFailures()).singleElement().satisfies(failure -> {
+                            assertThat(failure.fileFailures()).singleElement().satisfies(fileFailure -> {
+                                assertThat(fileFailure.filenames())
+                                        .containsExactlyInAnyOrder(filename("old-file-1"), filename("old-file-2"));
+                                assertThat(fileFailure.cause()).isInstanceOf(S3Exception.class);
+                            });
+                        }));
+        verify(1, postRequestedFor(urlEqualTo(DELETE_URL)));
+        assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
+                referencedAndUnreferencedFilesReport(oldEnoughTime,
+                        List.of(fileReference("new-file-1"), fileReference("new-file-2")),
+                        List.of(filename("old-file-1"), filename("old-file-2"))));
+        assertThat(threadSleeps).isEmpty();
+    }
+
+    @Test
     void shouldNotRecordFileAsDeletedWhenOnlySomeOfItsObjectsWereDeleted() throws Exception {
         // Given
         Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");

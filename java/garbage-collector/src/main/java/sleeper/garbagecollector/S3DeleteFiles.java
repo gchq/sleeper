@@ -32,7 +32,12 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Deletes files from S3 by their filename in the state store. Used during garbage collection.
@@ -70,7 +75,10 @@ public class S3DeleteFiles implements DeleteFiles {
                 .filter(filename -> !errorsByFilename.containsKey(filename))
                 .forEach(deleted::deleted);
 
-        errorsByFilename.forEach((filename, failure) -> deleted.failed(List.of(filename), failure));
+        // Group files by failure so a failed request is recorded once, rather than once per file
+        errorsByFilename.entrySet().stream()
+                .collect(groupingBy(Entry::getValue, LinkedHashMap::new, mapping(Entry::getKey, toList())))
+                .forEach((failure, failedFilenames) -> deleted.failed(failedFilenames, failure));
     }
 
     private void deleteS3Batch(FilesToDeleteInBucket filesInBucket, List<String> objectKeys, Set<String> deletedFiles,
