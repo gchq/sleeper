@@ -158,7 +158,7 @@
         <aws-crt.version>0.48.5</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
-        <aws-lambda-java-runtime-interface-client.version>2.12.1</aws-lambda-java-runtime-interface-client.version>
+        <aws-lambda-java-runtime-interface-client.version>2.12.2</aws-lambda-java-runtime-interface-client.version>
         <aws-lambda-powertools.version>2.11.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.21.0</commons-lang3.version>
         <commons-codec.version>1.23.0</commons-codec.version>
@@ -196,7 +196,7 @@
         <guava.version>33.7.2-jre</guava.version>
         <google.errorprone.version>2.50.0</google.errorprone.version>
         <google.http-client.version>2.2.0</google.http-client.version>
-        <google.grpc.version>1.84.2</google.grpc.version>
+        <google.grpc.version>1.85.1</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
         <cdk.version>2.273.0</cdk.version>
         <constructs.version>10.8.1</constructs.version>
@@ -249,7 +249,7 @@
         <approvaltests.version>31.0.0</approvaltests.version>
         <json-path.version>3.0.0</json-path.version>
         <xmlunit.version>2.14.0</xmlunit.version>
-        <jsonunit.version>6.3.0</jsonunit.version>
+        <jsonunit.version>6.4.0</jsonunit.version>
         <checkstyle.version>12.3.1</checkstyle.version>
         <sleeper.system.test.short.id />
         <sleeper.system.test.vpc.id />
@@ -266,7 +266,7 @@
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <release.plugin.version>3.3.1</release.plugin.version>
         <surefire.plugin.version>3.6.1</surefire.plugin.version>
-        <failsafe.plugin.version>3.6.0</failsafe.plugin.version>
+        <failsafe.plugin.version>3.6.1</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.2</shade.plugin.version>
