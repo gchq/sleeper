@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -97,6 +98,14 @@ public class CompactionTaskTestBase {
     protected final List<CompactionCommitMessage> batcherCommitQueue = new ArrayList<>();
     protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();
     private ThreadSleep waiterForFileAssignment = ThreadSleepTestHelper.recordWaits(foundWaitsForFileAssignment);
+    protected final List<String> terminations = new CopyOnWriteArrayList<>();
+    protected CompactionTaskTerminator terminator = terminations::add;
+    private Supplier<Instant> watchdogTimeSupplier = () -> {
+        throw new IllegalStateException("Unexpected watchdog time request");
+    };
+    private ThreadSleep watchdogSleep = millis -> {
+        throw new IllegalStateException("Unexpected watchdog wait");
+    };
 
     @BeforeEach
     void setUpBase() {
@@ -167,8 +176,14 @@ public class CompactionTaskTestBase {
         CompactionRunnerFactory selector = (job, properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,
-                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps), maxTimeAliveJitter, null)
+                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps), maxTimeAliveJitter, null,
+                terminator, watchdogTimeSupplier, watchdogSleep)
                 .run();
+    }
+
+    protected void setWatchdog(Supplier<Instant> timeSupplier, ThreadSleep sleep) {
+        watchdogTimeSupplier = timeSupplier;
+        watchdogSleep = sleep;
     }
 
     private StateStoreWaitForFiles noWaitForFileAssignment() {

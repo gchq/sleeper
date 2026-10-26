@@ -43,4 +43,15 @@ public interface CompactionRunner {
      * @throws IteratorCreationException a problem creating any configured iterators
      */
     RowsProcessed compact(CompactionRequest request) throws IOException, IteratorCreationException;
+
+    /**
+     * Checks whether the compaction task should monitor progress callbacks from this runner to detect a stalled
+     * compaction. This should only be enabled if progress callbacks are sent regularly regardless of the rate at which
+     * rows are processed.
+     *
+     * @return true if progress should be monitored for stalls
+     */
+    default boolean isProgressMonitored() {
+        return false;
+    }
 }

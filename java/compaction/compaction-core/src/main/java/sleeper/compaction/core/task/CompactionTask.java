@@ -26,6 +26,7 @@ import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.CompactionProgressCheckSettings;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
@@ -47,8 +48,10 @@ import sleeper.core.util.ThreadSleep;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.DoubleSupplier;
 import java.util.function.LongConsumer;
 import java.util.function.Supplier;
@@ -83,16 +86,21 @@ public class CompactionTask {
     private final ThreadSleep threadSleep;
     private final Duration maxAliveTimeDuration;
     private final LongConsumer progressTracker;
+    private final CompactionTaskTerminator terminator;
+    private final Supplier<Instant> watchdogTimeSupplier;
+    private final ThreadSleep watchdogSleep;
 
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobTracker jobStore,
-            CompactionTaskTracker taskTracker, CompactionRunnerFactory selector, String taskId) {
+            CompactionTaskTracker taskTracker, CompactionRunnerFactory selector, String taskId,
+            CompactionTaskTerminator terminator) {
         this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
                 messageReceiver, waitForFiles, jobCommitter,
                 jobStore, taskTracker, selector, taskId,
-                () -> UUID.randomUUID().toString(), Instant::now, Thread::sleep, Math::random, null);
+                () -> UUID.randomUUID().toString(), Instant::now, Thread::sleep, Math::random, null,
+                terminator, Instant::now, Thread::sleep);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
@@ -106,6 +114,26 @@ public class CompactionTask {
             CompactionJobTracker jobTracker, CompactionTaskTracker taskTracker, CompactionRunnerFactory selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, ThreadSleep threadSleep,
             DoubleSupplier randomJitterFunction, LongConsumer progressTracker) {
+        this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
+                messageReceiver, waitForFiles, jobCommitter, jobTracker, taskTracker, selector,
+                taskId, jobRunIdSupplier, timeSupplier, threadSleep, randomJitterFunction, progressTracker,
+                reason -> {
+                    throw new IllegalStateException("Unexpected compaction task termination: " + reason);
+                }, Instant::now, Thread::sleep);
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
+    public CompactionTask(
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
+            PropertiesReloader propertiesReloader,
+            StateStoreProvider stateStoreProvider,
+            MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
+            CompactionJobCommitterOrSendToLambda jobCommitter,
+            CompactionJobTracker jobTracker, CompactionTaskTracker taskTracker, CompactionRunnerFactory selector,
+            String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, ThreadSleep threadSleep,
+            DoubleSupplier randomJitterFunction, LongConsumer progressTracker,
+            CompactionTaskTerminator terminator, Supplier<Instant> watchdogTimeSupplier, ThreadSleep watchdogSleep) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
@@ -121,6 +149,9 @@ public class CompactionTask {
         this.jobCommitter = jobCommitter;
         this.waitForFiles = waitForFiles;
         this.progressTracker = progressTracker;
+        this.terminator = terminator;
+        this.watchdogTimeSupplier = watchdogTimeSupplier;
+        this.watchdogSleep = watchdogSleep;
         maxAliveTimeDuration = generateMaxAliveTimeWithJitter(randomJitterFunction);
     }
 
@@ -130,7 +161,13 @@ public class CompactionTask {
         LOGGER.info("Starting task {}", taskId);
         taskTracker.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
-        Instant finishTime = handleMessages(startTime, taskFinishedBuilder);
+        Instant finishTime;
+        try {
+            finishTime = handleMessages(startTime, taskStatusBuilder, taskFinishedBuilder);
+        } catch (CompactionStalledException e) {
+            LOGGER.error("Compaction task {} stopped after a compaction stalled", taskId, e);
+            return;
+        }
         CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
         LOGGER.info("Total number of messages processed = {}", taskFinished.getJobRuns());
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
@@ -138,7 +175,8 @@ public class CompactionTask {
         taskTracker.taskFinished(taskFinished);
     }
 
-    private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException {
+    private Instant handleMessages(Instant startTime, CompactionTaskStatus.Builder taskStatusBuilder,
+            CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException {
         IdleTimeTracker idleTimeTracker = new IdleTimeTracker(startTime);
         ConsecutiveFailuresTracker consecutiveFailuresTracker = new ConsecutiveFailuresTracker(instanceProperties);
         while (consecutiveFailuresTracker.hasNotMetMaximumFailures() && hasNotReachedMaxAliveTime(startTime)) {
@@ -154,7 +192,7 @@ public class CompactionTask {
             try (MessageHandle message = messageOpt.get()) {
                 String jobRunId = jobRunIdSupplier.get();
                 if (prepareCompactionMessage(jobRunId, message, consecutiveFailuresTracker)) {
-                    processCompactionMessage(jobRunId, taskFinishedBuilder, message, idleTimeTracker, consecutiveFailuresTracker);
+                    processCompactionMessage(jobRunId, taskStatusBuilder, taskFinishedBuilder, message, idleTimeTracker, consecutiveFailuresTracker);
                 }
             }
             if (Thread.currentThread().isInterrupted()) {
@@ -193,13 +231,15 @@ public class CompactionTask {
     }
 
     private void processCompactionMessage(
-            String jobRunId, CompactionTaskFinishedStatus.Builder builder, MessageHandle message,
-            IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker) {
+            String jobRunId, CompactionTaskStatus.Builder taskStatusBuilder, CompactionTaskFinishedStatus.Builder builder,
+            MessageHandle message, IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker) {
         Instant jobStartTime = timeSupplier.get();
         try {
             JobRunSummary summary;
             try {
-                summary = compact(message.getJob(), jobRunId, jobStartTime);
+                summary = compact(message, jobRunId, jobStartTime, taskStatusBuilder, builder);
+            } catch (CompactionStalledException e) {
+                throw e;
             } catch (TableNotFoundException e) {
                 LOGGER.warn("Found compaction job for non-existent table, ignoring: {}", message.getJob());
                 message.deleteFromQueue();
@@ -211,6 +251,8 @@ public class CompactionTask {
                 throw e;
             }
             commitCompaction(jobRunId, builder, message, idleTimeTracker, failureTracker, summary);
+        } catch (CompactionStalledException e) {
+            throw e;
         } catch (Exception e) {
             jobTracker.jobFailed(message.getJob()
                     .failedEventBuilder(timeSupplier.get())
@@ -242,22 +284,86 @@ public class CompactionTask {
         }
     }
 
-    private JobRunSummary compact(CompactionJob job, String jobRunId, Instant jobStartTime) throws Exception {
+    private JobRunSummary compact(
+            MessageHandle message, String jobRunId, Instant jobStartTime,
+            CompactionTaskStatus.Builder taskStatusBuilder, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws Exception {
+        CompactionJob job = message.getJob();
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobTracker.jobStarted(job.startedEventBuilder(jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         CompactionRunner compactor = selector.createCompactor(job, tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Partition partition = stateStore.getPartition(job.getPartitionId());
-        RowsProcessed rowsProcessed = compactor.compact(CompactionRequest.builder()
+        CompactionRequest.Builder request = CompactionRequest.builder()
                 .job(job)
                 .tableProperties(tableProperties)
-                .region(partition.getRegion())
-                .progressCallback(progressTracker)
-                .build());
+                .region(partition.getRegion());
+        RowsProcessed rowsProcessed;
+        if (compactor.isProgressMonitored()) {
+            rowsProcessed = compactWithWatchdog(compactor, request, message, jobRunId, jobStartTime, taskStatusBuilder, taskFinishedBuilder);
+        } else {
+            rowsProcessed = compactor.compact(request.progressCallback(progressTracker).build());
+        }
         Instant jobFinishTime = timeSupplier.get();
         JobRunSummary summary = new JobRunSummary(rowsProcessed, jobStartTime, jobFinishTime);
         return summary;
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
+    private RowsProcessed compactWithWatchdog(
+            CompactionRunner compactor, CompactionRequest.Builder request, MessageHandle message,
+            String jobRunId, Instant jobStartTime,
+            CompactionTaskStatus.Builder taskStatusBuilder, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws Exception {
+        CompactionJob job = message.getJob();
+        CompactionProgressCheckSettings settings = CompactionProgressCheckSettings.from(instanceProperties);
+        CompactionProgressMonitor monitor = new CompactionProgressMonitor(watchdogTimeSupplier);
+        LongConsumer callback = progressTracker == null ? monitor : monitor.andThen(progressTracker);
+        AtomicReference<CompactionStall> stalled = new AtomicReference<>();
+        RowsProcessed rowsProcessed;
+        try (CompactionWatchdog watchdog = new CompactionWatchdog(job.getId(), watchdogTimeSupplier.get(), monitor,
+                CompactionStallDetector.from(settings), settings.checkPeriod(), watchdogTimeSupplier, watchdogSleep,
+                stall -> {
+                    stalled.set(stall);
+                    handleStall(stall, message, jobRunId, jobStartTime, taskStatusBuilder, taskFinishedBuilder);
+                })) {
+            watchdog.start();
+            rowsProcessed = compactor.compact(request.progressCallback(callback).build());
+        }
+        if (stalled.get() != null) {
+            throw new CompactionStalledException(job.getId(), stalled.get());
+        }
+        return rowsProcessed;
+    }
+
+    // Called on the watchdog thread while the compaction may still be running, so this does not interact with the
+    // thread running the compaction. Each step is attempted even if an earlier one fails, so the task is always
+    // terminated.
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
+    private void handleStall(
+            CompactionStall stall, MessageHandle message, String jobRunId, Instant jobStartTime,
+            CompactionTaskStatus.Builder taskStatusBuilder, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) {
+        CompactionJob job = message.getJob();
+        LOGGER.error("Compaction job {}: compaction stalled, putting job back on queue and terminating task {}. {}",
+                job.getId(), taskId, stall.description());
+        attempt("record job failure", () -> jobTracker.jobFailed(job
+                .failedEventBuilder(stall.detectedTime())
+                .failureReasons(List.of("Compaction stalled: " + stall.description()))
+                .taskId(taskId).jobRunId(jobRunId).build()));
+        attempt("stop keep alive", message::close);
+        attempt("return job to queue", message::returnToQueue);
+        attempt("record task finished", () -> taskTracker.taskFinished(
+                taskStatusBuilder.finished(stall.detectedTime(), taskFinishedBuilder).build()));
+        LOGGER.info("Compaction job {}: ran for {} before stall was detected",
+                job.getId(), LoggedDuration.withFullOutput(jobStartTime, stall.detectedTime()));
+        terminator.terminate("Compaction job " + job.getId() + " stalled: " + stall.description());
+    }
+
+    private static void attempt(String description, Runnable action) {
+        try {
+            action.run();
+        } catch (RuntimeException e) {
+            LOGGER.error("Failed to {} after compaction stalled", description, e);
+        }
     }
 
     private void logMetrics(CompactionJob job, JobRunSummary summary) {

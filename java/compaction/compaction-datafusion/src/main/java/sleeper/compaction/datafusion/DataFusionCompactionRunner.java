@@ -104,6 +104,11 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         }
     }
 
+    @Override
+    public boolean isProgressMonitored() {
+        return true;
+    }
+
     /**
      * Creates the input struct that contains all the information needed by the Rust
      * code side of the compaction.
