@@ -154,7 +154,7 @@
         Only change it when deliberately matching a version from EMR, e.g. based on output from that script.
         Verify with EmrServerlessBulkImportST.
         -->
-        <aws-java-sdk-v2.bulk-import.version>2.44.5</aws-java-sdk-v2.bulk-import.version>
+        <aws-java-sdk-v2.bulk-import.version>2.57.3</aws-java-sdk-v2.bulk-import.version>
         <aws-crt.version>0.48.5</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
