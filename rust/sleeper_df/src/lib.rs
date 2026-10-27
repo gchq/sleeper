@@ -27,8 +27,9 @@ use ::log::error;
 #[cfg(doc)]
 use datafusion::arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
-use sleeper_core::{CompletedOutput, run_compaction, run_query, stream_to_ffi_arrow_stream};
+use sleeper_core::{CompletedOutput, run_compaction_with_interval, run_query, stream_to_ffi_arrow_stream};
 use std::ffi::c_int;
+use std::time::Duration;
 
 mod context;
 mod log;
@@ -78,6 +79,7 @@ pub extern "C" fn native_compact(
     input_ptr: *mut FFICommonConfig,
     output_ptr: *mut FFIFileResult,
     callback: ProgressCallback,
+    progress_callback_interval_ms: u64,
 ) -> c_int {
     maybe_cfg_log();
 
@@ -101,9 +103,10 @@ pub extern "C" fn native_compact(
     };
 
     // Run compaction
+    let interval = Duration::from_millis(progress_callback_interval_ms);
     let result = context
         .rt
-        .block_on(run_compaction(&details, &context.sleeper_context, callback));
+        .block_on(run_compaction_with_interval(&details, &context.sleeper_context, callback, interval));
     match result {
         Ok(res) => {
             if let Some(data) = unsafe { output_ptr.as_mut() } {

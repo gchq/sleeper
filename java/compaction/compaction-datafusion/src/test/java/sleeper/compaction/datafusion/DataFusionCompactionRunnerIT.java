@@ -26,12 +26,14 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.task.CompactionTaskTestHelper;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
+import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -65,10 +67,12 @@ import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongConsumer;
 
@@ -87,6 +91,7 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithMultipleKeys;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class DataFusionCompactionRunnerIT {
+    private static final int LONG_COMPACTION_ROWS_PER_FILE = 5_000_000;
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
@@ -602,6 +607,43 @@ public class DataFusionCompactionRunnerIT {
             assertThat(SketchesDeciles.from(readSketches(job.getOutputFile())))
                     .isEqualTo(SketchesDeciles.from(tableProperties, List.of(row1, row2)));
         }
+
+        @Test
+        void shouldReceivePeriodicProgressUpdatesWithShortInterval() throws Exception {
+            // Given
+            tableProperties.setSchema(createSchemaWithKey("key", new LongType()));
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            String file1 = writeFileOfLongKeys("root", 0, LONG_COMPACTION_ROWS_PER_FILE);
+            String file2 = writeFileOfLongKeys("root", 1, LONG_COMPACTION_ROWS_PER_FILE);
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+            List<Long> progressUpdates = new CopyOnWriteArrayList<>();
+
+            // When
+            runCompactionWithCallbackInterval(job, progressUpdates::add, Duration.ofMillis(100));
+
+            // Then
+            long totalRows = 2L * LONG_COMPACTION_ROWS_PER_FILE;
+            assertThat(progressUpdates)
+                    .as("periodic progress updates before the final update")
+                    .hasSizeGreaterThan(1)
+                    .endsWith(totalRows);
+        }
+    }
+
+    private String writeFileOfLongKeys(String partitionId, long offset, int numRows) throws Exception {
+        Schema schema = tableProperties.getSchema();
+        Sketches sketches = Sketches.from(schema);
+        String dataFile = buildPartitionFilePath(partitionId, UUID.randomUUID().toString() + ".parquet");
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new org.apache.hadoop.fs.Path(dataFile), schema)) {
+            for (long i = 0; i < numRows; i++) {
+                Row row = new Row(Map.of("key", 2 * i + offset));
+                writer.write(row);
+                sketches.update(row);
+            }
+        }
+        update(stateStore).addFile(FileReferenceFactory.from(stateStore).partitionFile(partitionId, dataFile, numRows));
+        sketchesStore.saveFileSketches(dataFile, schema, sketches);
+        return dataFile;
     }
 
     private void runTask(CompactionJob job) throws Exception {
@@ -615,6 +657,22 @@ public class DataFusionCompactionRunnerIT {
                     DataFusionAwsConfig.overrideEndpoint("dummy"),
                     new Configuration(), context);
             compactionTaskTestHelper().runTask(runner, progressCallback, List.of(job));
+        }
+    }
+
+    private void runCompactionWithCallbackInterval(CompactionJob job, LongConsumer progressCallback, Duration callbackInterval) throws Exception {
+        try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
+            CompactionRunner runner = new DataFusionCompactionRunner(
+                    DataFusionAwsConfig.overrideEndpoint("dummy"),
+                    new Configuration(), context);
+            Region region = stateStore.getPartition(job.getPartitionId()).getRegion();
+            runner.compact(CompactionRequest.builder()
+                    .job(job)
+                    .tableProperties(tableProperties)
+                    .region(region)
+                    .progressCallback(progressCallback)
+                    .progressCallbackInterval(callbackInterval)
+                    .build());
         }
     }
 
