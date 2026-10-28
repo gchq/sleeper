@@ -99,7 +99,7 @@
         <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of LZ4 Java with vulnerabilities. -->
         <org.lz4.version>1.8.1</org.lz4.version>
-        <yawk.lz4.version>1.12.0</yawk.lz4.version>
+        <yawk.lz4.version>1.12.1</yawk.lz4.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.2</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
@@ -109,7 +109,7 @@
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
         <xz.version>1.12</xz.version>
         <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. -->
-        <okhttp3.version>5.5.0</okhttp3.version>
+        <okhttp3.version>5.5.1</okhttp3.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict.
@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.55.13</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.57.3</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         It's not compatible with the latest version, so we match the version that it provides.
@@ -158,7 +158,7 @@
         <aws-crt.version>0.48.5</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
-        <aws-lambda-java-runtime-interface-client.version>2.12.1</aws-lambda-java-runtime-interface-client.version>
+        <aws-lambda-java-runtime-interface-client.version>2.12.2</aws-lambda-java-runtime-interface-client.version>
         <aws-lambda-powertools.version>2.11.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.21.0</commons-lang3.version>
         <commons-codec.version>1.23.0</commons-codec.version>
@@ -194,18 +194,18 @@
         <jjwt.build.version>0.13.0</jjwt.build.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.7.2-jre</guava.version>
-        <google.errorprone.version>2.50.0</google.errorprone.version>
+        <google.errorprone.version>2.51.0</google.errorprone.version>
         <google.http-client.version>2.2.0</google.http-client.version>
-        <google.grpc.version>1.84.2</google.grpc.version>
+        <google.grpc.version>1.85.1</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
         <cdk.version>2.273.0</cdk.version>
         <constructs.version>10.8.1</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
-        <jsii.version>1.141.0</jsii.version>
-        <gson.version>2.14.0</gson.version>
+        <jsii.version>1.142.0</jsii.version>
+        <gson.version>2.15.0</gson.version>
         <slf4j.version>2.0.20</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
-        <aspectj.version>1.9.25.1</aspectj.version>
+        <aspectj.version>1.9.26</aspectj.version>
         <pty4j.version>0.14.0</pty4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.86</bouncycastle.version>
@@ -230,7 +230,7 @@
         <apfloat.version>1.16.0</apfloat.version>
         <joda-time.version>2.15.0</joda-time.version>
         <json-smart.version>2.6.0</json-smart.version>
-        <jnr.ffi.version>2.3.3</jnr.ffi.version>
+        <jnr.ffi.version>2.3.4</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <docker-java.version>3.7.1</docker-java.version>
         <jib.version>0.28.2</jib.version>
@@ -243,13 +243,13 @@
         <mockito.version>5.24.0</mockito.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <handlebars.version>4.5.5</handlebars.version>
+        <handlebars.version>4.5.6</handlebars.version>
         <assertj.version>3.27.7</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>31.0.0</approvaltests.version>
         <json-path.version>3.0.0</json-path.version>
         <xmlunit.version>2.14.0</xmlunit.version>
-        <jsonunit.version>6.3.0</jsonunit.version>
+        <jsonunit.version>6.4.0</jsonunit.version>
         <checkstyle.version>12.3.1</checkstyle.version>
         <sleeper.system.test.short.id />
         <sleeper.system.test.vpc.id />
@@ -265,8 +265,8 @@
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <release.plugin.version>3.3.1</release.plugin.version>
-        <surefire.plugin.version>3.6.0</surefire.plugin.version>
-        <failsafe.plugin.version>3.6.0</failsafe.plugin.version>
+        <surefire.plugin.version>3.6.1</surefire.plugin.version>
+        <failsafe.plugin.version>3.6.1</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.2</shade.plugin.version>
