@@ -65,6 +65,8 @@ public class AutoDeleteS3ObjectsST {
                 .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, S3ResultsOutput.S3)));
         // Then the query stack can be removed with query results present in the bucket
         sleeper.disableOptionalStacks(List.of(OptionalStack.QueryStack));
+
+        // Then the Query Stack can be removed with query results present in the bucket
         assertThat(queryResults).containsExactlyElementsOf(
                 sleeper.generateNumberedRows().iterableOverRange(0, 100));
     }

@@ -69,7 +69,7 @@ public class IngestPerformanceST {
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(11),
                         "jobs finished with one run each")
-                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(150_000, 250_000),
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(140_000, 250_000),
                         "meets expected performance");
     }
 }

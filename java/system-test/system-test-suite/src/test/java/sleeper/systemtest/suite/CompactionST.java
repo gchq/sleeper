@@ -107,8 +107,10 @@ public class CompactionST {
                         () -> LongStream.range(0, 100)
                                 .flatMap(number -> LongStream.of(number, number))));
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
+        // And the files are compacted into the expected partitions
         assertThat(printFiles(sleeper.partitioning().tree(), files))
                 .isEqualTo(exampleString("compaction/compactedFilesFromMultiplePartitions.txt"));
+        // And all output files have sorted rows
         assertThat(files.getFilesWithReferences())
                 .allSatisfy(file -> assertThat(
                         SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
@@ -155,8 +157,10 @@ public class CompactionST {
                         () -> LongStream.range(0, 100)
                                 .flatMap(number -> LongStream.of(number, number))));
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
+        // And the files are compacted into the expected partitions
         assertThat(printFiles(sleeper.partitioning().tree(), files))
                 .isEqualTo(exampleString("compaction/compactedFilesFromMultiplePartitions.txt"));
+        // And all output files have sorted rows
         assertThat(files.getFilesWithReferences())
                 .allSatisfy(file -> assertThat(
                         SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))

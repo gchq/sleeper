@@ -34,17 +34,23 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.util.PollWithRetries;
+import sleeper.core.util.ThreadSleepTestHelper;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.output.ResultsOutputLocation;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.tracker.QueryState;
+import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.websocket.QueryWebSocketMessage;
 import sleeper.query.runner.websocket.QueryWebSocketMessageSerDe;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +58,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -92,6 +99,148 @@ class SleeperClientTest {
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("bulkExportQuerySender");
         assertThatThrownBy(() -> instance.sleeperClientBuilder().queryWebSocketSender(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("queryWebSocketSender");
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().querySender(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("querySender");
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().queryTrackerStore(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("queryTrackerStore");
+    }
+
+    @Test
+    void shouldSubmitQueryForProcessing() {
+        // Given
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_NAME, "query-table");
+        sleeperClient.addTable(tableProperties, List.of());
+        Query query = exactQuery("test-query", "A", "query-table");
+
+        // When
+        String queryId = sleeperClient.submitQuery(query);
+
+        // Then
+        assertThat(queryId).isEqualTo("test-query");
+        assertThat(instance.queryQueue()).containsExactly(query);
+    }
+
+    @Test
+    void shouldGetStatusOfQueryAndItsSubqueries() {
+        // Given
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_NAME, "query-table");
+        sleeperClient.addTable(tableProperties, List.of());
+        Query query = exactQuery("test-query", "A", "query-table");
+        instance.queryTracker().queryInProgress(query);
+
+        // When
+        List<TrackedQuery> status = sleeperClient.getQueryStatus("test-query");
+
+        // Then
+        assertThat(status)
+                .extracting(TrackedQuery::getQueryId, TrackedQuery::getLastKnownState)
+                .containsExactly(tuple("test-query", QueryState.IN_PROGRESS));
+    }
+
+    @Test
+    void shouldGetNoStatusForUntrackedQuery() {
+        // When / Then
+        assertThat(sleeperClient.getQueryStatus("not-a-query")).isEmpty();
+    }
+
+    @Test
+    void shouldWaitForQueryThatHasAlreadyFinished() throws Exception {
+        // Given
+        Query query = exactQuery("test-query", "A", "query-table");
+        instance.queryTracker().queryCompleted(query, new ResultsOutputInfo(123L, List.of()));
+        List<Duration> foundWaits = new ArrayList<>();
+        PollWithRetries poll = pollRecordingWaits(foundWaits);
+
+        // When
+        TrackedQuery status = sleeperClient.waitForQuery("test-query", poll);
+
+        // Then the query finished without any waiting
+        assertThat(status.getLastKnownState()).isEqualTo(QueryState.COMPLETED);
+        assertThat(status.getRowCount()).isEqualTo(123L);
+        assertThat(foundWaits).isEmpty();
+    }
+
+    @Test
+    void shouldWaitForQueryThatFinishesWhilePolling() throws Exception {
+        // Given a query that is in progress, and completes during the first wait between polls
+        Query query = exactQuery("test-query", "A", "query-table");
+        instance.queryTracker().queryInProgress(query);
+        List<Duration> foundWaits = new ArrayList<>();
+        PollWithRetries poll = pollWithWaitAction(foundWaits,
+                () -> instance.queryTracker().queryCompleted(query, new ResultsOutputInfo(456L, List.of())));
+
+        // When
+        TrackedQuery status = sleeperClient.waitForQuery("test-query", poll);
+
+        // Then
+        assertThat(status.getLastKnownState()).isEqualTo(QueryState.COMPLETED);
+        assertThat(foundWaits).hasSize(1);
+    }
+
+    @Test
+    void shouldWaitForQueryThatIsNotTrackedYet() throws Exception {
+        // Given a query that is not yet in the tracker, and fails during the first wait between polls
+        Query query = exactQuery("test-query", "A", "query-table");
+        List<Duration> foundWaits = new ArrayList<>();
+        PollWithRetries poll = pollWithWaitAction(foundWaits,
+                () -> instance.queryTracker().queryFailed(query, new Exception("Query failed")));
+
+        // When
+        TrackedQuery status = sleeperClient.waitForQuery("test-query", poll);
+
+        // Then
+        assertThat(status.getLastKnownState()).isEqualTo(QueryState.FAILED);
+        assertThat(foundWaits).hasSize(1);
+    }
+
+    @Test
+    void shouldSubmitQueryAndWaitUntilItFinishes() throws Exception {
+        // Given a query that completes during the first wait between polls, after it was submitted
+        Query query = exactQuery("test-query", "A", "query-table");
+        List<Duration> foundWaits = new ArrayList<>();
+        PollWithRetries poll = pollWithWaitAction(foundWaits,
+                () -> instance.queryTracker().queryCompleted(query, new ResultsOutputInfo(456L, List.of())));
+
+        // When
+        TrackedQuery status = sleeperClient.submitQueryAndWait(query, poll);
+
+        // Then the query was submitted for processing and polled until it finished
+        assertThat(instance.queryQueue()).containsExactly(query);
+        assertThat(status.getLastKnownState()).isEqualTo(QueryState.COMPLETED);
+        assertThat(status.getRowCount()).isEqualTo(456L);
+        assertThat(foundWaits).hasSize(1);
+    }
+
+    @Test
+    void shouldTimeOutWaitingForQueryThatDoesNotFinish() {
+        // Given
+        Query query = exactQuery("test-query", "A", "query-table");
+        instance.queryTracker().queryInProgress(query);
+        PollWithRetries poll = PollWithRetries.builder()
+                .pollIntervalMillis(10).maxRetries(1)
+                .sleepInInterval(ThreadSleepTestHelper.noWaits())
+                .build();
+
+        // When / Then
+        assertThatThrownBy(() -> sleeperClient.waitForQuery("test-query", poll))
+                .isInstanceOf(PollWithRetries.TimedOutException.class);
+    }
+
+    private PollWithRetries pollRecordingWaits(List<Duration> foundWaits) {
+        return PollWithRetries.builder()
+                .pollIntervalMillis(10).maxRetries(10)
+                .sleepInInterval(ThreadSleepTestHelper.recordWaits(foundWaits))
+                .build();
+    }
+
+    private PollWithRetries pollWithWaitAction(List<Duration> foundWaits, ThreadSleepTestHelper.WaitAction action) {
+        return PollWithRetries.builder()
+                .pollIntervalMillis(10).maxRetries(10)
+                .sleepInInterval(ThreadSleepTestHelper.withActionAfterWait(
+                        ThreadSleepTestHelper.recordWaits(foundWaits), action))
+                .build();
     }
 
     @Test
