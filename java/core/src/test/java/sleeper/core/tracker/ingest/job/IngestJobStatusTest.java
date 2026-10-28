@@ -494,7 +494,7 @@ public class IngestJobStatusTest {
         }
 
         @Test
-        void shouldReportFinishedWithFailure() {
+        void shouldReportJobSucceededWhenSuccessfulRunAlsoHadFailure() {
             Instant startTime = Instant.parse("2026-10-09T13:34:12.001Z");
 
             IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
