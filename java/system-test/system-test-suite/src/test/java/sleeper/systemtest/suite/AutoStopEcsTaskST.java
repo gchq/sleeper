@@ -76,7 +76,7 @@ public class AutoStopEcsTaskST {
         // Poll for 2 minutes. If ingest processing were still progressing,
         // the state store would have updated the row count within this period.
         for (int attempt = 1; attempt <= 24; attempt++) {
-            Thread.sleep(Duration.ofSeconds(5));
+            Thread.sleep(5000);
 
             long currentRowCount = sleeper.tableFiles().references().stream()
                     .mapToLong(FileReference::getNumberOfRows)
