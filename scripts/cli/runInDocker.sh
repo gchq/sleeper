@@ -126,7 +126,8 @@ run_in_docker() {
   # missing ones as root, and the non-root user in the container would not be able to write to them.
   mkdir -p "$HOME/.aws"
   mkdir -p "$HOME/.ssh"
-  mkdir -p "$HOME/.cache"
+  # Create cache directory as writable but not group writable
+  mkdir -m 700 -p "$HOME/.cache"
   RUN_PARAMS+=(
     --rm
     --add-host "host.docker.internal=host-gateway"
