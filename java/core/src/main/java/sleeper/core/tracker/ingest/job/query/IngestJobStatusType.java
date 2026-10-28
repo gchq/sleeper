@@ -68,12 +68,10 @@ public enum IngestJobStatusType {
      * @return     the status type
      */
     public static IngestJobStatusType statusTypeOfJobRun(JobRun run) {
-        IngestJobUpdateType furthestType = IngestJobUpdateType.typeOfFurthestUpdateInRun(run);
-        boolean committed = IngestJobUpdateType.isRunCommitted(run);
-        if (committed) {
+        if (IngestJobUpdateType.isRunCommitted(run)) {
             return FINISHED;
         } else {
-            return furthestType.getJobStatusTypeAfterUpdate();
+            return IngestJobUpdateType.typeOfFurthestUpdateInRun(run).getJobStatusTypeAfterUpdate();
         }
     }
 
