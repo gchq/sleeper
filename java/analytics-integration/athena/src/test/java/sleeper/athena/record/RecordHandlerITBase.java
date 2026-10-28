@@ -34,7 +34,7 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;

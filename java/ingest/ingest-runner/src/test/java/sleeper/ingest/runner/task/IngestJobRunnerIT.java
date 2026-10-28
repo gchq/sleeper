@@ -46,7 +46,7 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.testutils.RowGenerator;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;

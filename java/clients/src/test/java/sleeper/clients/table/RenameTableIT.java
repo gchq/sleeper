@@ -28,7 +28,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

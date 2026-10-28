@@ -18,8 +18,8 @@ package sleeper.systemtest.drivers.testutil;
 import software.amazon.awssdk.regions.Region;
 
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
-import sleeper.localstack.test.SleeperLocalStackClients;
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.local.aws.test.SleeperLocalStackClients;
+import sleeper.local.aws.test.SleeperLocalStackContainer;
 import sleeper.systemtest.drivers.bulkexport.AwsBulkExportDriver;
 import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
 import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
@@ -37,7 +37,7 @@ import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.util.NoSnapshotsDriver;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
-import static sleeper.localstack.test.LocalStackHadoopConfigurationProvider.configureHadoop;
+import static sleeper.local.aws.test.LocalStackHadoopConfigurationProvider.configureHadoop;
 
 public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
     private final SystemTestClients clients;

@@ -28,7 +28,7 @@ import sleeper.core.row.Row;
 import sleeper.core.row.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.model.QueryProcessingConfig;

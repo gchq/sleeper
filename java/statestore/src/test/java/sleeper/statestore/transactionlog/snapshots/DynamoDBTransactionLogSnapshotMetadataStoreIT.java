@@ -24,7 +24,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 
 import java.time.Instant;

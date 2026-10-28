@@ -33,7 +33,7 @@ import sleeper.core.tracker.ingest.job.IngestJobStatusTestData;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.time.Instant;
 import java.util.List;

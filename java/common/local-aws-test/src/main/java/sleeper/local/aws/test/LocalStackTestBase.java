@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.localstack.test;
+package sleeper.local.aws.test;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
@@ -43,8 +43,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.localstack.test.SleeperLocalStackClients.S3_CLIENT;
-import static sleeper.localstack.test.SleeperLocalStackClients.SQS_CLIENT;
+import static sleeper.local.aws.test.SleeperLocalStackClients.S3_CLIENT;
+import static sleeper.local.aws.test.SleeperLocalStackClients.SQS_CLIENT;
 
 /**
  * A base class for tests to run against LocalStack.

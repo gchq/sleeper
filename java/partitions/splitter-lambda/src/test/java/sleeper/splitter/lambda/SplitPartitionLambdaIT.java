@@ -38,7 +38,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTra
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.splitter.core.find.SplitPartitionJobDefinition;
 import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.statestore.StateStoreFactory;

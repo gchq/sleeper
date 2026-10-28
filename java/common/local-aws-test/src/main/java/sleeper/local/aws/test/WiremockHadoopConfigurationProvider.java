@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.localstack.test;
+package sleeper.local.aws.test;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import org.apache.hadoop.conf.Configuration;

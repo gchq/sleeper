@@ -42,7 +42,7 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.rowbatch.arraylist.ArrayListRowBatchFactory;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.splitter.core.find.FindPartitionsToSplit;
 import sleeper.splitter.core.find.SplitPartitionJobDefinition;

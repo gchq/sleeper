@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 
 import static org.assertj.core.api.Assertions.assertThat;

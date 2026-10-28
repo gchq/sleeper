@@ -22,7 +22,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableFilePaths;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.sketches.testutils.SketchesTestData;

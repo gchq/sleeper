@@ -23,7 +23,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.util.List;
 

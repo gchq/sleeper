@@ -31,7 +31,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.io.IOException;
 import java.util.HashMap;

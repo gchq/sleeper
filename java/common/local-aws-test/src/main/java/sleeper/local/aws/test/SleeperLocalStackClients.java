@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.localstack.test;
+package sleeper.local.aws.test;
 
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.localstack.LocalStackContainer;
@@ -26,9 +26,9 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsCredentialsProvider;
-import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.localstack.test.LocalStackHadoopConfigurationProvider.getHadoopConfiguration;
+import static sleeper.local.aws.test.LocalStackAwsV2ClientHelper.buildAwsCredentialsProvider;
+import static sleeper.local.aws.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.local.aws.test.LocalStackHadoopConfigurationProvider.getHadoopConfiguration;
 
 /**
  * Constants for shared AWS clients pointing to a LocalStack test container.

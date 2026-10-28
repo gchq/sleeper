@@ -47,7 +47,7 @@ import sleeper.ingest.runner.testutils.ResultVerifier;
 import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.ingest.runner.testutils.TestIngestType;
 import sleeper.ingest.runner.testutils.TestIngestType.WriteTarget;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;

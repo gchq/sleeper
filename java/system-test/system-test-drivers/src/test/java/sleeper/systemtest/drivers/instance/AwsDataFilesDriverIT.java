@@ -24,7 +24,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.localstack.test.SleeperLocalStackClients;
+import sleeper.local.aws.test.SleeperLocalStackClients;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;

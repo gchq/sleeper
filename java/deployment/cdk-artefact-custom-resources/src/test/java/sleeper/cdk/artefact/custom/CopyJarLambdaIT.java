@@ -28,7 +28,7 @@ import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 import sleeper.cdk.artefact.custom.testutil.FakeLambdaContext;
 import sleeper.cdk.artefact.custom.testutil.NexusRepositoryContainer;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.util.Map;
 import java.util.UUID;

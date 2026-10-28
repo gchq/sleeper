@@ -43,8 +43,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.localstack.test.SleeperLocalStackClients;
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.local.aws.test.SleeperLocalStackClients;
+import sleeper.local.aws.test.SleeperLocalStackContainer;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.trino.SleeperConfig;
@@ -66,7 +66,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.local.aws.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * This class is a JUnit plugin which starts a local S3 and DynamoDB within a Docker

@@ -38,7 +38,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.ingest.runner.testutils.TestIngestType;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;

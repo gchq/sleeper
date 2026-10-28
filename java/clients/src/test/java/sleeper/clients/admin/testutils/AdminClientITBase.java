@@ -39,8 +39,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.table.TableIndex;
-import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.localstack.test.SleeperLocalStackClients;
+import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.SleeperLocalStackClients;
 
 import java.nio.file.Path;
 import java.util.ArrayList;

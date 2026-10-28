@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportJobWriterToS3;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.util.List;
 import java.util.UUID;

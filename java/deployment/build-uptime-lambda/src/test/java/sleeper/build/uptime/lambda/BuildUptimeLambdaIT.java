@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

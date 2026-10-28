@@ -41,7 +41,7 @@ import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobTestData;
 import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.time.Duration;
 import java.time.Instant;

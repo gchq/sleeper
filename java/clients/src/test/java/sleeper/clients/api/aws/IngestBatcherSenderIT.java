@@ -22,7 +22,7 @@ import sleeper.clients.api.IngestBatcherSender;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.util.List;
 

@@ -24,7 +24,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.ObjectFactory;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;

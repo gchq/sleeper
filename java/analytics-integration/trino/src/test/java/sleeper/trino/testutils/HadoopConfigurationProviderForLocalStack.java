@@ -18,7 +18,7 @@ package sleeper.trino.testutils;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.localstack.test.SleeperLocalStackClients;
+import sleeper.local.aws.test.SleeperLocalStackClients;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 
 public class HadoopConfigurationProviderForLocalStack implements HadoopConfigurationProvider {

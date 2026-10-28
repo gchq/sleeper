@@ -27,7 +27,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
+import static sleeper.local.aws.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 /**
  * Helper methods to mock an ECS cluster.

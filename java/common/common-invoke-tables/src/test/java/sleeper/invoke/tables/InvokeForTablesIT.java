@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.util.List;
 import java.util.stream.IntStream;

@@ -49,8 +49,8 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvid
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
-import sleeper.localstack.test.LocalStackHadoopConfigurationProvider;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackHadoopConfigurationProvider;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.store.SketchesStore;

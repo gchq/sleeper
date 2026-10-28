@@ -18,7 +18,7 @@ package sleeper.cdk.custom;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import org.junit.jupiter.api.Test;
 
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.util.Map;
 import java.util.UUID;

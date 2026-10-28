@@ -24,7 +24,7 @@ import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.clients.api.BulkImportJobSender;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.util.List;
 import java.util.UUID;

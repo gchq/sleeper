@@ -27,7 +27,7 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTracker;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
 import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.time.Duration;
 import java.time.Instant;

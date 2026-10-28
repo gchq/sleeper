@@ -35,7 +35,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.RowsProcessed;
-import sleeper.localstack.test.SleeperLocalStackClients;
+import sleeper.local.aws.test.SleeperLocalStackClients;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;

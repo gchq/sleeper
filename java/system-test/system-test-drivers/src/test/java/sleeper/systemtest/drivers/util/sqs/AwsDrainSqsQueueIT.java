@@ -17,7 +17,7 @@ package sleeper.systemtest.drivers.util.sqs;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue.EmptyQueueResults;
 
 import java.util.List;

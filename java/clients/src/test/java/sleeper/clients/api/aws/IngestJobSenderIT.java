@@ -22,7 +22,7 @@ import sleeper.clients.api.IngestJobSender;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.util.List;
 import java.util.UUID;

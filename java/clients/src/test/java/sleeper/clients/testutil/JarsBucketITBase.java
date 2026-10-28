@@ -24,7 +24,7 @@ import sleeper.clients.deploy.jar.JarsBucketCreator;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 
 import java.io.IOException;
 import java.io.InputStreamReader;

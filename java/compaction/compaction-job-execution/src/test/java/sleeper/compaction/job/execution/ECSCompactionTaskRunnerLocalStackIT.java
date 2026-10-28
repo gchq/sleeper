@@ -74,7 +74,7 @@ import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalStackTestBase;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.statestore.StateStoreFactory;
