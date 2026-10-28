@@ -15,16 +15,19 @@
  */
 package sleeper.systemtest.drivers.testutil;
 
-import org.junit.jupiter.api.extension.ExtendWith;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.systemtest.drivers.instance.AwsSleeperTablesDriver;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+public class LocalAwsSleeperTablesDriver extends AwsSleeperTablesDriver {
 
-@ExtendWith(LocalStackSystemTestExtension.class)
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface LocalStackDslTest {
+    public LocalAwsSleeperTablesDriver(SystemTestClients clients) {
+        super(clients);
+    }
 
+    @Override
+    public void addTable(InstanceProperties instanceProperties, TableProperties properties) {
+        addTableDirectly(instanceProperties, properties);
+    }
 }

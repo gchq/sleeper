@@ -21,8 +21,8 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.drivers.testutil.AwsSendCompactionJobsTestHelper;
-import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
-import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
+import sleeper.systemtest.drivers.testutil.LocalAwsDslTest;
+import sleeper.systemtest.drivers.testutil.LocalAwsSystemTestDrivers;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -35,10 +35,10 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCALSTACK_MAIN;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
-@LocalStackDslTest
+@LocalAwsDslTest
 public class AwsResetInstanceOnFirstConnectIT {
 
     SystemTestInstanceContext instance;
@@ -50,7 +50,7 @@ public class AwsResetInstanceOnFirstConnectIT {
     AwsDrainSqsQueue drainQueue;
 
     @BeforeEach
-    void setUp(SleeperDsl sleeper, LocalStackSystemTestDrivers drivers, SystemTestContext context, SystemTestParameters parameters) {
+    void setUp(SleeperDsl sleeper, LocalAwsSystemTestDrivers drivers, SystemTestContext context, SystemTestParameters parameters) {
         sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
         instance = context.instance();
         instanceProperties = sleeper.instanceProperties();

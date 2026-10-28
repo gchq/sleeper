@@ -29,8 +29,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
-import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
-import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
+import sleeper.systemtest.drivers.testutil.LocalAwsDslTest;
+import sleeper.systemtest.drivers.testutil.LocalAwsSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -45,17 +45,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCALSTACK_MAIN;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
-@LocalStackDslTest
+@LocalAwsDslTest
 public class AwsStateStoreCommitterDriverIT {
 
     private SqsClient sqs;
     private SystemTestInstanceContext instance;
 
     @BeforeEach
-    void setUp(SleeperDsl sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
+    void setUp(SleeperDsl sleeper, SystemTestContext context, LocalAwsSystemTestDrivers drivers) {
         sleeper.connectToInstanceAddOnlineTable(LOCALSTACK_MAIN);
         sqs = drivers.clients().getSqs();
         instance = context.instance();

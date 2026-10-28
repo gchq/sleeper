@@ -37,16 +37,16 @@ import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.util.NoSnapshotsDriver;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
-public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
+public class LocalAwsSystemTestDrivers extends AwsSystemTestDrivers {
     private final SystemTestClients clients;
 
-    private LocalStackSystemTestDrivers(SystemTestClients clients) {
+    private LocalAwsSystemTestDrivers(SystemTestClients clients) {
         super(clients);
         this.clients = clients;
     }
 
-    public static LocalStackSystemTestDrivers fromContainer() {
-        return new LocalStackSystemTestDrivers(SystemTestClients.builder()
+    public static LocalAwsSystemTestDrivers fromContainer() {
+        return new LocalAwsSystemTestDrivers(SystemTestClients.builder()
                 .region(Region.of(SleeperLocalAwsContainer.INSTANCE.getRegion()))
                 .sts(SleeperLocalAwsClients.STS_CLIENT)
                 .s3(SleeperLocalAwsClients.S3_CLIENT)
@@ -60,17 +60,17 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
 
     @Override
     public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
-        return new LocalStackSystemTestDeploymentDriver(parameters, clients);
+        return new LocalAwsSystemTestDeploymentDriver(parameters, clients);
     }
 
     @Override
     public SleeperInstanceDriver instance(SystemTestParameters parameters) {
-        return new LocalStackSleeperInstanceDriver(parameters, clients);
+        return new LocalAwsSleeperInstanceDriver(parameters, clients);
     }
 
     @Override
     public SleeperTablesDriver tables(SystemTestParameters parameters) {
-        return new LocalStackSleeperTablesDriver(clients);
+        return new LocalAwsSleeperTablesDriver(clients);
     }
 
     @Override

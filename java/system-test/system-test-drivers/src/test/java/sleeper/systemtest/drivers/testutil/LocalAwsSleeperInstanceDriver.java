@@ -38,13 +38,13 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
-public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LocalStackSleeperInstanceDriver.class);
+public class LocalAwsSleeperInstanceDriver implements SleeperInstanceDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocalAwsSleeperInstanceDriver.class);
 
     private final SystemTestParameters parameters;
     private final SystemTestClients clients;
 
-    public LocalStackSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
+    public LocalAwsSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
         this.clients = clients;
     }

@@ -26,8 +26,8 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
-import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
-import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
+import sleeper.systemtest.drivers.testutil.LocalAwsDslTest;
+import sleeper.systemtest.drivers.testutil.LocalAwsSystemTestDrivers;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.compaction.StreamFakeCompactions;
@@ -41,10 +41,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCALSTACK_MAIN;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
-@LocalStackDslTest
+@LocalAwsDslTest
 public class CompactionFakeCommitIT {
     PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
@@ -54,7 +54,7 @@ public class CompactionFakeCommitIT {
     String tableId;
 
     @BeforeEach
-    void setUp(SleeperDsl sleeper, LocalStackSystemTestDrivers drivers) throws Exception {
+    void setUp(SleeperDsl sleeper, LocalAwsSystemTestDrivers drivers) throws Exception {
         sleeper.connectToInstanceAddOnlineTable(LOCALSTACK_MAIN);
         sleeper.partitioning().setPartitions(partitions);
         sqsClient = drivers.clients().getSqs();

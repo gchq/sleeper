@@ -26,8 +26,8 @@ import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkexport.core.model.BulkExportQuerySerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.local.aws.test.LocalAwsTestBase;
-import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
-import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
+import sleeper.systemtest.drivers.testutil.LocalAwsDslTest;
+import sleeper.systemtest.drivers.testutil.LocalAwsSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
@@ -36,9 +36,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_URL;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCALSTACK_MAIN;
 
-@LocalStackDslTest
+@LocalAwsDslTest
 public class AwsBulkExportDriverIT extends LocalAwsTestBase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsBulkExportDriverIT.class);
@@ -49,7 +49,7 @@ public class AwsBulkExportDriverIT extends LocalAwsTestBase {
     InstanceProperties instanceProperties;
 
     @BeforeEach
-    void setUp(SleeperDsl sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
+    void setUp(SleeperDsl sleeper, SystemTestContext context, LocalAwsSystemTestDrivers drivers) {
         sleeper.connectToInstanceAddOfflineTable(LOCALSTACK_MAIN);
         s3 = drivers.clients().getS3();
         sqs = drivers.clients().getSqs();

@@ -31,15 +31,15 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
-public class LocalStackTestInstance {
+public class LocalAwsTestInstance {
 
-    private LocalStackTestInstance() {
+    private LocalAwsTestInstance() {
     }
 
-    public static final SystemTestInstanceConfiguration LOCALSTACK_MAIN = usingSystemTestDefaults("main", LocalStackTestInstance::buildMainConfiguration);
-    public static final SystemTestInstanceConfiguration DRAIN_COMPACTIONS = usingSystemTestDefaults("cpt-dr", LocalStackTestInstance::buildMainConfiguration);
-    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE = usingSystemTestDefaults("prdtbl", LocalStackTestInstance::buildPredefinedTableConfiguration);
-    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("prdtnn", LocalStackTestInstance::buildPredefinedTableConfigurationNoName);
+    public static final SystemTestInstanceConfiguration LOCALSTACK_MAIN = usingSystemTestDefaults("main", LocalAwsTestInstance::buildMainConfiguration);
+    public static final SystemTestInstanceConfiguration DRAIN_COMPACTIONS = usingSystemTestDefaults("cpt-dr", LocalAwsTestInstance::buildMainConfiguration);
+    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE = usingSystemTestDefaults("prdtbl", LocalAwsTestInstance::buildPredefinedTableConfiguration);
+    public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("prdtnn", LocalAwsTestInstance::buildPredefinedTableConfigurationNoName);
 
     private static SleeperInstanceConfiguration buildMainConfiguration() {
         return buildConfigurationWithTableProperties(properties -> properties.set(TABLE_NAME, "system-test"));

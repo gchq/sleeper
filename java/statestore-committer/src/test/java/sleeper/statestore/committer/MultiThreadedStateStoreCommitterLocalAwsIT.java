@@ -57,7 +57,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class MultiThreadedStateStoreCommitterLocalStackIT extends LocalAwsTestBase {
+public class MultiThreadedStateStoreCommitterLocalAwsIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);

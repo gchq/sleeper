@@ -23,16 +23,16 @@ import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper;
 
-public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
+public class LocalAwsSystemTestExtension extends SleeperSystemTestExtension {
 
     private static final SystemTestDeploymentContext CONTEXT = createContext();
 
-    private LocalStackSystemTestExtension() {
+    private LocalAwsSystemTestExtension() {
         super(CONTEXT);
     }
 
     private static SystemTestDeploymentContext createContext() {
-        LocalStackSystemTestDrivers drivers = LocalStackSystemTestDrivers.fromContainer();
+        LocalAwsSystemTestDrivers drivers = LocalAwsSystemTestDrivers.fromContainer();
         SystemTestClients clients = drivers.clients();
         Region region = clients.getRegion();
         PartitionMetadata partitionMetadata = PartitionMetadata.of(region);

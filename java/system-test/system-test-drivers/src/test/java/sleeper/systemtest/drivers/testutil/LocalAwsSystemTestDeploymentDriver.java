@@ -28,13 +28,13 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 
-public class LocalStackSystemTestDeploymentDriver implements SystemTestDeploymentDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LocalStackSystemTestDeploymentDriver.class);
+public class LocalAwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocalAwsSystemTestDeploymentDriver.class);
 
     private final SystemTestParameters parameters;
     private final S3Client s3Client;
 
-    public LocalStackSystemTestDeploymentDriver(SystemTestParameters parameters, SystemTestClients clients) {
+    public LocalAwsSystemTestDeploymentDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
         s3Client = clients.getS3();
     }

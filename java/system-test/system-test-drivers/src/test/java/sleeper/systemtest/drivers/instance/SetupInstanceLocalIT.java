@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.row.Row;
-import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
+import sleeper.systemtest.drivers.testutil.LocalAwsDslTest;
 import sleeper.systemtest.dsl.SleeperDsl;
 
 import java.nio.file.Path;
@@ -28,9 +28,9 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCALSTACK_MAIN;
 
-@LocalStackDslTest
+@LocalAwsDslTest
 public class SetupInstanceLocalIT {
     @TempDir
     private Path tempDir;
