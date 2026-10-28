@@ -15,7 +15,7 @@
  */
 package sleeper.local.aws.test;
 
-import org.testcontainers.localstack.LocalStackContainer;
+import io.floci.testcontainers.FlociContainer;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -24,23 +24,25 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 
+import java.net.URI;
+
 public class LocalAwsV2ClientHelper {
 
     private LocalAwsV2ClientHelper() {
     }
 
-    public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(LocalStackContainer localAwsContainer, B builder) {
+    public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(FlociContainer localAwsContainer, B builder) {
         return builder
-                .endpointOverride(localAwsContainer.getEndpoint())
+                .endpointOverride(URI.create(localAwsContainer.getEndpoint()))
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
                         localAwsContainer.getAccessKey(), localAwsContainer.getSecretKey())))
                 .region(Region.of(localAwsContainer.getRegion()))
                 .build();
     }
 
-    public static S3AsyncClient buildAwsV2Client(LocalStackContainer localAwsContainer, S3CrtAsyncClientBuilder builder) {
+    public static S3AsyncClient buildAwsV2Client(FlociContainer localAwsContainer, S3CrtAsyncClientBuilder builder) {
         return builder
-                .endpointOverride(localAwsContainer.getEndpoint())
+                .endpointOverride(URI.create(localAwsContainer.getEndpoint()))
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
                         localAwsContainer.getAccessKey(), localAwsContainer.getSecretKey())))
                 .region(Region.of(localAwsContainer.getRegion()))

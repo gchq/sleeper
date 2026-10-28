@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.datafusion;
 
+import io.floci.testcontainers.FlociContainer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -22,7 +23,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.localstack.LocalStackContainer;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
@@ -213,8 +213,8 @@ public class DataFusionCompactionRunnerLocalAwsIT extends LocalAwsTestBase {
     }
 
     private static DataFusionAwsConfig createAwsConfig() {
-        LocalStackContainer container = SleeperLocalAwsContainer.INSTANCE;
-        return DataFusionAwsConfig.overrideEndpoint(container.getEndpoint().toString());
+        FlociContainer container = SleeperLocalAwsContainer.INSTANCE;
+        return DataFusionAwsConfig.overrideEndpoint(container.getEndpoint());
     }
 
     private String writeFileForPartition(String partitionId, List<Row> rows) throws Exception {

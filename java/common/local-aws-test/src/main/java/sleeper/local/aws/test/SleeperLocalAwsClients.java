@@ -15,8 +15,8 @@
  */
 package sleeper.local.aws.test;
 
+import io.floci.testcontainers.FlociContainer;
 import org.apache.hadoop.conf.Configuration;
-import org.testcontainers.localstack.LocalStackContainer;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -38,7 +38,7 @@ public class SleeperLocalAwsClients {
     private SleeperLocalAwsClients() {
     }
 
-    private static final LocalStackContainer CONTAINER = SleeperLocalAwsContainer.INSTANCE;
+    private static final FlociContainer CONTAINER = SleeperLocalAwsContainer.INSTANCE;
     public static final S3Client S3_CLIENT = buildAwsV2Client(CONTAINER, S3Client.builder());
     public static final S3AsyncClient S3_ASYNC_CLIENT = buildAwsV2Client(CONTAINER, S3AsyncClient.crtBuilder());
     public static final S3TransferManager S3_TRANSFER_MANAGER = S3TransferManager.builder().s3Client(S3_ASYNC_CLIENT).build();

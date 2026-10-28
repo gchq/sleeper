@@ -16,8 +16,8 @@
 package sleeper.local.aws.test;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.floci.testcontainers.FlociContainer;
 import org.apache.hadoop.conf.Configuration;
-import org.testcontainers.localstack.LocalStackContainer;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
@@ -52,7 +52,7 @@ import static sleeper.local.aws.test.SleeperLocalAwsClients.SQS_CLIENT;
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public abstract class LocalAwsTestBase {
 
-    protected final LocalStackContainer localAwsContainer = SleeperLocalAwsContainer.INSTANCE;
+    protected final FlociContainer localAwsContainer = SleeperLocalAwsContainer.INSTANCE;
     protected final S3Client s3Client = SleeperLocalAwsClients.S3_CLIENT;
     protected final S3AsyncClient s3AsyncClient = SleeperLocalAwsClients.S3_ASYNC_CLIENT;
     protected final S3TransferManager s3TransferManager = SleeperLocalAwsClients.S3_TRANSFER_MANAGER;

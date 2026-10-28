@@ -15,8 +15,8 @@
  */
 package sleeper.local.aws.test;
 
+import io.floci.testcontainers.FlociContainer;
 import org.apache.hadoop.conf.Configuration;
-import org.testcontainers.localstack.LocalStackContainer;
 
 public class LocalAwsHadoopConfigurationProvider {
 
@@ -32,19 +32,19 @@ public class LocalAwsHadoopConfigurationProvider {
      * @param  container local AWS container to access for S3A file system
      * @return           Hadoop configuration
      */
-    public static Configuration getHadoopConfiguration(LocalStackContainer container) {
+    public static Configuration getHadoopConfiguration(FlociContainer container) {
         Configuration configuration = new Configuration();
         configureHadoop(configuration, container);
         return configuration;
     }
 
-    public static void configureHadoop(Configuration configuration, LocalStackContainer container) {
+    public static void configureHadoop(Configuration configuration, FlociContainer container) {
         configuration.setClassLoader(LocalAwsHadoopConfigurationProvider.class.getClassLoader());
         configureHadoop(configuration::set, container);
     }
 
-    public static void configureHadoop(ConfigureHadoop configuration, LocalStackContainer container) {
-        configuration.set("fs.s3a.endpoint", container.getEndpoint().toString());
+    public static void configureHadoop(ConfigureHadoop configuration, FlociContainer container) {
+        configuration.set("fs.s3a.endpoint", container.getEndpoint());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
         configuration.set("fs.s3a.access.key", container.getAccessKey());
         configuration.set("fs.s3a.secret.key", container.getSecretKey());

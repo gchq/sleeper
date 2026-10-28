@@ -15,12 +15,12 @@
  */
 package sleeper.bulkexport.taskexecution;
 
+import io.floci.testcontainers.FlociContainer;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.localstack.LocalStackContainer;
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
@@ -394,7 +394,7 @@ public class ECSBulkExportTaskRunnerLocalAwsIT extends LocalAwsTestBase {
     }
 
     private static DataFusionAwsConfig createAwsConfig() {
-        LocalStackContainer container = SleeperLocalAwsContainer.INSTANCE;
-        return DataFusionAwsConfig.overrideEndpoint(container.getEndpoint().toString());
+        FlociContainer container = SleeperLocalAwsContainer.INSTANCE;
+        return DataFusionAwsConfig.overrideEndpoint(container.getEndpoint());
     }
 }

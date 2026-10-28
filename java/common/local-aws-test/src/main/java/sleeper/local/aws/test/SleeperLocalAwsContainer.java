@@ -16,11 +16,11 @@
 package sleeper.local.aws.test;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.floci.testcontainers.FlociContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Network;
-import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.io.UncheckedIOException;
@@ -32,21 +32,21 @@ import java.net.UnknownHostException;
  */
 public class SleeperLocalAwsContainer {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperLocalAwsContainer.class);
-    public static final String LOCALSTACK_DOCKER_IMAGE = "localstack/localstack:4.11";
+    private static final String FLOCI_DOCKER_IMAGE = "floci/floci:2.3.0";
 
     private SleeperLocalAwsContainer() {
     }
 
-    public static final LocalStackContainer INSTANCE = start();
+    public static final FlociContainer INSTANCE = start();
 
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
-    private static LocalStackContainer start() {
-        LocalStackContainer container = new LocalStackContainer(DockerImageName.parse(LOCALSTACK_DOCKER_IMAGE))
-                .withEnv("LOCALSTACK_HOST", getHostAddress())
+    private static FlociContainer start() {
+        FlociContainer container = new FlociContainer(DockerImageName.parse(FLOCI_DOCKER_IMAGE))
+                .withEnv("FLOCI_HOST", getHostAddress())
                 .withNetwork(Network.newNetwork())
-                .withNetworkAliases("localstack")
+                .withNetworkAliases("floci")
                 .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()))
-                .withEnv("DEBUG", "1");
+                .withEnv("QUARKUS_LOG_LEVEL", "DEBUG");
         container.start();
         return container;
     }

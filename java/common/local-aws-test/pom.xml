@@ -37,6 +37,10 @@
             <artifactId>testcontainers-localstack</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.floci</groupId>
+            <artifactId>testcontainers-floci-aws</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
         </dependency>

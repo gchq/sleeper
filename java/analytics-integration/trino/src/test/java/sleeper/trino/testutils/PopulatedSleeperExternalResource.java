@@ -15,6 +15,7 @@
  */
 package sleeper.trino.testutils;
 
+import io.floci.testcontainers.FlociContainer;
 import io.trino.sql.query.QueryAssertions;
 import io.trino.testing.DistributedQueryRunner;
 import org.apache.hadoop.conf.Configuration;
@@ -22,7 +23,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.testcontainers.localstack.LocalStackContainer;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -87,7 +87,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private final Map<String, String> extraPropertiesForQueryRunner;
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;
-    private final LocalStackContainer localAwsContainer = SleeperLocalAwsContainer.INSTANCE;
+    private final FlociContainer localAwsContainer = SleeperLocalAwsContainer.INSTANCE;
     private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalAws();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Configuration configuration = SleeperLocalAwsClients.HADOOP_CONF;
