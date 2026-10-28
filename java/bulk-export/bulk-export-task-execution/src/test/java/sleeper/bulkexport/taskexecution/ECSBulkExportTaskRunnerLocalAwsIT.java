@@ -79,7 +79,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class ECSBulkExportTaskRunnerLocalStackIT extends LocalAwsTestBase {
+public class ECSBulkExportTaskRunnerLocalAwsIT extends LocalAwsTestBase {
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder()
             .rowKeyFields(field)

@@ -21,7 +21,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.local.aws.test.SleeperLocalAwsClients;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 
-public class HadoopConfigurationProviderForLocalStack implements HadoopConfigurationProvider {
+public class HadoopConfigurationProviderForLocalAws implements HadoopConfigurationProvider {
 
     @Override
     public Configuration getHadoopConfiguration(InstanceProperties instanceProperties) {

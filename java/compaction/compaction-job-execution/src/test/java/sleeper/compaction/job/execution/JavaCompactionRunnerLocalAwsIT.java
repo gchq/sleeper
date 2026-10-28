@@ -54,7 +54,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
+public class JavaCompactionRunnerLocalAwsIT extends CompactionRunnerTestBase {
 
     private static DynamoDbClient dynamoClient = SleeperLocalAwsClients.DYNAMO_CLIENT;
     private static S3Client s3Client = SleeperLocalAwsClients.S3_CLIENT;

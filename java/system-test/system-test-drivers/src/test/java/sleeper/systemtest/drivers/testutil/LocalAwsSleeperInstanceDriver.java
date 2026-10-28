@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
-import sleeper.clients.deploy.localstack.DeployDockerInstance;
+import sleeper.clients.deploy.local.aws.DeployDockerInstance;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.utils.BucketUtils;
 import sleeper.core.SleeperVersion;

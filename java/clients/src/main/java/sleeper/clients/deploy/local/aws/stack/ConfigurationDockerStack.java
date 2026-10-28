@@ -17,7 +17,7 @@ package sleeper.clients.deploy.localstack.stack;
 
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.deploy.localstack.TearDownBucket;
+import sleeper.clients.deploy.local.aws.TearDownBucket;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;

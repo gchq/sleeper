@@ -89,7 +89,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;
     private final LocalStackContainer localStackContainer = SleeperLocalAwsContainer.INSTANCE;
-    private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalStack();
+    private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalAws();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Configuration configuration = SleeperLocalAwsClients.HADOOP_CONF;
     private final S3Client s3Client = SleeperLocalAwsClients.S3_CLIENT;

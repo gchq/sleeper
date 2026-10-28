@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getRows;
 
-public class IngestRowsLocalStackIT extends IngestRowsLocalStackITBase {
+public class IngestRowsLocalAwsIT extends IngestRowsLocalAwsITBase {
     @Test
     public void shouldWriteRowsCorrectly() throws Exception {
         // Given

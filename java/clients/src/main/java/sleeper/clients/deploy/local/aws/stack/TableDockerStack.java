@@ -18,7 +18,7 @@ package sleeper.clients.deploy.localstack.stack;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.deploy.localstack.TearDownBucket;
+import sleeper.clients.deploy.local.aws.TearDownBucket;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;

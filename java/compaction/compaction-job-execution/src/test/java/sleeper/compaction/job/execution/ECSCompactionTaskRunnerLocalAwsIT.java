@@ -121,7 +121,7 @@ import static sleeper.core.testutils.SupplierTestHelper.fixIds;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 import static sleeper.core.util.ThreadSleepTestHelper.noWaits;
 
-public class ECSCompactionTaskRunnerLocalStackIT extends LocalAwsTestBase {
+public class ECSCompactionTaskRunnerLocalAwsIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy.localstack;
+package sleeper.clients.deploy.local.aws;
 
 import org.eclipse.jetty.io.RuntimeIOException;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -22,10 +22,10 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.localstack.stack.CompactionDockerStack;
-import sleeper.clients.deploy.localstack.stack.ConfigurationDockerStack;
-import sleeper.clients.deploy.localstack.stack.IngestDockerStack;
-import sleeper.clients.deploy.localstack.stack.TableDockerStack;
+import sleeper.clients.deploy.local.aws.stack.CompactionDockerStack;
+import sleeper.clients.deploy.local.aws.stack.ConfigurationDockerStack;
+import sleeper.clients.deploy.local.aws.stack.IngestDockerStack;
+import sleeper.clients.deploy.local.aws.stack.TableDockerStack;
 import sleeper.clients.table.AddTableClient;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;

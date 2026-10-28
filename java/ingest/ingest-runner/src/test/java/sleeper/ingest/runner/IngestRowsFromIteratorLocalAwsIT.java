@@ -29,7 +29,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getRows;
 
-public class IngestRowsFromIteratorLocalStackIT extends IngestRowsLocalStackITBase {
+public class IngestRowsFromIteratorLocalAwsIT extends IngestRowsLocalAwsITBase {
     @Test
     public void shouldWriteRowsCorrectly() throws Exception {
         // Given

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.deploy.localstack;
+package sleeper.clients.deploy.local.aws;
 
 import org.junit.jupiter.api.BeforeEach;
 import software.amazon.awssdk.services.sqs.model.Message;

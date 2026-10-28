@@ -50,7 +50,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.schemaWithRowKeys;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
 
-public class IngestRowsLocalStackITBase extends LocalAwsTestBase {
+public class IngestRowsLocalAwsITBase extends LocalAwsTestBase {
     @TempDir
     private static Path tempDir;
 

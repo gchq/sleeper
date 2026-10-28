@@ -78,7 +78,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPrefix;
 
-public class BulkImportJobDriverLocalStackIT extends LocalAwsTestBase {
+public class BulkImportJobDriverLocalAwsIT extends LocalAwsTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, getSchema());
     private final SketchesStore sketchesStore = new HadoopSketchesStore(hadoopConf);
