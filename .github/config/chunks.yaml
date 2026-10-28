@@ -32,7 +32,7 @@ chunks:
       - common/common-invoke-tables
       - build
       - common/dynamodb-tools
-      - common/localstack-test
+      - common/local-aws-test
       - statestore
       - statestore-committer-core
       - statestore-committer

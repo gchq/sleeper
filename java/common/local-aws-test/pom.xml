@@ -25,7 +25,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>localstack-test</artifactId>
+    <artifactId>local-aws-test</artifactId>
 
     <dependencies>
         <dependency>

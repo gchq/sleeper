@@ -54,7 +54,7 @@ on:
       - 'java/common/parquet/**'
       - 'java/ingest/ingest-core/**'
       - 'java/core/**'
-      - 'java/common/localstack-test/**'
+      - 'java/common/local-aws-test/**'
       - 'java/bulk-export/bulk-export-core/**'
       - 'java/common/foreign-bridge/**'
       - 'java/common/arrow/**'
