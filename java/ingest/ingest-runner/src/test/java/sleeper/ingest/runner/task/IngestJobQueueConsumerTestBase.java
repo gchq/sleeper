@@ -30,7 +30,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.RowGenerator;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
@@ -56,7 +56,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase {
+public abstract class IngestJobQueueConsumerTestBase extends LocalAwsTestBase {
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);

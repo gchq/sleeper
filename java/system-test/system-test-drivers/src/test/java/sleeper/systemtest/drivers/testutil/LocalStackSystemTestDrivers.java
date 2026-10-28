@@ -18,8 +18,8 @@ package sleeper.systemtest.drivers.testutil;
 import software.amazon.awssdk.regions.Region;
 
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
-import sleeper.local.aws.test.SleeperLocalStackClients;
-import sleeper.local.aws.test.SleeperLocalStackContainer;
+import sleeper.local.aws.test.SleeperLocalAwsClients;
+import sleeper.local.aws.test.SleeperLocalAwsContainer;
 import sleeper.systemtest.drivers.bulkexport.AwsBulkExportDriver;
 import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
 import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
@@ -37,8 +37,6 @@ import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.util.NoSnapshotsDriver;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
-import static sleeper.local.aws.test.LocalStackHadoopConfigurationProvider.configureHadoop;
-
 public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
     private final SystemTestClients clients;
 
@@ -49,14 +47,14 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
 
     public static LocalStackSystemTestDrivers fromContainer() {
         return new LocalStackSystemTestDrivers(SystemTestClients.builder()
-                .region(Region.of(SleeperLocalStackContainer.INSTANCE.getRegion()))
-                .sts(SleeperLocalStackClients.STS_CLIENT)
-                .s3(SleeperLocalStackClients.S3_CLIENT)
-                .s3Async(SleeperLocalStackClients.S3_ASYNC_CLIENT)
-                .dynamo(SleeperLocalStackClients.DYNAMO_CLIENT)
-                .sqs(SleeperLocalStackClients.SQS_CLIENT)
-                .dataFusionAwsConfig(() -> DataFusionAwsConfig.overrideEndpoint(SleeperLocalStackContainer.INSTANCE.getEndpoint().toString()))
-                .configureHadoopSetter(conf -> configureHadoop(conf, SleeperLocalStackContainer.INSTANCE))
+                .region(Region.of(SleeperLocalAwsContainer.INSTANCE.getRegion()))
+                .sts(SleeperLocalAwsClients.STS_CLIENT)
+                .s3(SleeperLocalAwsClients.S3_CLIENT)
+                .s3Async(SleeperLocalAwsClients.S3_ASYNC_CLIENT)
+                .dynamo(SleeperLocalAwsClients.DYNAMO_CLIENT)
+                .sqs(SleeperLocalAwsClients.SQS_CLIENT)
+                .dataFusionAwsConfig(() -> DataFusionAwsConfig.overrideEndpoint(SleeperLocalAwsContainer.INSTANCE.getEndpoint().toString()))
+                .configureHadoopSetter(conf -> configureHadoop(conf, SleeperLocalAwsContainer.INSTANCE))
                 .build());
     }
 

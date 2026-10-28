@@ -28,7 +28,7 @@ import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 import sleeper.cdk.artefact.custom.testutil.FakeLambdaContext;
 import sleeper.cdk.artefact.custom.testutil.NexusRepositoryContainer;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.Map;
 import java.util.UUID;
@@ -49,7 +49,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 
 @Testcontainers
 @WireMockTest
-public class CopyJarLambdaIT extends LocalStackTestBase {
+public class CopyJarLambdaIT extends LocalAwsTestBase {
 
     @Container
     public static final NexusRepositoryContainer SOURCE = new NexusRepositoryContainer();

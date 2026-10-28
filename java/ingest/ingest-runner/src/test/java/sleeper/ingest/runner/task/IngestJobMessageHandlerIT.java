@@ -29,7 +29,7 @@ import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.time.Instant;
 import java.util.List;
@@ -41,7 +41,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRun;
 
-public class IngestJobMessageHandlerIT extends LocalStackTestBase {
+public class IngestJobMessageHandlerIT extends LocalAwsTestBase {
     private static final String TEST_TABLE = "test-table";
     private static final String TEST_TABLE_ID = "test-table-id";
 

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
-public class InvokeForTablesIT extends LocalStackTestBase {
+public class InvokeForTablesIT extends LocalAwsTestBase {
 
     @Test
     void shouldSendOneMessage() {

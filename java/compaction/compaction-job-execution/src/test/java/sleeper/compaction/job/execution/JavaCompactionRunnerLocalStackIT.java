@@ -35,7 +35,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.RowsProcessed;
-import sleeper.local.aws.test.SleeperLocalStackClients;
+import sleeper.local.aws.test.SleeperLocalAwsClients;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
@@ -56,11 +56,11 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
-    private static DynamoDbClient dynamoClient = SleeperLocalStackClients.DYNAMO_CLIENT;
-    private static S3Client s3Client = SleeperLocalStackClients.S3_CLIENT;
-    private static S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
-    private static Configuration hadoopConf = SleeperLocalStackClients.HADOOP_CONF;
-    private static S3TransferManager s3TransferManager = SleeperLocalStackClients.S3_TRANSFER_MANAGER;
+    private static DynamoDbClient dynamoClient = SleeperLocalAwsClients.DYNAMO_CLIENT;
+    private static S3Client s3Client = SleeperLocalAwsClients.S3_CLIENT;
+    private static S3AsyncClient s3AsyncClient = SleeperLocalAwsClients.S3_ASYNC_CLIENT;
+    private static Configuration hadoopConf = SleeperLocalAwsClients.HADOOP_CONF;
+    private static S3TransferManager s3TransferManager = SleeperLocalAwsClients.S3_TRANSFER_MANAGER;
 
     @BeforeEach
     void setUp() {

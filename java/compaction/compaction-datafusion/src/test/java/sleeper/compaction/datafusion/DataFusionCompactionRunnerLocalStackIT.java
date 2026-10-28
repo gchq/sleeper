@@ -47,8 +47,8 @@ import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
-import sleeper.local.aws.test.LocalStackTestBase;
-import sleeper.local.aws.test.SleeperLocalStackContainer;
+import sleeper.local.aws.test.LocalAwsTestBase;
+import sleeper.local.aws.test.SleeperLocalAwsContainer;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.parquet.row.RowReadSupport;
@@ -73,7 +73,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
+public class DataFusionCompactionRunnerLocalStackIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
@@ -213,7 +213,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private static DataFusionAwsConfig createAwsConfig() {
-        LocalStackContainer container = SleeperLocalStackContainer.INSTANCE;
+        LocalStackContainer container = SleeperLocalAwsContainer.INSTANCE;
         return DataFusionAwsConfig.overrideEndpoint(container.getEndpoint().toString());
     }
 

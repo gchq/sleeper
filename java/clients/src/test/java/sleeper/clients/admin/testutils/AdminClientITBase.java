@@ -39,8 +39,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.table.TableIndex;
-import sleeper.local.aws.test.LocalStackTestBase;
-import sleeper.local.aws.test.SleeperLocalStackClients;
+import sleeper.local.aws.test.LocalAwsTestBase;
+import sleeper.local.aws.test.SleeperLocalAwsClients;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -53,8 +53,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 
 public abstract class AdminClientITBase extends AdminClientTestBase {
 
-    protected final S3Client s3 = SleeperLocalStackClients.S3_CLIENT;
-    protected final DynamoDbClient dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT;
+    protected final S3Client s3 = SleeperLocalAwsClients.S3_CLIENT;
+    protected final DynamoDbClient dynamoDB = SleeperLocalAwsClients.DYNAMO_CLIENT;
     protected final InvokeCdk cdk = mock(InvokeCdk.class);
     protected final List<CommandPipeline> dockerCommandsThatRan = new ArrayList<>();
     protected TablePropertiesStore tablePropertiesStore;
@@ -95,7 +95,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     @Override
     public void setInstanceProperties(InstanceProperties instanceProperties) {
         super.setInstanceProperties(instanceProperties);
-        LocalStackTestBase.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        LocalAwsTestBase.createBucket(instanceProperties.get(CONFIG_BUCKET));
         S3InstanceProperties.saveToS3(s3, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);

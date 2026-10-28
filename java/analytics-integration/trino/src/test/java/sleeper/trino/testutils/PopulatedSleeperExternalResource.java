@@ -43,8 +43,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.local.aws.test.SleeperLocalStackClients;
-import sleeper.local.aws.test.SleeperLocalStackContainer;
+import sleeper.local.aws.test.SleeperLocalAwsClients;
+import sleeper.local.aws.test.SleeperLocalAwsContainer;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.trino.SleeperConfig;
@@ -66,7 +66,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.local.aws.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.local.aws.test.LocalAwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * This class is a JUnit plugin which starts a local S3 and DynamoDB within a Docker
@@ -88,13 +88,13 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private final Map<String, String> extraPropertiesForQueryRunner;
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;
-    private final LocalStackContainer localStackContainer = SleeperLocalStackContainer.INSTANCE;
+    private final LocalStackContainer localStackContainer = SleeperLocalAwsContainer.INSTANCE;
     private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalStack();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final Configuration configuration = SleeperLocalStackClients.HADOOP_CONF;
-    private final S3Client s3Client = SleeperLocalStackClients.S3_CLIENT;
-    private final S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
-    private final DynamoDbClient dynamoDBClient = SleeperLocalStackClients.DYNAMO_CLIENT;
+    private final Configuration configuration = SleeperLocalAwsClients.HADOOP_CONF;
+    private final S3Client s3Client = SleeperLocalAwsClients.S3_CLIENT;
+    private final S3AsyncClient s3AsyncClient = SleeperLocalAwsClients.S3_ASYNC_CLIENT;
+    private final DynamoDbClient dynamoDBClient = SleeperLocalAwsClients.DYNAMO_CLIENT;
     private QueryAssertions queryAssertions;
 
     public PopulatedSleeperExternalResource(List<TableDefinition> tableDefinitions) {

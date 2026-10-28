@@ -41,7 +41,7 @@ import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobTestData;
 import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -66,7 +66,7 @@ import static sleeper.ingest.tracker.testutils.IngestTrackerTestUtils.createInst
 import static sleeper.ingest.tracker.testutils.IngestTrackerTestUtils.createSchema;
 import static sleeper.ingest.tracker.testutils.IngestTrackerTestUtils.createTableProperties;
 
-public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
+public class DynamoDBIngestJobTrackerTestBase extends LocalAwsTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate")

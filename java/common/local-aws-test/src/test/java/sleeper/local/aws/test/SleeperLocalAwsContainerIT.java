@@ -21,7 +21,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SleeperLocalStackContainerIT extends LocalStackTestBase {
+public class SleeperLocalAwsContainerIT extends LocalAwsTestBase {
 
     @Test
     void shouldCreateS3Bucket() {

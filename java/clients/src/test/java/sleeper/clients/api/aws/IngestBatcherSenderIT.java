@@ -22,7 +22,7 @@ import sleeper.clients.api.IngestBatcherSender;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequestSerDe;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class IngestBatcherSenderIT extends LocalStackTestBase {
+public class IngestBatcherSenderIT extends LocalAwsTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
 

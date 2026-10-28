@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.build.uptime.lambda.WiremockTestHelper.wiremockClient;
 
 @WireMockTest
-public class BuildUptimeLambdaIT extends LocalStackTestBase {
+public class BuildUptimeLambdaIT extends LocalAwsTestBase {
 
     private final BuildUptimeEventSerDe serDe = new BuildUptimeEventSerDe();
     private BuildUptimeLambda lambda;

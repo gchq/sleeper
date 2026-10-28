@@ -34,7 +34,7 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
@@ -43,7 +43,7 @@ import java.nio.file.Path;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public abstract class RecordHandlerITBase extends LocalStackTestBase {
+public abstract class RecordHandlerITBase extends LocalAwsTestBase {
 
     // For storing data
     @TempDir

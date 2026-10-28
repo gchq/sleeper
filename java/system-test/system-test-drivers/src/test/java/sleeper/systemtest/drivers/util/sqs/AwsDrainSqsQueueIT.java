@@ -17,7 +17,7 @@ package sleeper.systemtest.drivers.util.sqs;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue.EmptyQueueResults;
 
 import java.util.List;
@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class AwsDrainSqsQueueIT extends LocalStackTestBase {
+public class AwsDrainSqsQueueIT extends LocalAwsTestBase {
 
     @Test
     void shouldEmptyMultipleQueuesAcrossThreads() {

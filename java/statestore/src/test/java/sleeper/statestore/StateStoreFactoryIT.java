@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +29,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class StateStoreFactoryIT extends LocalStackTestBase {
+public class StateStoreFactoryIT extends LocalAwsTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));

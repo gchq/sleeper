@@ -26,7 +26,7 @@ import sleeper.cdk.lambda.SleeperLambdaCode;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -37,7 +37,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class SleeperJarVersionIdProviderIT extends LocalStackTestBase {
+public class SleeperJarVersionIdProviderIT extends LocalAwsTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createInstanceProperties();

@@ -28,14 +28,14 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 import static java.nio.file.Files.createTempDirectory;
 
-public abstract class MetadataHandlerITBase extends LocalStackTestBase {
+public abstract class MetadataHandlerITBase extends LocalAwsTestBase {
 
     // For storing data
     @TempDir

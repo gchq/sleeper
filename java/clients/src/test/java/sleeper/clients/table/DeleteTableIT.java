@@ -41,7 +41,7 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRows;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -70,7 +70,7 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
-public class DeleteTableIT extends LocalStackTestBase {
+public class DeleteTableIT extends LocalAwsTestBase {
     @TempDir
     private Path tempDir;
 

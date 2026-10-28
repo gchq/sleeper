@@ -34,7 +34,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.util.LoggedDuration;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -54,7 +54,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
+public class StateStoreCommitterThroughputIT extends LocalAwsTestBase {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterThroughputIT.class);
 
     private final InstanceProperties instanceProperties = createInstance();

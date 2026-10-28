@@ -39,7 +39,7 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvid
 import sleeper.core.table.TableFilePaths;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Duration;
@@ -63,7 +63,7 @@ import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFil
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.util.ThreadSleepTestHelper.refuseWaits;
 
-public class GarbageCollectorS3IT extends LocalStackTestBase {
+public class GarbageCollectorS3IT extends LocalAwsTestBase {
 
     private static final Schema TEST_SCHEMA = getSchema();
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();

@@ -21,13 +21,13 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.Map;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
-public class DynamoDBToolsTestBase extends LocalStackTestBase {
+public class DynamoDBToolsTestBase extends LocalAwsTestBase {
     public static final String TEST_KEY = "test-key";
     public static final String TEST_VALUE = "test-value";
 

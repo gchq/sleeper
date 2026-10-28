@@ -23,7 +23,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.List;
 
@@ -35,7 +35,7 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.testutils.JitterTestHelper.noJitter;
 import static sleeper.core.util.ThreadSleepTestHelper.noWaits;
 
-public class DynamoDBIngestBatcherStoreTestBase extends LocalStackTestBase {
+public class DynamoDBIngestBatcherStoreTestBase extends LocalAwsTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties table1 = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
     protected final TableProperties table2 = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));

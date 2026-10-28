@@ -24,7 +24,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.ObjectFactory;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
@@ -48,7 +48,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-class S3UserJarsLoaderIT extends LocalStackTestBase {
+class S3UserJarsLoaderIT extends LocalAwsTestBase {
 
     private static final String SOURCE_CODE = "" +
             "import sleeper.core.row.Row;\n" +

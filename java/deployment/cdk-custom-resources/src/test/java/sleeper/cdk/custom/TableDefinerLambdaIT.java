@@ -45,7 +45,7 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRows;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -84,7 +84,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 @WireMockTest
-public class TableDefinerLambdaIT extends LocalStackTestBase {
+public class TableDefinerLambdaIT extends LocalAwsTestBase {
 
     private static final String CREATE = "Create", UPDATE = "Update", DELETE = "Delete";
     private final InstanceProperties instanceProperties = createTestInstanceProperties();

@@ -18,14 +18,14 @@ package sleeper.cdk.custom;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import org.junit.jupiter.api.Test;
 
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class AutoDeleteS3ObjectsLambdaIT extends LocalStackTestBase {
+public class AutoDeleteS3ObjectsLambdaIT extends LocalAwsTestBase {
 
     @Test
     void shouldDeleteObjectOnDelete() {

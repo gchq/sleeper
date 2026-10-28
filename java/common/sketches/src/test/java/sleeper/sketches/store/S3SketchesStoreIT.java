@@ -22,7 +22,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableFilePaths;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.sketches.testutils.SketchesTestData;
@@ -32,7 +32,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
-public class S3SketchesStoreIT extends LocalStackTestBase {
+public class S3SketchesStoreIT extends LocalAwsTestBase {
     InstanceProperties instanceProperties = createTestInstanceProperties();
     Schema schema = SketchesTestData.SCHEMA;
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);

@@ -27,7 +27,7 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTracker;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
 import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -37,7 +37,7 @@ import java.util.UUID;
 
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS;
 
-public class DynamoDBIngestTaskTrackerTestBase extends LocalStackTestBase {
+public class DynamoDBIngestTaskTrackerTestBase extends LocalAwsTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate")

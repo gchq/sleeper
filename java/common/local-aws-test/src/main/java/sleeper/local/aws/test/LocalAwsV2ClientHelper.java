@@ -24,9 +24,9 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 
-public class LocalStackAwsV2ClientHelper {
+public class LocalAwsV2ClientHelper {
 
-    private LocalStackAwsV2ClientHelper() {
+    private LocalAwsV2ClientHelper() {
     }
 
     public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(LocalStackContainer localStackContainer, B builder) {

@@ -46,7 +46,7 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.testutils.RowGenerator;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
@@ -80,7 +80,7 @@ import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobSt
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestStartedStatus;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
 
-class IngestJobRunnerIT extends LocalStackTestBase {
+class IngestJobRunnerIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);

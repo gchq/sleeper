@@ -20,14 +20,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class S3ExpandDirectoriesIT extends LocalStackTestBase {
+class S3ExpandDirectoriesIT extends LocalAwsTestBase {
 
     private S3ExpandDirectories expandDirectories = new S3ExpandDirectories(s3Client);
     private String bucket = UUID.randomUUID().toString();

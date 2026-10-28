@@ -74,7 +74,7 @@ import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.statestore.StateStoreFactory;
@@ -121,7 +121,7 @@ import static sleeper.core.testutils.SupplierTestHelper.fixIds;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 import static sleeper.core.util.ThreadSleepTestHelper.noWaits;
 
-public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
+public class ECSCompactionTaskRunnerLocalStackIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);

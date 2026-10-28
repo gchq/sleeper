@@ -18,16 +18,16 @@ package sleeper.local.aws.test;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.localstack.LocalStackContainer;
 
-public class LocalStackHadoopConfigurationProvider {
+public class LocalAwsHadoopConfigurationProvider {
 
-    private LocalStackHadoopConfigurationProvider() {
+    private LocalAwsHadoopConfigurationProvider() {
     }
 
     /**
      * Only use one Hadoop configuration from here at once if your code uses the Hadoop file system, for example if you
      * write Parquet files to S3A. The Hadoop FileSystem caches the S3AFileSystem objects which actually communicate
-     * with S3 and this means that any new LocalStack container will not be recognised once the first one has been used.
-     * The FileSystem cache needs to be reset between different uses of a LocalStack container.
+     * with S3 and this means that any new AWS container will not be recognised once the first one has been used.
+     * The FileSystem cache needs to be reset between different uses of an AWS container.
      *
      * @param  container LocalStack container to access for S3A file system
      * @return           Hadoop configuration
@@ -39,7 +39,7 @@ public class LocalStackHadoopConfigurationProvider {
     }
 
     public static void configureHadoop(Configuration configuration, LocalStackContainer container) {
-        configuration.setClassLoader(LocalStackHadoopConfigurationProvider.class.getClassLoader());
+        configuration.setClassLoader(LocalAwsHadoopConfigurationProvider.class.getClassLoader());
         configureHadoop(configuration::set, container);
     }
 

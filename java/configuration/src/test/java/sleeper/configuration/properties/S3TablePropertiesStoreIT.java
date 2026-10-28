@@ -30,14 +30,14 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
-import sleeper.local.aws.test.SleeperLocalStackContainer;
+import sleeper.local.aws.test.SleeperLocalAwsContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.local.aws.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.local.aws.test.LocalAwsV2ClientHelper.buildAwsV2Client;
 
 class S3TablePropertiesStoreIT extends TablePropertiesITBase {
 
@@ -222,7 +222,7 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
         }
 
         private S3Client buildS3ClientReturningStatusCode(int statusCode) {
-            return buildAwsV2Client(SleeperLocalStackContainer.INSTANCE, S3Client.builder()
+            return buildAwsV2Client(SleeperLocalAwsContainer.INSTANCE, S3Client.builder()
                     .overrideConfiguration(config -> config
                             .retryStrategy(AwsRetryStrategy.doNotRetry())
                             .addExecutionInterceptor(new ExecutionInterceptor() {

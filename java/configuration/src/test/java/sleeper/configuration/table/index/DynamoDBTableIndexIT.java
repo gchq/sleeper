@@ -27,14 +27,14 @@ import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class DynamoDBTableIndexIT extends LocalStackTestBase {
+public class DynamoDBTableIndexIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final DynamoDBTableIndex index = new DynamoDBTableIndex(instanceProperties, dynamoClient);

@@ -28,13 +28,13 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 /**
- * A helper class to create test containers to run LocalStack.
+ * A helper class to create test containers to run local AWS.
  */
-public class SleeperLocalStackContainer {
-    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperLocalStackContainer.class);
+public class SleeperLocalAwsContainer {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperLocalAwsContainer.class);
     public static final String LOCALSTACK_DOCKER_IMAGE = "localstack/localstack:4.11";
 
-    private SleeperLocalStackContainer() {
+    private SleeperLocalAwsContainer() {
     }
 
     public static final LocalStackContainer INSTANCE = start();

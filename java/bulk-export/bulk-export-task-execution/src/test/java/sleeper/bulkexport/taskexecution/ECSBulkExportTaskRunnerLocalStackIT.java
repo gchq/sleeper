@@ -48,8 +48,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
-import sleeper.local.aws.test.LocalStackTestBase;
-import sleeper.local.aws.test.SleeperLocalStackContainer;
+import sleeper.local.aws.test.LocalAwsTestBase;
+import sleeper.local.aws.test.SleeperLocalAwsContainer;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.row.ParquetRowWriterFactory;
@@ -79,7 +79,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
+public class ECSBulkExportTaskRunnerLocalStackIT extends LocalAwsTestBase {
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder()
             .rowKeyFields(field)
@@ -394,7 +394,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private static DataFusionAwsConfig createAwsConfig() {
-        LocalStackContainer container = SleeperLocalStackContainer.INSTANCE;
+        LocalStackContainer container = SleeperLocalAwsContainer.INSTANCE;
         return DataFusionAwsConfig.overrideEndpoint(container.getEndpoint().toString());
     }
 }

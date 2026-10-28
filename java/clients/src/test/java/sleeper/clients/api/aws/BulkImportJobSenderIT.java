@@ -24,7 +24,7 @@ import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.clients.api.BulkImportJobSender;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,7 +36,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class BulkImportJobSenderIT extends LocalStackTestBase {
+public class BulkImportJobSenderIT extends LocalAwsTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
 

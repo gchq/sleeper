@@ -28,7 +28,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.testutils.InMemoryTransactionBodyStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator.LatestSnapshotsMetadataLoader;
@@ -48,7 +48,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
-public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
+public class TransactionLogSnapshotTestBase extends LocalAwsTestBase {
     @TempDir
     private java.nio.file.Path tempDir;
     protected final Schema schema = createSchemaWithKey("key", new LongType());

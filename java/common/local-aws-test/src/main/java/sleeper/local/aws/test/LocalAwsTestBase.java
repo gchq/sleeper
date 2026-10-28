@@ -43,25 +43,25 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.local.aws.test.SleeperLocalStackClients.S3_CLIENT;
-import static sleeper.local.aws.test.SleeperLocalStackClients.SQS_CLIENT;
+import static sleeper.local.aws.test.SleeperLocalAwsClients.S3_CLIENT;
+import static sleeper.local.aws.test.SleeperLocalAwsClients.SQS_CLIENT;
 
 /**
- * A base class for tests to run against LocalStack.
+ * A base class for tests to run against local AWS.
  */
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-public abstract class LocalStackTestBase {
+public abstract class LocalAwsTestBase {
 
-    protected final LocalStackContainer localStackContainer = SleeperLocalStackContainer.INSTANCE;
-    protected final S3Client s3Client = SleeperLocalStackClients.S3_CLIENT;
-    protected final S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
-    protected final S3TransferManager s3TransferManager = SleeperLocalStackClients.S3_TRANSFER_MANAGER;
-    protected final DynamoDbClient dynamoClient = SleeperLocalStackClients.DYNAMO_CLIENT;
-    protected final SqsClient sqsClient = SleeperLocalStackClients.SQS_CLIENT;
-    protected final StsClient stsClient = SleeperLocalStackClients.STS_CLIENT;
-    protected final Configuration hadoopConf = SleeperLocalStackClients.HADOOP_CONF;
-    protected final CloudWatchClient cloudWatchClient = SleeperLocalStackClients.CLOUDWATCH_CLIENT;
-    protected final AwsCredentialsProvider credentialsProvider = SleeperLocalStackClients.CREDENTIALS_PROVIDER;
+    protected final LocalStackContainer localStackContainer = SleeperLocalAwsContainer.INSTANCE;
+    protected final S3Client s3Client = SleeperLocalAwsClients.S3_CLIENT;
+    protected final S3AsyncClient s3AsyncClient = SleeperLocalAwsClients.S3_ASYNC_CLIENT;
+    protected final S3TransferManager s3TransferManager = SleeperLocalAwsClients.S3_TRANSFER_MANAGER;
+    protected final DynamoDbClient dynamoClient = SleeperLocalAwsClients.DYNAMO_CLIENT;
+    protected final SqsClient sqsClient = SleeperLocalAwsClients.SQS_CLIENT;
+    protected final StsClient stsClient = SleeperLocalAwsClients.STS_CLIENT;
+    protected final Configuration hadoopConf = SleeperLocalAwsClients.HADOOP_CONF;
+    protected final CloudWatchClient cloudWatchClient = SleeperLocalAwsClients.CLOUDWATCH_CLIENT;
+    protected final AwsCredentialsProvider credentialsProvider = SleeperLocalAwsClients.CREDENTIALS_PROVIDER;
 
     public static void createBucket(String bucketName) {
         S3_CLIENT.createBucket(builder -> builder.bucket(bucketName));

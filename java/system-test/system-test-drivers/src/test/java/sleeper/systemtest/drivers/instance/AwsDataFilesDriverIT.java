@@ -24,7 +24,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.local.aws.test.SleeperLocalStackClients;
+import sleeper.local.aws.test.SleeperLocalAwsClients;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
@@ -94,7 +94,7 @@ public class AwsDataFilesDriverIT {
         try (ParquetReaderIterator iterator = new ParquetReaderIterator(
                 ParquetRowReaderFactory.parquetRowReaderBuilder(
                         new Path(file.getFilename()), schema(context))
-                        .withConf(SleeperLocalStackClients.HADOOP_CONF)
+                        .withConf(SleeperLocalAwsClients.HADOOP_CONF)
                         .build())) {
             List<Row> rows = new ArrayList<>();
             iterator.forEachRemaining(rows::add);

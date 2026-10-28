@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,7 +31,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class DynamoDBCompactionTaskTrackerCreatorIT extends LocalStackTestBase {
+public class DynamoDBCompactionTaskTrackerCreatorIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String tableName = DynamoDBCompactionTaskTracker.taskStatusTableName(instanceProperties.get(ID));

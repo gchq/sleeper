@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkexport.core.model.BulkExportQuerySerDe;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperDsl;
@@ -39,7 +39,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_E
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
 
 @LocalStackDslTest
-public class AwsBulkExportDriverIT extends LocalStackTestBase {
+public class AwsBulkExportDriverIT extends LocalAwsTestBase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsBulkExportDriverIT.class);
 

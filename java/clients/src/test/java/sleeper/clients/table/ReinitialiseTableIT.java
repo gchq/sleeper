@@ -42,7 +42,7 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -74,7 +74,7 @@ import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoR
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class ReinitialiseTableIT extends LocalStackTestBase {
+public class ReinitialiseTableIT extends LocalAwsTestBase {
     private static final String FILE_SHOULD_NOT_BE_DELETED_1 = "file0.parquet";
     private static final String FILE_SHOULD_NOT_BE_DELETED_2 = "for_ingest/file0.parquet";
     private static final String FILE_SHOULD_NOT_BE_DELETED_3 = "partition.parquet";

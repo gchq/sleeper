@@ -31,7 +31,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
@@ -50,7 +50,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.schemaWithRowKeys;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
 
-public class IngestRowsLocalStackITBase extends LocalStackTestBase {
+public class IngestRowsLocalStackITBase extends LocalAwsTestBase {
     @TempDir
     private static Path tempDir;
 

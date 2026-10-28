@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportJobWriterToS3;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class BulkImportJobLoaderFromS3IT extends LocalStackTestBase {
+public class BulkImportJobLoaderFromS3IT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
 

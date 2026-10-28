@@ -47,7 +47,7 @@ import sleeper.ingest.runner.testutils.ResultVerifier;
 import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.ingest.runner.testutils.TestIngestType;
 import sleeper.ingest.runner.testutils.TestIngestType.WriteTarget;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
@@ -83,7 +83,7 @@ import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromP
 import static sleeper.ingest.runner.testutils.ResultVerifier.readRowsFromPartitionDataFile;
 import static sleeper.ingest.runner.testutils.RowGenerator.genericKey1D;
 
-public class IngestCoordinatorCommonIT extends LocalStackTestBase {
+public class IngestCoordinatorCommonIT extends LocalAwsTestBase {
 
     @TempDir
     public Path temporaryFolder;

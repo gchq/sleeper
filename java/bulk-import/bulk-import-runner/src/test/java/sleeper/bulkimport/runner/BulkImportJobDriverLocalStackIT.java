@@ -49,8 +49,8 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvid
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
-import sleeper.local.aws.test.LocalStackHadoopConfigurationProvider;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsHadoopConfigurationProvider;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.store.SketchesStore;
@@ -78,7 +78,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPrefix;
 
-public class BulkImportJobDriverLocalStackIT extends LocalStackTestBase {
+public class BulkImportJobDriverLocalStackIT extends LocalAwsTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, getSchema());
     private final SketchesStore sketchesStore = new HadoopSketchesStore(hadoopConf);
@@ -99,7 +99,7 @@ public class BulkImportJobDriverLocalStackIT extends LocalStackTestBase {
         update(stateStore()).initialise(tableProperties);
         sparkConf.set("spark.master", "local");
         sparkConf.set("spark.app.name", "bulk import");
-        LocalStackHadoopConfigurationProvider.configureHadoop(
+        LocalAwsHadoopConfigurationProvider.configureHadoop(
                 (property, value) -> sparkConf.set("spark.hadoop." + property, value),
                 localStackContainer);
     }

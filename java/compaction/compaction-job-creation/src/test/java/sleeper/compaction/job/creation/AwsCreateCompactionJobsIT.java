@@ -41,7 +41,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -64,7 +64,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSI
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
+public class AwsCreateCompactionJobsIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = CreateJobsTestUtils.createSchema();

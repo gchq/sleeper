@@ -38,7 +38,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RowsProcessed;
-import sleeper.local.aws.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -62,7 +62,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.st
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
-public class DynamoDBCompactionJobTrackerTestBase extends LocalStackTestBase {
+public class DynamoDBCompactionJobTrackerTestBase extends LocalAwsTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("createUpdateTime", "expiryDate")
