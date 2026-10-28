@@ -79,10 +79,6 @@ public enum IngestJobUpdateType {
         }
     }
 
-    public boolean isFailed() {
-        return this == FAILED || this == REJECTED;
-    }
-
     /**
      * Gets the type of the provided process status update.
      *

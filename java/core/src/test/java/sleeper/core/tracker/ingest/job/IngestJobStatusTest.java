@@ -51,7 +51,6 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.validatedI
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.ACCEPTED;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FINISHED;
-import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FINISHED_WITH_FAILURE;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.UNCOMMITTED;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
@@ -505,30 +504,6 @@ public class IngestJobStatusTest {
                             ingestFinishedStatusUncommitted(startTime.plus(Duration.ofMinutes(10)), 1, new RowsProcessed(3000, 1500)),
                             ingestAddedFilesStatus(startTime.plus(Duration.ofMinutes(11)), 1),
                             failedStatus(startTime.plus(Duration.ofMinutes(12)), List.of("File already exists")))));
-
-            // Then
-            assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestRunStatusType)
-                    .isEqualTo(FINISHED_WITH_FAILURE);
-        }
-
-        @Test
-        void shouldReportFinishedWhenTwoRunsSucceededAndOneAlsoHadFailure() {
-            Instant startTime1 = Instant.parse("2026-10-09T12:35:12.001Z");
-            Instant startTime2 = Instant.parse("2026-10-09T13:35:12.001Z");
-
-            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
-                    forRunOnTask("run-1", "some-task",
-                            ingestAcceptedStatus(startTime1, 9),
-                            validatedIngestStartedStatus(startTime1.plus(Duration.ofMinutes(5)), 9),
-                            ingestFinishedStatusUncommitted(startTime1.plus(Duration.ofMinutes(10)), 1, new RowsProcessed(3000, 1500)),
-                            ingestAddedFilesStatus(startTime1.plus(Duration.ofMinutes(11)), 1)),
-                    forRunOnTask("run-2", "some-task",
-                            ingestAcceptedStatus(startTime2, 9),
-                            validatedIngestStartedStatus(startTime2.plus(Duration.ofMinutes(5)), 9),
-                            ingestFinishedStatusUncommitted(startTime2.plus(Duration.ofMinutes(10)), 1, new RowsProcessed(3000, 1500)),
-                            ingestAddedFilesStatus(startTime2.plus(Duration.ofMinutes(11)), 1),
-                            failedStatus(startTime2.plus(Duration.ofMinutes(12)), List.of("File already exists")))));
 
             // Then
             assertThat(status)
