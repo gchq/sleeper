@@ -50,7 +50,7 @@ public class AutoStopEcsTaskST {
     }
 
     @Test
-    void shouldRemoveIngestStackWhileTaskIsRunning(SleeperDsl sleeper) {
+    void shouldRemoveIngestStackWhileTaskIsRunning(SleeperDsl sleeper) throws Exception {
         // Given an ingest task is running
         sleeper.enableOptionalStacks(List.of(OptionalStack.IngestStack));
         sleeper.systemTestCluster()
@@ -64,11 +64,27 @@ public class AutoStopEcsTaskST {
         // When I remove the ingest stack
         sleeper.disableOptionalStacks(List.of(OptionalStack.IngestStack));
 
-        // Then the ingest does not complete successfully
-        assertThat(sleeper.tableFiles().references())
-                .satisfies(files -> {
-                    long totalRows = files.stream().mapToLong(FileReference::getNumberOfRows).sum();
-                    assertThat(totalRows).isLessThan(400_000_000);
-                });
+        // Then the ingest starts, but stops making progress before completion
+        long initialRowCount = sleeper.tableFiles().references().stream()
+                .mapToLong(FileReference::getNumberOfRows)
+                .sum();
+
+        assertThat(initialRowCount)
+                .isGreaterThan(0)
+                .isLessThan(400_000_000);
+
+        // Poll for 2 minutes. If ingest processing were still progressing,
+        // the state store would have updated the row count within this period.
+        for (int attempt = 1; attempt <= 24; attempt++) {
+            Thread.sleep(Duration.ofSeconds(5));
+
+            long currentRowCount = sleeper.tableFiles().references().stream()
+                    .mapToLong(FileReference::getNumberOfRows)
+                    .sum();
+
+            assertThat(currentRowCount)
+                    .as("Row count changed during stability check at iteration " + attempt)
+                    .isEqualTo(initialRowCount);
+        }
     }
 }
