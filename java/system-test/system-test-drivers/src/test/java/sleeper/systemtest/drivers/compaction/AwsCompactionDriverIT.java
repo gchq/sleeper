@@ -126,7 +126,7 @@ public class AwsCompactionDriverIT {
 
     private List<CompactionJobDispatchRequest> drainPendingCompactionQueue() {
         CompactionJobDispatchRequestSerDe serDe = new CompactionJobDispatchRequestSerDe();
-        return AwsDrainSqsQueue.forLocalStackTests(sqs)
+        return AwsDrainSqsQueue.forLocalAwsTests(sqs)
                 .drain(instance.getInstanceProperties().get(COMPACTION_PENDING_QUEUE_URL))
                 .map(Message::body)
                 .map(serDe::fromJson)

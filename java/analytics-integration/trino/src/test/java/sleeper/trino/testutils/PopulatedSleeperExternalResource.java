@@ -69,13 +69,12 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.local.aws.test.LocalAwsV2ClientHelper.buildAwsV2Client;
 
 /**
- * This class is a JUnit plugin which starts a local S3 and DynamoDB within a Docker
- * LocalStackContainer. Sleeper tables are created, with the data files themselves stored in a temporary directory on
- * the local disk.
+ * This class is a JUnit plugin which starts a local S3 and DynamoDB within a Docker container. Sleeper tables are
+ * created, with the data files themselves stored in a temporary directory on the local disk.
  * <p>
  * Only use one instance of this class at once. The Parquet readers and writers make use of the Hadoop FileSystem and
  * this caches the S3AFileSystem objects which actually communicate with S3. The cache needs to be reset between
- * different recreations of the localstack container. It would be good to fix this in future.
+ * different recreations of the container. It would be good to fix this in future.
  */
 public class PopulatedSleeperExternalResource implements BeforeAllCallback, AfterAllCallback {
     private static final String MAX_WRITER_COUNT_PROPERTY = "task.max-writer-count";
@@ -88,7 +87,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private final Map<String, String> extraPropertiesForQueryRunner;
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;
-    private final LocalStackContainer localStackContainer = SleeperLocalAwsContainer.INSTANCE;
+    private final LocalStackContainer localAwsContainer = SleeperLocalAwsContainer.INSTANCE;
     private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalAws();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Configuration configuration = SleeperLocalAwsClients.HADOOP_CONF;
@@ -160,7 +159,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
-        System.out.println("LocalStack endpoint:       " + localStackContainer.getEndpoint().toString());
+        System.out.println("Local AWS endpoint:       " + localAwsContainer.getEndpoint().toString());
 
         sleeperConfig.setLocalWorkingDirectory(createTempDirectory(UUID.randomUUID().toString()).toString());
 
@@ -203,9 +202,9 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         DistributedQueryRunner distributedQueryRunner = SleeperQueryRunner.createSleeperQueryRunner(
                 queryRunnerProperties(),
                 sleeperConfig,
-                buildAwsV2Client(localStackContainer, S3Client.builder()),
-                buildAwsV2Client(localStackContainer, S3AsyncClient.builder()),
-                buildAwsV2Client(localStackContainer, DynamoDbClient.builder()),
+                buildAwsV2Client(localAwsContainer, S3Client.builder()),
+                buildAwsV2Client(localAwsContainer, S3AsyncClient.builder()),
+                buildAwsV2Client(localAwsContainer, DynamoDbClient.builder()),
                 hadoopConfigurationProvider);
         queryAssertions = new QueryAssertions(distributedQueryRunner);
     }
@@ -214,7 +213,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     public void afterAll(ExtensionContext context) {
         this.queryAssertions.close();
         // The Hadoop file system maintains a cache of the file system object to use. The S3AFileSystem object
-        // retains the endpoint URL and so the cache needs to be cleared whenever the localstack instance changes.
+        // retains the endpoint URL and so the cache needs to be cleared whenever the local AWS changes.
         try {
             FileSystem.closeAll();
         } catch (Exception e) {

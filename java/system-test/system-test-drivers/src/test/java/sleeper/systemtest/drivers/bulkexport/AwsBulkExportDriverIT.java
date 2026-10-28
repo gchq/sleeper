@@ -36,7 +36,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_URL;
-import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCAL_MAIN;
 
 @LocalAwsDslTest
 public class AwsBulkExportDriverIT extends LocalAwsTestBase {
@@ -50,7 +50,7 @@ public class AwsBulkExportDriverIT extends LocalAwsTestBase {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper, SystemTestContext context, LocalAwsSystemTestDrivers drivers) {
-        sleeper.connectToInstanceAddOfflineTable(LOCALSTACK_MAIN);
+        sleeper.connectToInstanceAddOfflineTable(LOCAL_MAIN);
         s3 = drivers.clients().getS3();
         sqs = drivers.clients().getSqs();
         driver = drivers.bulkExport(context);

@@ -93,7 +93,7 @@ public enum OptionalStack {
             TableMetricsStack,
             AthenaStack);
 
-    public static final List<OptionalStack> LOCALSTACK_STACKS = List.of(
+    public static final List<OptionalStack> LOCAL_AWS_STACKS = List.of(
             IngestStack,
             CompactionStack,
             PartitionSplittingStack,

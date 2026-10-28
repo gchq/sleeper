@@ -39,7 +39,7 @@ public class LocalAwsSystemTestExtension extends SleeperSystemTestExtension {
         return new SystemTestDeploymentContext(
                 SystemTestParametersTestHelper.parametersBuilder()
                         .account(clients.getSts().getCallerIdentity().account())
-                        .shortTestId("localstack")
+                        .shortTestId("localaws")
                         .region(region.id())
                         .dnsSuffix(partitionMetadata.dnsSuffix())
                         .build(),

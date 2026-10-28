@@ -35,7 +35,7 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCAL_MAIN;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @LocalAwsDslTest
@@ -51,13 +51,13 @@ public class AwsResetInstanceOnFirstConnectIT {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper, LocalAwsSystemTestDrivers drivers, SystemTestContext context, SystemTestParameters parameters) {
-        sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
+        sleeper.connectToInstanceNoTables(LOCAL_MAIN);
         instance = context.instance();
         instanceProperties = sleeper.instanceProperties();
         instanceDriver = drivers.instance(parameters);
         tablesDriver = drivers.tables(parameters);
         sqs = drivers.clients().getSqs();
-        drainQueue = AwsDrainSqsQueue.forLocalStackTests(sqs);
+        drainQueue = AwsDrainSqsQueue.forLocalAwsTests(sqs);
         onFirstConnect = new AwsResetInstanceOnFirstConnect(drivers.clients(), drainQueue);
     }
 

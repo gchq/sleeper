@@ -36,7 +36,7 @@ public class LocalAwsTestInstance {
     private LocalAwsTestInstance() {
     }
 
-    public static final SystemTestInstanceConfiguration LOCALSTACK_MAIN = usingSystemTestDefaults("main", LocalAwsTestInstance::buildMainConfiguration);
+    public static final SystemTestInstanceConfiguration LOCAL_MAIN = usingSystemTestDefaults("main", LocalAwsTestInstance::buildMainConfiguration);
     public static final SystemTestInstanceConfiguration DRAIN_COMPACTIONS = usingSystemTestDefaults("cpt-dr", LocalAwsTestInstance::buildMainConfiguration);
     public static final SystemTestInstanceConfiguration PREDEFINED_TABLE = usingSystemTestDefaults("prdtbl", LocalAwsTestInstance::buildPredefinedTableConfiguration);
     public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("prdtnn", LocalAwsTestInstance::buildPredefinedTableConfigurationNoName);

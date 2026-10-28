@@ -23,7 +23,7 @@ import sleeper.systemtest.drivers.testutil.LocalAwsDslTest;
 import sleeper.systemtest.dsl.SleeperDsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCAL_MAIN;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @LocalAwsDslTest
@@ -31,7 +31,7 @@ public class AwsSleeperTablesDriverIT {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper) {
-        sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
+        sleeper.connectToInstanceNoTables(LOCAL_MAIN);
     }
 
     @Test

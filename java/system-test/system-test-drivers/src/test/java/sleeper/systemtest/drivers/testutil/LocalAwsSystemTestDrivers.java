@@ -78,7 +78,7 @@ public class LocalAwsSystemTestDrivers extends AwsSystemTestDrivers {
     @Override
     public CompactionDriver compaction(SystemTestContext context) {
         return new AwsCompactionDriver(context.instance(), clients,
-                AwsDrainSqsQueue.forLocalStackTests(clients.getSqs()));
+                AwsDrainSqsQueue.forLocalAwsTests(clients.getSqs()));
     }
 
     public BulkExportDriver bulkExport(SystemTestContext context) {

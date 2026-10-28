@@ -29,21 +29,21 @@ public class LocalAwsV2ClientHelper {
     private LocalAwsV2ClientHelper() {
     }
 
-    public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(LocalStackContainer localStackContainer, B builder) {
+    public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(LocalStackContainer localAwsContainer, B builder) {
         return builder
-                .endpointOverride(localStackContainer.getEndpoint())
+                .endpointOverride(localAwsContainer.getEndpoint())
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-                .region(Region.of(localStackContainer.getRegion()))
+                        localAwsContainer.getAccessKey(), localAwsContainer.getSecretKey())))
+                .region(Region.of(localAwsContainer.getRegion()))
                 .build();
     }
 
-    public static S3AsyncClient buildAwsV2Client(LocalStackContainer localStackContainer, S3CrtAsyncClientBuilder builder) {
+    public static S3AsyncClient buildAwsV2Client(LocalStackContainer localAwsContainer, S3CrtAsyncClientBuilder builder) {
         return builder
-                .endpointOverride(localStackContainer.getEndpoint())
+                .endpointOverride(localAwsContainer.getEndpoint())
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-                .region(Region.of(localStackContainer.getRegion()))
+                        localAwsContainer.getAccessKey(), localAwsContainer.getSecretKey())))
+                .region(Region.of(localAwsContainer.getRegion()))
                 .build();
     }
 

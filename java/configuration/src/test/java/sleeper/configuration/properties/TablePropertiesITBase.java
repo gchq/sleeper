@@ -33,7 +33,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
 /**
- * A base class for tests storing table properties in S3 with a DynamoDB table index, in LocalStack.
+ * A base class for tests storing table properties in S3 with a DynamoDB table index, in local AWS.
  */
 public abstract class TablePropertiesITBase extends LocalAwsTestBase {
 

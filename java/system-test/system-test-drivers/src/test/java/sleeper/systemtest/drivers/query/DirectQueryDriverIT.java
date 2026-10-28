@@ -26,7 +26,7 @@ import java.nio.file.Path;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCAL_MAIN;
 
 @LocalAwsDslTest
 public class DirectQueryDriverIT {
@@ -36,7 +36,7 @@ public class DirectQueryDriverIT {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper) {
-        sleeper.connectToInstanceAddOnlineTable(LOCALSTACK_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(LOCAL_MAIN);
     }
 
     @Test

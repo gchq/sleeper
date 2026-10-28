@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
-import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCAL_MAIN;
 
 @LocalAwsDslTest
 public class SleeperInstanceTablesLocalIT {
@@ -57,7 +57,7 @@ public class SleeperInstanceTablesLocalIT {
     class DefineNamedTables {
         @BeforeEach
         void setUp(SleeperDsl sleeper) {
-            sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
+            sleeper.connectToInstanceNoTables(LOCAL_MAIN);
         }
 
         @Test
@@ -112,7 +112,7 @@ public class SleeperInstanceTablesLocalIT {
     class InspectAllTables {
         @BeforeEach
         void setUp(SleeperDsl sleeper) {
-            sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
+            sleeper.connectToInstanceNoTables(LOCAL_MAIN);
         }
 
         @Test
@@ -185,7 +185,7 @@ public class SleeperInstanceTablesLocalIT {
         @Test
         void shouldFailToIngestWhenNoTableChosen(SleeperDsl sleeper) {
             // Given
-            sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
+            sleeper.connectToInstanceNoTables(LOCAL_MAIN);
             var ingest = sleeper.ingest().direct(null);
 
             // When / Then

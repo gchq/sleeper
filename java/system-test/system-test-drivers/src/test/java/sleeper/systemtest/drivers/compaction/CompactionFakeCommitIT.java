@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCAL_MAIN;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @LocalAwsDslTest
@@ -55,7 +55,7 @@ public class CompactionFakeCommitIT {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper, LocalAwsSystemTestDrivers drivers) throws Exception {
-        sleeper.connectToInstanceAddOnlineTable(LOCALSTACK_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(LOCAL_MAIN);
         sleeper.partitioning().setPartitions(partitions);
         sqsClient = drivers.clients().getSqs();
         compactionCommitQueueUrl = sqsClient.createQueue(builder -> builder.queueName(UUID.randomUUID().toString())).queueUrl();
@@ -89,7 +89,7 @@ public class CompactionFakeCommitIT {
     }
 
     private Set<CompactionCommitMessageHandle> drainCommitQueue() {
-        return AwsDrainSqsQueue.forLocalStackTests(sqsClient)
+        return AwsDrainSqsQueue.forLocalAwsTests(sqsClient)
                 .drain(compactionCommitQueueUrl)
                 .map(this::readCommitMessage)
                 .collect(toSet());

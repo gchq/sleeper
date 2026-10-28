@@ -28,7 +28,7 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
-import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCAL_MAIN;
 
 @LocalAwsDslTest
 public class SetupInstanceLocalIT {
@@ -37,7 +37,7 @@ public class SetupInstanceLocalIT {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper) {
-        sleeper.connectToInstanceAddOnlineTable(LOCALSTACK_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(LOCAL_MAIN);
     }
 
     @Test

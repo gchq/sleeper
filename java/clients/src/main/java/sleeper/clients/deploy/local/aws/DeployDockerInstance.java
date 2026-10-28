@@ -133,7 +133,7 @@ public class DeployDockerInstance {
         String instanceId = instanceProperties.get(ID);
         instanceProperties.set(ACCOUNT, accountName);
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromAccountAndInstanceId(accountName, instanceId));
-        instanceProperties.setEnumList(OPTIONAL_STACKS, OptionalStack.LOCALSTACK_STACKS);
+        instanceProperties.setEnumList(OPTIONAL_STACKS, OptionalStack.LOCAL_AWS_STACKS);
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(REGION, "us-east-1");

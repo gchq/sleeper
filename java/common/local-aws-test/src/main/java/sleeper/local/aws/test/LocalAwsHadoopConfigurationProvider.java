@@ -29,7 +29,7 @@ public class LocalAwsHadoopConfigurationProvider {
      * with S3 and this means that any new AWS container will not be recognised once the first one has been used.
      * The FileSystem cache needs to be reset between different uses of an AWS container.
      *
-     * @param  container LocalStack container to access for S3A file system
+     * @param  container local AWS container to access for S3A file system
      * @return           Hadoop configuration
      */
     public static Configuration getHadoopConfiguration(LocalStackContainer container) {
@@ -50,7 +50,7 @@ public class LocalAwsHadoopConfigurationProvider {
         configuration.set("fs.s3a.secret.key", container.getSecretKey());
         configuration.set("fs.s3a.connection.maximum", "25");
         configuration.set("fs.s3a.connection.ssl.enabled", "false");
-        // The following settings may be useful if the connection to the localstack S3 instance hangs.
+        // The following settings may be useful if the connection to the local S3 instance hangs.
         // These settings attempt to force connection issues to generate errors early.
         // The settings do help but errors may still take many minutes to appear.
         // configuration.set("fs.s3a.connection.timeout", "1000");
