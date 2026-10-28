@@ -52,7 +52,7 @@ import static sleeper.local.aws.test.SleeperLocalAwsClients.SQS_CLIENT;
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public abstract class LocalAwsTestBase {
 
-    protected final LocalStackContainer localStackContainer = SleeperLocalAwsContainer.INSTANCE;
+    protected final LocalStackContainer localAwsContainer = SleeperLocalAwsContainer.INSTANCE;
     protected final S3Client s3Client = SleeperLocalAwsClients.S3_CLIENT;
     protected final S3AsyncClient s3AsyncClient = SleeperLocalAwsClients.S3_ASYNC_CLIENT;
     protected final S3TransferManager s3TransferManager = SleeperLocalAwsClients.S3_TRANSFER_MANAGER;

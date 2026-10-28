@@ -62,9 +62,9 @@ public abstract class MetadataHandlerITBase extends LocalAwsTestBase {
 
         // Annoyingly the MetadataHandler hard-codes the S3 client it uses to check the spill bucket. Therefore
         // I need to set up some credentials in System properties so the default client will pick them up.
-        System.setProperty(ACCESS_KEY_SYSTEM_PROPERTY, localStackContainer.getAccessKey());
-        System.setProperty(SECRET_KEY_SYSTEM_PROPERTY, localStackContainer.getSecretKey());
-        System.setProperty(AWS_REGION_SYSTEM_PROPERTY, localStackContainer.getRegion());
+        System.setProperty(ACCESS_KEY_SYSTEM_PROPERTY, localAwsContainer.getAccessKey());
+        System.setProperty(SECRET_KEY_SYSTEM_PROPERTY, localAwsContainer.getSecretKey());
+        System.setProperty(AWS_REGION_SYSTEM_PROPERTY, localAwsContainer.getRegion());
     }
 
     @AfterEach

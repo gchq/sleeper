@@ -134,7 +134,7 @@ public abstract class DockerImageTestBase extends LocalAwsTestBase {
 
     private void configure(GenericContainer<?> container) {
         container.withEnv(getEnvironment())
-                .withNetwork(localStackContainer.getNetwork())
+                .withNetwork(localAwsContainer.getNetwork())
                 .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()));
     }
 

@@ -101,7 +101,7 @@ public class BulkImportJobDriverLocalAwsIT extends LocalAwsTestBase {
         sparkConf.set("spark.app.name", "bulk import");
         LocalAwsHadoopConfigurationProvider.configureHadoop(
                 (property, value) -> sparkConf.set("spark.hadoop." + property, value),
-                localStackContainer);
+                localAwsContainer);
     }
 
     @Test
