@@ -37,6 +37,8 @@ import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.util.NoSnapshotsDriver;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
+import static sleeper.local.aws.test.LocalAwsHadoopConfigurationProvider.configureHadoop;
+
 public class LocalAwsSystemTestDrivers extends AwsSystemTestDrivers {
     private final SystemTestClients clients;
 
