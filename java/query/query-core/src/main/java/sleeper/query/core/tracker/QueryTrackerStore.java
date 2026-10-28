@@ -26,7 +26,7 @@ public interface QueryTrackerStore {
      * Retrieves the status of a query by query ID.
      *
      * @param  queryId               the query ID
-     * @return                       the tracked query
+     * @return                       the tracked query, or null if the query is not tracked
      * @throws QueryTrackerException if something goes wrong checking the status of the query
      */
     TrackedQuery getStatus(String queryId) throws QueryTrackerException;
@@ -36,7 +36,7 @@ public interface QueryTrackerStore {
      *
      * @param  queryId               the query ID
      * @param  subQueryId            the sub query ID
-     * @return                       the tracked query
+     * @return                       the tracked query, or null if the subquery is not tracked
      * @throws QueryTrackerException if something goes wrong checking the status of the sub query
      */
     TrackedQuery getStatus(String queryId, String subQueryId) throws QueryTrackerException;
