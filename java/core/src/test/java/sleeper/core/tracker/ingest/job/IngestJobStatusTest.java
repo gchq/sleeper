@@ -511,6 +511,30 @@ public class IngestJobStatusTest {
                     .extracting(IngestJobStatus::getFurthestRunStatusType)
                     .isEqualTo(FINISHED_WITH_FAILURE);
         }
+
+        @Test
+        void shouldReportFinishedWhenTwoRunsSucceededAndOneAlsoHadFailure() {
+            Instant startTime1 = Instant.parse("2026-10-09T12:35:12.001Z");
+            Instant startTime2 = Instant.parse("2026-10-09T13:35:12.001Z");
+
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("run-1", "some-task",
+                            ingestAcceptedStatus(startTime1, 9),
+                            validatedIngestStartedStatus(startTime1.plus(Duration.ofMinutes(5)), 9),
+                            ingestFinishedStatusUncommitted(startTime1.plus(Duration.ofMinutes(10)), 1, new RowsProcessed(3000, 1500)),
+                            ingestAddedFilesStatus(startTime1.plus(Duration.ofMinutes(11)), 1)),
+                    forRunOnTask("run-2", "some-task",
+                            ingestAcceptedStatus(startTime2, 9),
+                            validatedIngestStartedStatus(startTime2.plus(Duration.ofMinutes(5)), 9),
+                            ingestFinishedStatusUncommitted(startTime2.plus(Duration.ofMinutes(10)), 1, new RowsProcessed(3000, 1500)),
+                            ingestAddedFilesStatus(startTime2.plus(Duration.ofMinutes(11)), 1),
+                            failedStatus(startTime2.plus(Duration.ofMinutes(12)), List.of("File already exists")))));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::getFurthestRunStatusType)
+                    .isEqualTo(FINISHED);
+        }
     }
 
     @Nested

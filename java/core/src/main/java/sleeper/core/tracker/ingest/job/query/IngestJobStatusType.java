@@ -31,8 +31,8 @@ public enum IngestJobStatusType {
     FAILED(3),
     IN_PROGRESS(4),
     UNCOMMITTED(5),
-    FINISHED(6),
-    FINISHED_WITH_FAILURE(7);
+    FINISHED_WITH_FAILURE(6),
+    FINISHED(7);
 
     private final int order;
 
