@@ -87,7 +87,7 @@ public class InstancePropertiesTestHelper {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
         instanceProperties.set(ACCOUNT, accountName);
-        instanceProperties.set(REGION, "test-region");
+        instanceProperties.set(REGION, "us-east-1");
         instanceProperties.set(DNS_SUFFIX, "amazonaws.com");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");

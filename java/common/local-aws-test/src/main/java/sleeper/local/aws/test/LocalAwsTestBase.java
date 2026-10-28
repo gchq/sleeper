@@ -23,6 +23,8 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.iam.IamClient;
+import software.amazon.awssdk.services.iam.model.CreateRoleRequest;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
@@ -43,6 +45,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
+import static sleeper.local.aws.test.SleeperLocalAwsClients.IAM_CLIENT;
 import static sleeper.local.aws.test.SleeperLocalAwsClients.S3_CLIENT;
 import static sleeper.local.aws.test.SleeperLocalAwsClients.SQS_CLIENT;
 
@@ -59,6 +62,7 @@ public abstract class LocalAwsTestBase {
     protected final DynamoDbClient dynamoClient = SleeperLocalAwsClients.DYNAMO_CLIENT;
     protected final SqsClient sqsClient = SleeperLocalAwsClients.SQS_CLIENT;
     protected final StsClient stsClient = SleeperLocalAwsClients.STS_CLIENT;
+    protected final IamClient iamClient = SleeperLocalAwsClients.IAM_CLIENT;
     protected final Configuration hadoopConf = SleeperLocalAwsClients.HADOOP_CONF;
     protected final CloudWatchClient cloudWatchClient = SleeperLocalAwsClients.CLOUDWATCH_CLIENT;
     protected final AwsCredentialsProvider credentialsProvider = SleeperLocalAwsClients.CREDENTIALS_PROVIDER;
@@ -96,6 +100,13 @@ public abstract class LocalAwsTestBase {
                 .queueName(UUID.randomUUID().toString())
                 .build())
                 .queueUrl();
+    }
+
+    public static String createRoleGetArn() {
+        return IAM_CLIENT.createRole(CreateRoleRequest.builder()
+                .roleName(UUID.randomUUID().toString())
+                .build())
+                .role().arn();
     }
 
     public static Stream<String> receiveMessages(String queueUrl) {

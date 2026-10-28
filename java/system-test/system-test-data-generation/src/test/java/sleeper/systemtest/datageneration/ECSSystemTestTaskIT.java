@@ -67,11 +67,10 @@ public class ECSSystemTestTaskIT extends LocalAwsTestBase {
 
     @BeforeEach
     void setUp() {
-        String account = stsClient.getCallerIdentity().account();
-        instanceProperties.set(ACCOUNT, account);
-        instanceProperties.set(ENDPOINT_URL, localAwsContainer.getEndpoint().toString());
-        instanceProperties.set(INGEST_DIRECT_ROLE_ARN, "arn:aws:iam::" + account + ":role/ingest-direct");
-        instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, "arn:aws:iam::" + account + ":role/ingest-by-queue");
+        instanceProperties.set(ACCOUNT, stsClient.getCallerIdentity().account());
+        instanceProperties.set(ENDPOINT_URL, localAwsContainer.getEndpoint());
+        instanceProperties.set(INGEST_DIRECT_ROLE_ARN, createRoleGetArn());
+        instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, createRoleGetArn());
         instanceProperties.set(INGEST_JOB_QUEUE_URL, createSqsQueueGetUrl());
         systemTestProperties.set(SYSTEM_TEST_BUCKET_NAME, UUID.randomUUID().toString());
         createBucket(instanceProperties.get(CONFIG_BUCKET));
