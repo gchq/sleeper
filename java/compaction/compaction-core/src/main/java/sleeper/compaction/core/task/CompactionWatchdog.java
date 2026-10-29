@@ -95,6 +95,7 @@ public class CompactionWatchdog implements AutoCloseable {
             try {
                 threadSleep.waitForMillis(checkPeriod.toMillis());
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 return;
             }
             Optional<CompactionStall> stall;
