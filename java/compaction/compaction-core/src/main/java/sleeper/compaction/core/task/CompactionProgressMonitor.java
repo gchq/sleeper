@@ -24,8 +24,8 @@ import java.util.function.Supplier;
 /**
  * Receives progress callbacks from a running compaction, and holds the latest progress to be checked by another thread.
  * <p>
- * Callbacks may be made from any thread, including native threads, and the compaction may be blocked while a callback
- * runs. This only performs an atomic update and does no other work.
+ * Callbacks may be made from any thread, including threads started outside of the JVM by native code, and the
+ * compaction may be blocked while a callback runs. This only performs an atomic update and does no other work.
  */
 public class CompactionProgressMonitor implements LongConsumer {
 
