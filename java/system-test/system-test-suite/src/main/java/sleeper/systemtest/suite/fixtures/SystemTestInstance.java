@@ -60,6 +60,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL;
@@ -246,6 +247,7 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EksBulkImportStack));
         properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE.toString());
+        properties.set(BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL, "true");
         setSystemTestTags(properties, "bulkImportOnEksAuto", "Sleeper Maven system test bulk import on EKS Auto Mode");
         return createInstanceConfiguration(properties);
     }
@@ -254,6 +256,7 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EksBulkImportStack));
         properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE.toString());
+        properties.set(BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL, "true");
         properties.setNumber(BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL, 5);
         properties.setNumber(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT, 640); // 5 jobs x 4 cores x (29 executors + 1 driver), plus 1 submitter per job and slack
         setSystemTestTags(properties, "bulkImportPerformanceOnEks", "Sleeper Maven system test bulk import performance on EKS");
