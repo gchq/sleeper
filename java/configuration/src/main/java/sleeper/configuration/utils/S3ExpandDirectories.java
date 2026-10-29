@@ -18,6 +18,7 @@ package sleeper.configuration.utils;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
@@ -76,10 +77,14 @@ public class S3ExpandDirectories {
                 .bucket(path.bucket())
                 .prefix(prefix)
                 .build());
-        return response.contents().stream()
-                .filter(s3Object -> checkIsParquetFile(s3Object.key()))
-                .map(s3Object -> new S3FileDetails(path.bucket(), s3Object.key(), s3Object.size()))
-                .toList();
+        try {
+            return response.contents().stream()
+                    .filter(s3Object -> checkIsParquetFile(s3Object.key()))
+                    .map(s3Object -> new S3FileDetails(path.bucket(), s3Object.key(), s3Object.size()))
+                    .toList();
+        } catch (NoSuchBucketException e) {
+            return List.of();
+        }
     }
 
     private Optional<S3FileDetails> findFileWithExactKey(S3Path path) {

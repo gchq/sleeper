@@ -34,6 +34,10 @@ a `.parquet` extension, and a path only matches a file at exactly that key or fi
 directories whose names start with the same characters as the path are not matched. See the
 [ingest guide](ingest.md#file-paths) for the full rules.
 
+The script checks the paths in S3 before it sends anything, and lists the files it found with their sizes. If any path
+matches no files, it also lists those paths, sends nothing, and exits with an error. Otherwise it submits those exact
+files to the batcher. For a directory, the script submits the files that are in it when you run the script.
+
 You can also submit requests to the queue manually as described [below](#manually-sending-files-to-the-batcher-queue).
 
 ### Job creation

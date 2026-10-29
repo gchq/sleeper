@@ -246,6 +246,16 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
             assertThat(expandDirectories.expandPaths(List.of(file)).listMissingPaths())
                     .containsExactly(file);
         }
+
+        @Test
+        void shouldReturnEmptyContentsWhenBucketIsNotFound() {
+            // Given
+            String file = "not-a-bucket/file.parquet";
+
+            // When / Then
+            assertThat(expandDirectories.expandPaths(List.of(file)).listMissingPaths())
+                    .containsExactly(file);
+        }
     }
 
     private List<Long> listFileSizeBytes(List<String> files) {
