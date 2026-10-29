@@ -27,7 +27,7 @@ from testcontainers.community.localstack import LocalStackContainer
 from pq import ParquetDeserialiser
 
 
-class LocalStack:
+class LocalAws:
     _container: LocalStackContainer = None
     _s3_resource: S3ServiceResource = None
     _s3_client: S3Client = None

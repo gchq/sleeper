@@ -20,7 +20,7 @@ from mypy_boto3_sqs.service_resource import Queue
 from sleeper import SleeperClient
 from sleeper.ingest import IngestJob, IngestJobSender
 from sleeper.properties import CommonCdkProperty, IngestCdkProperty, InstanceProperties, save_instance_properties
-from tests.sleeper.localstack import LocalStack
+from tests.sleeper.localstack import LocalAws
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
@@ -47,7 +47,7 @@ def should_send_ingest_job_with_client(queue: Queue, sleeper_client: SleeperClie
 def should_ingest_from_rows_with_client(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
     # Given
     rows = [{"key": "my_key", "value": "my_value"}, {"key": "my_key2", "value": "my_value2"}]
-    LocalStack.create_bucket(properties.get(CommonCdkProperty.DATA_BUCKET))
+    LocalAws.create_bucket(properties.get(CommonCdkProperty.DATA_BUCKET))
 
     # When
     sleeper_client.write_single_batch("my_table", rows)
@@ -55,7 +55,7 @@ def should_ingest_from_rows_with_client(queue: Queue, sleeper_client: SleeperCli
     # Then
     job = receive_message(queue)
     file = single(job.pop("files"))
-    assert LocalStack.read_parquet_file(file) == rows
+    assert LocalAws.read_parquet_file(file) == rows
     assert isinstance(job.pop("id"), str)
     assert job == {"tableName": "my_table"}
 
@@ -63,7 +63,7 @@ def should_ingest_from_rows_with_client(queue: Queue, sleeper_client: SleeperCli
 def should_ingest_with_client_writer(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
     # Given
     rows = [{"key": "my_key", "value": "my_value"}, {"key": "my_key2", "value": "my_value2"}]
-    LocalStack.create_bucket(properties.get(CommonCdkProperty.DATA_BUCKET))
+    LocalAws.create_bucket(properties.get(CommonCdkProperty.DATA_BUCKET))
 
     # When
     with sleeper_client.create_batch_writer("my_table", "my_job") as writer:
@@ -72,7 +72,7 @@ def should_ingest_with_client_writer(queue: Queue, sleeper_client: SleeperClient
     # Then
     job = receive_message(queue)
     file = single(job.pop("files"))
-    assert LocalStack.read_parquet_file(file) == rows
+    assert LocalAws.read_parquet_file(file) == rows
     assert isinstance(job.pop("id"), str)
     assert job == {"tableName": "my_table"}
 
@@ -95,7 +95,7 @@ def should_generate_job_id():
 
 @pytest.fixture
 def queue() -> Queue:
-    return LocalStack.create_queue()
+    return LocalAws.create_queue()
 
 
 @pytest.fixture
@@ -107,13 +107,13 @@ def properties(queue: Queue) -> InstanceProperties:
 
 @pytest.fixture
 def sender(properties: InstanceProperties) -> IngestJobSender:
-    return IngestJobSender(LocalStack.sqs_resource(), properties)
+    return IngestJobSender(LocalAws.sqs_resource(), properties)
 
 
 @pytest.fixture
 def sleeper_client(properties: InstanceProperties) -> SleeperClient:
-    LocalStack.create_bucket(properties.get(CommonCdkProperty.CONFIG_BUCKET))
-    save_instance_properties(LocalStack.s3_resource(), properties)
+    LocalAws.create_bucket(properties.get(CommonCdkProperty.CONFIG_BUCKET))
+    save_instance_properties(LocalAws.s3_resource(), properties)
     return LocalStackSleeperClient.create(properties)
 
 

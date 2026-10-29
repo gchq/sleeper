@@ -19,7 +19,7 @@ from mypy_boto3_sqs.service_resource import Queue
 
 from sleeper import SleeperClient
 from sleeper.properties import CommonCdkProperty, CommonProperty, IngestCdkProperty, InstanceProperties, save_instance_properties
-from tests.sleeper.localstack import LocalStack
+from tests.sleeper.localstack import LocalAws
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
@@ -75,14 +75,14 @@ def should_put_full_bulk_export_message_on_the_queue_with_provided_patformspec(s
 
 @pytest.fixture
 def sleeper_client(properties: InstanceProperties) -> SleeperClient:
-    LocalStack.create_bucket(properties.get(CommonCdkProperty.CONFIG_BUCKET))
-    save_instance_properties(LocalStack.s3_resource(), properties)
+    LocalAws.create_bucket(properties.get(CommonCdkProperty.CONFIG_BUCKET))
+    save_instance_properties(LocalAws.s3_resource(), properties)
     return LocalStackSleeperClient.create(properties)
 
 
 @pytest.fixture
 def bulk_import_queue() -> Queue:
-    return LocalStack.create_queue()
+    return LocalAws.create_queue()
 
 
 @pytest.fixture(params=["EMR", "PersistentEMR", "EKS", "EMRServerless"])

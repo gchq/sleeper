@@ -13,17 +13,17 @@
 #  limitations under the License.
 
 from sleeper.properties import CommonCdkProperty, CommonProperty, load_instance_properties, load_instance_properties_from_bucket, save_instance_properties
-from tests.sleeper.localstack import LocalStack
+from tests.sleeper.localstack import LocalAws
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
 def should_load_instance_properties():
     # Given
-    bucket = LocalStack.create_bucket()
-    LocalStack.s3_resource().Object(bucket.name, "instance.properties").put(Body="a.b.c=value")
+    bucket = LocalAws.create_bucket()
+    LocalAws.s3_resource().Object(bucket.name, "instance.properties").put(Body="a.b.c=value")
 
     # When
-    properties = load_instance_properties_from_bucket(LocalStack.s3_resource(), bucket.name)
+    properties = load_instance_properties_from_bucket(LocalAws.s3_resource(), bucket.name)
 
     # Then
     assert properties.as_dict() == {"a.b.c": "value"}
@@ -32,11 +32,11 @@ def should_load_instance_properties():
 def should_save_load_instance_properties():
     # Given
     properties = create_test_instance_properties()
-    LocalStack.create_bucket(properties.get(CommonCdkProperty.CONFIG_BUCKET))
-    save_instance_properties(LocalStack.s3_resource(), properties)
+    LocalAws.create_bucket(properties.get(CommonCdkProperty.CONFIG_BUCKET))
+    save_instance_properties(LocalAws.s3_resource(), properties)
 
     # When
-    loaded = load_instance_properties(LocalStack.s3_resource(), properties.get(CommonCdkProperty.ACCOUNT), properties.get(CommonProperty.ID))
+    loaded = load_instance_properties(LocalAws.s3_resource(), properties.get(CommonCdkProperty.ACCOUNT), properties.get(CommonProperty.ID))
 
     # Then
     assert properties.as_dict() == loaded.as_dict()

@@ -14,7 +14,7 @@
 
 from sleeper import SleeperClient
 from sleeper.properties import CommonCdkProperty, CommonProperty, InstanceProperties
-from tests.sleeper.localstack import LocalStack
+from tests.sleeper.localstack import LocalAws
 
 
 class LocalStackSleeperClient:
@@ -23,9 +23,9 @@ class LocalStackSleeperClient:
         return SleeperClient(
             instance_id=properties.get(CommonProperty.ID),
             account_name=properties.get(CommonCdkProperty.ACCOUNT),
-            s3_client=LocalStack.s3_client(),
-            s3_resource=LocalStack.s3_resource(),
-            s3_fs=LocalStack.s3fs(),
-            sqs_resource=LocalStack.sqs_resource(),
-            dynamo_resource=LocalStack.dynamo_resource(),
+            s3_client=LocalAws.s3_client(),
+            s3_resource=LocalAws.s3_resource(),
+            s3_fs=LocalAws.s3fs(),
+            sqs_resource=LocalAws.sqs_resource(),
+            dynamo_resource=LocalAws.dynamo_resource(),
         )
