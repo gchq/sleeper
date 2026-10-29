@@ -56,18 +56,14 @@ public class AutoDeleteS3ObjectsST {
 
     @Test
     void shouldRemoveQueryStackWithDataInQueryBucket(SleeperDsl sleeper) {
-
-        // Given the Query Stack is enabled
+        // Given the query stack is enabled
         sleeper.enableOptionalStacks(List.of(OptionalStack.QueryStack));
-
         // And rows have been ingested into the table
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
-
         // When a query is executed and results are written to the query results bucket
         List<Row> queryResults = sleeper.query().byQueue().allRowsWithProcessingConfig(config -> config
                 .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, S3ResultsOutput.S3)));
-
-        // And the Query Stack is removed
+        // Then the query stack can be removed with query results present in the bucket
         sleeper.disableOptionalStacks(List.of(OptionalStack.QueryStack));
 
         // Then the Query Stack can be removed with query results present in the bucket

@@ -92,7 +92,7 @@ public class CompactionVeryLargeST {
                 .waitForTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
-        // Then each file has 2 billion rows
+        // Then each file has the correct number of rows
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
         assertThat(files.streamFileReferences())
                 .hasSize(10)

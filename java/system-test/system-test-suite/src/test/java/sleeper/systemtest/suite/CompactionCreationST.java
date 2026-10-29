@@ -57,7 +57,7 @@ public class CompactionCreationST {
 
     @Test
     void shouldCreateLargeQuantitiesOfCompactionJobsAtOnce(SleeperDsl sleeper) throws Exception {
-        // Given 65,536 partitions each contain two files eligible for compaction
+        // Given partitions each contain two files eligible for compaction
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
@@ -85,7 +85,7 @@ public class CompactionCreationST {
 
     @Test
     void shouldSendBadCompactionBatchToDeadLetterQueue(SleeperDsl sleeper) throws Exception {
-        // Given a parquet file for compaction is assigned to job Id job-1 in the state store
+        // Given a parquet file for compaction is assigned to job ID job-1 in the state store
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"));
         FileReference inputFile = fileFactory(sleeper).rootFile("input.parquet", 100);
         sleeper.stateStore().fakeCommits().setupStateStore(store -> {
@@ -93,7 +93,7 @@ public class CompactionCreationST {
             update(store).assignJobId("job-1", List.of(inputFile));
         });
 
-        // When a compaction batch is received for the same file with job Id job-2
+        // When a compaction batch is received for the same file with job ID job-2
         sleeper.compaction()
                 .sendSingleCompactionBatch("job-2", List.of(inputFile))
                 // Then the compaction batch is sent to the dead letter queue because it is a mismatch

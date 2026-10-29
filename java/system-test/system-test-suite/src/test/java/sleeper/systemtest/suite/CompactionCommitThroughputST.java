@@ -52,7 +52,7 @@ public class CompactionCommitThroughputST {
 
     @Test
     void shouldFakeCompactionCommits(SleeperDsl sleeper) throws Exception {
-        // Given a table with 30,000 pending fake compaction commits is prepared in the state store
+        // Given a table with pending fake compactions commits is prepared in the state store
         sleeper.tables().createWithProperties("compaction", DEFAULT_SCHEMA,
                 Map.of(TABLE_ONLINE, "false"));
         sleeper.partitioning().setPartitions(partitions);

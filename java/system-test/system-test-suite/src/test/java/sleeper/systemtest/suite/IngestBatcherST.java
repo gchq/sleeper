@@ -51,7 +51,7 @@ public class IngestBatcherST {
 
     @Test
     void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperDsl sleeper) {
-        // Given
+        // Given source files to be grouped into multiple ingest jobs
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString(),
                 INGEST_BATCHER_MIN_JOB_FILES, "1",
@@ -64,12 +64,12 @@ public class IngestBatcherST {
                 .createWithNumberedRows("file3.parquet", numbers.range(200, 300))
                 .createWithNumberedRows("file4.parquet", numbers.range(300, 400));
 
-        // When
+        // When the source files are batched and ingested
         sleeper.ingest().batcher()
                 .sendSourceFilesExpectingJobs(2, "file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
                 .waitForStandardIngestTask().waitForIngestJobs();
 
-        // Then
+        // Then all rows are imported successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 400));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
@@ -77,7 +77,7 @@ public class IngestBatcherST {
 
     @Test
     void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen(SleeperDsl sleeper) {
-        // Given
+        // Given source files that can be grouped into a single bulk import job
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_QUEUE, BULK_IMPORT_EMR_SERVERLESS.toString(),
                 INGEST_BATCHER_MIN_JOB_FILES, "1",
@@ -91,21 +91,22 @@ public class IngestBatcherST {
                 .createWithNumberedRows("file3.parquet", numbers.range(200, 300))
                 .createWithNumberedRows("file4.parquet", numbers.range(300, 400));
 
-        // When
+        // When the source files are batched and bulk imported
         sleeper.ingest().batcher()
                 .sendSourceFilesExpectingJobs(1, "file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
                 .waitForBulkImportJobs(
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
-        // Then
+        // Then all rows are imported successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 400));
+        // And the data is stored in a single table file
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
     @Test
     void shouldIngestFileFromTableDataBucket(SleeperDsl sleeper) {
-        // Given
+        // Given a source file in the table data bucket
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString(),
                 INGEST_BATCHER_MIN_JOB_FILES, "1",
@@ -115,14 +116,15 @@ public class IngestBatcherST {
                 .inDataBucket()
                 .createWithNumberedRows("test-file.parquet", LongStream.range(0, 100));
 
-        // When
+        // When the source file is batched and ingested
         sleeper.ingest().batcher()
                 .sendSourceFilesExpectingJobs(1, "test-file.parquet")
                 .waitForStandardIngestTask().waitForIngestJobs();
 
-        // Then
+        // Then all rows are imported successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 100));
+        // And the data is stored in a single table file
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 }

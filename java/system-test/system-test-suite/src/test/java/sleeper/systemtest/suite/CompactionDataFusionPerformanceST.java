@@ -58,7 +58,8 @@ public class CompactionDataFusionPerformanceST {
 
     @Test
     void shouldMeetCompactionPerformanceStandards(SleeperDsl sleeper) {
-        // Given 110 ingest jobs have generated 40 million rows each
+        // Given ingest jobs have generated a high number of rows each
+        // And the high number is a number deliberately chosen as part of a performance testing strategy
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 DATA_ENGINE, DataEngine.DATAFUSION.toString()));

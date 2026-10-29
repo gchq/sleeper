@@ -55,10 +55,12 @@ public class QueryWebSocketST {
     @ParameterizedTest
     @MethodSource("queryTypes")
     void shouldRunQueryForAllRows(QueryTypeDsl queryType, SleeperDsl sleeper) {
-        // Given
+
+        // Given data has been ingested into the table
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
-        // When/Then
+        // When a query is run for all rows
+        // Then all rows are returned
         assertThat(queryType.query(sleeper)
                 .allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 100));
@@ -67,13 +69,15 @@ public class QueryWebSocketST {
     @ParameterizedTest
     @MethodSource("queryTypes")
     void shouldRunQueryWithOneRange(QueryTypeDsl queryType, SleeperDsl sleeper) {
-        // Given
+
+        // Given data has been ingested into the table
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
-        // When/Then
+        // When a query is run for a row key range
+        // Then the rows within that range are returned
         assertThat(queryType.query(sleeper)
                 .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         range("row-10", "row-20")))
@@ -83,13 +87,15 @@ public class QueryWebSocketST {
     @ParameterizedTest
     @MethodSource("queryTypes")
     void shouldRunQueryWithTwoRangesThatOverlap(QueryTypeDsl queryType, SleeperDsl sleeper) {
-        // Given
+
+        // Given data has been ingested into the table
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
-        // When/Then
+        // When a query is run for overlapping row key ranges
+        // Then the rows from the combined range are returned
         assertThat(queryType.query(sleeper)
                 .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         range("row-10", "row-30"),
@@ -100,13 +106,15 @@ public class QueryWebSocketST {
     @ParameterizedTest
     @MethodSource("queryTypes")
     void shouldRunQueryWithTwoRangesThatDoNotOverlap(QueryTypeDsl queryType, SleeperDsl sleeper) {
-        // Given
+
+        // Given data has been ingested into the table
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
-        // When/Then
+        // When a query is run for multiple row key ranges
+        // Then the rows from those ranges are returned
         assertThat(queryType.query(sleeper)
                 .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         range("row-10", "row-20"),
@@ -120,7 +128,10 @@ public class QueryWebSocketST {
     @ParameterizedTest
     @MethodSource("queryTypes")
     void shouldRunQueryReturningNoRows(QueryTypeDsl queryType, SleeperDsl sleeper) {
-        // When/Then
+        // Given no data has been ingested into the table
+
+        // When a query is run
+        // Then no rows are returned
         assertThat(queryType.query(sleeper)
                 .allRowsInTable())
                 .isEmpty();
@@ -132,10 +143,12 @@ public class QueryWebSocketST {
     @ParameterizedTest
     @MethodSource("queryTypes")
     void shouldRunQueryReturningTooManyRowsForOneWebSocketMessage(QueryTypeDsl queryType, SleeperDsl sleeper) {
-        // Given we have a number of rows that will break API Gateway's limit on payload size
+
+        // Given data has been ingested into the table
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 3000));
 
-        // When/Then
+        // When a query returns more rows than fit in a single WebSocket message
+        // Then all rows are returned successfully
         assertThat(queryType.query(sleeper).allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 3000));
     }
