@@ -43,7 +43,7 @@ public class SendToIngestBatcherTest {
                         new S3FileDetails("test-bucket", "dir/file2.parquet", 2_000_000)))));
 
         // When
-        boolean sent = SendToIngestBatcher.send("test-table", result, sentRequests::add, out.consoleOut());
+        boolean sent = send(result);
 
         // Then
         assertThat(sent).isTrue();
@@ -69,7 +69,7 @@ public class SendToIngestBatcherTest {
                 new S3PathContents(S3Path.parse("test-bucket/typo.parquet"), List.of())));
 
         // When
-        boolean sent = SendToIngestBatcher.send("test-table", result, sentRequests::add, out.consoleOut());
+        boolean sent = send(result);
 
         // Then
         assertThat(sent).isFalse();
@@ -87,4 +87,9 @@ public class SendToIngestBatcherTest {
                 Fix or remove the missing paths and try again.
                 """);
     }
+
+    private boolean send(S3ExpandDirectoriesResult result) {
+        return SendToIngestBatcher.send("test-table", result, sentRequests::add, out.consoleOut());
+    }
 }
+
