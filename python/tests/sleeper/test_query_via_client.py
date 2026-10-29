@@ -22,7 +22,7 @@ from sleeper import SleeperClient
 from sleeper.properties import CommonCdkProperty, InstanceProperties, QueryCdkProperty, save_instance_properties
 from sleeper.query import Query, Range, Region
 from tests.sleeper.local_aws import LocalAws
-from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
+from tests.sleeper.local_aws_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
