@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.task.CompactionTask.MessageReceiver;
@@ -350,12 +351,20 @@ public class CompactionTaskTestBase {
 
     protected CompactionRunner processJobs(ProcessJob... actions) {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
-        return request -> {
-            CompactionJob job = request.getJob();
-            if (getAction.hasNext()) {
-                return getAction.next().run(job);
-            } else {
-                throw new IllegalStateException("Unexpected job: " + job);
+        return new CompactionRunner() {
+            @Override
+            public RowsProcessed compact(CompactionRequest request) {
+                CompactionJob job = request.getJob();
+                if (getAction.hasNext()) {
+                    return getAction.next().run(job);
+                } else {
+                    throw new IllegalStateException("Unexpected job: " + job);
+                }
+            }
+
+            @Override
+            public boolean isProgressMonitored() {
+                return false;
             }
         };
     }

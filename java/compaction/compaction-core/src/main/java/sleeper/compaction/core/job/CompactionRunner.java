@@ -23,7 +23,6 @@ import java.io.IOException;
 /**
  * An implementation of compaction, to take a number of sorted input files and merge them into one fully sorted file.
  */
-@FunctionalInterface
 public interface CompactionRunner {
     /**
      * Compacts the input files of a compaction job into one output file.
@@ -51,7 +50,5 @@ public interface CompactionRunner {
      *
      * @return true if progress should be monitored for stalls
      */
-    default boolean isProgressMonitored() {
-        return false;
-    }
+    boolean isProgressMonitored();
 }
