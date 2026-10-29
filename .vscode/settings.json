@@ -118,7 +118,7 @@
   "python.testing.pytestEnabled": true,
   "python-envs.pythonProjects": [
     {
-      "path": ".",
+      "path": "python",
       "envManager": "ms-python.python:venv",
       "packageManager": "ms-python.python:pip"
     }
