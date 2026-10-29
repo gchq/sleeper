@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.api.IngestBatcherSender;
+import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.configuration.utils.S3ExpandDirectories;
@@ -35,6 +36,9 @@ import java.util.List;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.util.NumberFormatUtils.formatBytesAsHumanReadableString;
 
+/**
+ * Sends files in S3 to the ingest batcher, after checking that every path matches at least one file.
+ */
 public class SendToIngestBatcher {
 
     private SendToIngestBatcher() {
@@ -61,27 +65,46 @@ public class SendToIngestBatcher {
                 System.exit(1);
             }
             S3ExpandDirectoriesResult result = new S3ExpandDirectories(s3Client).expandPaths(files);
-            List<S3FileDetails> foundFiles = result.streamFiles().toList();
-            long totalBytes = foundFiles.stream().mapToLong(S3FileDetails::fileSizeBytes).sum();
-            System.out.println("Files found:");
-            foundFiles.forEach(file -> System.out.println("  " + file.pathForJob() + " (" + formatBytesAsHumanReadableString(file.fileSizeBytes()) + ")"));
-            System.out.println("Number of files found: " + foundFiles.size());
-            System.out.println("Total size: " + formatBytesAsHumanReadableString(totalBytes));
-            List<String> missingPaths = result.listMissingPaths();
-            if (!missingPaths.isEmpty()) {
-                System.out.println();
-                System.out.println("Paths not found:");
-                missingPaths.forEach(path -> System.out.println("  " + path));
-                System.out.println();
-                System.out.println("Nothing was sent to the ingest batcher, including the files found.");
-                System.out.println("Fix or remove the missing paths and try again.");
+            IngestBatcherSender sender = IngestBatcherSender.toSqs(instanceProperties, sqsClient);
+            boolean sent = send(tableName, result, sender, ConsoleOutput.stdOut());
+            if (!sent) {
                 System.exit(1);
             }
-            IngestBatcherSender.toSqs(instanceProperties, sqsClient)
-                    .submit(new IngestBatcherSubmitRequest(tableName, result.listJobPaths()));
-            System.out.println();
-            System.out.println("Sent to ingest batcher for table " + tableName);
         }
+    }
+
+    /**
+     * Reports the files found in S3 and sends them to the ingest batcher. Sends nothing if any path matched no files.
+     *
+     * @param  tableName the name of the table to ingest into
+     * @param  result    the files found at each path requested
+     * @param  sender    the sender to the ingest batcher
+     * @param  out       the console output
+     * @return           true if the files were sent
+     */
+    static boolean send(String tableName, S3ExpandDirectoriesResult result,
+            IngestBatcherSender sender, ConsoleOutput out) {
+        List<S3FileDetails> foundFiles = result.streamFiles().toList();
+        long totalBytes = foundFiles.stream().mapToLong(S3FileDetails::fileSizeBytes).sum();
+        out.println("Files found:");
+        foundFiles.forEach(file -> out.println(
+                "  " + file.pathForJob() + " (" + formatBytesAsHumanReadableString(file.fileSizeBytes()) + ")"));
+        out.println("Number of files found: " + foundFiles.size());
+        out.println("Total size: " + formatBytesAsHumanReadableString(totalBytes));
+        List<String> missingPaths = result.listMissingPaths();
+        if (!missingPaths.isEmpty()) {
+            out.println();
+            out.println("Paths not found:");
+            missingPaths.forEach(path -> out.println("  " + path));
+            out.println();
+            out.println("Nothing was sent to the ingest batcher, including the files found.");
+            out.println("Fix or remove the missing paths and try again.");
+            return false;
+        }
+        sender.submit(new IngestBatcherSubmitRequest(tableName, result.listJobPaths()));
+        out.println();
+        out.println("Sent to ingest batcher for table " + tableName);
+        return true;
     }
 
 }
