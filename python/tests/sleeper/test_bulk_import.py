@@ -20,7 +20,7 @@ from mypy_boto3_sqs.service_resource import Queue
 from sleeper import SleeperClient
 from sleeper.properties import CommonCdkProperty, CommonProperty, IngestCdkProperty, InstanceProperties, save_instance_properties
 from tests.sleeper.local_aws import LocalAws
-from tests.sleeper.local_aws_sleeper_client import LocalStackSleeperClient
+from tests.sleeper.local_aws_sleeper_client import LocalAwsSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
@@ -77,7 +77,7 @@ def should_put_full_bulk_export_message_on_the_queue_with_provided_patformspec(s
 def sleeper_client(properties: InstanceProperties) -> SleeperClient:
     LocalAws.create_bucket(properties.get(CommonCdkProperty.CONFIG_BUCKET))
     save_instance_properties(LocalAws.s3_resource(), properties)
-    return LocalStackSleeperClient.create(properties)
+    return LocalAwsSleeperClient.create(properties)
 
 
 @pytest.fixture

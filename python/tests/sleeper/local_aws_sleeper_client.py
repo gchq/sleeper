@@ -17,7 +17,7 @@ from sleeper.properties import CommonCdkProperty, CommonProperty, InstanceProper
 from tests.sleeper.local_aws import LocalAws
 
 
-class LocalStackSleeperClient:
+class LocalAwsSleeperClient:
     @staticmethod
     def create(properties: InstanceProperties) -> SleeperClient:
         return SleeperClient(

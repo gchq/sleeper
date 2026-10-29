@@ -22,7 +22,7 @@ from sleeper import SleeperClient
 from sleeper.properties import CommonCdkProperty, InstanceProperties, QueryCdkProperty, save_instance_properties
 from sleeper.query import Query, Range, Region
 from tests.sleeper.local_aws import LocalAws
-from tests.sleeper.local_aws_sleeper_client import LocalStackSleeperClient
+from tests.sleeper.local_aws_sleeper_client import LocalAwsSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
@@ -250,7 +250,7 @@ async def should_send_exact_query_with_sql_via_web_socket(sleeper_client: Sleepe
 def sleeper_client(properties: InstanceProperties) -> SleeperClient:
     LocalAws.create_bucket(properties.get(CommonCdkProperty.CONFIG_BUCKET))
     save_instance_properties(LocalAws.s3_resource(), properties)
-    return LocalStackSleeperClient.create(properties)
+    return LocalAwsSleeperClient.create(properties)
 
 
 @pytest.fixture
