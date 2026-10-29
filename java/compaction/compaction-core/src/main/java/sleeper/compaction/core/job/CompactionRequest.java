@@ -120,7 +120,7 @@ public class CompactionRequest {
 
         /**
          * Sets the interval between progress callback invocations by the native compaction runner.
-         *
+         * <p>
          * If not set or set to null, the built request will use the default interval of 5 seconds.
          *
          * @param  progressCallbackInterval the interval, or null to use the default

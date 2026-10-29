@@ -162,14 +162,14 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     /**
      * Take the compaction parameters and invoke the DataFusion compactor using the FFI bridge.
      *
-     * @param  job              the compaction job
-     * @param  compactionParams the compaction input parameters
-     * @param  runtime          the JNR FFI runtime object
-     * @param  context          the open context for FFI calls
-     * @param  progressCallback    the function to receive callbacks
-     * @param  callbackIntervalMs  interval in milliseconds between progress callbacks
-     * @return                     rows read/written
-     * @throws IOException         if the foreign library call doesn't complete successfully
+     * @param  job                the compaction job
+     * @param  compactionParams   the compaction input parameters
+     * @param  runtime            the JNR FFI runtime object
+     * @param  context            the open context for FFI calls
+     * @param  progressCallback   the function to receive callbacks
+     * @param  callbackIntervalMs interval in milliseconds between progress callbacks
+     * @return                    rows read/written
+     * @throws IOException        if the foreign library call doesn't complete successfully
      */
     private static RowsProcessed invokeDataFusion(CompactionJob job, FFICommonConfig compactionParams,
             jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context,

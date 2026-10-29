@@ -80,13 +80,13 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
     /**
      * Invokes a native compaction with a specified progress callback interval.
      *
-     * @param  context                       Java context object
-     * @param  input                         compaction input configuration
-     * @param  result                        compaction result if successful
-     * @param  progressCallback              optional function to be called with progress updates
-     * @param  progressCallbackIntervalMs    interval in milliseconds between progress callbacks
-     * @return                               indication of success
-     * @throws IllegalStateException         if the context has already been closed
+     * @param  context                    Java context object
+     * @param  input                      compaction input configuration
+     * @param  result                     compaction result if successful
+     * @param  progressCallback           optional function to be called with progress updates
+     * @param  progressCallbackIntervalMs interval in milliseconds between progress callbacks
+     * @return                            indication of success
+     * @throws IllegalStateException      if the context has already been closed
      */
     default int compact(FFIContext<DataFusionCompactionFunctions> context, FFICommonConfig input, FFIFileResult result,
             ProgressCallback progressCallback, long progressCallbackIntervalMs) {
