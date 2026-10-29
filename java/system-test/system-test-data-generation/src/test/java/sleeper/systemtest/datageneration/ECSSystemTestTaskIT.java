@@ -45,6 +45,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ENDPOINT_URL;
 import static sleeper.core.properties.model.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -68,6 +69,7 @@ public class ECSSystemTestTaskIT extends LocalAwsTestBase {
     @BeforeEach
     void setUp() {
         instanceProperties.set(ACCOUNT, stsClient.getCallerIdentity().account());
+        instanceProperties.set(REGION, localAwsContainer.getRegion());
         instanceProperties.set(ENDPOINT_URL, localAwsContainer.getEndpoint());
         instanceProperties.set(INGEST_DIRECT_ROLE_ARN, createRoleGetArn());
         instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, createRoleGetArn());
