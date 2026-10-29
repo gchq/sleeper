@@ -16,8 +16,7 @@
 set -euo pipefail
 unset CDPATH
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
+PROJECT_ROOT=$(cd "$(dirname "$0")" && cd ../.. && pwd)
 
 # The images are several GB, so in CI we remove each one after reading it to save disk space.
 # Locally we keep them, so they don't need pulling again on the next run.

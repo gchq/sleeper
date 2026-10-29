@@ -150,7 +150,7 @@
         java.lang.NoSuchFieldError: AWS_AUTH_SCHEME_PREFERENCE
         at software.amazon.awssdk.awscore.auth.AuthSchemePreferenceResolver.fromSystemSetting(AuthSchemePreferenceResolver.java:75)
         The version of the library is checked in .github/scripts/checkVersionNumber.sh so that Dependabot can't upgrade
-        it, and is compared against the EMR images daily by .github/scripts/checkBulkImportAwsSdkAgainstEmr.sh.
+        it, and can be compared against the EMR images with scripts/dev/checkBulkImportAwsSdkAgainstEmr.sh.
         Only change it when deliberately matching a version from EMR, e.g. based on output from that script.
         Verify with EmrServerlessBulkImportST.
         -->
