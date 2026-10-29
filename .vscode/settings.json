@@ -122,5 +122,6 @@
       "envManager": "ms-python.python:venv",
       "packageManager": "ms-python.python:pip"
     }
-  ]
+  ],
+  "python.defaultInterpreterPath": "${workspaceFolder}/python/.venv/bin/python"
 }
