@@ -45,8 +45,7 @@ public class SleeperLocalAwsContainer {
                 .withEnv("FLOCI_HOST", getHostAddress())
                 .withNetwork(Network.newNetwork())
                 .withNetworkAliases("floci")
-                .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()))
-                .withEnv("QUARKUS_LOG_LEVEL", "DEBUG");
+                .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()));
         container.start();
         return container;
     }
