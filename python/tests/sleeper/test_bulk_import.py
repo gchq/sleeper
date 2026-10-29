@@ -19,7 +19,7 @@ from mypy_boto3_sqs.service_resource import Queue
 
 from sleeper import SleeperClient
 from sleeper.properties import CommonCdkProperty, CommonProperty, IngestCdkProperty, InstanceProperties, save_instance_properties
-from tests.sleeper.localstack import LocalAws
+from tests.sleeper.local_aws import LocalAws
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 

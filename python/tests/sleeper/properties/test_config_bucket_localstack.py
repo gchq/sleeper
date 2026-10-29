@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 from sleeper.properties import CommonCdkProperty, CommonProperty, load_instance_properties, load_instance_properties_from_bucket, save_instance_properties
-from tests.sleeper.localstack import LocalAws
+from tests.sleeper.local_aws import LocalAws
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
