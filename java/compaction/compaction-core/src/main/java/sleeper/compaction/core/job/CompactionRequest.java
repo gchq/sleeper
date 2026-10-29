@@ -51,6 +51,10 @@ public class CompactionRequest {
         this.progressCallback = builder.progressCallback == null ? NO_OP_PROGRESS_CALLBACK : builder.progressCallback;
         this.progressCallbackInterval = builder.progressCallbackInterval == null
                 ? DEFAULT_PROGRESS_CALLBACK_INTERVAL : builder.progressCallbackInterval;
+        if (progressCallbackInterval.toMillis() <= 0) {
+            throw new IllegalArgumentException(
+                    "progressCallbackInterval must be at least 1 millisecond, found " + progressCallbackInterval);
+        }
     }
 
     public static Builder builder() {
@@ -121,7 +125,8 @@ public class CompactionRequest {
         /**
          * Sets the interval between progress callback invocations by the native compaction runner.
          * <p>
-         * If not set or set to null, the built request will use the default interval of 5 seconds.
+         * If not set or set to null, the built request will use the default interval of 5 seconds. Must be at least 1
+         * millisecond.
          *
          * @param  progressCallbackInterval the interval, or null to use the default
          * @return                          this builder
