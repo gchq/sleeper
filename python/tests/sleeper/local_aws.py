@@ -16,19 +16,19 @@ import uuid
 
 import boto3
 import s3fs
+from floci import FlociContainer
 from mypy_boto3_dynamodb import DynamoDBServiceResource
 from mypy_boto3_s3 import S3Client, S3ServiceResource
 from mypy_boto3_s3.service_resource import Bucket
 from mypy_boto3_sqs import SQSServiceResource
 from mypy_boto3_sqs.service_resource import Queue
 from pyarrow.parquet import ParquetFile
-from testcontainers.community.localstack import LocalStackContainer
 
 from pq import ParquetDeserialiser
 
 
 class LocalAws:
-    _container: LocalStackContainer = None
+    _container: FlociContainer = None
     _s3_resource: S3ServiceResource = None
     _s3_client: S3Client = None
     _s3fs: s3fs.S3FileSystem = None
@@ -36,9 +36,9 @@ class LocalAws:
     _dynamo_resource: DynamoDBServiceResource = None
 
     @classmethod
-    def container(cls) -> LocalStackContainer:
+    def container(cls) -> FlociContainer:
         if cls._container is None:
-            cls._container = LocalStackContainer("localstack/localstack:4.2")
+            cls._container = FlociContainer("floci/floci:2.3.0")
             cls._container.start()
         return cls._container
 
@@ -49,8 +49,14 @@ class LocalAws:
         return boto3.resource(name, **kwargs_)
 
     @classmethod
+    def client(cls, name: str, **kwargs):
+        kwargs_ = cls.client_kwargs()
+        kwargs_.update(kwargs)
+        return boto3.client(name, **kwargs_)
+
+    @classmethod
     def region_name(cls) -> str:
-        return cls.container().region_name
+        return cls.container().get_region()
 
     @classmethod
     def s3_resource(cls) -> S3ServiceResource:
@@ -61,7 +67,7 @@ class LocalAws:
     @classmethod
     def s3_client(cls) -> S3Client:
         if cls._s3_client is None:
-            cls._s3_client = cls.container().get_client("s3")
+            cls._s3_client = cls.client("s3")
         return cls._s3_client
 
     @classmethod
@@ -89,10 +95,10 @@ class LocalAws:
     def client_kwargs(cls) -> dict:
         container = cls.container()
         return {
-            "endpoint_url": container.get_url(),
-            "region_name": container.region_name,
-            "aws_access_key_id": "testcontainers-localstack",
-            "aws_secret_access_key": "testcontainers-localstack",
+            "endpoint_url": container.get_endpoint(),
+            "region_name": container.get_region(),
+            "aws_access_key_id": container.get_access_key(),
+            "aws_secret_access_key": container.get_secret_key(),
         }
 
     @classmethod
@@ -100,7 +106,7 @@ class LocalAws:
         if bucket_name is None:
             bucket_name = str(uuid.uuid4())
         bucket = cls.s3_resource().Bucket(bucket_name)
-        bucket.create(CreateBucketConfiguration={"LocationConstraint": cls.region_name()})
+        bucket.create()
         return bucket
 
     @classmethod
