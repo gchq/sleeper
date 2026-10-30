@@ -19,13 +19,19 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.table.TableStatus;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class NoSnapshotsDriver implements SnapshotsDriver {
+
+    @Override
+    public void triggerCreateSnapshots(Stream<TableStatus> tables) {
+    }
 
     @Override
     public Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {

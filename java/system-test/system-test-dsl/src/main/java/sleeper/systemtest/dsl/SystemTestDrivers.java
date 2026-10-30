@@ -142,7 +142,7 @@ public interface SystemTestDrivers {
 
     DeadLettersDriver deadLetters(SystemTestContext context);
 
-    SnapshotsDriver snapshots();
+    SnapshotsDriver snapshots(SystemTestContext context);
 
     ScheduleRulesDriver schedules();
 }

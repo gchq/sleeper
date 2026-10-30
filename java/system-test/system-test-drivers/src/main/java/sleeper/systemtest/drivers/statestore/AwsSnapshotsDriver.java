@@ -25,24 +25,36 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.core.table.TableStatus;
+import sleeper.invoke.tables.InvokeForTables;
 import sleeper.statestore.StateStoreArrowFileReadStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.statestore.transactionlog.snapshots.SnapshotType;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.fromMinimum;
 
 public class AwsSnapshotsDriver implements SnapshotsDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsSnapshotsDriver.class);
+    private final SystemTestInstanceContext instance;
     private final SystemTestClients clients;
 
-    public AwsSnapshotsDriver(SystemTestClients clients) {
+    public AwsSnapshotsDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
+        this.instance = instance;
         this.clients = clients;
+    }
+
+    @Override
+    public void triggerCreateSnapshots(Stream<TableStatus> tables) {
+        String queueUrl = instance.getInstanceProperties().get(null); // TODO add CDK-defined property
+        InvokeForTables.sendOneMessagePerTable(clients.getSqs(), queueUrl, tables);
     }
 
     @Override

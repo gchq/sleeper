@@ -286,8 +286,8 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public SnapshotsDriver snapshots() {
-        return new AwsSnapshotsDriver(clients);
+    public SnapshotsDriver snapshots(SystemTestContext context) {
+        return new AwsSnapshotsDriver(context.instance(), clients);
     }
 
     @Override
