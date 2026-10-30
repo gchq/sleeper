@@ -39,8 +39,8 @@ import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.job.creation.CompactionBatchJobsWriterToS3;
 import sleeper.compaction.job.creation.CompactionBatchMessageSenderToSqs;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -110,9 +110,9 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     @Override
-    public void triggerCreateJobs() {
+    public void triggerCreateJobs(Stream<TableStatus> tables) {
         String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_CREATION_QUEUE_URL);
-        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, instance.streamTableProperties().map(TableProperties::getStatus));
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, tables);
     }
 
     @Override

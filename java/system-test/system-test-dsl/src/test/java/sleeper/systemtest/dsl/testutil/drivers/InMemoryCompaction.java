@@ -36,6 +36,7 @@ import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
@@ -117,15 +118,16 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public void triggerCreateJobs() {
+        public void triggerCreateJobs(Stream<TableStatus> tables) {
             CreateCompactionJobs jobCreator = jobCreator();
-            instance.streamTableProperties().forEach(table -> {
-                try {
-                    jobCreator.createJobsWithStrategy(table);
-                } catch (ObjectFactoryException e) {
-                    throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
-                }
-            });
+            tables.flatMap(table -> instance.getTablePropertiesByDeployedId(table.getTableUniqueId()).stream())
+                    .forEach(table -> {
+                        try {
+                            jobCreator.createJobsWithStrategy(table);
+                        } catch (ObjectFactoryException e) {
+                            throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
+                        }
+                    });
         }
 
         @Override

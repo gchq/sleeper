@@ -22,7 +22,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -34,10 +36,13 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 import sleeper.systemtest.dsl.util.WaitForTasks;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
@@ -73,12 +78,17 @@ public class CompactionDsl {
     }
 
     public CompactionDsl createJobs(int expectedJobs, PollWithRetries poll) {
-        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll), driver::triggerCreateJobs);
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll),
+                () -> driver.triggerCreateJobs(instance.streamTableProperties().map(TableProperties::getStatus)));
         return this;
     }
 
     public CompactionDsl createJobsForAllInterleavedWithFakeTables(int expectedJobs, List<String> fakeTables) {
-        // TODO
+        PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1));
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll),
+                () -> driver.triggerCreateJobs(interleave(
+                        instance.streamTableProperties().map(TableProperties::getStatus),
+                        fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false)))));
         return this;
     }
 
@@ -216,5 +226,20 @@ public class CompactionDsl {
 
     private List<FileReference> loadFileReferences() {
         return instance.getStateStore().getFileReferences();
+    }
+
+    private static <T> Stream<T> interleave(Stream<T> streamA, Stream<T> streamB) {
+        Iterator<T> iteratorA = streamA.iterator();
+        Iterator<T> iteratorB = streamB.iterator();
+        List<T> result = new ArrayList<>();
+        while (iteratorA.hasNext() || iteratorB.hasNext()) {
+            if (iteratorA.hasNext()) {
+                result.add(iteratorA.next());
+            }
+            if (iteratorB.hasNext()) {
+                result.add(iteratorB.next());
+            }
+        }
+        return result.stream();
     }
 }

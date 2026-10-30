@@ -19,6 +19,7 @@ package sleeper.systemtest.dsl.compaction;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
+import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
 import java.util.List;
@@ -28,7 +29,7 @@ public interface CompactionDriver {
 
     CompactionJobTracker getJobTracker();
 
-    void triggerCreateJobs();
+    void triggerCreateJobs(Stream<TableStatus> tables);
 
     void forceCreateJobs();
 
