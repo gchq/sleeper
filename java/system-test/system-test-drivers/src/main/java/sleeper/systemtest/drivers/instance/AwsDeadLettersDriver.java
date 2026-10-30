@@ -36,8 +36,8 @@ public class AwsDeadLettersDriver implements DeadLettersDriver {
     }
 
     @Override
-    public List<String> drainTableTriggerQueueForWholeInstance(int expectedMessages, InstanceProperty instanceProperty) {
-        String queueUrl = instance.getInstanceProperties().get(instanceProperty);
+    public List<String> drainQueueForWholeInstance(int expectedMessages, InstanceProperty queueUrlProperty) {
+        String queueUrl = instance.getInstanceProperties().get(queueUrlProperty);
         return drainQueue.drainExpectingMessagesWithRetriesWhenEmpty(expectedMessages, 5, queueUrl)
                 .map(Message::body)
                 .toList();

@@ -17,6 +17,7 @@ package sleeper.systemtest.dsl.instance;
 
 import java.util.List;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_URL;
 
 public class DeadLettersDsl {
@@ -28,7 +29,11 @@ public class DeadLettersDsl {
     }
 
     public List<String> drainCompactionCreationTriggerDLQForWholeInstance(int expectedMessages) {
-        return driver.drainTableTriggerQueueForWholeInstance(expectedMessages, COMPACTION_JOB_CREATION_DLQ_URL);
+        return driver.drainQueueForWholeInstance(expectedMessages, COMPACTION_JOB_CREATION_DLQ_URL);
+    }
+
+    public List<String> drainCompactionCommitDLQForWholeInstance(int expectedMessages) {
+        return driver.drainQueueForWholeInstance(expectedMessages, COMPACTION_COMMIT_DLQ_URL);
     }
 
 }

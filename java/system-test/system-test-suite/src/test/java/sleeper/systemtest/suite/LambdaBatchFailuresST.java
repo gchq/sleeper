@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.compaction.StreamFakeCompactions;
@@ -107,10 +108,18 @@ public class LambdaBatchFailuresST {
 
         // When we submit commits for those jobs, interleaved with invalid jobs that do not parse
         sleeper.compaction().sendFakeCommitsInterleavedWithInvalid(compactions,
-                List.of("invalid-1", "invalid-2", "invalid-3", "invalid-4", "invalid-5"));
+                List.of("invalid-1", "invalid-2", "invalid-3", "invalid-4", "invalid-5"))
+                .waitForJobsToCommit();
 
         // Then the compactions are committed
+        assertThat(sleeper.tableFiles().referencesByTable())
+                .hasSize(5)
+                .allSatisfy((table, references) -> assertThat(references)
+                        .extracting(FileReference::getFilename)
+                        .containsExactly("output-1.parquet", "output-2.parquet", "output-3.parquet", "output-4.parquet", "output-5.parquet"));
         // And the messages for the invalid jobs appear on the dead letter queue
+        assertThat(sleeper.deadLetters().drainCompactionCommitDLQForWholeInstance(5))
+                .containsExactlyInAnyOrder("invalid-1", "invalid-2", "invalid-3", "invalid-4", "invalid-5");
     }
 
     @Test

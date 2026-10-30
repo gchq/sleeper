@@ -21,6 +21,6 @@ import java.util.List;
 
 public interface DeadLettersDriver {
 
-    List<String> drainTableTriggerQueueForWholeInstance(int expectedMessages, InstanceProperty instanceProperty);
+    List<String> drainQueueForWholeInstance(int expectedMessages, InstanceProperty queueUrlProperty);
 
 }

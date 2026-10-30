@@ -164,6 +164,11 @@ public class CompactionDsl {
         return this;
     }
 
+    public CompactionDsl waitForJobsToCommit() {
+        waitForJobs.waitForJobsToCommit(lastJobIds);
+        return this;
+    }
+
     public CompactionDsl waitForJobsToCommit(PollWithRetries poll) {
         waitForJobs.waitForJobsToCommit(lastJobIds, poll);
         return this;
