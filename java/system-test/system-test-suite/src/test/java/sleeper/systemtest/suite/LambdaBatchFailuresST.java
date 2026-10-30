@@ -18,11 +18,21 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow2;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.LongStream;
+
+import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BATCHING;
 
 @SystemTest
@@ -32,15 +42,30 @@ public class LambdaBatchFailuresST {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
-        // Given an instance configured to process multiple tables in a single lambda invocation
+        // Given an instance configured to process 10 messages in a single lambda invocation
         sleeper.connectToInstanceNoTables(BATCHING);
     }
 
     @Test
-    void shouldReportFailureCreatingCompactionJobsForSomeTables() {
+    void shouldReportFailureCreatingCompactionJobsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with files to be compacted
+        sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false",
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "2"));
+        sleeper.tables().forEach(() -> {
+            String tableId = sleeper.tableProperties().get(TABLE_ID);
+            sleeper.sourceFiles().inDataBucket().writeSketches()
+                    .createWithNumberedRows(tableId + "-1.parquet", LongStream.range(0, 10))
+                    .createWithNumberedRows(tableId + "-2.parquet", LongStream.range(0, 10));
+            sleeper.ingest().toStateStore()
+                    .addFileOnEveryPartition(tableId + "-1.parquet", 10)
+                    .addFileOnEveryPartition(tableId + "-2.parquet", 10);
+        });
 
         // When we trigger compaction creation for the tables, interleaved with non-existent tables
+        sleeper.compaction().createJobsForAllInterleavedWithFakeTables(5,
+                List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"));
 
         // Then the compactions run
         // And the messages for the non-existent tables appear on the dead letter queue

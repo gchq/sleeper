@@ -77,6 +77,11 @@ public class CompactionDsl {
         return this;
     }
 
+    public CompactionDsl createJobsForAllInterleavedWithFakeTables(int expectedJobs, List<String> fakeTables) {
+        // TODO
+        return this;
+    }
+
     public CompactionDsl putCurrentTablesOnlineUntilJobsAreCreated(int expectedJobs) {
         putCurrentTablesOnlineWaitForJobCreation(expectedJobs);
         instance.updateTableProperties(Map.of(TABLE_ONLINE, "false"));
