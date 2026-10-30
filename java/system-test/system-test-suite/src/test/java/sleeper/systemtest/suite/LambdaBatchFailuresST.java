@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -64,10 +65,15 @@ public class LambdaBatchFailuresST {
         });
 
         // When we trigger compaction creation for the tables, interleaved with non-existent tables
-        sleeper.compaction().createJobsForAllInterleavedWithFakeTables(5,
-                List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"));
+        sleeper.compaction()
+                .createJobsForAllInterleavedWithFakeTables(5,
+                        List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))
+                .waitForJobs();
 
         // Then the compactions run
+        assertThat(sleeper.tableFiles().referencesByTable())
+                .hasSize(5)
+                .allSatisfy((table, references) -> assertThat(references).hasSize(1));
         // And the messages for the non-existent tables appear on the dead letter queue
     }
 
