@@ -44,6 +44,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CL
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
+import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BATCHING;
@@ -192,11 +193,11 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldReportFailureDeletingSnapshotsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with state store transactions
         sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
-                TABLE_ONLINE, "false"));
+                TABLE_ONLINE, "false",
+                TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, "0"));
         sleeper.tables().forEach(() -> {
             PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
                     .rootFirst("root")
@@ -220,6 +221,8 @@ public class LambdaBatchFailuresST {
         });
 
         // When we trigger snapshot deletion for the tables, interleaved with non-existent tables
+        sleeper.stateStore().invokeSnapshotDeletionForAllInterleavedWithFakeTables(
+                List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"));
 
         // Then the snapshots are deleted
         // And the messages for the non-existent tables appear on the dead letter queue

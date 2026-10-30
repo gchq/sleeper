@@ -34,6 +34,10 @@ public class NoSnapshotsDriver implements SnapshotsDriver {
     }
 
     @Override
+    public void triggerDeleteSnapshots(Stream<TableStatus> tables) {
+    }
+
+    @Override
     public Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
         throw new UnsupportedOperationException(
                 "Requested loading files snapshot for instance " + instanceProperties.get(ID) +

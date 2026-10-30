@@ -104,6 +104,13 @@ public class StateStoreDsl {
         return this;
     }
 
+    public StateStoreDsl invokeSnapshotDeletionForAllInterleavedWithFakeTables(List<String> fakeTables) {
+        snapshotsDriver.triggerDeleteSnapshots(StreamUtils.interleave(
+                context.instance().streamTableProperties().map(TableProperties::getStatus),
+                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
+        return this;
+    }
+
     public AllReferencesToAllFiles waitForFilesSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<AllReferencesToAllFiles> condition) {
         return new WaitForSnapshot(context.instance(), snapshotsDriver)
                 .waitForFilesSnapshot(intervalAndPollingTimeout, condition);

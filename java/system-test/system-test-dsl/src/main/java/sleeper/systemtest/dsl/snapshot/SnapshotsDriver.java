@@ -28,6 +28,8 @@ public interface SnapshotsDriver {
 
     void triggerCreateSnapshots(Stream<TableStatus> tables);
 
+    void triggerDeleteSnapshots(Stream<TableStatus> tables);
+
     Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
 
     Optional<PartitionTree> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
