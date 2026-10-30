@@ -21,6 +21,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_DLQ_URL;
 
 public class DeadLettersDsl {
 
@@ -44,6 +45,10 @@ public class DeadLettersDsl {
 
     public List<String> drainSnapshotCreationTriggerDLQForWholeInstance(int expectedMessages) {
         return driver.drainQueueForWholeInstance(expectedMessages, TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL);
+    }
+
+    public List<String> drainSnapshotDeletionTriggerDLQForWholeInstance(int expectedMessages) {
+        return driver.drainQueueForWholeInstance(expectedMessages, TRANSACTION_LOG_SNAPSHOT_DELETION_DLQ_URL);
     }
 
 }

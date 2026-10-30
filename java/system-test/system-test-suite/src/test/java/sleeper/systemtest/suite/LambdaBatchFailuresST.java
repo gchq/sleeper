@@ -25,7 +25,6 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.compaction.StreamFakeCompactions;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
@@ -33,7 +32,6 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow2;
 
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -180,12 +178,9 @@ public class LambdaBatchFailuresST {
 
         // Then the snapshots are created
         sleeper.tables().forEach(() -> {
-            sleeper.stateStore().waitForPartitionsSnapshot(
-                    PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
-                    snapshot -> snapshot.getLeafPartitions().size() == 2);
-            sleeper.stateStore().waitForFilesSnapshot(
-                    PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
-                    snapshot -> snapshot.getFiles().size() == 1);
+            sleeper.stateStore()
+                    .waitForPartitionsSnapshot(snapshot -> snapshot.getLeafPartitions().size() == 2)
+                    .waitForFilesSnapshot(snapshot -> snapshot.getFiles().size() == 1);
         });
         // And the messages for the non-existent tables appear on the dead letter queue
         assertThat(sleeper.deadLetters().drainSnapshotCreationTriggerDLQForWholeInstance(5))
@@ -212,12 +207,9 @@ public class LambdaBatchFailuresST {
         // And snapshots are created
         sleeper.stateStore().invokeSnapshotCreation();
         sleeper.tables().forEach(() -> {
-            sleeper.stateStore().waitForPartitionsSnapshot(
-                    PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
-                    snapshot -> snapshot.getLeafPartitions().size() == 2);
-            sleeper.stateStore().waitForFilesSnapshot(
-                    PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
-                    snapshot -> snapshot.getFiles().size() == 1);
+            sleeper.stateStore()
+                    .waitForPartitionsSnapshot(snapshot -> snapshot.getLeafPartitions().size() == 2)
+                    .waitForFilesSnapshot(snapshot -> snapshot.getFiles().size() == 1);
         });
 
         // When we trigger snapshot deletion for the tables, interleaved with non-existent tables
@@ -225,7 +217,12 @@ public class LambdaBatchFailuresST {
                 List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"));
 
         // Then the snapshots are deleted
+        sleeper.tables().forEach(() -> {
+            sleeper.stateStore().waitForNoFilesSnapshot().waitForNoPartitionsSnapshot();
+        });
         // And the messages for the non-existent tables appear on the dead letter queue
+        assertThat(sleeper.deadLetters().drainSnapshotDeletionTriggerDLQForWholeInstance(5))
+                .containsExactlyInAnyOrder("missing-1", "missing-2", "missing-3", "missing-4", "missing-5");
     }
 
     @Test

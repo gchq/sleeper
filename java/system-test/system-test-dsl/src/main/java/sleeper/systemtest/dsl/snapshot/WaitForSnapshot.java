@@ -59,6 +59,26 @@ public class WaitForSnapshot {
         }
     }
 
+    public void waitForNoFilesSnapshot(PollWithRetries poll) {
+        LOGGER.info("Waiting until no files snapshot is present");
+        try {
+            poll.pollUntil("no files snapshot is present", () -> loadLatestFilesSnapshot().isEmpty());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void waitForNoPartitionsSnapshot(PollWithRetries poll) {
+        LOGGER.info("Waiting until no partitions snapshot is present");
+        try {
+            poll.pollUntil("no partitions snapshot is present", () -> loadLatestPartitionsSnapshot().isEmpty());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
     private Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot() {
         Optional<AllReferencesToAllFiles> snapshotOpt = driver.loadLatestFilesSnapshot(
                 instance.getInstanceProperties(), instance.getTableProperties());

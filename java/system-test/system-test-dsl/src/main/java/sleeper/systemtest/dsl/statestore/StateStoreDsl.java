@@ -31,6 +31,7 @@ import sleeper.systemtest.dsl.snapshot.WaitForSnapshot;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.StreamUtils;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -111,14 +112,36 @@ public class StateStoreDsl {
         return this;
     }
 
+    public StateStoreDsl waitForFilesSnapshot(Predicate<AllReferencesToAllFiles> condition) {
+        snapshotWaits().waitForFilesSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)), condition);
+        return this;
+    }
+
+    public StateStoreDsl waitForPartitionsSnapshot(Predicate<PartitionTree> condition) {
+        snapshotWaits().waitForPartitionsSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)), condition);
+        return this;
+    }
+
     public AllReferencesToAllFiles waitForFilesSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<AllReferencesToAllFiles> condition) {
-        return new WaitForSnapshot(context.instance(), snapshotsDriver)
-                .waitForFilesSnapshot(intervalAndPollingTimeout, condition);
+        return snapshotWaits().waitForFilesSnapshot(intervalAndPollingTimeout, condition);
     }
 
     public PartitionTree waitForPartitionsSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<PartitionTree> condition) {
-        return new WaitForSnapshot(context.instance(), snapshotsDriver)
-                .waitForPartitionsSnapshot(intervalAndPollingTimeout, condition);
+        return snapshotWaits().waitForPartitionsSnapshot(intervalAndPollingTimeout, condition);
+    }
+
+    public StateStoreDsl waitForNoFilesSnapshot() {
+        snapshotWaits().waitForNoFilesSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
+        return this;
+    }
+
+    public StateStoreDsl waitForNoPartitionsSnapshot() {
+        snapshotWaits().waitForNoPartitionsSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
+        return this;
+    }
+
+    private WaitForSnapshot snapshotWaits() {
+        return new WaitForSnapshot(context.instance(), snapshotsDriver);
     }
 
 }
