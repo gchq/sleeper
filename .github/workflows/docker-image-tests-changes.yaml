@@ -4,6 +4,8 @@ on:
     paths:
       - 'rust/**' # We've seen Rust failures because of code built against a different glibc version than is present in the image
       - 'scripts/build/**'
+      - 'java/**/DockerImageTestBase.java'
+      - 'java/**/*DockerImageST.java'
       - '.github/workflows/docker-image-tests.yaml'
 
 jobs:
