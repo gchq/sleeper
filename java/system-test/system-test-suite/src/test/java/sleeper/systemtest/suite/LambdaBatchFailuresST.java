@@ -69,6 +69,7 @@ public class LambdaBatchFailuresST {
         sleeper.compaction()
                 .createJobsForAllInterleavedWithFakeTables(5,
                         List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))
+                .waitForTasks(1)
                 .waitForJobs();
 
         // Then the compactions run
