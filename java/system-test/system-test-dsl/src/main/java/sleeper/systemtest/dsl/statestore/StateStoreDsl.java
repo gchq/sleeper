@@ -91,6 +91,12 @@ public class StateStoreDsl {
                                 .collect(toSet()));
     }
 
+    public StateStoreDsl invokeSnapshotCreation() {
+        snapshotsDriver.triggerCreateSnapshots(
+                context.instance().streamTableProperties().map(TableProperties::getStatus));
+        return this;
+    }
+
     public StateStoreDsl invokeSnapshotCreationForAllInterleavedWithFakeTables(List<String> fakeTables) {
         snapshotsDriver.triggerCreateSnapshots(StreamUtils.interleave(
                 context.instance().streamTableProperties().map(TableProperties::getStatus),

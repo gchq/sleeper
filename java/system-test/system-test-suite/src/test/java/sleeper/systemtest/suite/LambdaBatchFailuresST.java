@@ -193,8 +193,31 @@ public class LambdaBatchFailuresST {
 
     @Test
     @Disabled("TODO")
-    void shouldReportFailureDeletingSnapshotsForSomeTables() {
-        // Given 5 Sleeper tables with state store snapshots ready to be deleted
+    void shouldReportFailureDeletingSnapshotsForSomeTables(SleeperDsl sleeper) {
+        // Given 5 Sleeper tables with state store transactions
+        sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false"));
+        sleeper.tables().forEach(() -> {
+            PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "split")
+                    .buildTree();
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+            sleeper.partitioning().setPartitions(partitions);
+            sleeper.stateStore().fakeCommits().setupStateStore(store -> {
+                update(store).addFile(fileFactory.rootFile("test.parquet", 10));
+            });
+        });
+        // And snapshots are created
+        sleeper.stateStore().invokeSnapshotCreation();
+        sleeper.tables().forEach(() -> {
+            sleeper.stateStore().waitForPartitionsSnapshot(
+                    PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
+                    snapshot -> snapshot.getLeafPartitions().size() == 2);
+            sleeper.stateStore().waitForFilesSnapshot(
+                    PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
+                    snapshot -> snapshot.getFiles().size() == 1);
+        });
 
         // When we trigger snapshot deletion for the tables, interleaved with non-existent tables
 
