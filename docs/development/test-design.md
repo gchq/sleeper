@@ -62,7 +62,7 @@ interface, and a test fake can implement that interface as a class that's a wrap
 e.g. HashMap or ArrayList. Any queries against the database can also be implemented in-memory in the test fake.
 
 That lets us minimise the tests that need to run against the database. In Sleeper we do this with various data stores,
-usually DynamoDB and S3. We can test our DynamoDB and S3 code separately in integration tests against LocalStack, using
+usually DynamoDB and S3. We can test our DynamoDB and S3 code separately in integration tests against a local AWS, using
 Testcontainers.
 
 For a simpler example, when we want to send a message to an SQS queue, we would write an interface with a method to send
@@ -73,7 +73,7 @@ We avoid using Mockito or other mocking frameworks because they force us to coup
 using an in-memory implementation as a test fake, it makes it much easier to refactor e.g. method signatures that you
 would otherwise need to mock.
 
-We use WireMock in cases where we can't use LocalStack, so that we can test real network calls but fake the server when
+We use WireMock in cases where we can't use a local AWS, so that we can test real network calls but fake the server when
 a real implementation is not available.
 
 ### Entrypoints and helper methods
@@ -147,7 +147,7 @@ public class CompactionCommitBatcherTest {
 
 }
 
-public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
+public class SqsFifoStateStoreCommitRequestSenderIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));

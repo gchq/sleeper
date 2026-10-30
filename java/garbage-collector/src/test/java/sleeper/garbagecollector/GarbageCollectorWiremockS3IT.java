@@ -47,7 +47,7 @@ import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELA
 import static sleeper.core.statestore.FilesReportTestHelper.referencedAndUnreferencedFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.referencedFilesReport;
 import static sleeper.core.util.ThreadSleepTestHelper.recordWaits;
-import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
+import static sleeper.local.aws.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
 
 @WireMockTest
 class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {

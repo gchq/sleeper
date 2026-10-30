@@ -1,0 +1,106 @@
+/*
+ * Copyright 2022-2026 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.systemtest.drivers.testutil;
+
+import software.amazon.awssdk.regions.Region;
+
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
+import sleeper.local.aws.test.SleeperLocalAwsClients;
+import sleeper.local.aws.test.SleeperLocalAwsContainer;
+import sleeper.systemtest.drivers.bulkexport.AwsBulkExportDriver;
+import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
+import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
+import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
+import sleeper.systemtest.dsl.compaction.CompactionDriver;
+import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
+import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
+import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
+import sleeper.systemtest.dsl.instance.SystemTestParameters;
+import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
+import sleeper.systemtest.dsl.util.NoSnapshotsDriver;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
+
+import static sleeper.local.aws.test.LocalAwsHadoopConfigurationProvider.configureHadoop;
+
+public class LocalAwsSystemTestDrivers extends AwsSystemTestDrivers {
+    private final SystemTestClients clients;
+
+    private LocalAwsSystemTestDrivers(SystemTestClients clients) {
+        super(clients);
+        this.clients = clients;
+    }
+
+    public static LocalAwsSystemTestDrivers fromContainer() {
+        return new LocalAwsSystemTestDrivers(SystemTestClients.builder()
+                .region(Region.of(SleeperLocalAwsContainer.INSTANCE.getRegion()))
+                .sts(SleeperLocalAwsClients.STS_CLIENT)
+                .s3(SleeperLocalAwsClients.S3_CLIENT)
+                .s3Async(SleeperLocalAwsClients.S3_ASYNC_CLIENT)
+                .dynamo(SleeperLocalAwsClients.DYNAMO_CLIENT)
+                .sqs(SleeperLocalAwsClients.SQS_CLIENT)
+                .dataFusionAwsConfig(() -> DataFusionAwsConfig.overrideEndpoint(SleeperLocalAwsContainer.INSTANCE.getEndpoint().toString()))
+                .configureHadoopSetter(conf -> configureHadoop(conf, SleeperLocalAwsContainer.INSTANCE))
+                .build());
+    }
+
+    @Override
+    public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
+        return new LocalAwsSystemTestDeploymentDriver(parameters, clients);
+    }
+
+    @Override
+    public SleeperInstanceDriver instance(SystemTestParameters parameters) {
+        return new LocalAwsSleeperInstanceDriver(parameters, clients);
+    }
+
+    @Override
+    public SleeperTablesDriver tables(SystemTestParameters parameters) {
+        return new LocalAwsSleeperTablesDriver(clients);
+    }
+
+    @Override
+    public CompactionDriver compaction(SystemTestContext context) {
+        return new AwsCompactionDriver(context.instance(), clients,
+                AwsDrainSqsQueue.forLocalAwsTests(clients.getSqs()));
+    }
+
+    public BulkExportDriver bulkExport(SystemTestContext context) {
+        return new AwsBulkExportDriver(context, clients);
+    }
+
+    @Override
+    public SnapshotsDriver snapshots() {
+        return new NoSnapshotsDriver();
+    }
+
+    @Override
+    public PollWithRetriesDriver pollWithRetries() {
+        return PollWithRetriesDriver.noWaits();
+    }
+
+    @Override
+    public AssumeAdminRoleDriver assumeAdminRole() {
+        return properties -> this;
+    }
+
+    public SystemTestClients clients() {
+        return clients;
+    }
+}

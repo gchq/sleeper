@@ -26,7 +26,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.testutils.SketchesDeciles;
 
@@ -36,7 +36,7 @@ import java.util.Map;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class HadoopSketchesStoreIT extends LocalStackTestBase {
+public class HadoopSketchesStoreIT extends LocalAwsTestBase {
     @TempDir
     public java.nio.file.Path folder;
 

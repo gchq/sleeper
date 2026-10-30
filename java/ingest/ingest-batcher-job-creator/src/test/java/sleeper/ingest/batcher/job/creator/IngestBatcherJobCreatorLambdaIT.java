@@ -30,7 +30,7 @@ import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStoreCreator;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.time.Instant;
 import java.util.List;
@@ -48,7 +48,7 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.ingest.batcher.core.testutil.IngestBatcherTestHelper.jobIdSupplier;
 import static sleeper.ingest.batcher.core.testutil.IngestBatcherTestHelper.timeSupplier;
 
-public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
+public class IngestBatcherJobCreatorLambdaIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));

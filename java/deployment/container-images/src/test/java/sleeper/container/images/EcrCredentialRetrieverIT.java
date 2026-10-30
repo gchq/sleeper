@@ -26,7 +26,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.findUnmatchedReque
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
+import static sleeper.local.aws.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
 public class EcrCredentialRetrieverIT {

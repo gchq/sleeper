@@ -34,7 +34,7 @@
         <module>docker-lambda</module>
         <module>dynamodb-tools</module>
         <module>foreign-bridge</module>
-        <module>localstack-test</module>
+        <module>local-aws-test</module>
         <module>parquet</module>
         <module>sketches</module>
     </modules>

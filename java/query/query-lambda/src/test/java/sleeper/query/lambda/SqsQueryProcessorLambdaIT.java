@@ -56,7 +56,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.query.core.model.Query;
@@ -111,7 +111,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.query.core.tracker.QueryState.COMPLETED;
 import static sleeper.query.core.tracker.QueryState.IN_PROGRESS;
 
-public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
+public class SqsQueryProcessorLambdaIT extends LocalAwsTestBase {
 
     @TempDir
     public java.nio.file.Path tempDir;

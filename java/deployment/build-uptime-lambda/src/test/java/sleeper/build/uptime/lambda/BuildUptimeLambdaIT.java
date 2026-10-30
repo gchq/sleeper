@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -43,10 +43,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.build.uptime.lambda.WiremockTestHelper.wiremockClient;
+import static sleeper.local.aws.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
-public class BuildUptimeLambdaIT extends LocalStackTestBase {
+public class BuildUptimeLambdaIT extends LocalAwsTestBase {
 
     private final BuildUptimeEventSerDe serDe = new BuildUptimeEventSerDe();
     private BuildUptimeLambda lambda;
@@ -55,8 +55,8 @@ public class BuildUptimeLambdaIT extends LocalStackTestBase {
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
         lambda = new BuildUptimeLambda(
-                wiremockClient(runtimeInfo, Ec2Client.builder()),
-                wiremockClient(runtimeInfo, CloudWatchEventsClient.builder()),
+                wiremockAwsV2Client(runtimeInfo, Ec2Client.builder()),
+                wiremockAwsV2Client(runtimeInfo, CloudWatchEventsClient.builder()),
                 s3Client, times::poll);
         stubFor(post("/").willReturn(aResponse().withStatus(200)));
     }

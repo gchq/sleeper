@@ -1,0 +1,9 @@
+{
+  "venvPath": "python",
+  "venv": ".venv",
+  "executionEnvironments": [
+    {
+      "root": "python"
+    }
+  ]
+}

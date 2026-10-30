@@ -37,7 +37,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -58,7 +58,7 @@ import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoR
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class SqsBulkExportProcessorLambdaIT extends LocalStackTestBase {
+public class SqsBulkExportProcessorLambdaIT extends LocalAwsTestBase {
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))

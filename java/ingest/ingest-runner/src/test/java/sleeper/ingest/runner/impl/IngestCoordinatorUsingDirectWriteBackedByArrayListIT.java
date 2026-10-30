@@ -35,7 +35,7 @@ import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.rowbatch.arraylist.ArrayListRowBatchFactory;
 import sleeper.ingest.runner.testutils.RowGenerator;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
@@ -65,7 +65,7 @@ import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.standa
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readRowsFromPartitionDataFile;
 
-public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalStackTestBase {
+public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT extends LocalAwsTestBase {
 
     @TempDir
     public Path temporaryFolder;

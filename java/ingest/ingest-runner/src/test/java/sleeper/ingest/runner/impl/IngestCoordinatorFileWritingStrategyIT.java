@@ -38,7 +38,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.ingest.runner.testutils.TestIngestType;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
@@ -75,7 +75,7 @@ import static sleeper.ingest.runner.testutils.ResultVerifier.readRowsFromPartiti
 import static sleeper.ingest.runner.testutils.RowGenerator.genericKey1D;
 import static sleeper.ingest.runner.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
 
-public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
+public class IngestCoordinatorFileWritingStrategyIT extends LocalAwsTestBase {
 
     @TempDir
     public Path temporaryFolder;
