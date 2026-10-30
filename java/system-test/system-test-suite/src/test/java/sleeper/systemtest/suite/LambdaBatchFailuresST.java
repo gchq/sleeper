@@ -128,7 +128,6 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldReportFailureRunningGCForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with files ready for GC
         sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
@@ -142,9 +141,17 @@ public class LambdaBatchFailuresST {
         });
 
         // When we trigger GC for the tables, interleaved with non-existent tables
+        sleeper.garbageCollection().invokeForAllInterleavedWithFakeTables(
+                List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))
+                .waitFor();
 
         // Then the files are garbage collected
+        assertThat(sleeper.tableFiles().referencesByTable())
+                .hasSize(5)
+                .allSatisfy((table, references) -> assertThat(references).hasSize(1));
         // And the messages for the non-existent tables appear on the dead letter queue
+        assertThat(sleeper.deadLetters().drainGarbageCollectionTriggerDLQForWholeInstance(5))
+                .containsExactlyInAnyOrder("missing-1", "missing-2", "missing-3", "missing-4", "missing-5");
     }
 
     @Test
