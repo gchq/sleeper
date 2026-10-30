@@ -88,4 +88,16 @@ public class CompactionJobStatusReporterAllQueryTest extends CompactionJobStatus
         assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
                 .isEqualTo(example("reports/compaction/job/json/multipleInputFiles.json"));
     }
+
+    @Test
+    public void shouldReportCompactionJobStatusWithSuccessAndFailure() throws Exception {
+        // Given
+        List<CompactionJobStatus> statusList = jobSucceededWithFailure();
+
+        // When / Then
+        assertThat(verboseReportString(StandardCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
+                .isEqualTo(example("reports/compaction/job/standard/all/jobWithSuccessAndFailure.txt"));
+        assertThat(verboseReportString(JsonCompactionJobStatusReporter::new, statusList, JobQueryType.ALL))
+                .isEqualTo(example("reports/compaction/job/json/jobWithSuccessAndFailure.json"));
+    }
 }

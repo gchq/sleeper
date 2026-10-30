@@ -53,6 +53,18 @@ public enum CompactionJobUpdateTypeInRun {
     }
 
     /**
+     * Checks if a run has been committed, based on its update types.
+     *
+     * @param  run the run
+     * @return     true if the run has been committed to the state store
+     */
+    public static boolean isRunCommitted(JobRun run) {
+        return run.getStatusUpdates().stream()
+                .map(CompactionJobUpdateTypeInRun::typeOfUpdateInRun)
+                .anyMatch(type -> type == COMMITTED);
+    }
+
+    /**
      * Gets the update type of a status update that occurred during a run.
      *
      * @param  update                   the status update

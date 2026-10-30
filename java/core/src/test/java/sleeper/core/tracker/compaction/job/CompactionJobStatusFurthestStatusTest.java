@@ -169,6 +169,30 @@ public class CompactionJobStatusFurthestStatusTest {
     }
 
     @Test
+    void shouldReportJobSucceededWhenSuccessfulRunAlsoHadFailure() {
+        // Given
+        CompactionJobCreatedStatus filesAssigned = CompactionJobCreatedStatus.builder()
+                .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
+                .partitionId("partition1")
+                .inputFilesCount(11)
+                .build();
+        CompactionJobStartedStatus started = compactionStartedStatus(
+                Instant.parse("2023-03-22T15:36:03Z"));
+        CompactionJobFinishedStatus finished = compactionFinishedStatus(
+                summary(started, Duration.ofSeconds(30), 200L, 100L));
+        CompactionJobCommittedStatus committed = compactionCommittedStatus(
+                Instant.parse("2023-03-22T15:36:35Z"));
+        JobRunFailedStatus failed = failedStatus(
+                Instant.parse("2023-03-22T15:36:36Z"), List.of("Some failure"));
+
+        // When
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(filesAssigned, started, finished, committed, failed);
+
+        // Then
+        assertThat(status.getFurthestStatusType()).isEqualTo(FINISHED);
+    }
+
+    @Test
     void shouldReportJobInProgressWhenRetryingAfterFailure() {
         // Given
         CompactionJobCreatedStatus filesAssigned = CompactionJobCreatedStatus.builder()
