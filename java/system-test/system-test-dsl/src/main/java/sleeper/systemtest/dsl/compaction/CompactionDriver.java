@@ -17,7 +17,6 @@
 package sleeper.systemtest.dsl.compaction;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
@@ -39,7 +38,7 @@ public interface CompactionDriver {
 
     List<CompactionJob> drainJobsQueueForWholeInstance(int expectedJobs);
 
-    void sendCompactionCommits(Stream<CompactionCommitMessage> commits);
+    void sendCompactionCommits(Stream<CompactionCommitMessageWrapper> commits);
 
     String sendCompactionBatchGetKey(List<CompactionJob> jobs);
 

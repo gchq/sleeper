@@ -183,13 +183,17 @@ public class CompactionDsl {
     }
 
     public CompactionDsl sendFakeCommits(StreamFakeCompactions compactions) {
-        baseDriver.sendCompactionCommits(compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID)));
+        baseDriver.sendCompactionCommits(
+                compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID))
+                        .map(CompactionCommitMessageWrapper::from));
         lastJobIds = compactions.listJobIds();
         return this;
     }
 
     public CompactionDsl sendFakeCommitsInterleavedWithInvalid(StreamFakeCompactions compactions, List<String> invalidMessages) {
-        baseDriver.sendCompactionCommits(compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID)));
+        baseDriver.sendCompactionCommits(
+                compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID))
+                        .map(CompactionCommitMessageWrapper::from));
         lastJobIds = compactions.listJobIds();
         return this;
     }
