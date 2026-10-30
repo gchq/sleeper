@@ -18,6 +18,7 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionTree;
@@ -30,6 +31,7 @@ import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow2;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -37,6 +39,7 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
@@ -47,6 +50,8 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BATCHING;
 // Slow because we need to deploy a separate instance to configure batching sizes over the default of 1.
 @Slow2
 public class LambdaBatchFailuresST {
+    @TempDir
+    private Path tempDir;
 
     @BeforeEach
     void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
@@ -124,8 +129,17 @@ public class LambdaBatchFailuresST {
 
     @Test
     @Disabled("TODO")
-    void shouldReportFailureRunningGCForSomeTables() {
+    void shouldReportFailureRunningGCForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with files ready for GC
+        sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false",
+                GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
+        sleeper.tables().forEach(() -> {
+            sleeper.ingest().direct(tempDir)
+                    .splitIngests(2, sleeper.scrambleNumberedRows(
+                            LongStream.range(0, 10)));
+            sleeper.stateStore().fakeCommits().compactAllFilesToOnePerPartition();
+        });
 
         // When we trigger GC for the tables, interleaved with non-existent tables
 
