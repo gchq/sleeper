@@ -191,9 +191,10 @@ public class CompactionDsl {
     }
 
     public CompactionDsl sendFakeCommitsInterleavedWithInvalid(StreamFakeCompactions compactions, List<String> invalidMessages) {
-        baseDriver.sendCompactionCommits(
+        baseDriver.sendCompactionCommits(interleave(
                 compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID))
-                        .map(CompactionCommitMessageWrapper::from));
+                        .map(CompactionCommitMessageWrapper::from),
+                invalidMessages.stream().map(CompactionCommitMessageWrapper::fake)));
         lastJobIds = compactions.listJobIds();
         return this;
     }
