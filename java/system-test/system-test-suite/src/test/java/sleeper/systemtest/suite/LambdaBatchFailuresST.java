@@ -20,7 +20,11 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperDsl;
+import sleeper.systemtest.dsl.compaction.StreamFakeCompactions;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow2;
@@ -34,6 +38,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BATCHING;
 
@@ -82,11 +87,27 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
-    @Disabled("TODO")
-    void shouldReportFailureCommittingSomeCompactionJobs() {
+    void shouldReportFailureCommittingSomeCompactionJobs(SleeperDsl sleeper) {
         // Given a Sleeper table with 5 compaction jobs ready to be committed to the state store
+        sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false"));
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        sleeper.partitioning().setPartitions(partitions);
+        StreamFakeCompactions compactions = StreamFakeCompactions.builder()
+                .numCompactions(5)
+                .generateInputFiles(i -> List.of(fileFactory.rootFile("input-" + i + ".parquet", 100)))
+                .generateJobId(i -> "job-" + i)
+                .generateOutputFile(i -> fileFactory.rootFile("output-" + i + ".parquet", 100))
+                .build();
+        sleeper.stateStore().fakeCommits().setupStateStore(store -> {
+            compactions.streamAddFiles().forEach(update(store)::addTransaction);
+            compactions.streamAssignJobIds().forEach(update(store)::addTransaction);
+        });
 
         // When we submit commits for those jobs, interleaved with invalid jobs that do not parse
+        sleeper.compaction().sendFakeCommitsInterleavedWithInvalid(compactions,
+                List.of("invalid-1", "invalid-2", "invalid-3", "invalid-4", "invalid-5"));
 
         // Then the compactions are committed
         // And the messages for the invalid jobs appear on the dead letter queue
