@@ -145,6 +145,10 @@ public class WaitForJobs {
         }
     }
 
+    public void waitForJobsToCommit(Collection<String> jobIds) {
+        waitForJobsToCommit(jobIds, DEFAULT_POLL_UNTIL_JOBS_COMMIT);
+    }
+
     public void waitForJobsToCommit(
             Collection<String> jobIds, PollWithRetries pollUntilJobsCommit) {
         InstanceProperties properties = getInstanceProperties.get();

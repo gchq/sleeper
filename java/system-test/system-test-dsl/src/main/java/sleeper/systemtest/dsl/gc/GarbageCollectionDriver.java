@@ -16,7 +16,11 @@
 
 package sleeper.systemtest.dsl.gc;
 
+import sleeper.core.table.TableStatus;
+
+import java.util.stream.Stream;
+
 public interface GarbageCollectionDriver {
 
-    void invokeGarbageCollection();
+    void invokeGarbageCollection(Stream<TableStatus> tables);
 }

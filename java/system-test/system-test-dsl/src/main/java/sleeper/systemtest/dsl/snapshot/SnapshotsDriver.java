@@ -19,10 +19,16 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.table.TableStatus;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface SnapshotsDriver {
+
+    void triggerCreateSnapshots(Stream<TableStatus> tables);
+
+    void triggerDeleteSnapshots(Stream<TableStatus> tables);
 
     Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
 

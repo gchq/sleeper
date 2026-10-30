@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
@@ -28,8 +29,11 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.snapshot.WaitForSnapshot;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
+import sleeper.systemtest.dsl.util.StreamUtils;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -37,8 +41,8 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
-public class StateStoreDSl {
-    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreDSl.class);
+public class StateStoreDsl {
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreDsl.class);
 
     private final SystemTestContext context;
     private final StateStoreCommitterDriver driver;
@@ -46,12 +50,12 @@ public class StateStoreDSl {
     private final SnapshotsDriver snapshotsDriver;
     private final PollWithRetriesDriver pollDriver;
 
-    public StateStoreDSl(SystemTestContext context) {
+    public StateStoreDsl(SystemTestContext context) {
         this.context = context;
         SystemTestDrivers adminDrivers = context.instance().adminDrivers();
         driver = adminDrivers.stateStoreCommitter(context);
         logsDriver = adminDrivers.stateStoreCommitterLogs(context);
-        snapshotsDriver = adminDrivers.snapshots();
+        snapshotsDriver = adminDrivers.snapshots(context);
         pollDriver = adminDrivers.pollWithRetries();
     }
 
@@ -88,14 +92,56 @@ public class StateStoreDSl {
                                 .collect(toSet()));
     }
 
-    public AllReferencesToAllFiles waitForFilesSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<AllReferencesToAllFiles> condition) throws InterruptedException {
-        return new WaitForSnapshot(context.instance(), snapshotsDriver)
-                .waitForFilesSnapshot(intervalAndPollingTimeout, condition);
+    public StateStoreDsl invokeSnapshotCreation() {
+        snapshotsDriver.triggerCreateSnapshots(
+                context.instance().streamTableProperties().map(TableProperties::getStatus));
+        return this;
     }
 
-    public PartitionTree waitForPartitionsSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<PartitionTree> condition) throws InterruptedException {
-        return new WaitForSnapshot(context.instance(), snapshotsDriver)
-                .waitForPartitionsSnapshot(intervalAndPollingTimeout, condition);
+    public StateStoreDsl invokeSnapshotCreationForAllInterleavedWithFakeTables(List<String> fakeTables) {
+        snapshotsDriver.triggerCreateSnapshots(StreamUtils.interleave(
+                context.instance().streamTableProperties().map(TableProperties::getStatus),
+                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
+        return this;
+    }
+
+    public StateStoreDsl invokeSnapshotDeletionForAllInterleavedWithFakeTables(List<String> fakeTables) {
+        snapshotsDriver.triggerDeleteSnapshots(StreamUtils.interleave(
+                context.instance().streamTableProperties().map(TableProperties::getStatus),
+                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
+        return this;
+    }
+
+    public StateStoreDsl waitForFilesSnapshot(Predicate<AllReferencesToAllFiles> condition) {
+        snapshotWaits().waitForFilesSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)), condition);
+        return this;
+    }
+
+    public StateStoreDsl waitForPartitionsSnapshot(Predicate<PartitionTree> condition) {
+        snapshotWaits().waitForPartitionsSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)), condition);
+        return this;
+    }
+
+    public AllReferencesToAllFiles waitForFilesSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<AllReferencesToAllFiles> condition) {
+        return snapshotWaits().waitForFilesSnapshot(intervalAndPollingTimeout, condition);
+    }
+
+    public PartitionTree waitForPartitionsSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<PartitionTree> condition) {
+        return snapshotWaits().waitForPartitionsSnapshot(intervalAndPollingTimeout, condition);
+    }
+
+    public StateStoreDsl waitForNoFilesSnapshot() {
+        snapshotWaits().waitForNoFilesSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
+        return this;
+    }
+
+    public StateStoreDsl waitForNoPartitionsSnapshot() {
+        snapshotWaits().waitForNoPartitionsSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
+        return this;
+    }
+
+    private WaitForSnapshot snapshotWaits() {
+        return new WaitForSnapshot(context.instance(), snapshotsDriver);
     }
 
 }

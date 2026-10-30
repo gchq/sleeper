@@ -16,29 +16,40 @@
 
 package sleeper.systemtest.dsl.gc;
 
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
+import sleeper.systemtest.dsl.util.StreamUtils;
 
 import java.time.Duration;
+import java.util.List;
 
-public class SystemTestGarbageCollection {
+public class GarbageCollectionDsl {
 
     private final GarbageCollectionDriver driver;
     private final PollWithRetriesDriver pollDriver;
     private final SystemTestInstanceContext instance;
 
-    public SystemTestGarbageCollection(SystemTestContext context) {
+    public GarbageCollectionDsl(SystemTestContext context) {
         SystemTestDrivers instanceAdminDrivers = context.instance().adminDrivers();
         driver = instanceAdminDrivers.garbageCollection(context);
         pollDriver = instanceAdminDrivers.pollWithRetries();
         instance = context.instance();
     }
 
-    public SystemTestGarbageCollection invoke() {
-        driver.invokeGarbageCollection();
+    public GarbageCollectionDsl invoke() {
+        driver.invokeGarbageCollection(instance.streamTableProperties().map(TableProperties::getStatus));
+        return this;
+    }
+
+    public GarbageCollectionDsl invokeForAllInterleavedWithFakeTables(List<String> fakeTables) {
+        driver.invokeGarbageCollection(StreamUtils.interleave(
+                instance.streamTableProperties().map(TableProperties::getStatus),
+                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
         return this;
     }
 

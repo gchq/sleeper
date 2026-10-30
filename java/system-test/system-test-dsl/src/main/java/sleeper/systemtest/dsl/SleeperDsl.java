@@ -26,15 +26,16 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.systemtest.dsl.bulkexport.BulkExportDsl;
 import sleeper.systemtest.dsl.compaction.CompactionDsl;
-import sleeper.systemtest.dsl.gc.SystemTestGarbageCollection;
+import sleeper.systemtest.dsl.gc.GarbageCollectionDsl;
 import sleeper.systemtest.dsl.ingest.EksBulkImportCheckDsl;
 import sleeper.systemtest.dsl.ingest.IngestDsl;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
+import sleeper.systemtest.dsl.instance.DeadLettersDsl;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.instance.SystemTestTableFiles;
-import sleeper.systemtest.dsl.instance.SystemTestTables;
+import sleeper.systemtest.dsl.instance.SystemTestTablesDsl;
 import sleeper.systemtest.dsl.metrics.TableMetricsDsl;
 import sleeper.systemtest.dsl.partitioning.PartitioningDsl;
 import sleeper.systemtest.dsl.python.PythonApiDsl;
@@ -46,7 +47,7 @@ import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.sourcedata.LocalFilesDsl;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.sourcedata.SourceFilesDsl;
-import sleeper.systemtest.dsl.statestore.StateStoreDSl;
+import sleeper.systemtest.dsl.statestore.StateStoreDsl;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -144,8 +145,8 @@ public class SleeperDsl {
         return new CompactionDsl(context, baseDrivers);
     }
 
-    public SystemTestGarbageCollection garbageCollection() {
-        return new SystemTestGarbageCollection(context);
+    public GarbageCollectionDsl garbageCollection() {
+        return new GarbageCollectionDsl(context);
     }
 
     public ReportingDsl reporting() {
@@ -215,16 +216,20 @@ public class SleeperDsl {
         new SystemTestOptionalStacks(context.instance()).removeOptionalStacks(stacks);
     }
 
-    public StateStoreDSl stateStore() {
-        return new StateStoreDSl(context);
+    public StateStoreDsl stateStore() {
+        return new StateStoreDsl(context);
     }
 
-    public SystemTestTables tables() {
-        return new SystemTestTables(context.instance());
+    public SystemTestTablesDsl tables() {
+        return new SystemTestTablesDsl(context.instance());
     }
 
     public SleeperDsl table(String name) {
         context.instance().setCurrentTable(name);
         return this;
+    }
+
+    public DeadLettersDsl deadLetters() {
+        return new DeadLettersDsl(baseDrivers.deadLetters(context));
     }
 }

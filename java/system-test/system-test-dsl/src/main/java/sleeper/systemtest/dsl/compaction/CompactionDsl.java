@@ -22,7 +22,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -30,6 +32,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.DataFileDuplications;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
+import sleeper.systemtest.dsl.util.StreamUtils;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 import sleeper.systemtest.dsl.util.WaitForTasks;
 
@@ -73,7 +76,17 @@ public class CompactionDsl {
     }
 
     public CompactionDsl createJobs(int expectedJobs, PollWithRetries poll) {
-        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll), driver::triggerCreateJobs);
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll),
+                () -> driver.triggerCreateJobs(instance.streamTableProperties().map(TableProperties::getStatus)));
+        return this;
+    }
+
+    public CompactionDsl createJobsForAllInterleavedWithFakeTables(int expectedJobs, List<String> fakeTables) {
+        PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1));
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll),
+                () -> driver.triggerCreateJobs(StreamUtils.interleave(
+                        instance.streamTableProperties().map(TableProperties::getStatus),
+                        fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false)))));
         return this;
     }
 
@@ -149,6 +162,11 @@ public class CompactionDsl {
         return this;
     }
 
+    public CompactionDsl waitForJobsToCommit() {
+        waitForJobs.waitForJobsToCommit(lastJobIds);
+        return this;
+    }
+
     public CompactionDsl waitForJobsToCommit(PollWithRetries poll) {
         waitForJobs.waitForJobsToCommit(lastJobIds, poll);
         return this;
@@ -168,7 +186,18 @@ public class CompactionDsl {
     }
 
     public CompactionDsl sendFakeCommits(StreamFakeCompactions compactions) {
-        baseDriver.sendCompactionCommits(compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID)));
+        baseDriver.sendCompactionCommits(
+                compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID))
+                        .map(CompactionCommitMessageWrapper::from));
+        lastJobIds = compactions.listJobIds();
+        return this;
+    }
+
+    public CompactionDsl sendFakeCommitsInterleavedWithInvalid(StreamFakeCompactions compactions, List<String> invalidMessages) {
+        baseDriver.sendCompactionCommits(StreamUtils.interleave(
+                compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID))
+                        .map(CompactionCommitMessageWrapper::from),
+                invalidMessages.stream().map(CompactionCommitMessageWrapper::fake)));
         lastJobIds = compactions.listJobIds();
         return this;
     }
