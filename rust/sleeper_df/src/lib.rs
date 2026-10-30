@@ -24,11 +24,15 @@ use crate::{
     },
 };
 use ::log::error;
+use color_eyre::eyre::{bail, eyre};
 #[cfg(doc)]
 use datafusion::arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
-use sleeper_core::{CompletedOutput, run_compaction, run_query, stream_to_ffi_arrow_stream};
+use sleeper_core::{
+    CompletedOutput, run_compaction_with_interval, run_query, stream_to_ffi_arrow_stream,
+};
 use std::ffi::c_int;
+use std::time::Duration;
 
 mod context;
 mod log;
@@ -70,6 +74,7 @@ pub type ProgressCallback = Option<extern "C" fn(usize)>;
 /// | EFAULT | if pointers are NULL
 /// | EINVAL | if can't convert string to Rust string (invalid UTF-8?) |
 /// | EINVAL | if row key field numbers or sort field numbers are empty |
+/// | EINVAL | if progress callback interval is not positive |
 ///
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[unsafe(no_mangle)]
@@ -78,6 +83,7 @@ pub extern "C" fn native_compact(
     input_ptr: *mut FFICommonConfig,
     output_ptr: *mut FFIFileResult,
     callback: ProgressCallback,
+    progress_callback_interval_ms: i64,
 ) -> c_int {
     maybe_cfg_log();
 
@@ -100,10 +106,21 @@ pub extern "C" fn native_compact(
         }
     };
 
+    let interval = match progress_callback_interval(progress_callback_interval_ms) {
+        Ok(i) => i,
+        Err(e) => {
+            error!("{e}");
+            return EINVAL;
+        }
+    };
+
     // Run compaction
-    let result = context
-        .rt
-        .block_on(run_compaction(&details, &context.sleeper_context, callback));
+    let result = context.rt.block_on(run_compaction_with_interval(
+        &details,
+        &context.sleeper_context,
+        callback,
+        interval,
+    ));
     match result {
         Ok(res) => {
             if let Some(data) = unsafe { output_ptr.as_mut() } {
@@ -325,5 +342,53 @@ pub extern "C" fn native_query_file(
             error!("query error {e}");
             -1
         }
+    }
+}
+
+/// Converts a progress callback interval received from Java into a [`Duration`].
+///
+/// Java has no unsigned types, so the interval is received as a signed 64-bit integer.
+///
+/// # Errors
+/// If the interval is not positive.
+fn progress_callback_interval(interval_ms: i64) -> Result<Duration, color_eyre::Report> {
+    let millis: u64 = interval_ms.try_into().map_err(|_| {
+        eyre!("Progress callback interval must not be negative, got {interval_ms}ms")
+    })?;
+    if millis == 0 {
+        bail!("Progress callback interval must be positive, got {interval_ms}ms");
+    }
+    Ok(Duration::from_millis(millis))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_convert_positive_progress_callback_interval() {
+        // When
+        let result = progress_callback_interval(100);
+
+        // Then
+        assert_eq!(result.unwrap(), Duration::from_millis(100));
+    }
+
+    #[test]
+    fn should_reject_zero_progress_callback_interval() {
+        // When
+        let result = progress_callback_interval(0);
+
+        // Then
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn should_reject_negative_progress_callback_interval() {
+        // When
+        let result = progress_callback_interval(-1);
+
+        // Then
+        assert!(result.is_err());
     }
 }

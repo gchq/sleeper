@@ -18,6 +18,7 @@ package sleeper.compaction.core.job;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.function.LongConsumer;
 
@@ -31,6 +32,9 @@ import java.util.function.LongConsumer;
  */
 public class CompactionRequest {
 
+    /** Default interval between progress callback invocations, matching the Rust default. */
+    public static final Duration DEFAULT_PROGRESS_CALLBACK_INTERVAL = Duration.ofSeconds(5);
+
     private static final LongConsumer NO_OP_PROGRESS_CALLBACK = rows -> {
     };
 
@@ -38,12 +42,19 @@ public class CompactionRequest {
     private final TableProperties tableProperties;
     private final Region region;
     private final LongConsumer progressCallback;
+    private final Duration progressCallbackInterval;
 
     private CompactionRequest(Builder builder) {
         this.job = Objects.requireNonNull(builder.job, "job must not be null");
         this.tableProperties = Objects.requireNonNull(builder.tableProperties, "tableProperties must not be null");
         this.region = Objects.requireNonNull(builder.region, "region must not be null");
         this.progressCallback = builder.progressCallback == null ? NO_OP_PROGRESS_CALLBACK : builder.progressCallback;
+        this.progressCallbackInterval = builder.progressCallbackInterval == null
+                ? DEFAULT_PROGRESS_CALLBACK_INTERVAL : builder.progressCallbackInterval;
+        if (progressCallbackInterval.toMillis() <= 0) {
+            throw new IllegalArgumentException(
+                    "progressCallbackInterval must be at least 1 millisecond, found " + progressCallbackInterval);
+        }
     }
 
     public static Builder builder() {
@@ -66,11 +77,16 @@ public class CompactionRequest {
         return progressCallback;
     }
 
+    public Duration getProgressCallbackInterval() {
+        return progressCallbackInterval;
+    }
+
     public static class Builder {
         private CompactionJob job;
         private TableProperties tableProperties;
         private Region region;
         private LongConsumer progressCallback;
+        private Duration progressCallbackInterval;
 
         private Builder() {
         }
@@ -103,6 +119,20 @@ public class CompactionRequest {
          */
         public Builder progressCallback(LongConsumer progressCallback) {
             this.progressCallback = progressCallback;
+            return this;
+        }
+
+        /**
+         * Sets the interval between progress callback invocations by the native compaction runner.
+         * <p>
+         * If not set or set to null, the built request will use the default interval of 5 seconds. Must be at least 1
+         * millisecond.
+         *
+         * @param  progressCallbackInterval the interval, or null to use the default
+         * @return                          this builder
+         */
+        public Builder progressCallbackInterval(Duration progressCallbackInterval) {
+            this.progressCallbackInterval = progressCallbackInterval;
             return this;
         }
 

@@ -129,6 +129,12 @@ public class JavaCompactionRunner implements CompactionRunner {
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
     }
 
+    @Override
+    public boolean isProgressMonitored() {
+        // Progress callbacks are only sent after a number of rows are read, not at a regular interval
+        return false;
+    }
+
     private List<CloseableIterator<Row>> createInputIterators(CompactionJob compactionJob, Region region, Schema schema) throws IOException {
         List<CloseableIterator<Row>> inputIterators = new ArrayList<>();
 

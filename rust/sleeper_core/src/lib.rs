@@ -47,6 +47,9 @@ pub use objectstore_ext::s3::{AwsConfig, AwsSecrets};
 /// how many compaction output rows have been written.
 pub type ProgressCallback = extern "C" fn(usize);
 
+/// The default interval between progress callback invocations.
+pub const DEFAULT_PROGRESS_CALLBACK_INTERVAL: Duration = Duration::from_secs(5);
+
 /// Compacts the given Parquet files and reads the schema from the first.
 ///
 /// The `aws_creds` are optional if you are not attempting to read/write files from S3.
@@ -85,11 +88,30 @@ pub type ProgressCallback = extern "C" fn(usize);
 ///
 /// # Errors
 /// There must be at least one input file.
-///
 pub async fn run_compaction(
     config: &CommonConfig<'_>,
     sleeper_context: &Arc<SleeperContext>,
     progress_callback: Option<ProgressCallback>,
+) -> Result<CompactionResult> {
+    run_compaction_with_interval(
+        config,
+        sleeper_context,
+        progress_callback,
+        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
+    )
+    .await
+}
+
+/// Compacts the given Parquet files, as [`run_compaction`], with a specified interval between progress
+/// callback invocations.
+///
+/// # Errors
+/// There must be at least one input file.
+pub async fn run_compaction_with_interval(
+    config: &CommonConfig<'_>,
+    sleeper_context: &Arc<SleeperContext>,
+    progress_callback: Option<ProgressCallback>,
+    callback_interval: Duration,
 ) -> Result<CompactionResult> {
     let sdk_config = sleeper_context.resolve_sdk_config().await.clone();
     let store_factory = config.create_object_store_factory(sdk_config);
@@ -108,7 +130,7 @@ pub async fn run_compaction(
                     () = task_token.cancelled() => {
                         break;
                     }
-                    () = sleep(Duration::from_secs(5)) => {
+                    () = sleep(callback_interval) => {
                         if let Some(row_count) = context_clone.get_compaction_rows_read(&job_id) {
                             callback(row_count);
                         }

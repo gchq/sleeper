@@ -119,7 +119,8 @@ public class ECSCompactionTaskRunner {
                     tablePropertiesProvider, stateStoreProvider, jobTracker, instanceProperties, sqsClient);
             CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider, propertiesReloader,
                     stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
-                    waitForFiles, committerOrLambda, jobTracker, taskTracker, compactionSelector, taskId);
+                    waitForFiles, committerOrLambda, jobTracker, taskTracker, compactionSelector, taskId,
+                    new ExitJvmCompactionTaskTerminator());
             task.run();
         } finally {
             LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));

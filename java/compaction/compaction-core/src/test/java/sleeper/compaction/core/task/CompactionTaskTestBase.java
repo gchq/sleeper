@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.task.CompactionTask.MessageReceiver;
@@ -54,6 +55,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -97,6 +99,14 @@ public class CompactionTaskTestBase {
     protected final List<CompactionCommitMessage> batcherCommitQueue = new ArrayList<>();
     protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();
     private ThreadSleep waiterForFileAssignment = ThreadSleepTestHelper.recordWaits(foundWaitsForFileAssignment);
+    protected final List<String> terminations = new CopyOnWriteArrayList<>();
+    protected CompactionTaskTerminator terminator = terminations::add;
+    private Supplier<Instant> watchdogTimeSupplier = () -> {
+        throw new IllegalStateException("Unexpected watchdog time request");
+    };
+    private ThreadSleep watchdogSleep = millis -> {
+        throw new IllegalStateException("Unexpected watchdog wait");
+    };
 
     @BeforeEach
     void setUpBase() {
@@ -167,8 +177,14 @@ public class CompactionTaskTestBase {
         CompactionRunnerFactory selector = (job, properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,
-                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps), maxTimeAliveJitter, null)
+                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps), maxTimeAliveJitter, null,
+                terminator, watchdogTimeSupplier, watchdogSleep)
                 .run();
+    }
+
+    protected void setWatchdog(Supplier<Instant> timeSupplier, ThreadSleep sleep) {
+        watchdogTimeSupplier = timeSupplier;
+        watchdogSleep = sleep;
     }
 
     private StateStoreWaitForFiles noWaitForFileAssignment() {
@@ -335,12 +351,20 @@ public class CompactionTaskTestBase {
 
     protected CompactionRunner processJobs(ProcessJob... actions) {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
-        return request -> {
-            CompactionJob job = request.getJob();
-            if (getAction.hasNext()) {
-                return getAction.next().run(job);
-            } else {
-                throw new IllegalStateException("Unexpected job: " + job);
+        return new CompactionRunner() {
+            @Override
+            public RowsProcessed compact(CompactionRequest request) {
+                CompactionJob job = request.getJob();
+                if (getAction.hasNext()) {
+                    return getAction.next().run(job);
+                } else {
+                    throw new IllegalStateException("Unexpected job: " + job);
+                }
+            }
+
+            @Override
+            public boolean isProgressMonitored() {
+                return false;
             }
         };
     }

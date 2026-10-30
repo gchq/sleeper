@@ -23,7 +23,6 @@ import java.io.IOException;
 /**
  * An implementation of compaction, to take a number of sorted input files and merge them into one fully sorted file.
  */
-@FunctionalInterface
 public interface CompactionRunner {
     /**
      * Compacts the input files of a compaction job into one output file.
@@ -43,4 +42,13 @@ public interface CompactionRunner {
      * @throws IteratorCreationException a problem creating any configured iterators
      */
     RowsProcessed compact(CompactionRequest request) throws IOException, IteratorCreationException;
+
+    /**
+     * Checks whether the compaction task should monitor progress callbacks from this runner to detect a stalled
+     * compaction. This should only be enabled if progress callbacks are sent regularly regardless of the rate at which
+     * rows are processed.
+     *
+     * @return true if progress should be monitored for stalls
+     */
+    boolean isProgressMonitored();
 }

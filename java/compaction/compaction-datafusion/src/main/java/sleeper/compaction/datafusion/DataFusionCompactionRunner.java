@@ -78,10 +78,11 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         TableProperties tableProperties = request.getTableProperties();
         Region region = request.getRegion();
         LongConsumer progressCallback = request.getProgressCallback();
+        long callbackIntervalMs = request.getProgressCallbackInterval().toMillis();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
         try {
-            RowsProcessed result = invokeDataFusion(job, params, runtime, context, progressCallback);
+            RowsProcessed result = invokeDataFusion(job, params, runtime, context, progressCallback, callbackIntervalMs);
 
             if (result.getRowsWritten() < 1) {
                 Path outputPath = new Path(job.getOutputFile());
@@ -102,6 +103,11 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         } finally {
             Reference.reachabilityFence(params);
         }
+    }
+
+    @Override
+    public boolean isProgressMonitored() {
+        return true;
     }
 
     /**
@@ -156,16 +162,18 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     /**
      * Take the compaction parameters and invoke the DataFusion compactor using the FFI bridge.
      *
-     * @param  job              the compaction job
-     * @param  compactionParams the compaction input parameters
-     * @param  runtime          the JNR FFI runtime object
-     * @param  context          the open context for FFI calls
-     * @param  progressCallback the function to receive callbacks
-     * @return                  rows read/written
-     * @throws IOException      if the foreign library call doesn't complete successfully
+     * @param  job                the compaction job
+     * @param  compactionParams   the compaction input parameters
+     * @param  runtime            the JNR FFI runtime object
+     * @param  context            the open context for FFI calls
+     * @param  progressCallback   the function to receive callbacks
+     * @param  callbackIntervalMs interval in milliseconds between progress callbacks
+     * @return                    rows read/written
+     * @throws IOException        if the foreign library call doesn't complete successfully
      */
     private static RowsProcessed invokeDataFusion(CompactionJob job, FFICommonConfig compactionParams,
-            jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context, LongConsumer progressCallback) throws IOException {
+            jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context,
+            LongConsumer progressCallback, long callbackIntervalMs) throws IOException {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);
 
@@ -175,7 +183,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         Pointer key = objectRefManager.add(callbackWrapper);
 
         try {
-            int result = context.getFunctions().compact(context, compactionParams, compactionData, callbackWrapper);
+            int result = context.getFunctions().compact(context, compactionParams, compactionData, callbackWrapper, callbackIntervalMs);
             // Check result
             if (result != 0) {
                 LOGGER.error("DataFusion compaction failed, return code: {}", result);

@@ -144,6 +144,36 @@ public interface CompactionProperty {
             .defaultValue("3")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_PROGRESS_FIRST_UPDATE_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.progress.first.update.timeout.seconds")
+            .description("The maximum time in seconds that a compaction task will wait for the first progress update " +
+                    "from a running DataFusion compaction job, before deciding that the compaction has stalled.\n" +
+                    "This only applies to compactions run with the DataFusion data engine. It has no effect on " +
+                    "compactions run with the Java data engine, including for tables with a Java iterator set. If a " +
+                    "compaction stalls, the job is returned to the queue and the compaction task is terminated.")
+            .defaultValue("600")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_PROGRESS_STALL_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.progress.stall.timeout.seconds")
+            .description("The maximum time in seconds that the number of rows processed by a running DataFusion " +
+                    "compaction job can stay unchanged, before the compaction task decides that the compaction has " +
+                    "stalled.\n" +
+                    "This only applies to compactions run with the DataFusion data engine. It has no effect on " +
+                    "compactions run with the Java data engine, including for tables with a Java iterator set. If a " +
+                    "compaction stalls, the job is returned to the queue and the compaction task is terminated.")
+            .defaultValue("300")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_PROGRESS_CHECK_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.progress.check.period.seconds")
+            .description("The frequency, in seconds, with which a compaction task checks whether a running " +
+                    "DataFusion compaction job has stalled.\n" +
+                    "This only applies to compactions run with the DataFusion data engine. It has no effect on " +
+                    "compactions run with the Java data engine, including for tables with a Java iterator set.\n" +
+                    "This must be less than the values of " +
+                    "sleeper.compaction.task.progress.first.update.timeout.seconds and " +
+                    "sleeper.compaction.task.progress.stall.timeout.seconds.")
+            .defaultValue("30")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.job.creation.period.minutes")
             .description("The rate at which the compaction job creation lambda runs (in minutes, must be >=1).")
             .defaultValue("1")
