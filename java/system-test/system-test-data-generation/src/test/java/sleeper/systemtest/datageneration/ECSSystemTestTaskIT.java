@@ -26,7 +26,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJobStore;
@@ -45,6 +45,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ENDPOINT_URL;
 import static sleeper.core.properties.model.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -55,7 +56,7 @@ import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
-public class ECSSystemTestTaskIT extends LocalStackTestBase {
+public class ECSSystemTestTaskIT extends LocalAwsTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     SystemTestStandaloneProperties systemTestProperties = new SystemTestStandaloneProperties();
@@ -67,11 +68,11 @@ public class ECSSystemTestTaskIT extends LocalStackTestBase {
 
     @BeforeEach
     void setUp() {
-        String account = stsClient.getCallerIdentity().account();
-        instanceProperties.set(ACCOUNT, account);
-        instanceProperties.set(ENDPOINT_URL, localStackContainer.getEndpoint().toString());
-        instanceProperties.set(INGEST_DIRECT_ROLE_ARN, "arn:aws:iam::" + account + ":role/ingest-direct");
-        instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, "arn:aws:iam::" + account + ":role/ingest-by-queue");
+        instanceProperties.set(ACCOUNT, stsClient.getCallerIdentity().account());
+        instanceProperties.set(REGION, localAwsContainer.getRegion());
+        instanceProperties.set(ENDPOINT_URL, localAwsContainer.getEndpoint());
+        instanceProperties.set(INGEST_DIRECT_ROLE_ARN, createRoleGetArn());
+        instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, createRoleGetArn());
         instanceProperties.set(INGEST_JOB_QUEUE_URL, createSqsQueueGetUrl());
         systemTestProperties.set(SYSTEM_TEST_BUCKET_NAME, UUID.randomUUID().toString());
         createBucket(instanceProperties.get(CONFIG_BUCKET));

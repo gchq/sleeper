@@ -32,7 +32,7 @@ on:
       - 'java/configuration/**'
       - 'java/ingest/ingest-core/**'
       - 'java/common/dynamodb-tools/**'
-      - 'java/common/localstack-test/**'
+      - 'java/common/local-aws-test/**'
       - 'java/core/**'
 
 jobs:

@@ -87,7 +87,7 @@ public class DataFusionAwsConfig {
     }
 
     /**
-     * Creates a configuration to run against a LocalStack endpoint.
+     * Creates a configuration to run against a local AWS endpoint.
      *
      * @param  endpoint the endpoint to use
      * @return          the configuration

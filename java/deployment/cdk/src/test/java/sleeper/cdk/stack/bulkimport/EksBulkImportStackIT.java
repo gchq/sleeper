@@ -32,8 +32,9 @@ import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROL
 public class EksBulkImportStackIT extends SleeperStackTestBase {
 
     @Test
-    void shouldGenerateCloudFormationTemplate() {
+    void shouldGenerateCloudFormationTemplateForFargateCluster() {
         // Given
+        instanceProperties.setEnum(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.FARGATE);
         SleeperCoreStacks core = SleeperCoreStacks.create(rootStack, instanceProps());
         BulkImportBucketStack bucket = new BulkImportBucketStack(rootStack, "BulkImportBucket", instanceProperties, core);
 
@@ -101,6 +102,7 @@ public class EksBulkImportStackIT extends SleeperStackTestBase {
     @Test
     void shouldGenerateCloudFormationTemplateWithAdminRoles() {
         // Given
+        instanceProperties.setEnum(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.FARGATE);
         instanceProperties.set(EKS_CLUSTER_ADMIN_ROLES, "admin-role-one,admin-role-two");
         SleeperCoreStacks core = SleeperCoreStacks.create(rootStack, instanceProps());
         BulkImportBucketStack bucket = new BulkImportBucketStack(rootStack, "BulkImportBucket", instanceProperties, core);
@@ -117,6 +119,7 @@ public class EksBulkImportStackIT extends SleeperStackTestBase {
     @Test
     void shouldGenerateCloudFormationTemplateWithAwsCliLayer() {
         // Given
+        instanceProperties.setEnum(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.FARGATE);
         instanceProperties.set(BULK_IMPORT_EKS_AWSCLI_LAYER_ARN,
                 "arn:aws:lambda:test-region:123456789012:layer:AWSCLI:1");
         SleeperCoreStacks core = SleeperCoreStacks.create(rootStack, instanceProps());

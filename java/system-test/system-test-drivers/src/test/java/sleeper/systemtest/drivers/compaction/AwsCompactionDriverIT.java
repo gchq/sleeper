@@ -32,8 +32,8 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.drivers.testutil.AwsSendCompactionJobsTestHelper;
-import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
-import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
+import sleeper.systemtest.drivers.testutil.LocalAwsDslTest;
+import sleeper.systemtest.drivers.testutil.LocalAwsSystemTestDrivers;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -47,10 +47,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.localstack.test.LocalStackTestBase.createSqsQueueGetUrl;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.DRAIN_COMPACTIONS;
+import static sleeper.local.aws.test.LocalAwsTestBase.createSqsQueueGetUrl;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.DRAIN_COMPACTIONS;
 
-@LocalStackDslTest
+@LocalAwsDslTest
 public class AwsCompactionDriverIT {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriverIT.class);
 
@@ -60,7 +60,7 @@ public class AwsCompactionDriverIT {
     SystemTestInstanceContext instance;
 
     @BeforeEach
-    void setUp(SleeperDsl sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
+    void setUp(SleeperDsl sleeper, SystemTestContext context, LocalAwsSystemTestDrivers drivers) {
         sleeper.connectToInstanceAddOfflineTable(DRAIN_COMPACTIONS);
         s3 = drivers.clients().getS3();
         sqs = drivers.clients().getSqs();
@@ -126,7 +126,7 @@ public class AwsCompactionDriverIT {
 
     private List<CompactionJobDispatchRequest> drainPendingCompactionQueue() {
         CompactionJobDispatchRequestSerDe serDe = new CompactionJobDispatchRequestSerDe();
-        return AwsDrainSqsQueue.forLocalStackTests(sqs)
+        return AwsDrainSqsQueue.forLocalAwsTests(sqs)
                 .drain(instance.getInstanceProperties().get(COMPACTION_PENDING_QUEUE_URL))
                 .map(Message::body)
                 .map(serDe::fromJson)

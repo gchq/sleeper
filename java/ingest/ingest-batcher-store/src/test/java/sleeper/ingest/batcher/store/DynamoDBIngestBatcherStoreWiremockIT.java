@@ -60,8 +60,8 @@ import static sleeper.core.util.ThreadSleepTestHelper.recordWaits;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.FILE_PATH;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.JOB_ID;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.NOT_ASSIGNED_TO_JOB;
-import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
-import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
+import static sleeper.local.aws.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
+import static sleeper.local.aws.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
 
 @WireMockTest
 public class DynamoDBIngestBatcherStoreWiremockIT {
@@ -190,7 +190,8 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
                         .map(file -> "{\"DeleteRequest\": {\"Key\": {" +
                                 "\"" + JOB_ID + "\": {\"S\": \"" + NOT_ASSIGNED_TO_JOB + "\"}, " +
                                 "\"" + FILE_PATH + "\": {\"S\": \"" + tableId + "/" + file + "\"}}}}")
-                        .collect(Collectors.joining(", ")) +
+                        .collect(Collectors.joining(", "))
+                +
                 "]}";
     }
 

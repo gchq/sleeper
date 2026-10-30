@@ -206,9 +206,9 @@ tracking of compaction, and the interactions of compaction with the state of a S
 links the application code for compaction to AWS.
 
 The "common" modules are shared utilities for interacting with external dependencies in common ways. They sit under the
-directory `java/common`. This includes tools for working with DynamoDB, testing code using AWS clients against
-LocalStack, and some infrastructure code to do with invoking lambdas, running jobs in a task, and starting tasks that
-will run jobs. Here a job is some process that needs to run, and a task is a piece of infrastructure that can run jobs,
+directory `java/common`. This includes tools for working with DynamoDB, testing code using AWS clients against a local
+AWS, and some infrastructure code to do with invoking lambdas, running jobs in a task, and starting tasks that will run
+jobs. Here a job is some process that needs to run, and a task is a piece of infrastructure that can run jobs,
 e.g. an AWS ECS task.
 
 ### Linting

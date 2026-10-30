@@ -33,7 +33,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
+import static sleeper.local.aws.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 /**
  * Helper methods to mock an EMR Serverless application.

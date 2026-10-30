@@ -22,7 +22,7 @@ import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkexport.core.model.BulkExportQuerySerDe;
 import sleeper.clients.api.BulkExportQuerySender;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_URL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class BulkExportQuerySenderIT extends LocalStackTestBase {
+public class BulkExportQuerySenderIT extends LocalAwsTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
 

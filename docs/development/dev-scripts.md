@@ -21,6 +21,11 @@ The first parameter is the name of the image, as listed in the documentation
 of [Docker images](../deployment/docker-images.md). The second parameter is the tag, usually "test" for an automated
 Docker image test.
 
+#### `checkBuildImportAwsSdkAgainstEmr.sh`
+
+This will check whether the AWS SDK version used in the bulk import module matches the version used in EMR. It checks
+against the EMR container images, based on the contents of jar files in those images.
+
 #### `checkNotices.sh`
 
 This will check whether all managed Maven dependencies have been included in the NOTICES file at the root of the

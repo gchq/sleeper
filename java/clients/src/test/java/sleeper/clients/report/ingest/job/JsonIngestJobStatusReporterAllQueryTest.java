@@ -36,6 +36,7 @@ import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestData.
 import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
 import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
 import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestData.rejectedJobWithMultipleReasons;
+import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestData.succeededWithFailureBulkImportJob;
 import static sleeper.clients.report.ingest.job.IngestJobStatusReporterTestHelper.getJsonReport;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
@@ -133,6 +134,16 @@ public class JsonIngestJobStatusReporterAllQueryTest {
             // When / Then
             assertThatJson(getJsonReport(JobQueryType.ALL, rejectedJob, 0))
                     .isEqualTo(example("reports/ingest/job/json/bulkImport/rejectedJob.json"));
+        }
+
+        @Test
+        void shouldReportBulkImportJobSucceededWithFailure() throws Exception {
+            // Given
+            List<IngestJobStatus> jobs = succeededWithFailureBulkImportJob();
+
+            // When / Then
+            assertThat(getJsonReport(JobQueryType.ALL, jobs, 0))
+                    .isEqualTo(example("reports/ingest/job/json/bulkImport/succeededWithFailureJob.json"));
         }
     }
 }

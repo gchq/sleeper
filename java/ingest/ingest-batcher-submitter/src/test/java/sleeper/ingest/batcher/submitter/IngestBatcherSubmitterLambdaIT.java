@@ -31,7 +31,7 @@ import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.IngestBatcherTrackedFile;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStoreCreator;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.time.Instant;
 import java.util.List;
@@ -46,7 +46,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
+public class IngestBatcherSubmitterLambdaIT extends LocalAwsTestBase {
 
     private static final String TEST_TABLE_ID = "test-table-id";
     private static final Instant RECEIVED_TIME = Instant.parse("2023-06-16T10:57:00Z");

@@ -24,7 +24,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
@@ -36,7 +36,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class EstimateSplitPointsClientIT extends LocalStackTestBase {
+public class EstimateSplitPointsClientIT extends LocalAwsTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
 

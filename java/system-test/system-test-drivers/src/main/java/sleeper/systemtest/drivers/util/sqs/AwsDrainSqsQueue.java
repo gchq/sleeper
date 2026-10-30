@@ -79,7 +79,7 @@ public class AwsDrainSqsQueue {
                 .build();
     }
 
-    public static AwsDrainSqsQueue forLocalStackTests(SqsClient sqsClient) {
+    public static AwsDrainSqsQueue forLocalAwsTests(SqsClient sqsClient) {
         return withClient(sqsClient)
                 .numThreads(2)
                 .messagesPerBatchPerThread(10)

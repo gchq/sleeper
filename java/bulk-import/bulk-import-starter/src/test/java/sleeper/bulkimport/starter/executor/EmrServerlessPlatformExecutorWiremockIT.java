@@ -50,7 +50,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
+import static sleeper.local.aws.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
 public class EmrServerlessPlatformExecutorWiremockIT {

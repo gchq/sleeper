@@ -28,7 +28,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,7 +40,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
-public class RenameTableIT extends LocalStackTestBase {
+public class RenameTableIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key1");

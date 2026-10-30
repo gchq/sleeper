@@ -22,13 +22,13 @@ import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.DescribeTableResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.ingest.tracker.testutils.IngestTrackerTestUtils.createInstanceProperties;
 
-public class DynamoDBIngestTaskTrackerCreatorIT extends LocalStackTestBase {
+public class DynamoDBIngestTaskTrackerCreatorIT extends LocalAwsTestBase {
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String tableName = DynamoDBIngestTaskTracker.taskStatusTableName(instanceProperties.get(ID));
 

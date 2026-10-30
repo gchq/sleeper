@@ -33,7 +33,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.EnvironmentUtils;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.row.ParquetRowWriterFactory;
@@ -58,7 +58,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public abstract class DockerImageTestBase extends LocalStackTestBase {
+public abstract class DockerImageTestBase extends LocalAwsTestBase {
     public static final Logger LOGGER = LoggerFactory.getLogger(DockerImageTestBase.class);
 
     protected InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -134,7 +134,7 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
 
     private void configure(GenericContainer<?> container) {
         container.withEnv(getEnvironment())
-                .withNetwork(localStackContainer.getNetwork())
+                .withNetwork(localAwsContainer.getNetwork())
                 .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()));
     }
 

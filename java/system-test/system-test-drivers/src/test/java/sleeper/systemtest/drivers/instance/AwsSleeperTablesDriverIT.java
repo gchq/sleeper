@@ -19,19 +19,19 @@ package sleeper.systemtest.drivers.instance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
+import sleeper.systemtest.drivers.testutil.LocalAwsDslTest;
 import sleeper.systemtest.dsl.SleeperDsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCAL_MAIN;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
-@LocalStackDslTest
+@LocalAwsDslTest
 public class AwsSleeperTablesDriverIT {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper) {
-        sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
+        sleeper.connectToInstanceNoTables(LOCAL_MAIN);
     }
 
     @Test

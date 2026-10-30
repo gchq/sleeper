@@ -15,6 +15,7 @@
  */
 package sleeper.trino.testutils;
 
+import io.floci.testcontainers.FlociContainer;
 import io.trino.sql.query.QueryAssertions;
 import io.trino.testing.DistributedQueryRunner;
 import org.apache.hadoop.conf.Configuration;
@@ -22,7 +23,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.testcontainers.localstack.LocalStackContainer;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -43,8 +43,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.localstack.test.SleeperLocalStackClients;
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.local.aws.test.SleeperLocalAwsClients;
+import sleeper.local.aws.test.SleeperLocalAwsContainer;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.trino.SleeperConfig;
@@ -66,16 +66,15 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.local.aws.test.LocalAwsV2ClientHelper.buildAwsV2Client;
 
 /**
- * This class is a JUnit plugin which starts a local S3 and DynamoDB within a Docker
- * LocalStackContainer. Sleeper tables are created, with the data files themselves stored in a temporary directory on
- * the local disk.
+ * This class is a JUnit plugin which starts a local S3 and DynamoDB within a Docker container. Sleeper tables are
+ * created, with the data files themselves stored in a temporary directory on the local disk.
  * <p>
  * Only use one instance of this class at once. The Parquet readers and writers make use of the Hadoop FileSystem and
  * this caches the S3AFileSystem objects which actually communicate with S3. The cache needs to be reset between
- * different recreations of the localstack container. It would be good to fix this in future.
+ * different recreations of the container. It would be good to fix this in future.
  */
 public class PopulatedSleeperExternalResource implements BeforeAllCallback, AfterAllCallback {
     private static final String MAX_WRITER_COUNT_PROPERTY = "task.max-writer-count";
@@ -88,13 +87,13 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private final Map<String, String> extraPropertiesForQueryRunner;
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;
-    private final LocalStackContainer localStackContainer = SleeperLocalStackContainer.INSTANCE;
-    private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalStack();
+    private final FlociContainer localAwsContainer = SleeperLocalAwsContainer.INSTANCE;
+    private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalAws();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final Configuration configuration = SleeperLocalStackClients.HADOOP_CONF;
-    private final S3Client s3Client = SleeperLocalStackClients.S3_CLIENT;
-    private final S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
-    private final DynamoDbClient dynamoDBClient = SleeperLocalStackClients.DYNAMO_CLIENT;
+    private final Configuration configuration = SleeperLocalAwsClients.HADOOP_CONF;
+    private final S3Client s3Client = SleeperLocalAwsClients.S3_CLIENT;
+    private final S3AsyncClient s3AsyncClient = SleeperLocalAwsClients.S3_ASYNC_CLIENT;
+    private final DynamoDbClient dynamoDBClient = SleeperLocalAwsClients.DYNAMO_CLIENT;
     private QueryAssertions queryAssertions;
 
     public PopulatedSleeperExternalResource(List<TableDefinition> tableDefinitions) {
@@ -160,7 +159,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
-        System.out.println("LocalStack endpoint:       " + localStackContainer.getEndpoint().toString());
+        System.out.println("Local AWS endpoint:       " + localAwsContainer.getEndpoint().toString());
 
         sleeperConfig.setLocalWorkingDirectory(createTempDirectory(UUID.randomUUID().toString()).toString());
 
@@ -203,9 +202,9 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         DistributedQueryRunner distributedQueryRunner = SleeperQueryRunner.createSleeperQueryRunner(
                 queryRunnerProperties(),
                 sleeperConfig,
-                buildAwsV2Client(localStackContainer, S3Client.builder()),
-                buildAwsV2Client(localStackContainer, S3AsyncClient.builder()),
-                buildAwsV2Client(localStackContainer, DynamoDbClient.builder()),
+                buildAwsV2Client(localAwsContainer, S3Client.builder()),
+                buildAwsV2Client(localAwsContainer, S3AsyncClient.builder()),
+                buildAwsV2Client(localAwsContainer, DynamoDbClient.builder()),
                 hadoopConfigurationProvider);
         queryAssertions = new QueryAssertions(distributedQueryRunner);
     }
@@ -214,7 +213,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     public void afterAll(ExtensionContext context) {
         this.queryAssertions.close();
         // The Hadoop file system maintains a cache of the file system object to use. The S3AFileSystem object
-        // retains the endpoint URL and so the cache needs to be cleared whenever the localstack instance changes.
+        // retains the endpoint URL and so the cache needs to be cleared whenever the local AWS changes.
         try {
             FileSystem.closeAll();
         } catch (Exception e) {
