@@ -39,6 +39,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.fromMinimum;
 
 public class AwsSnapshotsDriver implements SnapshotsDriver {
@@ -53,7 +54,7 @@ public class AwsSnapshotsDriver implements SnapshotsDriver {
 
     @Override
     public void triggerCreateSnapshots(Stream<TableStatus> tables) {
-        String queueUrl = instance.getInstanceProperties().get(null); // TODO add CDK-defined property
+        String queueUrl = instance.getInstanceProperties().get(TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL);
         InvokeForTables.sendOneMessagePerTable(clients.getSqs(), queueUrl, tables);
     }
 
