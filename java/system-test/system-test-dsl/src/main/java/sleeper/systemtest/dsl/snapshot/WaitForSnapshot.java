@@ -37,16 +37,26 @@ public class WaitForSnapshot {
         this.driver = driver;
     }
 
-    public AllReferencesToAllFiles waitForFilesSnapshot(PollWithRetries poll, Predicate<AllReferencesToAllFiles> condition) throws InterruptedException {
+    public AllReferencesToAllFiles waitForFilesSnapshot(PollWithRetries poll, Predicate<AllReferencesToAllFiles> condition) {
         LOGGER.info("Waiting for files snapshot");
-        return poll.queryUntil("files snapshot is present", this::loadLatestFilesSnapshot, matches(condition))
-                .orElseThrow();
+        try {
+            return poll.queryUntil("files snapshot is present", this::loadLatestFilesSnapshot, matches(condition))
+                    .orElseThrow();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
-    public PartitionTree waitForPartitionsSnapshot(PollWithRetries poll, Predicate<PartitionTree> condition) throws InterruptedException {
+    public PartitionTree waitForPartitionsSnapshot(PollWithRetries poll, Predicate<PartitionTree> condition) {
         LOGGER.info("Waiting for partitions snapshot");
-        return poll.queryUntil("partitions snapshot is present", this::loadLatestPartitionsSnapshot, matches(condition))
-                .orElseThrow();
+        try {
+            return poll.queryUntil("partitions snapshot is present", this::loadLatestPartitionsSnapshot, matches(condition))
+                    .orElseThrow();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     private Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot() {

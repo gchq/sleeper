@@ -55,7 +55,7 @@ public class StateStoreSnapshotsST {
     }
 
     @Test
-    void shouldAddManyFiles(SleeperDsl sleeper) throws Exception {
+    void shouldAddManyFiles(SleeperDsl sleeper) {
         // Given we create a table
         sleeper.tables().createWithProperties("snapshots", DEFAULT_SCHEMA, Map.of(
                 STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getSimpleName(),

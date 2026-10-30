@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
@@ -28,8 +29,10 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.snapshot.WaitForSnapshot;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
+import sleeper.systemtest.dsl.util.StreamUtils;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -88,12 +91,19 @@ public class StateStoreDsl {
                                 .collect(toSet()));
     }
 
-    public AllReferencesToAllFiles waitForFilesSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<AllReferencesToAllFiles> condition) throws InterruptedException {
+    public StateStoreDsl invokeSnapshotCreationForAllInterleavedWithFakeTables(List<String> fakeTables) {
+        snapshotsDriver.triggerCreateSnapshots(StreamUtils.interleave(
+                context.instance().streamTableProperties().map(TableProperties::getStatus),
+                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
+        return this;
+    }
+
+    public AllReferencesToAllFiles waitForFilesSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<AllReferencesToAllFiles> condition) {
         return new WaitForSnapshot(context.instance(), snapshotsDriver)
                 .waitForFilesSnapshot(intervalAndPollingTimeout, condition);
     }
 
-    public PartitionTree waitForPartitionsSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<PartitionTree> condition) throws InterruptedException {
+    public PartitionTree waitForPartitionsSnapshot(PollWithRetries intervalAndPollingTimeout, Predicate<PartitionTree> condition) {
         return new WaitForSnapshot(context.instance(), snapshotsDriver)
                 .waitForPartitionsSnapshot(intervalAndPollingTimeout, condition);
     }

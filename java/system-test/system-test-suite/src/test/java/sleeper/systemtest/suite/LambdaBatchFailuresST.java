@@ -25,6 +25,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.compaction.StreamFakeCompactions;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
@@ -32,6 +33,7 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow2;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -155,8 +157,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
-    @Disabled("TODO")
-    void shouldReportFailureCreatingSnapshotsForSomeTables(SleeperDsl sleeper) throws Exception {
+    void shouldReportFailureCreatingSnapshotsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with state store transactions
         sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false"));
@@ -173,9 +174,21 @@ public class LambdaBatchFailuresST {
         });
 
         // When we trigger snapshot creation for the tables, interleaved with non-existent tables
+        sleeper.stateStore().invokeSnapshotCreationForAllInterleavedWithFakeTables(
+                List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"));
 
         // Then the snapshots are created
+        sleeper.tables().forEach(() -> {
+            sleeper.stateStore().waitForPartitionsSnapshot(
+                    PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
+                    snapshot -> snapshot.getLeafPartitions().size() == 2);
+            sleeper.stateStore().waitForFilesSnapshot(
+                    PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
+                    snapshot -> snapshot.getFiles().size() == 1);
+        });
         // And the messages for the non-existent tables appear on the dead letter queue
+        assertThat(sleeper.deadLetters().drainSnapshotCreationTriggerDLQForWholeInstance(5))
+                .containsExactlyInAnyOrder("missing-1", "missing-2", "missing-3", "missing-4", "missing-5");
     }
 
     @Test
