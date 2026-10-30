@@ -24,11 +24,11 @@ import sleeper.core.table.TableStatus;
 import java.util.List;
 import java.util.Map;
 
-public class SystemTestTables {
+public class SystemTestTablesDsl {
 
     private final SystemTestInstanceContext instance;
 
-    public SystemTestTables(SystemTestInstanceContext instance) {
+    public SystemTestTablesDsl(SystemTestInstanceContext instance) {
         this.instance = instance;
     }
 
@@ -36,21 +36,21 @@ public class SystemTestTables {
         createManyWithProperties(numberOfTables, schema, Map.of());
     }
 
-    public SystemTestTables create(String name, Schema schema) {
+    public SystemTestTablesDsl create(String name, Schema schema) {
         instance.createTable(name, schema, Map.of());
         return this;
     }
 
-    public SystemTestTables createWithProperties(String name, Schema schema, Map<TableProperty, String> setProperties) {
+    public SystemTestTablesDsl createWithProperties(String name, Schema schema, Map<TableProperty, String> setProperties) {
         instance.createTable(name, schema, setProperties);
         return this;
     }
 
-    public SystemTestTables create(List<String> names, Schema schema) {
+    public SystemTestTablesDsl create(List<String> names, Schema schema) {
         return createWithProperties(names, schema, Map.of());
     }
 
-    public SystemTestTables createWithProperties(List<String> names, Schema schema, Map<TableProperty, String> setProperties) {
+    public SystemTestTablesDsl createWithProperties(List<String> names, Schema schema, Map<TableProperty, String> setProperties) {
         names.forEach(name -> instance.createTable(name, schema, setProperties));
         return this;
     }
