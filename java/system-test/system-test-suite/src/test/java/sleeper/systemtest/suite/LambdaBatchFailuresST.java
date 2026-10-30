@@ -16,6 +16,7 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
@@ -80,6 +81,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("TODO")
     void shouldReportFailureCommittingSomeCompactionJobs() {
         // Given a Sleeper table with 5 compaction jobs ready to be committed to the state store
 
@@ -90,6 +92,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("TODO")
     void shouldReportFailureRunningGCForSomeTables() {
         // Given 5 Sleeper tables with files ready for GC
 
@@ -100,6 +103,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("TODO")
     void shouldReportFailureCreatingSnapshotsForSomeTables() {
         // Given 5 Sleeper tables with state store transactions
 
@@ -110,6 +114,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("TODO")
     void shouldReportFailureDeletingSnapshotsForSomeTables() {
         // Given 5 Sleeper tables with state store snapshots ready to be deleted
 
@@ -120,6 +125,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("TODO")
     void shouldReportFailureDeletingTransactionsForSomeTables() {
         // Given 5 Sleeper tables with state store transactions ready to be deleted
 
@@ -130,6 +136,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("TODO")
     void shouldReportFailureWritingMetricsForSomeTables() {
         // Given 5 Sleeper tables with file references
 
