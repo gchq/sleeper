@@ -10,7 +10,7 @@ it takes to complete the nightly system tests.
 | AutoStopEcsTaskST          | ECSStateStoreCommitterST           | MultipleTablesST                |
 | CompactionCreationST       | ECSStateStoreCommitterThroughputST | StateStoreCommitterThroughputST |
 | EmrPersistentBulkImportST  | EksFargateBulkImportST             |
-| OptionalFeaturesDisabledST |
+| OptionalFeaturesDisabledST | LambdaBatchFailuresST              |
 | RedeployOptionalStacksST   |
 
 | Expensive1                        | Expensive2                 | Expensive3              |
