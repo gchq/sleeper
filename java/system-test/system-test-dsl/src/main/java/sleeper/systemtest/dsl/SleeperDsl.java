@@ -26,7 +26,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.systemtest.dsl.bulkexport.BulkExportDsl;
 import sleeper.systemtest.dsl.compaction.CompactionDsl;
-import sleeper.systemtest.dsl.gc.SystemTestGarbageCollection;
+import sleeper.systemtest.dsl.gc.GarbageCollectionDsl;
 import sleeper.systemtest.dsl.ingest.EksBulkImportCheckDsl;
 import sleeper.systemtest.dsl.ingest.IngestDsl;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
@@ -145,8 +145,8 @@ public class SleeperDsl {
         return new CompactionDsl(context, baseDrivers);
     }
 
-    public SystemTestGarbageCollection garbageCollection() {
-        return new SystemTestGarbageCollection(context);
+    public GarbageCollectionDsl garbageCollection() {
+        return new GarbageCollectionDsl(context);
     }
 
     public ReportingDsl reporting() {
