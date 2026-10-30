@@ -30,6 +30,7 @@ import sleeper.systemtest.dsl.gc.SystemTestGarbageCollection;
 import sleeper.systemtest.dsl.ingest.EksBulkImportCheckDsl;
 import sleeper.systemtest.dsl.ingest.IngestDsl;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
+import sleeper.systemtest.dsl.instance.DeadLettersDsl;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
@@ -226,5 +227,9 @@ public class SleeperDsl {
     public SleeperDsl table(String name) {
         context.instance().setCurrentTable(name);
         return this;
+    }
+
+    public DeadLettersDsl deadLetters() {
+        return new DeadLettersDsl(baseDrivers.deadLetters(context));
     }
 }
