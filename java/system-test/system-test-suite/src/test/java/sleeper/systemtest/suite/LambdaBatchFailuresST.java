@@ -156,8 +156,21 @@ public class LambdaBatchFailuresST {
 
     @Test
     @Disabled("TODO")
-    void shouldReportFailureCreatingSnapshotsForSomeTables() {
+    void shouldReportFailureCreatingSnapshotsForSomeTables(SleeperDsl sleeper) throws Exception {
         // Given 5 Sleeper tables with state store transactions
+        sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false"));
+        sleeper.tables().forEach(() -> {
+            PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "split")
+                    .buildTree();
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+            sleeper.partitioning().setPartitions(partitions);
+            sleeper.stateStore().fakeCommits().setupStateStore(store -> {
+                update(store).addFile(fileFactory.rootFile("test.parquet", 10));
+            });
+        });
 
         // When we trigger snapshot creation for the tables, interleaved with non-existent tables
 
