@@ -140,7 +140,7 @@ public abstract class DockerImageTestBase extends LocalAwsTestBase {
 
     private Map<String, String> getEnvironment() {
         Map<String, String> environment = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
-        environment.put("AWS_ENDPOINT_URL", "http://localstack:4566");
+        environment.put("AWS_ENDPOINT_URL", "http://floci:4566");
         LOGGER.info("Setting environment: {}", environment);
         return environment;
     }
