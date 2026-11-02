@@ -286,7 +286,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public StateStoreAdminDriver snapshots(SystemTestContext context) {
+    public StateStoreAdminDriver stateStoreAdmin(SystemTestContext context) {
         return new AwsStateStoreAdminDriver(context.instance(), clients);
     }
 

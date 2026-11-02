@@ -86,7 +86,7 @@ public class LocalAwsSystemTestDrivers extends AwsSystemTestDrivers {
     }
 
     @Override
-    public StateStoreAdminDriver snapshots(SystemTestContext context) {
+    public StateStoreAdminDriver stateStoreAdmin(SystemTestContext context) {
         return new NoStateStoreAdminDriver();
     }
 

@@ -222,7 +222,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     @Override
-    public StateStoreAdminDriver snapshots(SystemTestContext context) {
+    public StateStoreAdminDriver stateStoreAdmin(SystemTestContext context) {
         return new NoStateStoreAdminDriver();
     }
 

@@ -53,7 +53,7 @@ public class StateStoreDsl {
         SystemTestDrivers adminDrivers = context.instance().adminDrivers();
         driver = adminDrivers.stateStoreCommitter(context);
         logsDriver = adminDrivers.stateStoreCommitterLogs(context);
-        snapshotsDriver = adminDrivers.snapshots(context);
+        snapshotsDriver = adminDrivers.stateStoreAdmin(context);
         pollDriver = adminDrivers.pollWithRetries();
     }
 
