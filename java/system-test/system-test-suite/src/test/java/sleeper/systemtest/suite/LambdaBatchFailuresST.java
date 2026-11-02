@@ -199,7 +199,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
-    // @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
+    @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureDeletingSnapshotsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with state store transactions
         sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
