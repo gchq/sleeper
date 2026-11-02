@@ -169,12 +169,12 @@ public interface TableDefaultProperty {
             .description("The minimum number of transactions that a snapshot must be ahead of the local " +
                     "state, before we load the snapshot instead of updating from the transaction log.")
             .defaultValue("" + TransactionLogStateStore.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT)
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS = Index.propertyBuilder("sleeper.default.table.statestore.transactionlog.snapshot.expiry.days")
             .description("The number of days that transaction log snapshots remain in the snapshot store before being deleted.")
             .defaultValue("2")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT)
             .build();
     UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS = Index
@@ -185,7 +185,7 @@ public interface TableDefaultProperty {
                     "transactions associated with a snapshot that may still be used as the starting point for " +
                     "reading the log.")
             .defaultValue("2")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT)
             .build();
     UserDefinedInstanceProperty DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE = Index.propertyBuilder("sleeper.default.table.statestore.transactionlog.delete.number.behind.latest.snapshot")
@@ -202,7 +202,7 @@ public interface TableDefaultProperty {
                     "minimum age for it to count for this:\n" +
                     "sleeper.default.statestore.transactionlog.delete.behind.snapshot.min.age\n")
             .defaultValue("200")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT)
             .build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.default.table.bulk.import.min.leaf.partitions")
