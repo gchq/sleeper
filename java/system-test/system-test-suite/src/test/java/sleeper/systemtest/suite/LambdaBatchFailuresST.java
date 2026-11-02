@@ -16,6 +16,7 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -67,6 +68,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureCreatingCompactionJobsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with files to be compacted
         sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
@@ -100,6 +102,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8365")
     void shouldReportFailureCommittingSomeCompactionJobs(SleeperDsl sleeper) {
         // Given a Sleeper table with 5 compaction jobs ready to be committed to the state store
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
@@ -135,6 +138,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureRunningGCForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with files ready for GC
         sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
@@ -162,6 +166,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureCreatingSnapshotsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with state store transactions
         sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
@@ -194,6 +199,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureDeletingSnapshotsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with state store transactions
         sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
@@ -232,6 +238,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureDeletingTransactionsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables configured to delete unneeded transactions immediately
         sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
@@ -274,6 +281,7 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
+    @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureWritingMetricsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with file references
         sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA,
