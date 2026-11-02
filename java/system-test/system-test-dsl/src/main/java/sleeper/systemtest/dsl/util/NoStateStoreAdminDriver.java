@@ -19,6 +19,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.table.TableStatus;
 import sleeper.systemtest.dsl.statestore.StateStoreAdminDriver;
 
@@ -52,6 +53,20 @@ public class NoStateStoreAdminDriver implements StateStoreAdminDriver {
     public Optional<PartitionTree> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
         throw new UnsupportedOperationException(
                 "Requested loading partitions snapshot for instance " + instanceProperties.get(ID) +
+                        ", table " + tableProperties.getStatus() + ", not currently implemented for this driver");
+    }
+
+    @Override
+    public Stream<TransactionLogEntry> loadAllFileTransactions(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        throw new UnsupportedOperationException(
+                "Requested loading transactions for instance " + instanceProperties.get(ID) +
+                        ", table " + tableProperties.getStatus() + ", not currently implemented for this driver");
+    }
+
+    @Override
+    public Stream<TransactionLogEntry> loadAllPartitionTransactions(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        throw new UnsupportedOperationException(
+                "Requested loading transactions for instance " + instanceProperties.get(ID) +
                         ", table " + tableProperties.getStatus() + ", not currently implemented for this driver");
     }
 

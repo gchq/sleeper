@@ -19,6 +19,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.table.TableStatus;
 
 import java.util.Optional;
@@ -35,4 +36,8 @@ public interface StateStoreAdminDriver {
     Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
 
     Optional<PartitionTree> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
+
+    Stream<TransactionLogEntry> loadAllFileTransactions(InstanceProperties instanceProperties, TableProperties tableProperties);
+
+    Stream<TransactionLogEntry> loadAllPartitionTransactions(InstanceProperties instanceProperties, TableProperties tableProperties);
 }

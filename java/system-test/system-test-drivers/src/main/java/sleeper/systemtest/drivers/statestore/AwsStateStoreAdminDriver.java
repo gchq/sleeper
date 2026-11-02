@@ -22,12 +22,15 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.table.TableStatus;
 import sleeper.invoke.tables.InvokeForTables;
 import sleeper.statestore.StateStoreArrowFileReadStore;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.statestore.transactionlog.snapshots.SnapshotType;
@@ -82,6 +85,18 @@ public class AwsStateStoreAdminDriver implements StateStoreAdminDriver {
     public Optional<PartitionTree> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return loadLatestSnapshot(instanceProperties, tableProperties, SnapshotType.PARTITIONS)
                 .map(AwsStateStoreAdminDriver::readPartitions);
+    }
+
+    @Override
+    public Stream<TransactionLogEntry> loadAllFileTransactions(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, clients.getDynamo(), clients.getS3())
+                .readTransactions(TransactionLogRange.fromMinimum(0));
+    }
+
+    @Override
+    public Stream<TransactionLogEntry> loadAllPartitionTransactions(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, clients.getDynamo(), clients.getS3())
+                .readTransactions(TransactionLogRange.fromMinimum(0));
     }
 
     private Optional<TransactionLogSnapshot> loadLatestSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties, SnapshotType snapshotType) {
