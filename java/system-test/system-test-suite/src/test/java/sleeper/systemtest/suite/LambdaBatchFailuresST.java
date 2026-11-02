@@ -223,10 +223,10 @@ public class LambdaBatchFailuresST {
                     .waitForFilesSnapshot(snapshot -> snapshot.getFiles().size() == 1);
         });
         // And we make another, newer snapshot so the previous one can be deleted
+        partitions.splitToNewChildren("L", "LL", "LR", "again");
         sleeper.tables().forEach(() -> {
             sleeper.stateStore().fakeCommits().setupStateStore(store -> {
-                partitions.splitToNewChildren("L", "LL", "LR", "again")
-                        .applySplit(store, "L");
+                partitions.applySplit(store, "L");
                 update(store).addFile(FileReferenceFactory.from(partitions.buildTree())
                         .partitionFile("LL", "test-LL.parquet", 20));
             });
