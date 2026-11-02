@@ -280,6 +280,8 @@ public class LambdaBatchFailuresST {
         });
 
         // When we trigger table metrics for the tables, interleaved with non-existent tables
+        sleeper.tableMetrics().triggerForAllInterleavedWithFakeTables(
+                List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"));
 
         // Then the metrics are published
         // And the messages for the non-existent tables appear on the dead letter queue
