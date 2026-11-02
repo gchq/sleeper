@@ -27,6 +27,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.compaction.StreamFakeCompactions;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow2;
 
@@ -45,6 +46,9 @@ import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_NUMBER
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.tableMetrics;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BATCHING;
@@ -274,7 +278,14 @@ public class LambdaBatchFailuresST {
         // Given 5 Sleeper tables with file references
         sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA,
                 Map.of(TABLE_ONLINE, "false"));
+        sleeper.setGeneratorOverrides(
+                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                        numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.tables().forEach(() -> {
+            sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "row-50")
+                    .buildTree());
             sleeper.ingest().direct(tempDir)
                     .numberedRows(LongStream.range(0, 100))
                     .numberedRows(LongStream.range(0, 23));
