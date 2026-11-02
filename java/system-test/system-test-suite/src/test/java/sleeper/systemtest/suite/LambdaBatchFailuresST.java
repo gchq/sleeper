@@ -16,7 +16,6 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -270,9 +269,15 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
-    @Disabled("TODO")
-    void shouldReportFailureWritingMetricsForSomeTables() {
+    void shouldReportFailureWritingMetricsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with file references
+        sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA,
+                Map.of(TABLE_ONLINE, "false"));
+        sleeper.tables().forEach(() -> {
+            sleeper.ingest().direct(tempDir)
+                    .numberedRows(LongStream.range(0, 100))
+                    .numberedRows(LongStream.range(0, 23));
+        });
 
         // When we trigger table metrics for the tables, interleaved with non-existent tables
 
