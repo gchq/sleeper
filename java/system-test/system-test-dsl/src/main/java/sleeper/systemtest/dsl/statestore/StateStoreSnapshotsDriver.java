@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.snapshot;
+package sleeper.systemtest.dsl.statestore;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -24,7 +24,7 @@ import sleeper.core.table.TableStatus;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public interface SnapshotsDriver {
+public interface StateStoreSnapshotsDriver {
 
     void triggerCreateSnapshots(Stream<TableStatus> tables);
 

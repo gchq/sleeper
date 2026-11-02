@@ -33,7 +33,7 @@ import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapsho
 import sleeper.statestore.transactionlog.snapshots.SnapshotType;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreSnapshotsDriver;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -43,7 +43,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.fromMinimum;
 
-public class AwsSnapshotsDriver implements SnapshotsDriver {
+public class AwsSnapshotsDriver implements StateStoreSnapshotsDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsSnapshotsDriver.class);
     private final SystemTestInstanceContext instance;
     private final SystemTestClients clients;

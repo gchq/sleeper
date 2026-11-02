@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.snapshot;
+package sleeper.systemtest.dsl.statestore;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +30,9 @@ public class WaitForSnapshot {
     public static final Logger LOGGER = LoggerFactory.getLogger(WaitForSnapshot.class);
 
     private final SystemTestInstanceContext instance;
-    private final SnapshotsDriver driver;
+    private final StateStoreSnapshotsDriver driver;
 
-    public WaitForSnapshot(SystemTestInstanceContext instance, SnapshotsDriver driver) {
+    public WaitForSnapshot(SystemTestInstanceContext instance, StateStoreSnapshotsDriver driver) {
         this.instance = instance;
         this.driver = driver;
     }

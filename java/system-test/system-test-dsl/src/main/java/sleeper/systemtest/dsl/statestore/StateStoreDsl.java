@@ -26,8 +26,6 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
-import sleeper.systemtest.dsl.snapshot.WaitForSnapshot;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.StreamUtils;
 
@@ -47,7 +45,7 @@ public class StateStoreDsl {
     private final SystemTestContext context;
     private final StateStoreCommitterDriver driver;
     private final StateStoreCommitterLogsDriver logsDriver;
-    private final SnapshotsDriver snapshotsDriver;
+    private final StateStoreSnapshotsDriver snapshotsDriver;
     private final PollWithRetriesDriver pollDriver;
 
     public StateStoreDsl(SystemTestContext context) {

@@ -39,12 +39,12 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
-import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreSnapshotsDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryBulkExportDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataGenerationTasksDriver;
@@ -222,7 +222,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     @Override
-    public SnapshotsDriver snapshots(SystemTestContext context) {
+    public StateStoreSnapshotsDriver snapshots(SystemTestContext context) {
         return new NoSnapshotsDriver();
     }
 
