@@ -45,6 +45,7 @@ import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_NUMBER
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.tableMetrics;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BATCHING;
 
@@ -284,7 +285,16 @@ public class LambdaBatchFailuresST {
                 List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"));
 
         // Then the metrics are published
+        sleeper.tables().forEach(() -> {
+            assertThat(sleeper.tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
+                    .partitionCount(3).leafPartitionCount(2)
+                    .fileCount(2).rowCount(123)
+                    .averageFileReferencesPerPartition(1.5)
+                    .build());
+        });
         // And the messages for the non-existent tables appear on the dead letter queue
+        assertThat(sleeper.deadLetters().drainTableMetricsDLQForWholeInstance(5))
+                .containsExactlyInAnyOrder("missing-1", "missing-2", "missing-3", "missing-4", "missing-5");
     }
 
 }

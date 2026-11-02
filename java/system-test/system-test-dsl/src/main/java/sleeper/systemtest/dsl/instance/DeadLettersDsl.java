@@ -20,6 +20,7 @@ import java.util.List;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_URL;
@@ -54,6 +55,10 @@ public class DeadLettersDsl {
 
     public List<String> drainTransactionDeletionTriggerDLQForWholeInstance(int expectedMessages) {
         return driver.drainQueueForWholeInstance(expectedMessages, TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_URL);
+    }
+
+    public List<String> drainTableMetricsDLQForWholeInstance(int expectedMessages) {
+        return driver.drainQueueForWholeInstance(expectedMessages, TABLE_METRICS_DLQ_URL);
     }
 
 }
