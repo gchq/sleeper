@@ -158,7 +158,7 @@ public class SleeperDsl {
     }
 
     public TableMetricsDsl tableMetrics() {
-        return new TableMetricsDsl(context.instance().adminDrivers().tableMetrics(context));
+        return new TableMetricsDsl(context.instance().adminRoleDrivers().tableMetrics(context));
     }
 
     public DataGenerationClusterDsl systemTestCluster() {
@@ -196,7 +196,7 @@ public class SleeperDsl {
 
     public CloseableIterator<Row> getRows(AllReferencesToAFile file) {
         Schema schema = context.instance().getTableProperties().getSchema();
-        DataFilesDriver driver = context.instance().adminDrivers().dataFiles(context);
+        DataFilesDriver driver = context.instance().adminRoleDrivers().dataFiles(context);
         return driver.getRows(schema, file.getFilename());
     }
 

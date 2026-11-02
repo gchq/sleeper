@@ -61,7 +61,7 @@ public class CompactionDsl {
     public CompactionDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.instance = context.instance();
         this.sourceFiles = context.sourceFiles();
-        SystemTestDrivers drivers = instance.adminDrivers();
+        SystemTestDrivers drivers = instance.adminRoleDrivers();
         driver = drivers.compaction(context);
         pollDriver = drivers.pollWithRetries();
         waitForJobCreation = new WaitForCompactionJobCreation(instance, driver);

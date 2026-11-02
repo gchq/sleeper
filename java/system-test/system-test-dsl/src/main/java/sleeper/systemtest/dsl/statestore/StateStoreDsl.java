@@ -45,16 +45,16 @@ public class StateStoreDsl {
     private final SystemTestContext context;
     private final StateStoreCommitterDriver driver;
     private final StateStoreCommitterLogsDriver logsDriver;
-    private final StateStoreAdminDriver snapshotsDriver;
+    private final StateStoreAdminDriver adminDriver;
     private final PollWithRetriesDriver pollDriver;
 
     public StateStoreDsl(SystemTestContext context) {
         this.context = context;
-        SystemTestDrivers adminDrivers = context.instance().adminDrivers();
-        driver = adminDrivers.stateStoreCommitter(context);
-        logsDriver = adminDrivers.stateStoreCommitterLogs(context);
-        snapshotsDriver = adminDrivers.stateStoreAdmin(context);
-        pollDriver = adminDrivers.pollWithRetries();
+        SystemTestDrivers adminRoleDrivers = context.instance().adminRoleDrivers();
+        driver = adminRoleDrivers.stateStoreCommitter(context);
+        logsDriver = adminRoleDrivers.stateStoreCommitterLogs(context);
+        adminDriver = adminRoleDrivers.stateStoreAdmin(context);
+        pollDriver = adminRoleDrivers.pollWithRetries();
     }
 
     public StateStoreFakeCommitsDsl fakeCommits() {
@@ -91,20 +91,20 @@ public class StateStoreDsl {
     }
 
     public StateStoreDsl invokeSnapshotCreation() {
-        snapshotsDriver.triggerCreateSnapshots(
+        adminDriver.triggerCreateSnapshots(
                 context.instance().streamTableProperties().map(TableProperties::getStatus));
         return this;
     }
 
     public StateStoreDsl invokeSnapshotCreationForAllInterleavedWithFakeTables(List<String> fakeTables) {
-        snapshotsDriver.triggerCreateSnapshots(StreamUtils.interleave(
+        adminDriver.triggerCreateSnapshots(StreamUtils.interleave(
                 context.instance().streamTableProperties().map(TableProperties::getStatus),
                 fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
         return this;
     }
 
     public StateStoreDsl invokeSnapshotDeletionForAllInterleavedWithFakeTables(List<String> fakeTables) {
-        snapshotsDriver.triggerDeleteSnapshots(StreamUtils.interleave(
+        adminDriver.triggerDeleteSnapshots(StreamUtils.interleave(
                 context.instance().streamTableProperties().map(TableProperties::getStatus),
                 fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
         return this;
@@ -139,7 +139,7 @@ public class StateStoreDsl {
     }
 
     private WaitForSnapshot snapshotWaits() {
-        return new WaitForSnapshot(context.instance(), snapshotsDriver);
+        return new WaitForSnapshot(context.instance(), adminDriver);
     }
 
 }

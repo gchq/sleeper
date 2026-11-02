@@ -35,7 +35,7 @@ public class GarbageCollectionDsl {
     private final SystemTestInstanceContext instance;
 
     public GarbageCollectionDsl(SystemTestContext context) {
-        SystemTestDrivers instanceAdminDrivers = context.instance().adminDrivers();
+        SystemTestDrivers instanceAdminDrivers = context.instance().adminRoleDrivers();
         driver = instanceAdminDrivers.garbageCollection(context);
         pollDriver = instanceAdminDrivers.pollWithRetries();
         instance = context.instance();

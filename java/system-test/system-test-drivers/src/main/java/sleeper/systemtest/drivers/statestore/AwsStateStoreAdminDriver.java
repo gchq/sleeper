@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_URL;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.fromMinimum;
 
 public class AwsStateStoreAdminDriver implements StateStoreAdminDriver {
@@ -62,6 +63,12 @@ public class AwsStateStoreAdminDriver implements StateStoreAdminDriver {
     @Override
     public void triggerDeleteSnapshots(Stream<TableStatus> tables) {
         String queueUrl = instance.getInstanceProperties().get(TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL);
+        InvokeForTables.sendOneMessagePerTable(clients.getSqs(), queueUrl, tables);
+    }
+
+    @Override
+    public void triggerDeleteTransactions(Stream<TableStatus> tables) {
+        String queueUrl = instance.getInstanceProperties().get(TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_URL);
         InvokeForTables.sendOneMessagePerTable(clients.getSqs(), queueUrl, tables);
     }
 

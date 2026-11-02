@@ -30,6 +30,8 @@ public interface StateStoreAdminDriver {
 
     void triggerDeleteSnapshots(Stream<TableStatus> tables);
 
+    void triggerDeleteTransactions(Stream<TableStatus> tables);
+
     Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
 
     Optional<PartitionTree> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
