@@ -42,7 +42,9 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CL
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
+import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
+import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BATCHING;
@@ -226,11 +228,35 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
-    @Disabled("TODO")
-    void shouldReportFailureDeletingTransactionsForSomeTables() {
-        // Given 5 Sleeper tables with state store transactions ready to be deleted
+    void shouldReportFailureDeletingTransactionsForSomeTables(SleeperDsl sleeper) {
+        // Given 5 Sleeper tables configured to delete unneeded transactions immediately
+        sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false",
+                TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS, "0",
+                TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, "0"));
+        // And we add transactions to the tables
+        sleeper.tables().forEach(() -> {
+            PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "split")
+                    .buildTree();
+            FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+            sleeper.partitioning().setPartitions(partitions);
+            sleeper.stateStore().fakeCommits().setupStateStore(store -> {
+                update(store).addFile(fileFactory.rootFile("test.parquet", 10));
+            });
+        });
+        // And we create snapshots of the state so that the transactions are no loner needed
+        sleeper.stateStore().invokeSnapshotCreation();
+        sleeper.tables().forEach(() -> {
+            sleeper.stateStore()
+                    .waitForPartitionsSnapshot(snapshot -> snapshot.getLeafPartitions().size() == 2)
+                    .waitForFilesSnapshot(snapshot -> snapshot.getFiles().size() == 1);
+        });
 
         // When we trigger transaction deletion for the tables, interleaved with non-existent tables
+        sleeper.stateStore().invokeTransactionDeletionForAllInterleavedWithFakeTables(
+                List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"));
 
         // Then the transactions are deleted
         // And the messages for the non-existent tables appear on the dead letter queue
