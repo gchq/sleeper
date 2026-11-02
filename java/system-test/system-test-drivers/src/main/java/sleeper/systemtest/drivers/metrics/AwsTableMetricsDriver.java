@@ -49,6 +49,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -82,9 +83,9 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
     }
 
     @Override
-    public void generateTableMetrics() {
+    public void triggerTableMetricsGeneration(Stream<TableStatus> tables) {
         String queueUrl = instance.getInstanceProperties().get(TABLE_METRICS_QUEUE_URL);
-        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, instance.streamTableProperties().map(TableProperties::getStatus));
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, tables);
     }
 
     @Override

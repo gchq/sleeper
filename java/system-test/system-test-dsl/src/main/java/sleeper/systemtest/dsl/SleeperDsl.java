@@ -158,7 +158,7 @@ public class SleeperDsl {
     }
 
     public TableMetricsDsl tableMetrics() {
-        return new TableMetricsDsl(context.instance().adminRoleDrivers().tableMetrics(context));
+        return new TableMetricsDsl(context.instance(), context.instance().adminRoleDrivers().tableMetrics(context));
     }
 
     public DataGenerationClusterDsl systemTestCluster() {

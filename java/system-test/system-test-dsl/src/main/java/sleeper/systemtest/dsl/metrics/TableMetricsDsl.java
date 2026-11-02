@@ -17,17 +17,21 @@
 package sleeper.systemtest.dsl.metrics;
 
 import sleeper.core.metrics.TableMetrics;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 public class TableMetricsDsl {
 
+    private final SystemTestInstanceContext instance;
     private final TableMetricsDriver driver;
 
-    public TableMetricsDsl(TableMetricsDriver driver) {
+    public TableMetricsDsl(SystemTestInstanceContext instance, TableMetricsDriver driver) {
+        this.instance = instance;
         this.driver = driver;
     }
 
     public TableMetricsDsl generate() {
-        driver.generateTableMetrics();
+        driver.triggerTableMetricsGeneration(instance.streamTableProperties().map(TableProperties::getStatus));
         return this;
     }
 
