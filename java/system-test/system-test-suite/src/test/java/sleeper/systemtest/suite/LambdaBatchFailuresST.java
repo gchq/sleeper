@@ -265,6 +265,8 @@ public class LambdaBatchFailuresST {
                     .waitForNoFileTransactions();
         });
         // And the messages for the non-existent tables appear on the dead letter queue
+        assertThat(sleeper.deadLetters().drainTransactionDeletionTriggerDLQForWholeInstance(5))
+                .containsExactlyInAnyOrder("missing-1", "missing-2", "missing-3", "missing-4", "missing-5");
     }
 
     @Test
