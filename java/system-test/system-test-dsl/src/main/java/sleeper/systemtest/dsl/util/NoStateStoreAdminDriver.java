@@ -20,14 +20,14 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.table.TableStatus;
-import sleeper.systemtest.dsl.statestore.StateStoreSnapshotsDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreAdminDriver;
 
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
-public class NoSnapshotsDriver implements StateStoreSnapshotsDriver {
+public class NoStateStoreAdminDriver implements StateStoreAdminDriver {
 
     @Override
     public void triggerCreateSnapshots(Stream<TableStatus> tables) {

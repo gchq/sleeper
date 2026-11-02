@@ -30,9 +30,9 @@ public class WaitForSnapshot {
     public static final Logger LOGGER = LoggerFactory.getLogger(WaitForSnapshot.class);
 
     private final SystemTestInstanceContext instance;
-    private final StateStoreSnapshotsDriver driver;
+    private final StateStoreAdminDriver driver;
 
-    public WaitForSnapshot(SystemTestInstanceContext instance, StateStoreSnapshotsDriver driver) {
+    public WaitForSnapshot(SystemTestInstanceContext instance, StateStoreAdminDriver driver) {
         this.instance = instance;
         this.driver = driver;
     }

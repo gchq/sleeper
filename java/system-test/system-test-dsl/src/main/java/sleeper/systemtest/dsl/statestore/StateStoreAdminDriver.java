@@ -24,7 +24,7 @@ import sleeper.core.table.TableStatus;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public interface StateStoreSnapshotsDriver {
+public interface StateStoreAdminDriver {
 
     void triggerCreateSnapshots(Stream<TableStatus> tables);
 

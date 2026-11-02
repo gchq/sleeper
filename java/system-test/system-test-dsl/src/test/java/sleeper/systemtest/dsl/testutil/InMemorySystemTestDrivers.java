@@ -42,9 +42,9 @@ import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreAdminDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
-import sleeper.systemtest.dsl.statestore.StateStoreSnapshotsDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryBulkExportDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataGenerationTasksDriver;
@@ -59,7 +59,7 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemoryReports;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
 import sleeper.systemtest.dsl.util.NoScheduleRulesDriver;
-import sleeper.systemtest.dsl.util.NoSnapshotsDriver;
+import sleeper.systemtest.dsl.util.NoStateStoreAdminDriver;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDriversBase;
@@ -222,8 +222,8 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     @Override
-    public StateStoreSnapshotsDriver snapshots(SystemTestContext context) {
-        return new NoSnapshotsDriver();
+    public StateStoreAdminDriver snapshots(SystemTestContext context) {
+        return new NoStateStoreAdminDriver();
     }
 
     @Override

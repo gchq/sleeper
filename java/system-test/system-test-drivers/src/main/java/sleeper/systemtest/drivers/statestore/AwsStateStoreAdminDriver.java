@@ -33,7 +33,7 @@ import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapsho
 import sleeper.statestore.transactionlog.snapshots.SnapshotType;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.statestore.StateStoreSnapshotsDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreAdminDriver;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -43,12 +43,12 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.fromMinimum;
 
-public class AwsSnapshotsDriver implements StateStoreSnapshotsDriver {
-    public static final Logger LOGGER = LoggerFactory.getLogger(AwsSnapshotsDriver.class);
+public class AwsStateStoreAdminDriver implements StateStoreAdminDriver {
+    public static final Logger LOGGER = LoggerFactory.getLogger(AwsStateStoreAdminDriver.class);
     private final SystemTestInstanceContext instance;
     private final SystemTestClients clients;
 
-    public AwsSnapshotsDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
+    public AwsStateStoreAdminDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.clients = clients;
     }
@@ -68,13 +68,13 @@ public class AwsSnapshotsDriver implements StateStoreSnapshotsDriver {
     @Override
     public Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return loadLatestSnapshot(instanceProperties, tableProperties, SnapshotType.FILES)
-                .map(AwsSnapshotsDriver::readFiles);
+                .map(AwsStateStoreAdminDriver::readFiles);
     }
 
     @Override
     public Optional<PartitionTree> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return loadLatestSnapshot(instanceProperties, tableProperties, SnapshotType.PARTITIONS)
-                .map(AwsSnapshotsDriver::readPartitions);
+                .map(AwsStateStoreAdminDriver::readPartitions);
     }
 
     private Optional<TransactionLogSnapshot> loadLatestSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties, SnapshotType snapshotType) {

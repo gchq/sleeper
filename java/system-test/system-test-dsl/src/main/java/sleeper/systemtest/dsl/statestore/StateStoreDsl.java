@@ -45,7 +45,7 @@ public class StateStoreDsl {
     private final SystemTestContext context;
     private final StateStoreCommitterDriver driver;
     private final StateStoreCommitterLogsDriver logsDriver;
-    private final StateStoreSnapshotsDriver snapshotsDriver;
+    private final StateStoreAdminDriver snapshotsDriver;
     private final PollWithRetriesDriver pollDriver;
 
     public StateStoreDsl(SystemTestContext context) {

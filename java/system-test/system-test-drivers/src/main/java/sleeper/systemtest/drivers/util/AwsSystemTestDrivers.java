@@ -50,7 +50,7 @@ import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.query.WebSocketQueryDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
-import sleeper.systemtest.drivers.statestore.AwsSnapshotsDriver;
+import sleeper.systemtest.drivers.statestore.AwsStateStoreAdminDriver;
 import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterDriver;
 import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -87,9 +87,9 @@ import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestLocalFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreAdminDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
-import sleeper.systemtest.dsl.statestore.StateStoreSnapshotsDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -286,8 +286,8 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public StateStoreSnapshotsDriver snapshots(SystemTestContext context) {
-        return new AwsSnapshotsDriver(context.instance(), clients);
+    public StateStoreAdminDriver snapshots(SystemTestContext context) {
+        return new AwsStateStoreAdminDriver(context.instance(), clients);
     }
 
     @Override
