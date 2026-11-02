@@ -246,7 +246,7 @@ public class LambdaBatchFailuresST {
                 update(store).addFile(fileFactory.rootFile("test.parquet", 10));
             });
         });
-        // And we create snapshots of the state so that the transactions are no loner needed
+        // And we create snapshots of the state so that the transactions are no longer needed
         sleeper.stateStore().invokeSnapshotCreation();
         sleeper.tables().forEach(() -> {
             sleeper.stateStore()
@@ -259,6 +259,11 @@ public class LambdaBatchFailuresST {
                 List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"));
 
         // Then the transactions are deleted
+        sleeper.tables().forEach(() -> {
+            sleeper.stateStore()
+                    .waitForNoPartitionTransactions()
+                    .waitForNoFileTransactions();
+        });
         // And the messages for the non-existent tables appear on the dead letter queue
     }
 

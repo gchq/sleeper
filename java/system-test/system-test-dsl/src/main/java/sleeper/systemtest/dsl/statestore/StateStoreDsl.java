@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -34,6 +35,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
@@ -118,12 +120,12 @@ public class StateStoreDsl {
     }
 
     public StateStoreDsl waitForFilesSnapshot(Predicate<AllReferencesToAllFiles> condition) {
-        snapshotWaits().waitForFilesSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)), condition);
+        snapshotWaits().waitForFilesSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(2)), condition);
         return this;
     }
 
     public StateStoreDsl waitForPartitionsSnapshot(Predicate<PartitionTree> condition) {
-        snapshotWaits().waitForPartitionsSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)), condition);
+        snapshotWaits().waitForPartitionsSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(2)), condition);
         return this;
     }
 
@@ -136,17 +138,51 @@ public class StateStoreDsl {
     }
 
     public StateStoreDsl waitForNoFilesSnapshot() {
-        snapshotWaits().waitForNoFilesSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
+        snapshotWaits().waitForNoFilesSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(2)));
         return this;
     }
 
     public StateStoreDsl waitForNoPartitionsSnapshot() {
-        snapshotWaits().waitForNoPartitionsSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
+        snapshotWaits().waitForNoPartitionsSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(2)));
+        return this;
+    }
+
+    public StateStoreDsl waitForNoFileTransactions() {
+        try {
+            pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(2))
+                    .pollUntil("file transactions are deleted",
+                            () -> fileTransactions().count() == 0);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+        return this;
+    }
+
+    public StateStoreDsl waitForNoPartitionTransactions() {
+        try {
+            pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(2))
+                    .pollUntil("partition transactions are deleted",
+                            () -> partitionTransactions().count() == 0);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
         return this;
     }
 
     private WaitForSnapshot snapshotWaits() {
         return new WaitForSnapshot(context.instance(), adminDriver);
+    }
+
+    private Stream<TransactionLogEntry> fileTransactions() {
+        return adminDriver.loadAllFileTransactions(
+                context.instance().getInstanceProperties(), context.instance().getTableProperties());
+    }
+
+    private Stream<TransactionLogEntry> partitionTransactions() {
+        return adminDriver.loadAllPartitionTransactions(
+                context.instance().getInstanceProperties(), context.instance().getTableProperties());
     }
 
 }

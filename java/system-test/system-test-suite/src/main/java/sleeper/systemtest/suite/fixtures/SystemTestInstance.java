@@ -87,9 +87,12 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_ROW_BATCH_TYPE;
 import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_CREATION_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_DELETION_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_PLATFORM;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.model.OptionalStack.CompactionStack;
 import static sleeper.core.properties.model.OptionalStack.EmrBulkImportStack;
 import static sleeper.core.properties.model.OptionalStack.EmrServerlessBulkImportStack;
@@ -338,6 +341,10 @@ public class SystemTestInstance {
         properties.setEnumList(OPTIONAL_STACKS, List.of(
                 CompactionStack, GarbageCollectorStack, PartitionSplittingStack, TableMetricsStack));
         properties.set(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.LAMBDA.toString());
+        properties.setNumber(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES, 1);
+        properties.setNumber(SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_SECONDS, 60);
+        properties.setNumber(SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_MINUTES, 1);
+        properties.setNumber(TRANSACTION_DELETION_LAMBDA_PERIOD_IN_MINUTES, 1);
         properties.setNumber(COMPACTION_JOB_CREATION_BATCH_SIZE, 10);
         properties.setNumber(COMPACTION_COMMIT_BATCH_SIZE, 10);
         properties.setNumber(COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS, 1);
