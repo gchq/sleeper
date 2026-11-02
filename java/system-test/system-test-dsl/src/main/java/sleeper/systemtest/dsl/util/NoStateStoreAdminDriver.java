@@ -70,4 +70,18 @@ public class NoStateStoreAdminDriver implements StateStoreAdminDriver {
                         ", table " + tableProperties.getStatus() + ", not currently implemented for this driver");
     }
 
+    @Override
+    public int countFilesSnapshots(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        throw new UnsupportedOperationException(
+                "Requested counting files snapshots for instance " + instanceProperties.get(ID) +
+                        ", table " + tableProperties.getStatus() + ", not currently implemented for this driver");
+    }
+
+    @Override
+    public int countPartitionsSnapshots(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        throw new UnsupportedOperationException(
+                "Requested counting partitions snapshots for instance " + instanceProperties.get(ID) +
+                        ", table " + tableProperties.getStatus() + ", not currently implemented for this driver");
+    }
+
 }

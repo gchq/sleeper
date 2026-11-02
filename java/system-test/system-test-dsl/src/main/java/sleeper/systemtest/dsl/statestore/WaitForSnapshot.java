@@ -59,20 +59,34 @@ public class WaitForSnapshot {
         }
     }
 
-    public void waitForNoFilesSnapshot(PollWithRetries poll) {
-        LOGGER.info("Waiting until no files snapshot is present");
+    public void waitForFilesSnapshotCountDecrease(PollWithRetries poll, int number) {
+        LOGGER.info("Waiting for files snapshot deletion");
         try {
-            poll.pollUntil("no files snapshot is present", () -> loadLatestFilesSnapshot().isEmpty());
+            poll.pollUntil("files snapshot deletion", () -> {
+                int count = driver.countFilesSnapshots(instance.getInstanceProperties(), instance.getTableProperties());
+                if (count < number) {
+                    throw new RuntimeException("More files snapshots deleted than expected, found " + count);
+                } else {
+                    return count == number;
+                }
+            });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }
 
-    public void waitForNoPartitionsSnapshot(PollWithRetries poll) {
-        LOGGER.info("Waiting until no partitions snapshot is present");
+    public void waitForPartitionsSnapshotCountDecrease(PollWithRetries poll, int number) {
+        LOGGER.info("Waiting for partitions snapshot deletion");
         try {
-            poll.pollUntil("no partitions snapshot is present", () -> loadLatestPartitionsSnapshot().isEmpty());
+            poll.pollUntil("partitions snapshot deletion", () -> {
+                int count = driver.countPartitionsSnapshots(instance.getInstanceProperties(), instance.getTableProperties());
+                if (count < number) {
+                    throw new RuntimeException("More partitions snapshots deleted than expected, found " + count);
+                } else {
+                    return count == number;
+                }
+            });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

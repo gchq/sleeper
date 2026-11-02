@@ -34,10 +34,12 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.statestore.transactionlog.snapshots.SnapshotType;
+import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotMetadata;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreAdminDriver;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -99,11 +101,29 @@ public class AwsStateStoreAdminDriver implements StateStoreAdminDriver {
                 .readTransactions(TransactionLogRange.fromMinimum(0));
     }
 
+    @Override
+    public int countFilesSnapshots(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        List<TransactionLogSnapshotMetadata> snapshots = metadataStore(instanceProperties, tableProperties).getFilesSnapshots();
+        LOGGER.info("Found files snapshots: {}", snapshots);
+        return snapshots.size();
+    }
+
+    @Override
+    public int countPartitionsSnapshots(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        List<TransactionLogSnapshotMetadata> snapshots = metadataStore(instanceProperties, tableProperties).getPartitionsSnapshots();
+        LOGGER.info("Found partitions snapshots: {}", snapshots);
+        return snapshots.size();
+    }
+
     private Optional<TransactionLogSnapshot> loadLatestSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties, SnapshotType snapshotType) {
-        DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, clients.getDynamo());
+        DynamoDBTransactionLogSnapshotMetadataStore metadataStore = metadataStore(instanceProperties, tableProperties);
         StateStoreArrowFileReadStore fileStore = new StateStoreArrowFileReadStore(instanceProperties, clients.getS3());
         return new DynamoDBTransactionLogSnapshotLoader(metadataStore, fileStore, snapshotType)
                 .loadLatestSnapshotInRange(fromMinimum(0));
+    }
+
+    private DynamoDBTransactionLogSnapshotMetadataStore metadataStore(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, clients.getDynamo());
     }
 
     private static AllReferencesToAllFiles readFiles(TransactionLogSnapshot snapshot) {

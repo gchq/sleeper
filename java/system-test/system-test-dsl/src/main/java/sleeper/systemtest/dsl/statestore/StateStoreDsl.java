@@ -137,13 +137,13 @@ public class StateStoreDsl {
         return snapshotWaits().waitForPartitionsSnapshot(intervalAndPollingTimeout, condition);
     }
 
-    public StateStoreDsl waitForNoFilesSnapshot() {
-        snapshotWaits().waitForNoFilesSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(2)));
+    public StateStoreDsl waitForFilesSnapshotsToDecreaseTo(int number) {
+        snapshotWaits().waitForFilesSnapshotCountDecrease(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(2)), number);
         return this;
     }
 
-    public StateStoreDsl waitForNoPartitionsSnapshot() {
-        snapshotWaits().waitForNoPartitionsSnapshot(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(2)));
+    public StateStoreDsl waitForPartitionsSnapshotsToDecreaseTo(int number) {
+        snapshotWaits().waitForPartitionsSnapshotCountDecrease(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(2)), number);
         return this;
     }
 

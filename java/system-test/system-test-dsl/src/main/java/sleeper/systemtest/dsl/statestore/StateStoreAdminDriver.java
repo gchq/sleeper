@@ -40,4 +40,8 @@ public interface StateStoreAdminDriver {
     Stream<TransactionLogEntry> loadAllFileTransactions(InstanceProperties instanceProperties, TableProperties tableProperties);
 
     Stream<TransactionLogEntry> loadAllPartitionTransactions(InstanceProperties instanceProperties, TableProperties tableProperties);
+
+    int countFilesSnapshots(InstanceProperties instanceProperties, TableProperties tableProperties);
+
+    int countPartitionsSnapshots(InstanceProperties instanceProperties, TableProperties tableProperties);
 }

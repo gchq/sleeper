@@ -199,21 +199,20 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
-    @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
+    // @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureDeletingSnapshotsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with state store transactions
         sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, "0"));
+        PartitionsBuilder partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "split");
+        PartitionTree initialPartitions = partitions.buildTree();
         sleeper.tables().forEach(() -> {
-            PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", "split")
-                    .buildTree();
-            FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
-            sleeper.partitioning().setPartitions(partitions);
+            sleeper.partitioning().setPartitions(initialPartitions);
             sleeper.stateStore().fakeCommits().setupStateStore(store -> {
-                update(store).addFile(fileFactory.rootFile("test.parquet", 10));
+                update(store).addFile(FileReferenceFactory.from(initialPartitions).rootFile("test.parquet", 10));
             });
         });
         // And snapshots are created
@@ -223,6 +222,21 @@ public class LambdaBatchFailuresST {
                     .waitForPartitionsSnapshot(snapshot -> snapshot.getLeafPartitions().size() == 2)
                     .waitForFilesSnapshot(snapshot -> snapshot.getFiles().size() == 1);
         });
+        // And we make another, newer snapshot so the previous one can be deleted
+        sleeper.tables().forEach(() -> {
+            sleeper.stateStore().fakeCommits().setupStateStore(store -> {
+                partitions.splitToNewChildren("L", "LL", "LR", "again")
+                        .applySplit(store, "L");
+                update(store).addFile(FileReferenceFactory.from(partitions.buildTree())
+                        .partitionFile("LL", "test-LL.parquet", 20));
+            });
+        });
+        sleeper.stateStore().invokeSnapshotCreation();
+        sleeper.tables().forEach(() -> {
+            sleeper.stateStore()
+                    .waitForPartitionsSnapshot(snapshot -> snapshot.getLeafPartitions().size() == 3)
+                    .waitForFilesSnapshot(snapshot -> snapshot.getFiles().size() == 2);
+        });
 
         // When we trigger snapshot deletion for the tables, interleaved with non-existent tables
         sleeper.stateStore().invokeSnapshotDeletionForAllInterleavedWithFakeTables(
@@ -230,7 +244,9 @@ public class LambdaBatchFailuresST {
 
         // Then the snapshots are deleted
         sleeper.tables().forEach(() -> {
-            sleeper.stateStore().waitForNoFilesSnapshot().waitForNoPartitionsSnapshot();
+            sleeper.stateStore()
+                    .waitForPartitionsSnapshotsToDecreaseTo(1)
+                    .waitForFilesSnapshotsToDecreaseTo(1);
         });
         // And the messages for the non-existent tables appear on the dead letter queue
         assertThat(sleeper.deadLetters().drainSnapshotDeletionTriggerDLQForWholeInstance(5))
