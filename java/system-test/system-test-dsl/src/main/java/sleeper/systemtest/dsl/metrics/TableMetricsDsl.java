@@ -36,6 +36,6 @@ public class TableMetricsDsl {
     }
 
     public TableMetrics get() {
-        return driver.getTableMetrics();
+        return driver.getTableMetrics(instance.getTableProperties());
     }
 }

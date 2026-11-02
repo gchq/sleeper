@@ -16,6 +16,7 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.metrics.TableMetrics;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class InMemoryTableMetrics {
 
@@ -51,8 +53,8 @@ public class InMemoryTableMetrics {
         }
 
         @Override
-        public TableMetrics getTableMetrics() {
-            return metricsByTableName.get(instance.getTableName());
+        public TableMetrics getTableMetrics(TableProperties tableProperties) {
+            return metricsByTableName.get(tableProperties.get(TABLE_NAME));
         }
     }
 
