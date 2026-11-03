@@ -26,7 +26,9 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.CountingIterator;
 import sleeper.core.iterator.closeable.MergingIterator;
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
@@ -58,11 +60,9 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -246,7 +246,7 @@ public class InMemoryCompaction {
 
     private RowsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema) {
         List<CloseableIterator<Row>> inputIterators = job.getInputFiles().stream()
-                .map(file -> new CountingIterator(file, partition.getRegion(), schema))
+                .map(file -> new CountingIterator<Row>(fileIterator(file, partition.getRegion(), schema)))
                 .collect(toUnmodifiableList());
         CloseableIterator<Row> mergingIterator;
         try {
@@ -264,8 +264,8 @@ public class InMemoryCompaction {
         dataStore.addFile(job.getOutputFile(), rows);
         sketchesStore.saveFileSketches(job.getOutputFile(), sketches);
         return new RowsProcessed(rows.size(), inputIterators.stream()
-                .map(it -> (CountingIterator) it)
-                .mapToLong(it -> it.count)
+                .map(it -> (CountingIterator<Row>) it)
+                .mapToLong(CountingIterator::getCount)
                 .sum());
     }
 
@@ -283,33 +283,10 @@ public class InMemoryCompaction {
         });
     }
 
-    private class CountingIterator implements CloseableIterator<Row> {
-
-        private final Iterator<Row> iterator;
-        private long count = 0;
-
-        CountingIterator(String filename, Region region, Schema schema) {
-            iterator = dataStore.streamRows(List.of(filename))
-                    .filter(row -> region.isKeyInRegion(schema, row.getRowKeys(schema)))
-                    .iterator();
-        }
-
-        @Override
-        public boolean hasNext() {
-            return iterator.hasNext();
-        }
-
-        @Override
-        public Row next() {
-            Row row = iterator.next();
-            count++;
-            return row;
-        }
-
-        @Override
-        public void close() throws IOException {
-        }
-
+    private CloseableIterator<Row> fileIterator(String filename, Region region, Schema schema) {
+        return new WrappedIterator<>(dataStore.streamRows(List.of(filename))
+                .filter(row -> region.isKeyInRegion(schema, row.getRowKeys(schema)))
+                .iterator());
     }
 
 }
