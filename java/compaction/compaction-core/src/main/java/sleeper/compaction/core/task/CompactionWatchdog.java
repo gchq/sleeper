@@ -23,6 +23,7 @@ import sleeper.core.util.ThreadSleep;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -43,9 +44,7 @@ public class CompactionWatchdog implements AutoCloseable {
     private final ThreadSleep threadSleep;
     private final Consumer<CompactionStall> stallHandler;
     private final Thread thread;
-    private final Object lock = new Object();
-    private boolean stopped = false;
-    private boolean handlingStall = false;
+    private final AtomicReference<State> state = new AtomicReference<>(State.RUNNING);
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public CompactionWatchdog(
@@ -77,11 +76,8 @@ public class CompactionWatchdog implements AutoCloseable {
      */
     @Override
     public void close() {
-        synchronized (lock) {
-            stopped = true;
-            if (!handlingStall) {
-                thread.interrupt();
-            }
+        if (state.compareAndSet(State.RUNNING, State.STOPPED)) {
+            thread.interrupt();
         }
         try {
             thread.join();
@@ -98,16 +94,15 @@ public class CompactionWatchdog implements AutoCloseable {
                 Thread.currentThread().interrupt();
                 return;
             }
-            Optional<CompactionStall> stall;
-            synchronized (lock) {
-                if (stopped) {
-                    return;
-                }
-                stall = detector.checkForStall(jobStartTime, monitor.getProgress(), timeSupplier.get());
-                if (stall.isEmpty()) {
-                    continue;
-                }
-                handlingStall = true;
+            if (state.get() != State.RUNNING) {
+                return;
+            }
+            Optional<CompactionStall> stall = detector.checkForStall(jobStartTime, monitor.getProgress(), timeSupplier.get());
+            if (stall.isEmpty()) {
+                continue;
+            }
+            if (!state.compareAndSet(State.RUNNING, State.HANDLING_STALL)) {
+                return;
             }
             LOGGER.error("Compaction job {}: detected stalled compaction: {}", jobId, stall.get().description());
             try {
@@ -117,5 +112,13 @@ public class CompactionWatchdog implements AutoCloseable {
             }
             return;
         }
+    }
+
+    /**
+     * The state of the watchdog. Stopping the watchdog and handling a stall are mutually exclusive, so that a stall
+     * handler is never interrupted, and a stall is never handled after the watchdog is closed.
+     */
+    private enum State {
+        RUNNING, STOPPED, HANDLING_STALL
     }
 }
