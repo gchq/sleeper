@@ -42,7 +42,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleepTestHelper;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
@@ -75,7 +75,7 @@ import static sleeper.query.core.tracker.QueryState.IN_PROGRESS;
 import static sleeper.query.core.tracker.QueryState.PARTIALLY_FAILED;
 import static sleeper.query.core.tracker.QueryState.QUEUED;
 
-public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
+public class DynamoDBQueryTrackerIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
 

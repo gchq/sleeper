@@ -22,7 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Schema;
-import sleeper.localstack.test.WiremockHadoopConfigurationProvider;
+import sleeper.local.aws.test.WiremockHadoopConfigurationProvider;
 import sleeper.sketches.Sketches;
 
 import java.io.IOException;

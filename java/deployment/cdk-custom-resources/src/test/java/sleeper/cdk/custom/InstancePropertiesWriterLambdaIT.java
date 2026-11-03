@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -36,7 +36,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
-public class InstancePropertiesWriterLambdaIT extends LocalStackTestBase {
+public class InstancePropertiesWriterLambdaIT extends LocalAwsTestBase {
 
     private InstanceProperties createDefaultProperties(String account, String bucket) {
         InstanceProperties instanceProperties = new InstanceProperties();

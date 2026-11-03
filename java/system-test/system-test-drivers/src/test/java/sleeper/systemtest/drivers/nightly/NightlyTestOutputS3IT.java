@@ -24,7 +24,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.systemtest.drivers.nightly.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
-class NightlyTestOutputS3IT extends LocalStackTestBase {
+class NightlyTestOutputS3IT extends LocalAwsTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
     @TempDir
