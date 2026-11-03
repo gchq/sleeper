@@ -43,6 +43,17 @@ public class ExitJvmCompactionTaskTerminator implements CompactionTaskTerminator
         this.haltAfter = haltAfter;
     }
 
+    /**
+     * Exits the JVM with a non-zero exit code, so that ECS records the task as failed.
+     * <p>
+     * We first attempt a normal exit with System.exit, which runs shutdown hooks, e.g. so that logs are flushed.
+     * However, this is called after a compaction has hung in native code, so the process may be in an inconsistent
+     * state and a shutdown hook could also hang. That would block System.exit indefinitely, and the task would remain
+     * hung. As a fallback, a daemon thread calls Runtime.halt after a delay, which terminates the JVM immediately
+     * without running shutdown hooks.
+     *
+     * @param reason a description of why the task is being terminated
+     */
     @Override
     @SuppressFBWarnings("DM_EXIT")
     public void terminate(String reason) {

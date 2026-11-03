@@ -165,6 +165,7 @@ public class CompactionTask {
         try {
             finishTime = handleMessages(startTime, taskStatusBuilder, taskFinishedBuilder);
         } catch (CompactionStalledException e) {
+            // Task finished status was already reported by the watchdog thread when the stall was detected
             LOGGER.error("Compaction task {} stopped after a compaction stalled", taskId, e);
             return;
         }
