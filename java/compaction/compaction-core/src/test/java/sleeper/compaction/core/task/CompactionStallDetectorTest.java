@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.core.task.CompactionProgressTestData.rowsProcessedLastUpdateAndLastChange;
 
 public class CompactionStallDetectorTest {
 
@@ -59,9 +60,8 @@ public class CompactionStallDetectorTest {
 
         @Test
         void shouldNotStallWhenRowsChangedRecently() {
-            CompactionProgress progress = new CompactionProgress(100,
-                    Instant.parse("2026-10-26T10:20:00Z"),
-                    Instant.parse("2026-10-26T10:20:00Z"));
+            CompactionProgress progress = rowsProcessedLastUpdateAndLastChange(100,
+                    "2026-10-26T10:20:00Z", "2026-10-26T10:20:00Z");
             assertThat(detector.checkForStall(JOB_START, Optional.of(progress),
                     Instant.parse("2026-10-26T10:24:59Z")))
                     .isEmpty();
@@ -69,9 +69,8 @@ public class CompactionStallDetectorTest {
 
         @Test
         void shouldIgnoreFirstUpdateTimeoutOnceUpdateReceived() {
-            CompactionProgress progress = new CompactionProgress(100,
-                    Instant.parse("2026-10-26T10:15:00Z"),
-                    Instant.parse("2026-10-26T10:15:00Z"));
+            CompactionProgress progress = rowsProcessedLastUpdateAndLastChange(100,
+                    "2026-10-26T10:15:00Z", "2026-10-26T10:15:00Z");
             assertThat(detector.checkForStall(JOB_START, Optional.of(progress),
                     Instant.parse("2026-10-26T10:16:00Z")))
                     .isEmpty();
@@ -79,9 +78,8 @@ public class CompactionStallDetectorTest {
 
         @Test
         void shouldStallWhenRowsUnchangedWhileUpdatesContinue() {
-            CompactionProgress progress = new CompactionProgress(100,
-                    Instant.parse("2026-10-26T10:24:55Z"),
-                    Instant.parse("2026-10-26T10:20:00Z"));
+            CompactionProgress progress = rowsProcessedLastUpdateAndLastChange(100,
+                    "2026-10-26T10:24:55Z", "2026-10-26T10:20:00Z");
             Instant now = Instant.parse("2026-10-26T10:25:00Z");
             assertThat(detector.checkForStall(JOB_START, Optional.of(progress), now))
                     .contains(new CompactionStall(
@@ -92,9 +90,8 @@ public class CompactionStallDetectorTest {
 
         @Test
         void shouldStallWhenUpdatesStop() {
-            CompactionProgress progress = new CompactionProgress(100,
-                    Instant.parse("2026-10-26T10:20:00Z"),
-                    Instant.parse("2026-10-26T10:20:00Z"));
+            CompactionProgress progress = rowsProcessedLastUpdateAndLastChange(100,
+                    "2026-10-26T10:20:00Z", "2026-10-26T10:20:00Z");
             Instant now = Instant.parse("2026-10-26T10:25:00Z");
             assertThat(detector.checkForStall(JOB_START, Optional.of(progress), now))
                     .contains(new CompactionStall(

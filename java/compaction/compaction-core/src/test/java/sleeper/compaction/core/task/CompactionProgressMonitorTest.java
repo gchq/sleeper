@@ -22,6 +22,7 @@ import sleeper.core.testutils.TestInstantSupplier;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.core.task.CompactionProgressTestData.rowsProcessedLastUpdateAndLastChange;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 
 public class CompactionProgressMonitorTest {
@@ -45,9 +46,8 @@ public class CompactionProgressMonitorTest {
         monitor.accept(100);
 
         // Then
-        assertThat(monitor.getProgress()).contains(new CompactionProgress(100,
-                Instant.parse("2026-10-26T10:00:05Z"),
-                Instant.parse("2026-10-26T10:00:05Z")));
+        assertThat(monitor.getProgress()).contains(rowsProcessedLastUpdateAndLastChange(100,
+                "2026-10-26T10:00:05Z", "2026-10-26T10:00:05Z"));
     }
 
     @Test
@@ -62,9 +62,8 @@ public class CompactionProgressMonitorTest {
         monitor.accept(200);
 
         // Then
-        assertThat(monitor.getProgress()).contains(new CompactionProgress(200,
-                Instant.parse("2026-10-26T10:00:10Z"),
-                Instant.parse("2026-10-26T10:00:10Z")));
+        assertThat(monitor.getProgress()).contains(rowsProcessedLastUpdateAndLastChange(200,
+                "2026-10-26T10:00:10Z", "2026-10-26T10:00:10Z"));
     }
 
     @Test
@@ -82,9 +81,8 @@ public class CompactionProgressMonitorTest {
         monitor.accept(100);
 
         // Then
-        assertThat(monitor.getProgress()).contains(new CompactionProgress(100,
-                Instant.parse("2026-10-26T10:00:15Z"),
-                Instant.parse("2026-10-26T10:00:05Z")));
+        assertThat(monitor.getProgress()).contains(rowsProcessedLastUpdateAndLastChange(100,
+                "2026-10-26T10:00:15Z", "2026-10-26T10:00:05Z"));
         assertThat(times.getRemainingTimes()).isEmpty();
     }
 
@@ -100,8 +98,7 @@ public class CompactionProgressMonitorTest {
         monitor.accept(80);
 
         // Then
-        assertThat(monitor.getProgress()).contains(new CompactionProgress(80,
-                Instant.parse("2026-10-26T10:00:10Z"),
-                Instant.parse("2026-10-26T10:00:10Z")));
+        assertThat(monitor.getProgress()).contains(rowsProcessedLastUpdateAndLastChange(80,
+                "2026-10-26T10:00:10Z", "2026-10-26T10:00:10Z"));
     }
 }
