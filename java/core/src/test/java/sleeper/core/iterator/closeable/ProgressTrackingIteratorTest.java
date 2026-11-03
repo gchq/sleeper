@@ -22,18 +22,20 @@ import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.Semaphore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ProgressTrackingIteratorTest {
 
     private final List<Long> progressReports = new ArrayList<>();
+    private final Semaphore pollRequested = new Semaphore(0);
+    private final Semaphore pollCompleted = new Semaphore(0);
 
     @Test
     void shouldFindNoItems() {
         // Given
-        ProgressTrackingIterator<String> iterator = trackProgressEveryNItems(1, iteratorOver(List.of()));
+        ProgressTrackingIterator<String> iterator = trackProgressEveryNItems(1, List.of());
 
         // When / Then
         assertThat(gatherToList(iterator)).isEmpty();
@@ -45,7 +47,7 @@ public class ProgressTrackingIteratorTest {
     void shouldReportEvery3ItemsAndAtEnd() {
         // Given
         List<String> items = List.of("a", "b", "c", "d", "e", "f", "g");
-        ProgressTrackingIterator<String> iterator = trackProgressEveryNItems(3, iteratorOver(items));
+        ProgressTrackingIterator<String> iterator = trackProgressEveryNItems(3, items);
 
         // When / Then
         assertThat(gatherToList(iterator)).containsExactlyElementsOf(items);
@@ -57,7 +59,7 @@ public class ProgressTrackingIteratorTest {
     void shouldReportOnce() {
         // Given
         List<String> items = List.of("a", "b", "c");
-        ProgressTrackingIterator<String> iterator = trackProgressEveryNItems(3, iteratorOver(items));
+        ProgressTrackingIterator<String> iterator = trackProgressEveryNItems(3, items);
 
         // When / Then
         assertThat(gatherToList(iterator)).containsExactlyElementsOf(items);
@@ -65,26 +67,32 @@ public class ProgressTrackingIteratorTest {
         assertThat(iterator.getCount()).isEqualTo(3);
     }
 
-    private <T> ProgressTrackingIterator<T> trackProgressEveryNItems(long n, CloseableIterator<T> source) {
-        CountingIterator<T> counting = new CountingIterator<>(source);
-        AtomicLong lastCount = new AtomicLong(0);
-        return new ProgressTrackingIterator<>(counting, progressReports::add, Duration.ofSeconds(1), time -> {
-            while (counting.getCount() < lastCount.get() + n) {
-                Thread.sleep(1);
-            }
-            lastCount.set(counting.getCount());
-        });
-    }
+    private ProgressTrackingIterator<String> trackProgressEveryNItems(int n, List<String> items) {
+        CloseableIterator<String> source = new CloseableIterator<>() {
+            private int read = 0;
 
-    private static <T> CloseableIterator<T> iteratorOver(List<T> list) {
-        return new WrappedIterator<>(list.stream().peek(item -> {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
+            @Override
+            public boolean hasNext() {
+                return read < items.size();
             }
-        }).iterator());
+
+            @Override
+            public String next() {
+                if (read > 0 && read % n == 0) {
+                    pollRequested.release();
+                    pollCompleted.acquireUninterruptibly();
+                }
+                return items.get(read++);
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        return new ProgressTrackingIterator<>(source, count -> {
+            progressReports.add(count);
+            pollCompleted.release();
+        }, Duration.ofSeconds(1), millis -> pollRequested.acquire());
     }
 
     private static <T> List<T> gatherToList(CloseableIterator<T> iterator) {
