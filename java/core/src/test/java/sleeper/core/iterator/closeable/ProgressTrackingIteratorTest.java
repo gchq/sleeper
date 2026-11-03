@@ -19,8 +19,10 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,7 +54,7 @@ public class ProgressTrackingIteratorTest {
     }
 
     @Test
-    void shouldNotReportAtEndIfThatCountWasAlreadyReported() {
+    void shouldReportOnce() {
         // Given
         List<String> items = List.of("a", "b", "c");
         ProgressTrackingIterator<String> iterator = trackProgressEveryNItems(3, iteratorOver(items));
@@ -60,15 +62,29 @@ public class ProgressTrackingIteratorTest {
         // When / Then
         assertThat(gatherToList(iterator)).containsExactlyElementsOf(items);
         assertThat(progressReports).containsExactly(3L);
-        assertThat(iterator.getCount()).isZero();
+        assertThat(iterator.getCount()).isEqualTo(3);
     }
 
     private <T> ProgressTrackingIterator<T> trackProgressEveryNItems(long n, CloseableIterator<T> source) {
-        return new ProgressTrackingIterator<>(source, progressReports::add, n);
+        CountingIterator<T> counting = new CountingIterator<>(source);
+        AtomicLong lastCount = new AtomicLong(0);
+        return new ProgressTrackingIterator<>(counting, progressReports::add, Duration.ofSeconds(1), time -> {
+            while (counting.getCount() < lastCount.get() + n) {
+                Thread.sleep(1);
+            }
+            lastCount.set(counting.getCount());
+        });
     }
 
     private static <T> CloseableIterator<T> iteratorOver(List<T> list) {
-        return new WrappedIterator<>(list.iterator());
+        return new WrappedIterator<>(list.stream().peek(item -> {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }).iterator());
     }
 
     private static <T> List<T> gatherToList(CloseableIterator<T> iterator) {

@@ -47,6 +47,7 @@ import sleeper.sketches.Sketches;
 import sleeper.sketches.store.SketchesStore;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -104,7 +105,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         Schema schema = request.getTableProperties().getSchema();
         List<CloseableIterator<Row>> inputIterators = createInputIterators(request.getJob(), request.getRegion(), schema);
         CloseableIterator<Row> mergingIterator = new MergingIterator(schema, inputIterators);
-        return new ProgressTrackingIterator<>(mergingIterator, request.getProgressCallback(), 50_000);
+        return new ProgressTrackingIterator<>(mergingIterator, request.getProgressCallback(), Duration.ofSeconds(5), Thread::sleep);
     }
 
     private ParquetWriter<Row> createWriter(CompactionRequest request) throws IOException {

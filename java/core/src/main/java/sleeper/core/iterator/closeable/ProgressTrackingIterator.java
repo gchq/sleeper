@@ -15,20 +15,36 @@
  */
 package sleeper.core.iterator.closeable;
 
+import sleeper.core.util.ThreadSleep;
+
 import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongConsumer;
 
 public class ProgressTrackingIterator<T> implements CloseableIterator<T> {
 
     private final CloseableIterator<T> source;
     private final LongConsumer callback;
-    private final long reportEveryN;
-    private long count = 0;
+    private final AtomicLong count = new AtomicLong(0);
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final Thread pollingThread;
 
-    public ProgressTrackingIterator(CloseableIterator<T> source, LongConsumer callback, long reportEveryN) {
+    public ProgressTrackingIterator(CloseableIterator<T> source, LongConsumer callback, Duration pollInterval, ThreadSleep threadSleep) {
         this.source = source;
         this.callback = callback;
-        this.reportEveryN = reportEveryN;
+        this.pollingThread = new Thread(() -> {
+            while (!closed.get()) {
+                try {
+                    threadSleep.waitForDuration(pollInterval);
+                } catch (InterruptedException e) {
+                    return;
+                }
+                callback.accept(count.get());
+            }
+        });
+        pollingThread.start();
     }
 
     @Override
@@ -39,23 +55,26 @@ public class ProgressTrackingIterator<T> implements CloseableIterator<T> {
     @Override
     public T next() {
         T row = source.next();
-        count++;
-        if (0 == count % reportEveryN) {
-            callback.accept(count);
-        }
+        count.incrementAndGet();
         return row;
     }
 
     @Override
     public void close() throws IOException {
         source.close();
-        if (count == 0 || count % reportEveryN != 0) {
-            callback.accept(count);
+        closed.set(true);
+        pollingThread.interrupt();
+        callback.accept(count.get());
+        try {
+            pollingThread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         }
     }
 
     public long getCount() {
-        return count;
+        return count.get();
     }
 
 }

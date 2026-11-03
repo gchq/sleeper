@@ -16,11 +16,12 @@
 package sleeper.core.iterator.closeable;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class CountingIterator<T> implements CloseableIterator<T> {
 
     private final CloseableIterator<T> source;
-    private long count = 0;
+    private AtomicLong count = new AtomicLong(0);
 
     public CountingIterator(CloseableIterator<T> source) {
         this.source = source;
@@ -34,7 +35,7 @@ public class CountingIterator<T> implements CloseableIterator<T> {
     @Override
     public T next() {
         T row = source.next();
-        count++;
+        count.incrementAndGet();
         return row;
     }
 
@@ -44,7 +45,7 @@ public class CountingIterator<T> implements CloseableIterator<T> {
     }
 
     public long getCount() {
-        return count;
+        return count.get();
     }
 
 }
