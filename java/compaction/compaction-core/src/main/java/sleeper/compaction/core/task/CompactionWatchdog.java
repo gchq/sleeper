@@ -73,6 +73,8 @@ public class CompactionWatchdog implements AutoCloseable {
     /**
      * Stops checking progress, and waits for the background thread to finish. If a stall has already been detected,
      * this will wait for the stall handler to finish, and will not interrupt it.
+     *
+     * @throws RuntimeException if the calling thread is interrupted while waiting, with the interrupt flag restored
      */
     @Override
     public void close() {
@@ -83,6 +85,7 @@ public class CompactionWatchdog implements AutoCloseable {
             thread.join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         }
     }
 

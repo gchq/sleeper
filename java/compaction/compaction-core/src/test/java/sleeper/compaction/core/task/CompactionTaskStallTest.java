@@ -153,6 +153,38 @@ public class CompactionTaskStallTest extends CompactionTaskTestBase {
                 taskFinishedAt(Instant.parse("2026-10-26T10:10:00Z")));
     }
 
+    @Test
+    void shouldFailJobAndStopTaskWhenInterruptedWhileWaitingForWatchdog() throws Exception {
+        // Given
+        CompactionJob job1 = createJobOnQueue("job1");
+        CompactionJob job2 = createJobOnQueue("job2");
+        setWatchdogClockAndWait(() -> JOB_START, waitUntilInterrupted());
+
+        // When
+        try {
+            runTask(compactionInterruptsTaskThenReturns());
+        } finally {
+            // Clear the interrupt so it does not affect later tests
+            Thread.interrupted();
+        }
+
+        // Then
+        assertThat(jobsReturnedToQueue).containsExactly(job1);
+        assertThat(jobsOnQueue).containsExactly(job2);
+        assertThat(consumedJobs).isEmpty();
+        assertThat(stateStoreCommitQueue).isEmpty();
+        assertThat(terminations).isEmpty();
+        assertThat(jobTracker.getJob(job1.getId()).orElseThrow().getRunsLatestFirst())
+                .singleElement()
+                .satisfies(run -> {
+                    assertThat(run.isFinishedSuccessfully()).isFalse();
+                    assertThat(run.getFailureReasons()).anyMatch(reason -> reason.contains("InterruptedException"));
+                });
+        assertThat(taskTracker.getAllTasks())
+                .singleElement()
+                .satisfies(task -> assertThat(task.isFinished()).isTrue());
+    }
+
     private TestInstantSupplier taskTimes() {
         return supplyTimes(
                 TASK_START, // Task start
@@ -193,6 +225,20 @@ public class CompactionTaskStallTest extends CompactionTaskTestBase {
             for (long rows : rowsProcessedUpdates) {
                 request.getProgressCallback().accept(rows);
             }
+            return new RowsProcessed(10, 10);
+        });
+    }
+
+    /**
+     * Simulates the task thread being interrupted during a compaction. The compaction completes, and the interrupt is
+     * found when waiting for the watchdog to stop.
+     *
+     * @return the compaction runner
+     */
+    private CompactionRunner compactionInterruptsTaskThenReturns() {
+        return monitoredRunner(request -> {
+            request.getProgressCallback().accept(10);
+            Thread.currentThread().interrupt();
             return new RowsProcessed(10, 10);
         });
     }

@@ -31,6 +31,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 
 public class CompactionWatchdogTest {
@@ -111,6 +112,29 @@ public class CompactionWatchdogTest {
         // Then
         assertThat(stalls).isEmpty();
         assertThat(sleep.waits).containsExactly(CHECK_PERIOD);
+    }
+
+    @Test
+    void shouldThrowAndRestoreInterruptWhenInterruptedWhileClosing() throws Exception {
+        // Given
+        startWatchdog(new CompactionProgressMonitor(supplyTimes()), supplyTimes());
+        sleep.awaitWait();
+        Thread.currentThread().interrupt();
+
+        // When
+        boolean interrupted;
+        try {
+            assertThatThrownBy(watchdog::close)
+                    .isInstanceOf(RuntimeException.class)
+                    .hasCauseInstanceOf(InterruptedException.class);
+        } finally {
+            // Clear the interrupt so it does not affect later tests
+            interrupted = Thread.interrupted();
+        }
+
+        // Then
+        assertThat(interrupted).as("interrupt flag should be restored").isTrue();
+        assertThat(stalls).isEmpty();
     }
 
     private void startWatchdog(CompactionProgressMonitor monitor, TestInstantSupplier checkTimes) {
