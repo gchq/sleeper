@@ -32,7 +32,7 @@ import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.List;
 import java.util.UUID;
@@ -43,7 +43,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
+public class CompactionCommitBatcherLambdaIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final CompactionCommitMessageSerDe compactionSerDe = new CompactionCommitMessageSerDe();

@@ -45,8 +45,8 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
-import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
-import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
+import static sleeper.local.aws.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
+import static sleeper.local.aws.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
 
 @WireMockTest
 public class IngestBatcherSubmitterLambdaWireMockIT {

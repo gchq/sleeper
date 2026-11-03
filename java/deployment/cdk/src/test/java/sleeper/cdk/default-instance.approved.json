@@ -17253,7 +17253,7 @@
             "MemorySize": 4096,
             "Runtime": "java17",
             "Description": "Gathers up compaction commits and combines them into a larger update to the state store. Used when committing compaction jobs asynchronously.",
-            "Timeout": 900,
+            "Timeout": 30,
             "LoggingConfig": {
               "LogGroup": {
                 "Ref": "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingcompactioncommitbatcherC6D633F8Ref"
@@ -17316,7 +17316,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "CompactionCommitBatcherCurrentVersionE40B6054393b6176809f16cf1765d4b19b70c317",
+                      "CompactionCommitBatcherCurrentVersionE40B6054d9f18abff4cfa252de82b715560ddd1b",
                       "Version"
                     ]
                   }
@@ -18020,6 +18020,17 @@
           "Properties": {
             "FunctionName": {
               "Ref": "CompactionJobsCreationHandlerAC80181B"
+            }
+          }
+        },
+        "CompactionCommitBatcherCurrentVersionE40B6054d9f18abff4cfa252de82b715560ddd1b": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "CompactionCommitBatcher593C3BC4"
             }
           }
         },
@@ -18919,7 +18930,7 @@
                 ]
               }
             },
-            "VisibilityTimeout": 900,
+            "VisibilityTimeout": 90,
             "QueueName": "sleeper-test-instance-CompactionCommitQ",
             "Tags": [
               {
@@ -18931,17 +18942,6 @@
                 "Value": "test-instance"
               }
             ]
-          }
-        },
-        "CompactionCommitBatcherCurrentVersionE40B6054393b6176809f16cf1765d4b19b70c317": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "CompactionCommitBatcher593C3BC4"
-            }
           }
         },
         "PendingCompactionAlarm056BF1F0": {

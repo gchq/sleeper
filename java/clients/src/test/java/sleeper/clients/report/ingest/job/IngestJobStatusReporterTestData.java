@@ -39,6 +39,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFini
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.failedIngestJob;
@@ -236,7 +237,7 @@ public class IngestJobStatusReporterTestData {
     }
 
     /**
-     * Creates example data for jobs from the ingest job tracker with a single bulk import job that has fully completed.
+     * Creates example data for with a single bulk import job that has fully completed.
      *
      * @return the job status list with a single job
      */
@@ -248,6 +249,23 @@ public class IngestJobStatusReporterTestData {
                 validatedIngestStartedStatus(job8, startTime8.plus(Duration.ofMinutes(5))),
                 ingestFinishedStatusUncommitted(startTime8.plus(Duration.ofMinutes(10)), 1, new RowsProcessed(3000, 1500)),
                 ingestAddedFilesStatus(startTime8.plus(Duration.ofMinutes(11)), 1))));
+    }
+
+    /**
+     * Creates example with a single bulk import job that has fully completed, but had a duplicate state store
+     * transaction that did not validate.
+     *
+     * @return the job status list with a single job
+     */
+    public static List<IngestJobStatus> succeededWithFailureBulkImportJob() {
+        IngestJob job = createJob(9, 9);
+        Instant startTime = Instant.parse("2026-10-09T13:34:12.001Z");
+        return List.of(ingestJobStatus(job, jobRunOnTask("bulk-import-cluster-9",
+                ingestAcceptedStatus(startTime, 9),
+                validatedIngestStartedStatus(job, startTime.plus(Duration.ofMinutes(5))),
+                ingestFinishedStatusUncommitted(startTime.plus(Duration.ofMinutes(10)), 1, new RowsProcessed(3000, 1500)),
+                ingestAddedFilesStatus(startTime.plus(Duration.ofMinutes(11)), 1),
+                failedStatus(startTime.plus(Duration.ofMinutes(12)), List.of("File already exists")))));
     }
 
     /**
