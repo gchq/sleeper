@@ -18,6 +18,11 @@ package sleeper.core.iterator.closeable;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * An iterator that counts the elements from a source iterator as it goes.
+ *
+ * @param <T> the element type
+ */
 public class CountingIterator<T> implements CloseableIterator<T> {
 
     private final CloseableIterator<T> source;
@@ -44,6 +49,11 @@ public class CountingIterator<T> implements CloseableIterator<T> {
         source.close();
     }
 
+    /**
+     * Retrieves the number of elements read from the source.
+     *
+     * @return the count
+     */
     public long getCount() {
         return count.get();
     }
