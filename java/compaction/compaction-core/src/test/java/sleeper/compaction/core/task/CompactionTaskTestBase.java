@@ -174,17 +174,36 @@ public class CompactionTaskTestBase {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider(), stateStoreProvider(),
                 jobTracker, stateStoreCommitQueue::add, batcherCommitQueue::add, timeSupplier);
-        CompactionRunnerFactory selector = (job, properties) -> compactor;
-        new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
-                stateStoreProvider(), messageReceiver, fileAssignmentCheck,
-                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps), maxTimeAliveJitter, null,
-                terminator, watchdogTimeSupplier, watchdogSleep)
-                .run();
+        CompactionTask.builder()
+                .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(tablePropertiesProvider())
+                .propertiesReloader(PropertiesReloader.neverReload())
+                .stateStoreProvider(stateStoreProvider())
+                .messageReceiver(messageReceiver)
+                .waitForFiles(fileAssignmentCheck)
+                .jobCommitter(committer)
+                .jobTracker(jobTracker)
+                .taskTracker(taskTracker)
+                .runnerFactory((job, properties) -> compactor)
+                .taskId(taskId)
+                .watchdogFactory(CompactionWatchdogFactory.terminateOnStall(terminator, watchdogTimeSupplier, watchdogSleep))
+                .jobRunIdSupplier(jobRunIdSupplier)
+                .timeSupplier(timeSupplier)
+                .threadSleep(recordWaits(sleeps))
+                .randomJitterFunction(maxTimeAliveJitter)
+                .build().run();
     }
 
-    protected void setWatchdog(Supplier<Instant> timeSupplier, ThreadSleep sleep) {
+    /**
+     * Sets how the watchdog behaves for a compaction that is monitored for stalls. The watchdog runs on its own thread,
+     * so it uses its own clock and wait, separate from the compaction task.
+     *
+     * @param timeSupplier      the clock for the watchdog, used to time progress updates and checks
+     * @param waitBetweenChecks the wait between progress checks
+     */
+    protected void setWatchdogClockAndWait(Supplier<Instant> timeSupplier, ThreadSleep waitBetweenChecks) {
         watchdogTimeSupplier = timeSupplier;
-        watchdogSleep = sleep;
+        watchdogSleep = waitBetweenChecks;
     }
 
     private StateStoreWaitForFiles noWaitForFileAssignment() {

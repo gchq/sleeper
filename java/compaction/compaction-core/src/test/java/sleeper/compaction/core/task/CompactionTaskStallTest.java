@@ -69,7 +69,7 @@ public class CompactionTaskStallTest extends CompactionTaskTestBase {
         TestInstantSupplier watchdogTimes = supplyTimes(
                 JOB_START, // Watchdog started
                 Instant.parse("2026-10-26T10:10:00Z")); // Check finds stall
-        setWatchdog(watchdogTimes, checkAfterCompactionStarted());
+        setWatchdogClockAndWait(watchdogTimes, checkAfterCompactionStarted());
 
         // When
         runTask(compactionHangsAfterUpdates(), taskTimes());
@@ -98,7 +98,7 @@ public class CompactionTaskStallTest extends CompactionTaskTestBase {
                 Instant.parse("2026-10-26T10:01:00Z"), // Progress update
                 Instant.parse("2026-10-26T10:02:00Z"), // Progress update, unchanged
                 Instant.parse("2026-10-26T10:06:00Z")); // Check finds stall
-        setWatchdog(watchdogTimes, checkAfterCompactionStarted());
+        setWatchdogClockAndWait(watchdogTimes, checkAfterCompactionStarted());
 
         // When
         runTask(compactionHangsAfterUpdates(100, 100), taskTimes());
@@ -126,7 +126,7 @@ public class CompactionTaskStallTest extends CompactionTaskTestBase {
                 JOB_START, // Watchdog started
                 Instant.parse("2026-10-26T10:01:00Z"), // Progress update
                 Instant.parse("2026-10-26T10:02:00Z")); // Progress update
-        setWatchdog(watchdogTimes, waitUntilInterrupted());
+        setWatchdogClockAndWait(watchdogTimes, waitUntilInterrupted());
 
         // When
         runTask(compactionSucceedsWithUpdates(100, 200));
@@ -142,7 +142,7 @@ public class CompactionTaskStallTest extends CompactionTaskTestBase {
     void shouldTerminateWhenReturningJobToQueueFails() throws Exception {
         // Given
         CompactionJob job = createJob("job1");
-        setWatchdog(supplyTimes(JOB_START, Instant.parse("2026-10-26T10:10:00Z")), checkAfterCompactionStarted());
+        setWatchdogClockAndWait(supplyTimes(JOB_START, Instant.parse("2026-10-26T10:10:00Z")), checkAfterCompactionStarted());
 
         // When
         runTask(receiveOnce(messageFailingToReturnToQueue(job)), compactionHangsAfterUpdates(), taskTimes());
