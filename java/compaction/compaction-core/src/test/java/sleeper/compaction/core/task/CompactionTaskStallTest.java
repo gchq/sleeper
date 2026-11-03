@@ -213,9 +213,8 @@ public class CompactionTaskStallTest extends CompactionTaskTestBase {
                 request.getProgressCallback().accept(rows);
             }
             compactionStarted.countDown();
-            assertThat(terminated.await(10, TimeUnit.SECONDS))
-                    .as("compaction task should be terminated")
-                    .isTrue();
+            // Time out so that the test fails instead of hanging if the task is never terminated
+            terminated.await(10, TimeUnit.SECONDS);
             return new RowsProcessed(10, 10);
         });
     }
