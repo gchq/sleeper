@@ -54,6 +54,9 @@ pub const DEFAULT_PROGRESS_CALLBACK_INTERVAL: Duration = Duration::from_secs(5);
 ///
 /// The `aws_creds` are optional if you are not attempting to read/write files from S3.
 ///
+/// If a progress callback is given, it will be called with the number of rows read so far at the given interval,
+/// and with the number of rows written once the compaction has finished.
+///
 /// # Examples
 /// ```no_run
 /// # use url::Url;
@@ -61,7 +64,7 @@ pub const DEFAULT_PROGRESS_CALLBACK_INTERVAL: Duration = Duration::from_secs(5);
 /// # use std::collections::HashMap;
 /// # use std::sync::Arc;
 /// # use crate::sleeper_core::{sleeper_context::SleeperContext, run_compaction, CommonConfig, CommonConfigBuilder,
-/// # PartitionBound, ColRange, OutputType, SleeperParquetOptions, SleeperRegion};
+/// # PartitionBound, ColRange, OutputType, SleeperParquetOptions, SleeperRegion, DEFAULT_PROGRESS_CALLBACK_INTERVAL};
 /// # fn main() -> Result<(), color_eyre::eyre::Report> {
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// region.insert("key".into(), ColRange {
@@ -80,7 +83,8 @@ pub const DEFAULT_PROGRESS_CALLBACK_INTERVAL: Duration = Duration::from_secs(5);
 ///     .region(SleeperRegion::new(region))
 ///     .build()?;
 /// # tokio_test::block_on(async {
-/// let result = run_compaction(&compaction_input, &Arc::new(SleeperContext::default()), None).await;
+/// let result = run_compaction(&compaction_input, &Arc::new(SleeperContext::default()), None,
+///     DEFAULT_PROGRESS_CALLBACK_INTERVAL).await;
 /// # });
 /// # Ok(())
 /// # }
@@ -89,25 +93,6 @@ pub const DEFAULT_PROGRESS_CALLBACK_INTERVAL: Duration = Duration::from_secs(5);
 /// # Errors
 /// There must be at least one input file.
 pub async fn run_compaction(
-    config: &CommonConfig<'_>,
-    sleeper_context: &Arc<SleeperContext>,
-    progress_callback: Option<ProgressCallback>,
-) -> Result<CompactionResult> {
-    run_compaction_with_interval(
-        config,
-        sleeper_context,
-        progress_callback,
-        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
-    )
-    .await
-}
-
-/// Compacts the given Parquet files, as [`run_compaction`], with a specified interval between progress
-/// callback invocations.
-///
-/// # Errors
-/// There must be at least one input file.
-pub async fn run_compaction_with_interval(
     config: &CommonConfig<'_>,
     sleeper_context: &Arc<SleeperContext>,
     progress_callback: Option<ProgressCallback>,
