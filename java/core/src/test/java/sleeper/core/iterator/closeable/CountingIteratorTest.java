@@ -18,7 +18,6 @@ package sleeper.core.iterator.closeable;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.testutil.EmptyIteratorWithFakeOnClose;
-import sleeper.core.row.Row;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -54,8 +53,8 @@ public class CountingIteratorTest {
     void shouldCloseSourceIterator() {
         // Given
         AtomicBoolean closed = new AtomicBoolean(false);
-        EmptyIteratorWithFakeOnClose source = new EmptyIteratorWithFakeOnClose(() -> closed.set(true));
-        CountingIterator<Row> iterator = new CountingIterator<>(source);
+        EmptyIteratorWithFakeOnClose<String> source = new EmptyIteratorWithFakeOnClose<>(() -> closed.set(true));
+        CountingIterator<String> iterator = new CountingIterator<>(source);
 
         // When / Then
         assertThat(gatherToList(iterator)).isEmpty();

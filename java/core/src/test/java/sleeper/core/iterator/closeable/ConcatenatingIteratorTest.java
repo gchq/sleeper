@@ -177,7 +177,7 @@ public class ConcatenatingIteratorTest {
     public void shouldCloseIterablesAfterTheyComplete() {
         // Given
         AtomicBoolean closed = new AtomicBoolean(false);
-        EmptyIteratorWithFakeOnClose testIterator = new EmptyIteratorWithFakeOnClose(() -> closed.set(true));
+        EmptyIteratorWithFakeOnClose<Row> testIterator = new EmptyIteratorWithFakeOnClose<>(() -> closed.set(true));
 
         // When
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList((Supplier<CloseableIterator<Row>>) () -> testIterator));
@@ -199,7 +199,7 @@ public class ConcatenatingIteratorTest {
     @Test
     public void shouldThrowExceptionIfSubIteratorThrowsWhenClosing() {
         // Given
-        EmptyIteratorWithFakeOnClose failingIterator = new EmptyIteratorWithFakeOnClose(() -> {
+        EmptyIteratorWithFakeOnClose<Row> failingIterator = new EmptyIteratorWithFakeOnClose<>(() -> {
             throw new IOException("Unexpected failure");
         });
 
