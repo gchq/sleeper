@@ -36,6 +36,7 @@ public class ProgressTrackingIteratorTest {
         // When / Then
         assertThat(gatherToList(iterator)).isEmpty();
         assertThat(progressReports).containsExactly(0L);
+        assertThat(iterator.getCount()).isZero();
     }
 
     @Test
@@ -47,6 +48,7 @@ public class ProgressTrackingIteratorTest {
         // When / Then
         assertThat(gatherToList(iterator)).containsExactlyElementsOf(items);
         assertThat(progressReports).containsExactly(3L, 6L, 7L);
+        assertThat(iterator.getCount()).isEqualTo(7);
     }
 
     @Test
@@ -58,6 +60,7 @@ public class ProgressTrackingIteratorTest {
         // When / Then
         assertThat(gatherToList(iterator)).containsExactlyElementsOf(items);
         assertThat(progressReports).containsExactly(3L);
+        assertThat(iterator.getCount()).isZero();
     }
 
     private <T> ProgressTrackingIterator<T> trackProgressEveryNItems(long n, CloseableIterator<T> source) {

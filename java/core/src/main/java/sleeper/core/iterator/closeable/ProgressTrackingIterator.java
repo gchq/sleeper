@@ -54,4 +54,8 @@ public class ProgressTrackingIterator<T> implements CloseableIterator<T> {
         }
     }
 
+    public long getCount() {
+        return count;
+    }
+
 }

@@ -32,6 +32,7 @@ import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.IteratorFactory;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.MergingIterator;
+import sleeper.core.iterator.closeable.ProgressTrackingIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
@@ -48,7 +49,6 @@ import sleeper.sketches.store.SketchesStore;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.LongConsumer;
 
 /**
  * Executes a compaction job. Compacts N input files into a single output file.
@@ -70,64 +70,55 @@ public class JavaCompactionRunner implements CompactionRunner {
     public RowsProcessed compact(CompactionRequest request) throws IOException, IteratorCreationException {
         CompactionJob compactionJob = request.getJob();
         TableProperties tableProperties = request.getTableProperties();
-        Region region = request.getRegion();
-        LongConsumer callback = request.getProgressCallback();
         Schema schema = tableProperties.getSchema();
 
-        // Create a reader for each file
-        List<CloseableIterator<Row>> inputIterators = createInputIterators(compactionJob, region, schema);
-
-        CloseableIterator<Row> mergingIterator = new MergingIterator(schema, inputIterators);
-        CloseableIterator<Row> compactionIterator = applyIteratorConfig(objectFactory, schema, compactionJob, mergingIterator);
-        // Merge these iterator into one sorted iterator
-
-        // Create writer
-        LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
-        Path outputPath = new Path(compactionJob.getOutputFile());
-        // Setting file writer mode to OVERWRITE so if the same job runs again after failing to
-        // update the state store, it will overwrite the existing output file written
-        // by the previous run
-        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
-                outputPath, tableProperties, configuration, ParquetFileWriter.Mode.OVERWRITE);
-
-        LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
+        long rowsRead = 0;
+        long rowsWritten = 0;
         Sketches sketches = Sketches.from(schema);
+        try (ProgressTrackingIterator<Row> sourceIterator = createTrackedSourceIterator(request);
+                ParquetWriter<Row> writer = createWriter(request)) {
+            CloseableIterator<Row> compactionIterator = applyIteratorConfig(objectFactory, schema, compactionJob, sourceIterator);
 
-        long rowsWritten = 0L;
-        long rowsRead = 0L;
-        while (compactionIterator.hasNext()) {
-            Row row = compactionIterator.next();
-            rowsRead++;
-            if (0 == rowsRead % 50_000) {
-                callback.accept(rowsRead);
+            while (compactionIterator.hasNext()) {
+                Row row = compactionIterator.next();
+                sketches.update(row);
+                // Write out
+                writer.write(row);
+                rowsWritten++;
+                if (0 == rowsWritten % 1_000_000) {
+                    LOGGER.info("Compaction job {}: Written {} rows", compactionJob.getId(), rowsWritten);
+                }
             }
-            sketches.update(row);
-            // Write out
-            writer.write(row);
-            rowsWritten++;
-            if (0 == rowsWritten % 1_000_000) {
-                LOGGER.info("Compaction job {}: Written {} rows", compactionJob.getId(), rowsWritten);
-            }
+            rowsRead = sourceIterator.getCount();
         }
-        callback.accept(rowsRead);
-        writer.close();
-        LOGGER.debug("Compaction job {}: Closed writer", compactionJob.getId());
+        LOGGER.debug("Compaction job {}: Closed readers and writer", compactionJob.getId());
 
         sketchesStore.saveFileSketches(compactionJob.getOutputFile(), schema, sketches);
         LOGGER.info("Compaction job {}: Wrote sketches file for {}", compactionJob.getId(), compactionJob.getOutputFile());
 
-        for (CloseableIterator<Row> iterator : inputIterators) {
-            iterator.close();
-        }
-        LOGGER.debug("Compaction job {}: Closed readers", compactionJob.getId());
+        LOGGER.info("Compaction job {}: Read {} rows and wrote {} rows", compactionJob.getId(), rowsRead, rowsWritten);
+        return new RowsProcessed(rowsRead, rowsWritten);
+    }
 
-        long totalNumberOfRowsRead = 0L;
-        for (CloseableIterator<Row> iterator : inputIterators) {
-            totalNumberOfRowsRead += ((ParquetReaderIterator) iterator).getNumberOfRowsRead();
-        }
+    private ProgressTrackingIterator<Row> createTrackedSourceIterator(CompactionRequest request) throws IOException, IteratorCreationException {
+        Schema schema = request.getTableProperties().getSchema();
+        List<CloseableIterator<Row>> inputIterators = createInputIterators(request.getJob(), request.getRegion(), schema);
+        CloseableIterator<Row> mergingIterator = new MergingIterator(schema, inputIterators);
+        return new ProgressTrackingIterator<>(mergingIterator, request.getProgressCallback(), 50_000);
+    }
 
-        LOGGER.info("Compaction job {}: Read {} rows and wrote {} rows", compactionJob.getId(), totalNumberOfRowsRead, rowsWritten);
-        return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
+    private ParquetWriter<Row> createWriter(CompactionRequest request) throws IOException {
+        CompactionJob compactionJob = request.getJob();
+        Path outputPath = new Path(compactionJob.getOutputFile());
+        LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
+
+        // Setting file writer mode to OVERWRITE so if the same job runs again after failing to
+        // update the state store, it will overwrite the existing output file written
+        // by the previous run
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                outputPath, request.getTableProperties(), configuration, ParquetFileWriter.Mode.OVERWRITE);
+        LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
+        return writer;
     }
 
     private List<CloseableIterator<Row>> createInputIterators(CompactionJob compactionJob, Region region, Schema schema) throws IOException {
