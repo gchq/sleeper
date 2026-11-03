@@ -21,6 +21,8 @@ import java.io.IOException;
 
 /**
  * A test fake for an empty iterator that applies some action when it is closed.
+ *
+ * @param <T> the element type
  */
 public class EmptyIteratorWithFakeOnClose<T> implements CloseableIterator<T> {
 
