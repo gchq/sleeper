@@ -57,8 +57,8 @@ public class CompactionPerformanceST {
 
     @Test
     void shouldMeetCompactionPerformanceStandards(SleeperDsl sleeper) {
-        // Given ingest jobs have generated a high number of rows each
-        // And the high number is a number deliberately chosen as part of a performance testing strategy
+
+        // Given many data generation jobs have produced a large number of files across partitions
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"));
         sleeper.systemTestCluster().runDataGenerationJobs(110,
                 builder -> builder.ingestMode(DIRECT).rowsPerIngest(40_000_000),

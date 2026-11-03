@@ -51,6 +51,7 @@ public class AutoStopEcsTaskST {
 
     @Test
     void shouldRemoveIngestStackWhileTaskIsRunning(SleeperDsl sleeper) throws Exception {
+
         // Given an ingest task is running
         sleeper.enableOptionalStacks(List.of(OptionalStack.IngestStack));
         sleeper.systemTestCluster()

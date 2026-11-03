@@ -59,7 +59,7 @@ public class PartitionSplittingST {
     @Test
     void shouldSplitPartitionsWith100RowsAndThresholdOf20(SleeperDsl sleeper) {
 
-        // Given a table configured to split partitions during ingestion
+        // Given a table with data ingested into a single partition
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 PARTITION_SPLIT_THRESHOLD, "20"));

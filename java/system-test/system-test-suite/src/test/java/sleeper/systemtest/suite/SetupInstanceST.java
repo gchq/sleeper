@@ -47,7 +47,9 @@ public class SetupInstanceST {
     @Test
     void shouldConnectToInstance(SleeperDsl sleeper) {
 
-        // Then the instance is configured with the expected retention settings
+        // When the instance properties are read
+
+        // Then the expected property values are returned
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
                 .isFalse();
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_LOGS_AFTER_DESTROY))
@@ -108,7 +110,7 @@ public class SetupInstanceST {
         assertThat(sleeper.directQuery().allRowsInTable())
                 .hasSize(246);
 
-        // And no ingest job IDs are written to the source bucket
+        // And direct ingest does not create source bucket files
         assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
                 .isEmpty();
     }

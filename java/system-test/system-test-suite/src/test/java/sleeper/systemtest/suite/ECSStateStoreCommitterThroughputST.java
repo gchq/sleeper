@@ -55,12 +55,13 @@ public class ECSStateStoreCommitterThroughputST {
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable(SleeperDsl sleeper) throws Exception {
+
         // Given an offline table with a single root partition
         sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
-        // When fake commits are sent to the state store
+        // When commit processing updates the ingest job tracker
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
@@ -68,8 +69,7 @@ public class ECSStateStoreCommitterThroughputST {
                         .map(StateStoreCommitMessage::addFile))
                 .waitForCommitLogs();
 
-        // Then all files were committed
-        // And the commit throughput meets the expected commits per second
+        // Then commit throughput is not reduced below the expected threshold
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
@@ -77,6 +77,7 @@ public class ECSStateStoreCommitterThroughputST {
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithIngestJobOnOneTable(SleeperDsl sleeper) throws Exception {
+
         // Given an offline table with a single root partition
         sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
@@ -99,12 +100,13 @@ public class ECSStateStoreCommitterThroughputST {
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingLargeRequestsOnOneTable(SleeperDsl sleeper) throws Exception {
-        // Given an offline table with a single randomUUID partition
+
+        // Given an offline table with a single root partition
         sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition(UUID.randomUUID().toString()).buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
-        // When a large number of requests are sent to the state store
+        // When large commit requests are sent to the state store
         FileReferenceFactory fileFactory = FileReferenceFactory.from(sleeper.instanceProperties(), sleeper.tableProperties(), partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 100)
@@ -123,6 +125,7 @@ public class ECSStateStoreCommitterThroughputST {
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables(SleeperDsl sleeper) throws Exception {
+
         // Given multiple tables with a single root partition per table
         sleeper.connectToInstanceNoTables(ECS_STATESTORE);
         sleeper.tables().createMany(10, DEFAULT_SCHEMA);
@@ -150,6 +153,7 @@ public class ECSStateStoreCommitterThroughputST {
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingCompactionJobIdAssignment(SleeperDsl sleeper) throws Exception {
+
         // Given an offline table with a single root partition
         // And files exist in the state store without compaction job assignments
         sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
@@ -182,8 +186,9 @@ public class ECSStateStoreCommitterThroughputST {
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingCompaction(SleeperDsl sleeper) throws Exception {
+
         // Given an offline table with a single root partition
-        //And files exist in the state store with compaction job assignments
+        // And files exist in the state store with compaction job assignments
         sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
@@ -200,7 +205,7 @@ public class ECSStateStoreCommitterThroughputST {
                     .collect(toUnmodifiableList()));
         });
 
-        // When the batch of compaction jobs are sent
+        // When commit processing updates the compaction job tracker
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.commitCompactionForPartitionOnTaskInRun(
@@ -224,6 +229,7 @@ public class ECSStateStoreCommitterThroughputST {
 
     @Test
     void shouldMeetExpectedThroughputWhenCommittingDeletedFiles(SleeperDsl sleeper) throws Exception {
+
         // Given an offline table with a single root partition
         // And compacted files have been replaced by new files
         sleeper.connectToInstanceAddOfflineTable(ECS_STATESTORE);
@@ -265,6 +271,7 @@ public class ECSStateStoreCommitterThroughputST {
 
     @Test
     void shouldMeetExpectedThroughputWhenPerformingManyOperationsOnMultipleTables(SleeperDsl sleeper) throws Exception {
+
         // Given multiple tables with a single root partition
         sleeper.connectToInstanceNoTables(ECS_STATESTORE);
         sleeper.tables().createMany(10, DEFAULT_SCHEMA);
