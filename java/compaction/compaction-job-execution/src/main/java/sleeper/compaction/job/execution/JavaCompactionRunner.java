@@ -77,7 +77,8 @@ public class JavaCompactionRunner implements CompactionRunner {
         // Create a reader for each file
         List<CloseableIterator<Row>> inputIterators = createInputIterators(compactionJob, region, schema);
 
-        CloseableIterator<Row> mergingIterator = getMergingIterator(objectFactory, schema, compactionJob, inputIterators);
+        CloseableIterator<Row> mergingIterator = new MergingIterator(schema, inputIterators);
+        CloseableIterator<Row> compactionIterator = applyIteratorConfig(objectFactory, schema, compactionJob, mergingIterator);
         // Merge these iterator into one sorted iterator
 
         // Create writer
@@ -94,8 +95,8 @@ public class JavaCompactionRunner implements CompactionRunner {
 
         long rowsWritten = 0L;
         long rowsRead = 0L;
-        while (mergingIterator.hasNext()) {
-            Row row = mergingIterator.next();
+        while (compactionIterator.hasNext()) {
+            Row row = compactionIterator.next();
             rowsRead++;
             if (0 == rowsRead % 50_000) {
                 callback.accept(rowsRead);
@@ -147,10 +148,9 @@ public class JavaCompactionRunner implements CompactionRunner {
         return inputIterators;
     }
 
-    public static CloseableIterator<Row> getMergingIterator(
+    public static CloseableIterator<Row> applyIteratorConfig(
             ObjectFactory objectFactory, Schema schema, CompactionJob compactionJob,
-            List<CloseableIterator<Row>> inputIterators) throws IteratorCreationException {
-        CloseableIterator<Row> mergingIterator = new MergingIterator(schema, inputIterators);
+            CloseableIterator<Row> inputIterator) throws IteratorCreationException {
 
         // Apply an iterator if one is provided
         IteratorConfig config = IteratorConfig.builder()
@@ -161,6 +161,6 @@ public class JavaCompactionRunner implements CompactionRunner {
                 .build();
         return new IteratorFactory(objectFactory)
                 .getIterator(config, schema)
-                .applyTransform(mergingIterator);
+                .applyTransform(inputIterator);
     }
 }

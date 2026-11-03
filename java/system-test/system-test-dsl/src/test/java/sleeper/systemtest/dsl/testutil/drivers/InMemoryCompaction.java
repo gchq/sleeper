@@ -26,6 +26,7 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.MergingIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
@@ -249,8 +250,8 @@ public class InMemoryCompaction {
                 .collect(toUnmodifiableList());
         CloseableIterator<Row> mergingIterator;
         try {
-            mergingIterator = JavaCompactionRunner.getMergingIterator(
-                    ObjectFactory.noUserJars(), schema, job, inputIterators);
+            mergingIterator = JavaCompactionRunner.applyIteratorConfig(
+                    ObjectFactory.noUserJars(), schema, job, new MergingIterator(schema, inputIterators));
         } catch (IteratorCreationException e) {
             throw new RuntimeException(e);
         }
