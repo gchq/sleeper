@@ -105,7 +105,9 @@ public class JavaCompactionRunner implements CompactionRunner {
         Schema schema = request.getTableProperties().getSchema();
         List<CloseableIterator<Row>> inputIterators = createInputIterators(request.getJob(), request.getRegion(), schema);
         CloseableIterator<Row> mergingIterator = new MergingIterator(schema, inputIterators);
-        ProgressTrackingIterator<Row> trackingIterator = new ProgressTrackingIterator<>(mergingIterator, request.getProgressCallback(), Duration.ofSeconds(5), Thread::sleep, Thread::new);
+        ProgressTrackingIterator<Row> trackingIterator = new ProgressTrackingIterator<>(mergingIterator,
+                request.getProgressCallback(), Duration.ofSeconds(5), Thread::sleep,
+                runnable -> new Thread(runnable, "compaction-progress-" + request.getJob().getId()));
         trackingIterator.startProgressPolling();
         return trackingIterator;
     }
