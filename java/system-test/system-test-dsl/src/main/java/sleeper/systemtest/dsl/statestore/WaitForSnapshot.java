@@ -59,15 +59,15 @@ public class WaitForSnapshot {
         }
     }
 
-    public void waitForFilesSnapshotCountDecrease(PollWithRetries poll, int number) {
+    public void waitForFilesSnapshotCountDecrease(PollWithRetries poll, int expectedAfter) {
         LOGGER.info("Waiting for files snapshot deletion");
         try {
             poll.pollUntil("files snapshot deletion", () -> {
                 int count = driver.countFilesSnapshots(instance.getInstanceProperties(), instance.getTableProperties());
-                if (count < number) {
+                if (count < expectedAfter) {
                     throw new RuntimeException("More files snapshots deleted than expected, found " + count);
                 } else {
-                    return count == number;
+                    return count == expectedAfter;
                 }
             });
         } catch (InterruptedException e) {
@@ -76,15 +76,15 @@ public class WaitForSnapshot {
         }
     }
 
-    public void waitForPartitionsSnapshotCountDecrease(PollWithRetries poll, int number) {
+    public void waitForPartitionsSnapshotCountDecrease(PollWithRetries poll, int expectedAfter) {
         LOGGER.info("Waiting for partitions snapshot deletion");
         try {
             poll.pollUntil("partitions snapshot deletion", () -> {
                 int count = driver.countPartitionsSnapshots(instance.getInstanceProperties(), instance.getTableProperties());
-                if (count < number) {
+                if (count < expectedAfter) {
                     throw new RuntimeException("More partitions snapshots deleted than expected, found " + count);
                 } else {
-                    return count == number;
+                    return count == expectedAfter;
                 }
             });
         } catch (InterruptedException e) {
