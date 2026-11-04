@@ -28,16 +28,7 @@ import software.amazon.awssdk.services.s3.model.S3Error;
 import sleeper.core.util.ThreadSleep;
 import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Deletes files from S3 by their filename in the state store. Used during garbage collection.
@@ -62,27 +53,15 @@ public class S3DeleteFiles implements DeleteFiles {
     @Override
     public void deleteFiles(List<String> filenames, TableFilesDeleted deleted) {
         FilesToDelete files = FilesToDelete.from(filenames);
-        Set<String> deletedFiles = new LinkedHashSet<>();
-        Map<String, Exception> errorsByFilename = new LinkedHashMap<>();
-
         for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
+            FileDeletionTracker tracker = new FileDeletionTracker(filesInBucket);
             filesInBucket.objectKeysInBatchesOf(s3BatchSize)
-                    .forEach(batch -> deleteS3Batch(filesInBucket, batch, deletedFiles, errorsByFilename));
+                    .forEach(batch -> deleteS3Batch(filesInBucket, batch, tracker));
+            tracker.recordFileResults(deleted);
         }
-
-        // Record a file as deleted only if none of its objects failed
-        deletedFiles.stream()
-                .filter(filename -> !errorsByFilename.containsKey(filename))
-                .forEach(deleted::deleted);
-
-        // Group files by failure so a failed request is recorded once, rather than once per file
-        errorsByFilename.entrySet().stream()
-                .collect(groupingBy(Entry::getValue, LinkedHashMap::new, mapping(Entry::getKey, toList())))
-                .forEach((failure, failedFilenames) -> deleted.failed(failedFilenames, failure));
     }
 
-    private void deleteS3Batch(FilesToDeleteInBucket filesInBucket, List<String> objectKeys, Set<String> deletedFiles,
-            Map<String, Exception> errorsByFilename) {
+    private void deleteS3Batch(FilesToDeleteInBucket filesInBucket, List<String> objectKeys, FileDeletionTracker tracker) {
         DeleteObjectsRequest deleteRequest = createDeleteObjectsRequest(filesInBucket, objectKeys);
         boolean retry;
         do {
@@ -90,16 +69,11 @@ public class S3DeleteFiles implements DeleteFiles {
             try {
                 LOGGER.debug("Sending request to delete {} objects", objectKeys.size());
                 DeleteObjectsResponse response = s3Client.deleteObjects(deleteRequest);
-
+                response.deleted().forEach(object -> tracker.objectDeleted(object.key()));
                 response.errors().forEach(error -> {
                     LOGGER.error("Failed to delete object {}: {} - {}", error.key(), error.code(), error.message());
-                    errorsByFilename.putIfAbsent(
-                            filesInBucket.getFilenameForObjectKey(error.key()), deleteFailure(error));
+                    tracker.objectFailed(error.key(), deleteFailure(error));
                 });
-
-                deletedFiles.addAll(response.deleted().stream()
-                        .map(object -> filesInBucket.getFilenameForObjectKey(object.key()))
-                        .toList());
             } catch (Exception e) {
                 if (isSlowDownException(e)) {
                     retry = true;
@@ -107,8 +81,7 @@ public class S3DeleteFiles implements DeleteFiles {
                     sleep.waitForMillisWrappingInterrupt(1000);
                 } else {
                     LOGGER.error("Failed to delete batch: {}", objectKeys, e);
-                    objectKeys.forEach(
-                            key -> errorsByFilename.putIfAbsent(filesInBucket.getFilenameForObjectKey(key), e));
+                    tracker.objectsFailed(objectKeys, e);
                 }
             }
         } while (retry);

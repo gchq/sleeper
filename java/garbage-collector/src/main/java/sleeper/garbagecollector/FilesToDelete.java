@@ -40,7 +40,8 @@ public class FilesToDelete {
     }
 
     /**
-     * Indexes files from the state store to prepare for deletion from S3.
+     * Indexes files from the state store to prepare for deletion from S3. Files are grouped by bucket, and each file
+     * is split into its separate S3 objects in {@link FilesToDeleteInBucket#from}.
      *
      * @param  filenames the filenames from the state store
      * @return           the index
