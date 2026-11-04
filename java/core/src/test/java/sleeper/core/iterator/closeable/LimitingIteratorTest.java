@@ -18,7 +18,6 @@ package sleeper.core.iterator.closeable;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.testutil.EmptyIteratorWithFakeOnClose;
-import sleeper.core.row.Row;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,8 +79,8 @@ public class LimitingIteratorTest {
     void shouldCloseWrappedIterator() throws Exception {
         // Given
         AtomicBoolean closed = new AtomicBoolean(false);
-        EmptyIteratorWithFakeOnClose source = new EmptyIteratorWithFakeOnClose(() -> closed.set(true));
-        LimitingIterator<Row> iterator = new LimitingIterator<>(10, source);
+        EmptyIteratorWithFakeOnClose<String> source = new EmptyIteratorWithFakeOnClose<>(() -> closed.set(true));
+        LimitingIterator<String> iterator = new LimitingIterator<>(10, source);
 
         // When
         iterator.close();

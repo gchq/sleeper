@@ -103,7 +103,7 @@ public class AwsDrainSqsQueue {
     }
 
     public Stream<Message> drainExpectingMessagesWithRetriesWhenEmpty(int expectedMessages, int retriesWhenEmpty, String queueUrl) {
-        LOGGER.info("Draining queue until empty, expecting {} messages: {}", queueUrl);
+        LOGGER.info("Draining queue until empty, expecting {} messages: {}", expectedMessages, queueUrl);
         return Stream.iterate(
                 ReceiveBatchResult.first(receiveMessageBatch(queueUrl)),
                 lastResult -> keepCheckingQueue(lastResult, expectedMessages, retriesWhenEmpty),

@@ -105,10 +105,10 @@ public class IngestToStateStoreDsl {
     }
 
     private DataFilesDriver dataFilesDriver() {
-        return instance.adminDrivers().dataFiles(context);
+        return instance.adminRoleDrivers().dataFiles(context);
     }
 
     private IngestSourceFilesDriver sourceFilesDriver() {
-        return instance.adminDrivers().sourceFiles(context);
+        return instance.adminRoleDrivers().sourceFiles(context);
     }
 }
