@@ -24,7 +24,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongConsumer;
 
 /**
- * An iterator that counts the elements from a source iterator as it goes, and regularly reports on the count.
+ * An iterator that counts the elements from a source iterator as it goes, and regularly reports on the count. To make
+ * reports to the callback with progress updates while it runs, call {@link #startProgressPolling()} before you start
+ * reading from the iterator. Polling will stop when the iterator is closed.
  *
  * @param <T> the element type
  */
@@ -49,6 +51,12 @@ public class ProgressTrackingIterator<T> implements CloseableIterator<T> {
                 callback.accept(count.get());
             }
         });
+    }
+
+    /**
+     * Starts a background thread to provide periodic updates on the number of rows read.
+     */
+    public void startProgressPolling() {
         pollingThread.start();
     }
 

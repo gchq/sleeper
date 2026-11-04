@@ -89,10 +89,12 @@ public class ProgressTrackingIteratorTest {
             public void close() {
             }
         };
-        return new ProgressTrackingIterator<>(source, count -> {
+        ProgressTrackingIterator<String> iterator = new ProgressTrackingIterator<>(source, count -> {
             progressReports.add(count);
             pollCompleted.release();
         }, Duration.ofSeconds(1), millis -> pollRequested.acquire());
+        iterator.startProgressPolling();
+        return iterator;
     }
 
     private static <T> List<T> gatherToList(CloseableIterator<T> iterator) {

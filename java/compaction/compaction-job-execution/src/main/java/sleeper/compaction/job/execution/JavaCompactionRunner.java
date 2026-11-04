@@ -105,7 +105,9 @@ public class JavaCompactionRunner implements CompactionRunner {
         Schema schema = request.getTableProperties().getSchema();
         List<CloseableIterator<Row>> inputIterators = createInputIterators(request.getJob(), request.getRegion(), schema);
         CloseableIterator<Row> mergingIterator = new MergingIterator(schema, inputIterators);
-        return new ProgressTrackingIterator<>(mergingIterator, request.getProgressCallback(), Duration.ofSeconds(5), Thread::sleep);
+        ProgressTrackingIterator<Row> trackingIterator = new ProgressTrackingIterator<>(mergingIterator, request.getProgressCallback(), Duration.ofSeconds(5), Thread::sleep);
+        trackingIterator.startProgressPolling();
+        return trackingIterator;
     }
 
     private ParquetWriter<Row> createWriter(CompactionRequest request) throws IOException {
