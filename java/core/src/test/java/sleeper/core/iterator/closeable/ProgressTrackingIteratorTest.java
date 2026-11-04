@@ -117,12 +117,12 @@ public class ProgressTrackingIteratorTest {
                 .isEqualTo(false);
     }
 
-    private ProgressTrackingIterator<String> trackProgressEveryNItems(int n, List<String> items) {
-        CloseableIterator<String> source = new IteratorWaitingOnPoll<>(items, n);
+    private <T> ProgressTrackingIterator<T> trackProgressEveryNItems(int n, List<T> items) {
+        CloseableIterator<T> source = new IteratorWaitingOnPoll<>(items, n);
         LongConsumer callback = this::trackProgressAndReleasePollCompleted;
         ThreadSleep threadSleep = this::waitUntilTimeToPollProgress;
         ThreadFactory threadFactory = this::createAndTrackThread;
-        ProgressTrackingIterator<String> iterator = new ProgressTrackingIterator<String>(
+        ProgressTrackingIterator<T> iterator = new ProgressTrackingIterator<>(
                 source, callback, Duration.ofSeconds(1),
                 threadSleep, threadFactory);
         iterator.startProgressPolling();
@@ -154,7 +154,7 @@ public class ProgressTrackingIteratorTest {
         return thread;
     }
 
-    class IteratorWaitingOnPoll<T> implements CloseableIterator<T> {
+    private class IteratorWaitingOnPoll<T> implements CloseableIterator<T> {
         private final List<T> items;
         private final long waitEveryNItems;
         private int read = 0;
