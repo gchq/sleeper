@@ -30,6 +30,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.LongConsumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ProgressTrackingIteratorTest {
 
@@ -37,6 +38,8 @@ public class ProgressTrackingIteratorTest {
     private final List<Long> progressReports = new ArrayList<>();
     private final Semaphore pollRequested = new Semaphore(0);
     private final Semaphore pollCompleted = new Semaphore(0);
+    private Runnable onSourceClose = () -> {
+    };
 
     @AfterEach
     void tearDown() throws InterruptedException {
@@ -90,6 +93,24 @@ public class ProgressTrackingIteratorTest {
         gatherToList(iterator);
 
         // Then
+        assertThat(threads)
+                .singleElement()
+                .extracting(Thread::isAlive)
+                .isEqualTo(false);
+    }
+
+    @Test
+    void shouldStopPollingThreadWhenSourceFailsToClose() {
+        // Given
+        onSourceClose = () -> {
+            throw new RuntimeException("Could not close source");
+        };
+        ProgressTrackingIterator<String> iterator = trackProgressEveryNItems(3, List.of("a", "b"));
+
+        // When / Then
+        assertThatThrownBy(() -> gatherToList(iterator))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Could not close source");
         assertThat(threads)
                 .singleElement()
                 .extracting(Thread::isAlive)
@@ -159,6 +180,7 @@ public class ProgressTrackingIteratorTest {
 
         @Override
         public void close() {
+            onSourceClose.run();
         }
     }
 
