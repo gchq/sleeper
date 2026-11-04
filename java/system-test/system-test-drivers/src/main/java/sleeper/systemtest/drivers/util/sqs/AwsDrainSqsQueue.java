@@ -79,7 +79,7 @@ public class AwsDrainSqsQueue {
                 .build();
     }
 
-    public static AwsDrainSqsQueue forLocalStackTests(SqsClient sqsClient) {
+    public static AwsDrainSqsQueue forLocalAwsTests(SqsClient sqsClient) {
         return withClient(sqsClient)
                 .numThreads(2)
                 .messagesPerBatchPerThread(10)
@@ -103,7 +103,7 @@ public class AwsDrainSqsQueue {
     }
 
     public Stream<Message> drainExpectingMessagesWithRetriesWhenEmpty(int expectedMessages, int retriesWhenEmpty, String queueUrl) {
-        LOGGER.info("Draining queue until empty, expecting {} messages: {}", queueUrl);
+        LOGGER.info("Draining queue until empty, expecting {} messages: {}", expectedMessages, queueUrl);
         return Stream.iterate(
                 ReceiveBatchResult.first(receiveMessageBatch(queueUrl)),
                 lastResult -> keepCheckingQueue(lastResult, expectedMessages, retriesWhenEmpty),

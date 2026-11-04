@@ -17,7 +17,6 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.creation.CreateCompactionJobBatches;
 import sleeper.compaction.core.job.creation.CreateCompactionJobBatches.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
@@ -36,6 +35,7 @@ import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
@@ -52,6 +52,7 @@ import sleeper.core.util.ObjectFactoryException;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.compaction.CompactionCommitMessageWrapper;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
@@ -117,15 +118,16 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public void triggerCreateJobs() {
+        public void triggerCreateJobs(Stream<TableStatus> tables) {
             CreateCompactionJobs jobCreator = jobCreator();
-            instance.streamTableProperties().forEach(table -> {
-                try {
-                    jobCreator.createJobsWithStrategy(table);
-                } catch (ObjectFactoryException e) {
-                    throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
-                }
-            });
+            tables.flatMap(table -> instance.getTablePropertiesByDeployedId(table.getTableUniqueId()).stream())
+                    .forEach(table -> {
+                        try {
+                            jobCreator.createJobsWithStrategy(table);
+                        } catch (ObjectFactoryException e) {
+                            throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
+                        }
+                    });
         }
 
         @Override
@@ -157,9 +159,9 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public void sendCompactionCommits(Stream<CompactionCommitMessage> commits) {
+        public void sendCompactionCommits(Stream<CompactionCommitMessageWrapper> commits) {
             TablePropertiesProvider tablesProvider = instance.getTablePropertiesProvider();
-            commits.forEach(commit -> {
+            commits.map(CompactionCommitMessageWrapper::message).forEach(commit -> {
                 ReplaceFileReferencesRequest request = commit.request();
                 TableProperties tableProperties = tablesProvider.getById(commit.tableId());
                 update(instance.getStateStore(tableProperties)).atomicallyReplaceFileReferencesWithNewOnes(List.of(request));

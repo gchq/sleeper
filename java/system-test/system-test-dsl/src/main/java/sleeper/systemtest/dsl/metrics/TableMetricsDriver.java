@@ -17,10 +17,14 @@
 package sleeper.systemtest.dsl.metrics;
 
 import sleeper.core.metrics.TableMetrics;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.table.TableStatus;
+
+import java.util.stream.Stream;
 
 public interface TableMetricsDriver {
 
-    void generateTableMetrics();
+    void triggerTableMetricsGeneration(Stream<TableStatus> tables);
 
-    TableMetrics getTableMetrics();
+    TableMetrics getTableMetrics(TableProperties tableProperties);
 }

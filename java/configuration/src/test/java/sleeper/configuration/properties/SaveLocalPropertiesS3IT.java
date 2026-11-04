@@ -24,7 +24,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -39,7 +39,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-class SaveLocalPropertiesS3IT extends LocalStackTestBase {
+class SaveLocalPropertiesS3IT extends LocalAwsTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     @TempDir
     private Path tempDir;

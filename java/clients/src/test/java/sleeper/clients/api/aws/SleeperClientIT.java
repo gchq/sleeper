@@ -26,7 +26,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.List;
@@ -40,7 +40,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class SleeperClientIT extends LocalStackTestBase {
+public class SleeperClientIT extends LocalAwsTestBase {
 
     Schema schema = createSchemaWithKey("key", new StringType());
     InstanceProperties instanceProperties = createTestInstanceProperties();

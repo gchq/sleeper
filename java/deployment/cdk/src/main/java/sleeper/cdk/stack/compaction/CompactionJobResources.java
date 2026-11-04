@@ -67,6 +67,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COM
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_MAX_RETRIES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_QUEUE_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_DISPATCH_MAX_RETRIES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM;
@@ -352,7 +353,7 @@ public class CompactionJobResources {
                         .queue(deadLetterQueue)
                         .build())
                 .visibilityTimeout(
-                        Duration.seconds(instanceProperties.getInt(COMPACTION_COMMIT_BATCHER_LAMBDA_TIMEOUT_IN_SECONDS)))
+                        Duration.seconds(instanceProperties.getInt(COMPACTION_COMMIT_QUEUE_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(COMPACTION_COMMIT_QUEUE_URL, queue.getQueueUrl());
         instanceProperties.set(COMPACTION_COMMIT_QUEUE_ARN, queue.getQueueArn());

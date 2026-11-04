@@ -33,7 +33,7 @@ import sleeper.core.tracker.ingest.job.IngestJobStatusTestData;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.time.Instant;
 import java.util.List;
@@ -46,7 +46,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 
-public class BulkImportStarterLambdaIT extends LocalStackTestBase {
+public class BulkImportStarterLambdaIT extends LocalAwsTestBase {
     private static final String TEST_TABLE = "test-table";
     private static final String TEST_TABLE_ID = "test-table-id";
     private final String testBucket = UUID.randomUUID().toString();

@@ -36,7 +36,7 @@ public class IngestDsl {
     public IngestDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.context = context;
         this.baseDrivers = baseDrivers;
-        this.adminDrivers = context.instance().adminDrivers();
+        this.adminDrivers = context.instance().adminRoleDrivers();
     }
 
     public IngestDsl setType(IngestTypeDsl type) {
