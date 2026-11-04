@@ -18,17 +18,20 @@ package sleeper.garbagecollector;
 import sleeper.core.util.S3Filename;
 import sleeper.core.util.SplitIntoBatches;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
  * Files from the state store to be deleted from a single S3 bucket. These are indexed for interaction with the S3 API,
- * to convert to S3 object keys and then back to state store filenames to update the state store.
+ * to convert to S3 object keys and then back to state store filenames to update the state store. Each filename in the
+ * state store refers to multiple S3 objects: the data file and the sketches file.
  *
  * @param bucketName          the name of the S3 bucket
  * @param objectKeyToFilename a map from S3 object key to the filename in the state store
@@ -44,17 +47,19 @@ public record FilesToDeleteInBucket(String bucketName, Map<String, String> objec
      */
     public static FilesToDeleteInBucket from(String bucketName, List<S3Filename> files) {
         Map<String, String> objectKeyToFilename = files.stream()
-                .flatMap(file -> streamObjectKeys(file).map(key -> Map.entry(key, file.filename())))
+                .flatMap(file -> dataAndSketchesObjectKeys(file).map(key -> Map.entry(key, file.filename())))
                 .collect(toMap(Entry::getKey, Entry::getValue));
         return new FilesToDeleteInBucket(bucketName, objectKeyToFilename);
     }
 
-    private static Stream<String> streamObjectKeys(S3Filename filename) {
+    /**
+     * Splits a filename from the state store into the S3 objects that need to be deleted for it.
+     *
+     * @param  filename the parsed state store filename
+     * @return          the object keys of the data file and the sketches file
+     */
+    private static Stream<String> dataAndSketchesObjectKeys(S3Filename filename) {
         return Stream.of(filename.objectKey(), filename.sketchesObjectKey());
-    }
-
-    public Collection<String> getObjectKeys() {
-        return objectKeyToFilename.keySet();
     }
 
     public Stream<List<String>> objectKeysInBatchesOf(int batchSize) {
@@ -65,8 +70,9 @@ public record FilesToDeleteInBucket(String bucketName, Map<String, String> objec
         return objectKeyToFilename.get(objectKey);
     }
 
-    public List<String> getAllFilenamesInBatch(List<String> objectKeysForBatch) {
-        return objectKeysForBatch.stream().map(this::getFilenameForObjectKey).distinct().toList();
+    public Map<String, List<String>> getObjectKeysByFilename() {
+        return objectKeyToFilename.entrySet().stream()
+                .collect(groupingBy(Entry::getValue, mapping(Entry::getKey, toList())));
     }
 
 }
