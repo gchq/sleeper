@@ -18,11 +18,13 @@ package sleeper.systemtest.drivers.gc;
 
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.core.properties.table.TableProperties;
+import sleeper.core.table.TableStatus;
 import sleeper.invoke.tables.InvokeForTables;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+
+import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
 
@@ -37,9 +39,9 @@ public class AwsGarbageCollectionDriver implements GarbageCollectionDriver {
     }
 
     @Override
-    public void invokeGarbageCollection() {
+    public void invokeGarbageCollection(Stream<TableStatus> tables) {
         String queueUrl = instance.getInstanceProperties().get(GARBAGE_COLLECTOR_QUEUE_URL);
-        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, instance.streamTableProperties().map(TableProperties::getStatus));
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, tables);
     }
 
 }

@@ -32,6 +32,7 @@ import sleeper.systemtest.drivers.ingest.AwsPurgeQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.HadoopLocalFilesDriver;
 import sleeper.systemtest.drivers.instance.AwsDataFilesDriver;
+import sleeper.systemtest.drivers.instance.AwsDeadLettersDriver;
 import sleeper.systemtest.drivers.instance.AwsScheduleRulesDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperInstanceDriver;
 import sleeper.systemtest.drivers.instance.AwsSleeperTablesDriver;
@@ -49,7 +50,7 @@ import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.query.WebSocketQueryDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.drivers.sourcedata.AwsIngestSourceFilesDriver;
-import sleeper.systemtest.drivers.statestore.AwsSnapshotsDriver;
+import sleeper.systemtest.drivers.statestore.AwsStateStoreAdminDriver;
 import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterDriver;
 import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -67,6 +68,7 @@ import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
+import sleeper.systemtest.dsl.instance.DeadLettersDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.ScheduleRulesDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -81,11 +83,11 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
-import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestLocalFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreAdminDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
@@ -284,12 +286,17 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public SnapshotsDriver snapshots() {
-        return new AwsSnapshotsDriver(clients);
+    public StateStoreAdminDriver stateStoreAdmin(SystemTestContext context) {
+        return new AwsStateStoreAdminDriver(context.instance(), clients);
     }
 
     @Override
     public ScheduleRulesDriver schedules() {
         return new AwsScheduleRulesDriver(clients);
+    }
+
+    @Override
+    public DeadLettersDriver deadLetters(SystemTestContext context) {
+        return new AwsDeadLettersDriver(context.instance(), clients);
     }
 }
