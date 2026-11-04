@@ -259,12 +259,7 @@ public class CompactionTask {
                 .job(job)
                 .tableProperties(tableProperties)
                 .region(partition.getRegion());
-        RowsProcessed rowsProcessed;
-        if (compactor.isProgressMonitored()) {
-            rowsProcessed = compactWithWatchdog(compactor, request, message, jobRunId, jobStartTime, taskStatusBuilder, taskFinishedBuilder);
-        } else {
-            rowsProcessed = compactor.compact(request.progressCallback(progressTracker).build());
-        }
+        RowsProcessed rowsProcessed = compactWithWatchdog(compactor, request, message, jobRunId, jobStartTime, taskStatusBuilder, taskFinishedBuilder);
         Instant jobFinishTime = timeSupplier.get();
         JobRunSummary summary = new JobRunSummary(rowsProcessed, jobStartTime, jobFinishTime);
         return summary;

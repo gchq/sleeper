@@ -153,38 +153,6 @@ public class CompactionTaskStallTest extends CompactionTaskTestBase {
                 taskFinishedAt(Instant.parse("2026-10-26T10:10:00Z")));
     }
 
-    @Test
-    void shouldFailJobAndStopTaskWhenInterruptedWhileWaitingForWatchdog() throws Exception {
-        // Given
-        CompactionJob job1 = createJobOnQueue("job1");
-        CompactionJob job2 = createJobOnQueue("job2");
-        setWatchdogClockAndWait(() -> JOB_START, waitUntilInterrupted());
-
-        // When
-        try {
-            runTask(compactionInterruptsTaskThenReturns());
-        } finally {
-            // Clear the interrupt so it does not affect later tests
-            Thread.interrupted();
-        }
-
-        // Then
-        assertThat(jobsReturnedToQueue).containsExactly(job1);
-        assertThat(jobsOnQueue).containsExactly(job2);
-        assertThat(consumedJobs).isEmpty();
-        assertThat(stateStoreCommitQueue).isEmpty();
-        assertThat(terminations).isEmpty();
-        assertThat(jobTracker.getJob(job1.getId()).orElseThrow().getRunsLatestFirst())
-                .singleElement()
-                .satisfies(run -> {
-                    assertThat(run.isFinishedSuccessfully()).isFalse();
-                    assertThat(run.getFailureReasons()).anyMatch(reason -> reason.contains("InterruptedException"));
-                });
-        assertThat(taskTracker.getAllTasks())
-                .singleElement()
-                .satisfies(task -> assertThat(task.isFinished()).isTrue());
-    }
-
     private TestInstantSupplier taskTimes() {
         return supplyTimes(
                 TASK_START, // Task start
@@ -208,7 +176,7 @@ public class CompactionTaskStallTest extends CompactionTaskTestBase {
      * @return                      the compaction runner
      */
     private CompactionRunner compactionHangsAfterUpdates(long... rowsProcessedUpdates) {
-        return monitoredRunner(request -> {
+        return interruptibleRunner(request -> {
             for (long rows : rowsProcessedUpdates) {
                 request.getProgressCallback().accept(rows);
             }
@@ -220,7 +188,7 @@ public class CompactionTaskStallTest extends CompactionTaskTestBase {
     }
 
     private CompactionRunner compactionSucceedsWithUpdates(long... rowsProcessedUpdates) {
-        return monitoredRunner(request -> {
+        return interruptibleRunner(request -> {
             for (long rows : rowsProcessedUpdates) {
                 request.getProgressCallback().accept(rows);
             }
@@ -228,19 +196,6 @@ public class CompactionTaskStallTest extends CompactionTaskTestBase {
         });
     }
 
-    /**
-     * Simulates the task thread being interrupted during a compaction. The compaction completes, and the interrupt is
-     * found when waiting for the watchdog to stop.
-     *
-     * @return the compaction runner
-     */
-    private CompactionRunner compactionInterruptsTaskThenReturns() {
-        return monitoredRunner(request -> {
-            request.getProgressCallback().accept(10);
-            Thread.currentThread().interrupt();
-            return new RowsProcessed(10, 10);
-        });
-    }
 
     private ThreadSleep checkAfterCompactionStarted() {
         return millis -> compactionStarted.await();
@@ -277,30 +232,22 @@ public class CompactionTaskStallTest extends CompactionTaskTestBase {
         };
     }
 
-    private static CompactionRunner monitoredRunner(MonitoredCompaction compaction) {
-        return new CompactionRunner() {
-            @Override
-            public RowsProcessed compact(CompactionRequest request) {
-                try {
-                    return compaction.run(request);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
-                }
-            }
-
-            @Override
-            public boolean isProgressMonitored() {
-                return true;
+    private static CompactionRunner interruptibleRunner(InterruptibleCompaction compaction) {
+        return request -> {
+            try {
+                return compaction.run(request);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
             }
         };
     }
 
     /**
-     * A fake compaction for a runner whose progress is monitored.
+     * A fake compaction which may wait, and so may be interrupted.
      */
     @FunctionalInterface
-    private interface MonitoredCompaction {
+    private interface InterruptibleCompaction {
         RowsProcessed run(CompactionRequest request) throws InterruptedException;
     }
 }

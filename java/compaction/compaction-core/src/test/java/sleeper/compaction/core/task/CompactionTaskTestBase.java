@@ -19,7 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
-import sleeper.compaction.core.job.CompactionRequest;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.task.CompactionTask.MessageReceiver;
@@ -56,6 +55,7 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -101,12 +101,9 @@ public class CompactionTaskTestBase {
     private ThreadSleep waiterForFileAssignment = ThreadSleepTestHelper.recordWaits(foundWaitsForFileAssignment);
     protected final List<String> terminations = new CopyOnWriteArrayList<>();
     protected CompactionTaskTerminator terminator = terminations::add;
-    private Supplier<Instant> watchdogTimeSupplier = () -> {
-        throw new IllegalStateException("Unexpected watchdog time request");
-    };
-    private ThreadSleep watchdogSleep = millis -> {
-        throw new IllegalStateException("Unexpected watchdog wait");
-    };
+    // By default the watchdog never checks for a stall, as it waits until it is stopped
+    private Supplier<Instant> watchdogTimeSupplier = () -> Instant.parse("2026-01-01T00:00:00Z");
+    private ThreadSleep watchdogSleep = millis -> new CountDownLatch(1).await();
 
     @BeforeEach
     void setUpBase() {
@@ -370,20 +367,12 @@ public class CompactionTaskTestBase {
 
     protected CompactionRunner processJobs(ProcessJob... actions) {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
-        return new CompactionRunner() {
-            @Override
-            public RowsProcessed compact(CompactionRequest request) {
-                CompactionJob job = request.getJob();
-                if (getAction.hasNext()) {
-                    return getAction.next().run(job);
-                } else {
-                    throw new IllegalStateException("Unexpected job: " + job);
-                }
-            }
-
-            @Override
-            public boolean isProgressMonitored() {
-                return false;
+        return request -> {
+            CompactionJob job = request.getJob();
+            if (getAction.hasNext()) {
+                return getAction.next().run(job);
+            } else {
+                throw new IllegalStateException("Unexpected job: " + job);
             }
         };
     }
