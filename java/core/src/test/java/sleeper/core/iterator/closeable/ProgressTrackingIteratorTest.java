@@ -24,7 +24,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.LongConsumer;
@@ -117,9 +119,52 @@ public class ProgressTrackingIteratorTest {
                 .isEqualTo(false);
     }
 
+    @Test
+    void shouldMakeFinalReportAfterSlowPollFinishes() throws Exception {
+        // Given an iterator whose polls are slow to report
+        List<Long> reports = Collections.synchronizedList(new ArrayList<>());
+        Semaphore pollStarted = new Semaphore(0);
+        ProgressTrackingIterator<String> iterator = trackProgressWithSourceItemsAndCallback(
+                List.of("a", "b"),
+                delayPollReportUntilClosingThreadJoins(Thread.currentThread(), pollStarted, reports));
+
+        // And a poll reads the count after the first item
+        iterator.next();
+        pollRequested.release();
+        pollStarted.acquire();
+
+        // And the second item is read before that poll reports
+        iterator.next();
+
+        // When
+        iterator.close();
+
+        // Then the poll's stale count is reported before the final count
+        assertThat(reports).containsExactly(1L, 2L);
+    }
+
+    // Holds up reports from the polling thread until the iterator is closed and the closing thread is waiting to join
+    // the polling thread. Without the join, the closing thread would report the final count before the poll reports.
+    private static LongConsumer delayPollReportUntilClosingThreadJoins(Thread closingThread, Semaphore pollStarted, List<Long> reports) {
+        return count -> {
+            if (Thread.currentThread() != closingThread) {
+                pollStarted.release();
+                waitForInterruptFromClose();
+                waitUntilJoining(closingThread);
+            }
+            reports.add(count);
+        };
+    }
+
     private <T> ProgressTrackingIterator<T> trackProgressEveryNItems(int n, List<T> items) {
-        CloseableIterator<T> source = new IteratorWaitingOnPoll<>(items, n);
-        LongConsumer callback = this::trackProgressAndReleasePollCompleted;
+        return trackProgress(new IteratorWaitingOnPoll<>(items, n), this::trackProgressAndReleasePollCompleted);
+    }
+
+    private <T> ProgressTrackingIterator<T> trackProgressWithSourceItemsAndCallback(List<T> items, LongConsumer callback) {
+        return trackProgress(new WrappedIterator<>(items.iterator()), callback);
+    }
+
+    private <T> ProgressTrackingIterator<T> trackProgress(CloseableIterator<T> source, LongConsumer callback) {
         ThreadSleep threadSleep = this::waitUntilTimeToPollProgress;
         ThreadFactory threadFactory = this::createAndTrackThread;
         ProgressTrackingIterator<T> iterator = new ProgressTrackingIterator<>(
@@ -146,6 +191,21 @@ public class ProgressTrackingIteratorTest {
 
     private void waitUntilTimeToPollProgress(long millis) throws InterruptedException {
         pollRequested.acquire();
+    }
+
+    private static void waitForInterruptFromClose() {
+        try {
+            new CountDownLatch(1).await();
+        } catch (InterruptedException e) {
+            // Expected when the iterator is closed
+        }
+    }
+
+    private static void waitUntilJoining(Thread closingThread) {
+        // After the polling thread is interrupted, the closing thread only waits when it joins the polling thread
+        while (closingThread.getState() != Thread.State.WAITING) {
+            Thread.onSpinWait();
+        }
     }
 
     private Thread createAndTrackThread(Runnable runnable) {
