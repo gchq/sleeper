@@ -51,6 +51,7 @@ public class ProgressTrackingIterator<T> implements CloseableIterator<T> {
                 callback.accept(count.get());
             }
         });
+        pollingThread.setDaemon(true);
     }
 
     /**
