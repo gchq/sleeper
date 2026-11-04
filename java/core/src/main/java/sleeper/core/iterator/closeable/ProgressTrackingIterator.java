@@ -19,6 +19,7 @@ import sleeper.core.util.ThreadSleep;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongConsumer;
@@ -38,10 +39,12 @@ public class ProgressTrackingIterator<T> implements CloseableIterator<T> {
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Thread pollingThread;
 
-    public ProgressTrackingIterator(CloseableIterator<T> source, LongConsumer callback, Duration pollInterval, ThreadSleep threadSleep) {
+    public ProgressTrackingIterator(
+            CloseableIterator<T> source, LongConsumer callback,
+            Duration pollInterval, ThreadSleep threadSleep, ThreadFactory threadFactory) {
         this.source = source;
         this.callback = callback;
-        this.pollingThread = new Thread(() -> {
+        this.pollingThread = threadFactory.newThread(() -> {
             while (!closed.get()) {
                 try {
                     threadSleep.waitForDuration(pollInterval);

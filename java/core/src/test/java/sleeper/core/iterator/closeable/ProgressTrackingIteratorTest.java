@@ -15,6 +15,7 @@
  */
 package sleeper.core.iterator.closeable;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -28,9 +29,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ProgressTrackingIteratorTest {
 
+    private final List<Thread> threads = new ArrayList<>();
     private final List<Long> progressReports = new ArrayList<>();
     private final Semaphore pollRequested = new Semaphore(0);
     private final Semaphore pollCompleted = new Semaphore(0);
+
+    @AfterEach
+    void tearDown() throws InterruptedException {
+        for (Thread thread : threads) {
+            thread.interrupt();
+            thread.join(1000);
+        }
+    }
 
     @Test
     void shouldFindNoItems() {
@@ -68,31 +78,11 @@ public class ProgressTrackingIteratorTest {
     }
 
     private ProgressTrackingIterator<String> trackProgressEveryNItems(int n, List<String> items) {
-        CloseableIterator<String> source = new CloseableIterator<>() {
-            private int read = 0;
-
-            @Override
-            public boolean hasNext() {
-                return read < items.size();
-            }
-
-            @Override
-            public String next() {
-                if (read > 0 && read % n == 0) {
-                    pollRequested.release();
-                    pollCompleted.acquireUninterruptibly();
-                }
-                return items.get(read++);
-            }
-
-            @Override
-            public void close() {
-            }
-        };
-        ProgressTrackingIterator<String> iterator = new ProgressTrackingIterator<>(source, count -> {
-            progressReports.add(count);
-            pollCompleted.release();
-        }, Duration.ofSeconds(1), millis -> pollRequested.acquire());
+        CloseableIterator<String> source = new IteratorWaitingOnPoll<>(items, n);
+        ProgressTrackingIterator<String> iterator = new ProgressTrackingIterator<String>(
+                source, this::trackProgressAndReleasePollCompleted, Duration.ofSeconds(1),
+                this::waitUntilTimeToPollProgress,
+                this::createAndTrackThread);
         iterator.startProgressPolling();
         return iterator;
     }
@@ -104,6 +94,50 @@ public class ProgressTrackingIteratorTest {
             return list;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private void trackProgressAndReleasePollCompleted(long count) {
+        progressReports.add(count);
+        pollCompleted.release();
+    }
+
+    private void waitUntilTimeToPollProgress(long millis) throws InterruptedException {
+        pollRequested.acquire();
+    }
+
+    private Thread createAndTrackThread(Runnable runnable) {
+        Thread thread = new Thread(runnable);
+        threads.add(thread);
+        return thread;
+    }
+
+    class IteratorWaitingOnPoll<T> implements CloseableIterator<T> {
+        private final List<T> items;
+        private final long waitEveryNItems;
+        private int read = 0;
+
+        IteratorWaitingOnPoll(List<T> items, long waitEveryNItems) {
+            this.items = items;
+            this.waitEveryNItems = waitEveryNItems;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return read < items.size();
+        }
+
+        @Override
+        public T next() {
+            if (read > 0 && read % waitEveryNItems == 0) {
+                pollRequested.release();
+                pollCompleted.acquireUninterruptibly();
+            }
+            return items.get(read++);
+        }
+
+        @Override
+        public void close() {
         }
     }
 
