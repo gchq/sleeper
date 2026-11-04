@@ -18,12 +18,16 @@ package sleeper.core.iterator.closeable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.util.ThreadSleep;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
+import java.util.function.LongConsumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -77,12 +81,29 @@ public class ProgressTrackingIteratorTest {
         assertThat(iterator.getCount()).isEqualTo(3);
     }
 
+    @Test
+    void shouldStopPollingThreadOnClose() {
+        // Given
+        ProgressTrackingIterator<String> iterator = trackProgressEveryNItems(3, List.of("a", "b"));
+
+        // When
+        gatherToList(iterator);
+
+        // Then
+        assertThat(threads)
+                .singleElement()
+                .extracting(Thread::isAlive)
+                .isEqualTo(false);
+    }
+
     private ProgressTrackingIterator<String> trackProgressEveryNItems(int n, List<String> items) {
         CloseableIterator<String> source = new IteratorWaitingOnPoll<>(items, n);
+        LongConsumer callback = this::trackProgressAndReleasePollCompleted;
+        ThreadSleep threadSleep = this::waitUntilTimeToPollProgress;
+        ThreadFactory threadFactory = this::createAndTrackThread;
         ProgressTrackingIterator<String> iterator = new ProgressTrackingIterator<String>(
-                source, this::trackProgressAndReleasePollCompleted, Duration.ofSeconds(1),
-                this::waitUntilTimeToPollProgress,
-                this::createAndTrackThread);
+                source, callback, Duration.ofSeconds(1),
+                threadSleep, threadFactory);
         iterator.startProgressPolling();
         return iterator;
     }
