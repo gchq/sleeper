@@ -31,8 +31,11 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.LongConsumer;
 
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.assertj.core.api.InstanceOfAssertFactories.THROWABLE;
 
 public class ProgressTrackingIteratorTest {
 
@@ -143,6 +146,66 @@ public class ProgressTrackingIteratorTest {
         assertThat(reports).containsExactly(1L, 2L);
     }
 
+    @Test
+    void shouldSkipFinalReportWhenInterruptedWaitingForPollToFinish() throws Exception {
+        // Given an iterator whose polls interrupt the closing thread
+        List<Long> reports = Collections.synchronizedList(new ArrayList<>());
+        Semaphore pollStarted = new Semaphore(0);
+        ProgressTrackingIterator<String> iterator = trackProgressWithSourceItemsAndCallback(
+                List.of("a", "b"),
+                interruptClosingThreadWhileJoining(Thread.currentThread(), pollStarted, reports));
+
+        // And all items are read, then a poll starts
+        iterator.forEachRemaining(item -> {
+        });
+        pollRequested.release();
+        pollStarted.acquire();
+
+        // When
+        Throwable thrown = catchThrowable(iterator::close);
+        boolean interrupted = Thread.interrupted();
+
+        // Then
+        assertThat(thrown).isInstanceOf(RuntimeException.class)
+                .hasCauseInstanceOf(InterruptedException.class);
+        assertThat(interrupted).isTrue();
+        assertThat(reports).isEmpty();
+    }
+
+    @Test
+    void shouldKeepSourceFailureWhenInterruptedWaitingForPollToFinish() throws Exception {
+        // Given an iterator whose polls interrupt the closing thread
+        List<Long> reports = Collections.synchronizedList(new ArrayList<>());
+        Semaphore pollStarted = new Semaphore(0);
+        ProgressTrackingIterator<String> iterator = trackProgressWithSourceItemsAndCallback(
+                List.of("a", "b"),
+                interruptClosingThreadWhileJoining(Thread.currentThread(), pollStarted, reports));
+
+        // And the source fails to close
+        RuntimeException sourceFailure = new RuntimeException("Could not close source");
+        onSourceClose = () -> {
+            throw sourceFailure;
+        };
+
+        // And all items are read, then a poll starts
+        iterator.forEachRemaining(item -> {
+        });
+        pollRequested.release();
+        pollStarted.acquire();
+
+        // When
+        Throwable thrown = catchThrowable(iterator::close);
+        boolean interrupted = Thread.interrupted();
+
+        // Then the source failure is thrown, with the interrupt suppressed
+        assertThat(thrown).isSameAs(sourceFailure);
+        assertThat(thrown.getSuppressed())
+                .singleElement(as(THROWABLE))
+                .hasCauseInstanceOf(InterruptedException.class);
+        assertThat(interrupted).isTrue();
+        assertThat(reports).isEmpty();
+    }
+
     // Holds up reports from the polling thread until the iterator is closed and the closing thread is waiting to join
     // the polling thread. Without the join, the closing thread would report the final count before the poll reports.
     private static LongConsumer delayPollReportUntilClosingThreadJoins(Thread closingThread, Semaphore pollStarted, List<Long> reports) {
@@ -156,12 +219,34 @@ public class ProgressTrackingIteratorTest {
         };
     }
 
+    // Interrupts the closing thread while it's waiting to join the polling thread. The polling thread then keeps running
+    // until the test is torn down, so the join can't finish before the closing thread sees the interrupt.
+    private static LongConsumer interruptClosingThreadWhileJoining(Thread closingThread, Semaphore pollStarted, List<Long> reports) {
+        return count -> {
+            if (Thread.currentThread() != closingThread) {
+                pollStarted.release();
+                waitForInterruptFromClose();
+                waitUntilJoining(closingThread);
+                closingThread.interrupt();
+                waitForInterruptFromTearDown();
+            } else {
+                reports.add(count);
+            }
+        };
+    }
+
     private <T> ProgressTrackingIterator<T> trackProgressEveryNItems(int n, List<T> items) {
         return trackProgress(new IteratorWaitingOnPoll<>(items, n), this::trackProgressAndReleasePollCompleted);
     }
 
     private <T> ProgressTrackingIterator<T> trackProgressWithSourceItemsAndCallback(List<T> items, LongConsumer callback) {
-        return trackProgress(new WrappedIterator<>(items.iterator()), callback);
+        CloseableIterator<T> source = new WrappedIterator<>(items.iterator()) {
+            @Override
+            public void close() {
+                onSourceClose.run();
+            }
+        };
+        return trackProgress(source, callback);
     }
 
     private <T> ProgressTrackingIterator<T> trackProgress(CloseableIterator<T> source, LongConsumer callback) {
@@ -194,10 +279,18 @@ public class ProgressTrackingIteratorTest {
     }
 
     private static void waitForInterruptFromClose() {
+        waitForInterrupt();
+    }
+
+    private static void waitForInterruptFromTearDown() {
+        waitForInterrupt();
+    }
+
+    private static void waitForInterrupt() {
         try {
             new CountDownLatch(1).await();
         } catch (InterruptedException e) {
-            // Expected when the iterator is closed
+            // Expected
         }
     }
 
