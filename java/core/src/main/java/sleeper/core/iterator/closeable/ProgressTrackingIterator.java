@@ -74,15 +74,18 @@ public class ProgressTrackingIterator<T> implements CloseableIterator<T> {
 
     @Override
     public void close() throws IOException {
-        source.close();
-        closed.set(true);
-        pollingThread.interrupt();
-        callback.accept(count.get());
         try {
-            pollingThread.join();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            source.close();
+        } finally {
+            closed.set(true);
+            pollingThread.interrupt();
+            callback.accept(count.get());
+            try {
+                pollingThread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
         }
     }
 
