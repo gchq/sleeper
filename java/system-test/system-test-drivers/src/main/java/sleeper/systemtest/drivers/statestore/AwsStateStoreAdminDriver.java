@@ -104,14 +104,14 @@ public class AwsStateStoreAdminDriver implements StateStoreAdminDriver {
     @Override
     public int countFilesSnapshots(InstanceProperties instanceProperties, TableProperties tableProperties) {
         List<TransactionLogSnapshotMetadata> snapshots = metadataStore(instanceProperties, tableProperties).getFilesSnapshots();
-        LOGGER.info("Found files snapshots: {}", snapshots);
+        LOGGER.info("Found {} files snapshots", snapshots.size());
         return snapshots.size();
     }
 
     @Override
     public int countPartitionsSnapshots(InstanceProperties instanceProperties, TableProperties tableProperties) {
         List<TransactionLogSnapshotMetadata> snapshots = metadataStore(instanceProperties, tableProperties).getPartitionsSnapshots();
-        LOGGER.info("Found partitions snapshots: {}", snapshots);
+        LOGGER.info("Found {} partitions snapshots", snapshots.size());
         return snapshots.size();
     }
 
