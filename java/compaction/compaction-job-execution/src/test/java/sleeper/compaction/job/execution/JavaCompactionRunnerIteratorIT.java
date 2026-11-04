@@ -31,6 +31,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.sketches.testutils.SketchesDeciles;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -139,5 +140,39 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
                                 .rank(0.7, 140L).rank(0.8, 160L).rank(0.9, 180L))
                         .build());
         assertThat(stateStore.getFileReferences()).containsExactly(outputFileReference(compactionJob, 100));
+    }
+
+    @Test
+    void shouldReportProgressWhileFiltering() throws Exception {
+        // Given
+        Schema schema = CompactionRunnerTestUtils.createSchemaWithKeyTimestampValue();
+        tableProperties.setSchema(schema);
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+
+        List<Row> data1 = CompactionRunnerTestData.specifiedFromEvens((even, row) -> {
+            row.put("key", (long) even);
+            row.put("timestamp", System.currentTimeMillis());
+            row.put("value", 987654321L);
+        });
+        List<Row> data2 = CompactionRunnerTestData.specifiedFromOdds((odd, row) -> {
+            row.put("key", (long) odd);
+            row.put("timestamp", 0L);
+            row.put("value", 123456789L);
+        });
+        FileReference file1 = ingestRowsGetFile(data1);
+        FileReference file2 = ingestRowsGetFile(data2);
+        tableProperties.set(FILTERING_CONFIG, "ageOff(timestamp,1000000)");
+
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+        assignJobIdToInputFiles(stateStore, compactionJob);
+
+        // When
+        List<Long> progressUpdates = new ArrayList<>();
+        runTask(compactionJob, hadoopConfigForECS(), progressUpdates::add);
+
+        // Then
+        assertThat(progressUpdates).containsExactly(200L);
+        assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(200, 100));
+        assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
     }
 }

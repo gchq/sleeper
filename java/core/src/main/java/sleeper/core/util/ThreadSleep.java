@@ -31,6 +31,16 @@ public interface ThreadSleep {
     void waitForMillis(long milliseconds) throws InterruptedException;
 
     /**
+     * Wait for the specified period.
+     *
+     * @param  duration             duration to wait for
+     * @throws InterruptedException if the thread is interrupted while waiting
+     */
+    default void waitForDuration(Duration duration) throws InterruptedException {
+        waitForMillis(duration.toMillis());
+    }
+
+    /**
      * Wait for the specified period. If the thread is interrupted while waiting, wrap it as a RuntimeException and
      * re-interrupt the thread.
      *
