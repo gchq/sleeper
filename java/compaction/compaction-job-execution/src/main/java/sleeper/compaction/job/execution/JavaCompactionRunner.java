@@ -47,7 +47,6 @@ import sleeper.sketches.Sketches;
 import sleeper.sketches.store.SketchesStore;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -106,7 +105,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         List<CloseableIterator<Row>> inputIterators = createInputIterators(request.getJob(), request.getRegion(), schema);
         CloseableIterator<Row> mergingIterator = new MergingIterator(schema, inputIterators);
         ProgressTrackingIterator<Row> trackingIterator = new ProgressTrackingIterator<>(mergingIterator,
-                request.getProgressCallback(), Duration.ofSeconds(5), Thread::sleep,
+                request.getProgressCallback(), request.getProgressCallbackInterval(), Thread::sleep,
                 runnable -> new Thread(runnable, "compaction-progress-" + request.getJob().getId()));
         trackingIterator.startProgressPolling();
         return trackingIterator;
