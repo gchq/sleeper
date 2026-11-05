@@ -17332,6 +17332,9 @@
                 "Arn"
               ]
             },
+            "FunctionResponseTypes": [
+              "ReportBatchItemFailures"
+            ],
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -19976,9 +19979,6 @@
                 "Arn"
               ]
             },
-            "FunctionResponseTypes": [
-              "ReportBatchItemFailures"
-            ],
             "Tags": [
               {
                 "Key": "DeploymentStack",
