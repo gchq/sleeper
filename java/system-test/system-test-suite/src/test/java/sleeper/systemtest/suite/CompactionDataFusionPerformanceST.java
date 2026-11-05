@@ -59,7 +59,7 @@ public class CompactionDataFusionPerformanceST {
     @Test
     void shouldMeetCompactionPerformanceStandards(SleeperDsl sleeper) {
 
-        // Given many data generation jobs have produced a large number of files across partitions
+        // Given many data generation jobs have produced a large enough number of files that would trigger compaction
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 DATA_ENGINE, DataEngine.DATAFUSION.toString()));

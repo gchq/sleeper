@@ -56,9 +56,8 @@ public class IngestPerformanceST {
                         builder -> builder.ingestMode(QUEUE)
                                 .ingestQueue(STANDARD_INGEST)
                                 .rowsPerIngest(40_000_000),
-
-                        // When the data generation and ingest jobs are run to completion
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
+                // When the ingest jobs are run to completion
                 .waitForStandardIngestTasks(11,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
                 .waitForIngestJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
