@@ -135,7 +135,9 @@ public class TransactionLogSnapshotStack extends NestedStack {
 
         snapshotCreationLambda.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(SNAPSHOT_CREATION_BATCH_SIZE))
-                .maxConcurrency(instanceProperties.getIntOrNull(SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_MAXIMUM)).build());
+                .maxConcurrency(instanceProperties.getIntOrNull(SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_MAXIMUM))
+                .reportBatchItemFailures(true)
+                .build());
 
         coreStacks.grantReadTablesStatus(snapshotCreationTrigger);
         coreStacks.grantInvokeScheduled(snapshotCreationTrigger, queue);
@@ -200,7 +202,9 @@ public class TransactionLogSnapshotStack extends NestedStack {
 
         snapshotDeletionLambda.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(SNAPSHOT_DELETION_BATCH_SIZE))
-                .maxConcurrency(instanceProperties.getIntOrNull(SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_MAXIMUM)).build());
+                .maxConcurrency(instanceProperties.getIntOrNull(SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_MAXIMUM))
+                .reportBatchItemFailures(true)
+                .build());
 
         coreStacks.grantReadTablesStatus(snapshotDeletionTrigger);
         coreStacks.grantInvokeScheduled(snapshotDeletionTrigger, queue);
