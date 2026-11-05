@@ -38,7 +38,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTra
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.splitter.core.find.SplitPartitionJobDefinition;
 import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.statestore.StateStoreFactory;
@@ -62,7 +62,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class SplitPartitionLambdaIT extends LocalStackTestBase {
+public class SplitPartitionLambdaIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = createSchemaWithKey("key", new IntType());

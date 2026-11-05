@@ -105,7 +105,7 @@
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
         <kerby.version>2.1.2</kerby.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. -->
-        <dnsjava.version>3.6.5</dnsjava.version>
+        <dnsjava.version>3.7.0</dnsjava.version>
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
         <xz.version>1.12</xz.version>
         <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. -->
@@ -124,10 +124,10 @@
         Spark declares an old version of RoaringBitmap with vulnerabilities. We have upgraded the version
         ahead of the Spark version to address detected vulnerabilities.
         -->
-        <roaringbitmap.version>1.6.24</roaringbitmap.version>
+        <roaringbitmap.version>1.6.29</roaringbitmap.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.6.5</logback.version>
+        <logback.version>1.6.6</logback.version>
         <!--
         Spark declares an old version of Log4J with vulnerabilities. We exclude some of the Log4J dependencies as we use
         SLF4J, but we can't exclude them from EMR.
@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.57.3</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.57.8</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         It's not compatible with the latest version, so we match the version that it provides.
@@ -150,7 +150,7 @@
         java.lang.NoSuchFieldError: AWS_AUTH_SCHEME_PREFERENCE
         at software.amazon.awssdk.awscore.auth.AuthSchemePreferenceResolver.fromSystemSetting(AuthSchemePreferenceResolver.java:75)
         The version of the library is checked in .github/scripts/checkVersionNumber.sh so that Dependabot can't upgrade
-        it, and is compared against the EMR images daily by .github/scripts/checkBulkImportAwsSdkAgainstEmr.sh.
+        it, and can be compared against the EMR images with scripts/dev/checkBulkImportAwsSdkAgainstEmr.sh.
         Only change it when deliberately matching a version from EMR, e.g. based on output from that script.
         Verify with EmrServerlessBulkImportST.
         -->
@@ -178,7 +178,7 @@
         <jline.version>4.4.8</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-24</zstd-jni.version>
+        <zstd-jni.version>1.5.7-25</zstd-jni.version>
         <airlift.units.version>1.10</airlift.units.version>
         <airlift.slice.version>2.3</airlift.slice.version>
         <!-- Trino and its dependencies declare different versions of Airlift. -->
@@ -187,7 +187,7 @@
         <opentelemetry.version>1.66.0</opentelemetry.version>
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
-        <zookeeper.version>3.9.6</zookeeper.version>
+        <zookeeper.version>3.9.7</zookeeper.version>
         <jackson.version>2.22.4</jackson.version>
         <jackson.annotations.version>2.22</jackson.annotations.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
@@ -198,7 +198,7 @@
         <google.http-client.version>2.2.0</google.http-client.version>
         <google.grpc.version>1.85.1</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.274.0</cdk.version>
+        <cdk.version>2.275.0</cdk.version>
         <constructs.version>10.8.1</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
         <jsii.version>1.142.0</jsii.version>
@@ -228,9 +228,9 @@
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.3</jgrapht.version>
         <apfloat.version>1.16.0</apfloat.version>
-        <joda-time.version>2.15.0</joda-time.version>
+        <joda-time.version>2.15.1</joda-time.version>
         <json-smart.version>2.6.0</json-smart.version>
-        <jnr.ffi.version>2.3.4</jnr.ffi.version>
+        <jnr.ffi.version>2.3.6</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <docker-java.version>3.7.1</docker-java.version>
         <jib.version>0.28.2</jib.version>
@@ -242,8 +242,9 @@
         <junit.platform.version>1.14.4</junit.platform.version>
         <mockito.version>5.24.0</mockito.version>
         <testcontainers.version>2.0.5</testcontainers.version>
+        <floci.version>2.17.0</floci.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <handlebars.version>4.5.6</handlebars.version>
+        <handlebars.version>4.5.8</handlebars.version>
         <assertj.version>3.27.7</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>31.0.0</approvaltests.version>
@@ -273,7 +274,7 @@
         <assembly.plugin.version>3.8.0</assembly.plugin.version>
         <jar.plugin.version>3.5.1</jar.plugin.version>
         <compiler.plugin.version>3.16.0</compiler.plugin.version>
-        <enforcer.plugin.version>3.6.3</enforcer.plugin.version>
+        <enforcer.plugin.version>3.7.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.10.4</spotbugs.version>
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
@@ -385,6 +386,11 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>auth</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>iam</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
             <dependency>
@@ -1613,9 +1619,9 @@
             </dependency>
             <!-- Test Dependencies -->
             <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-localstack</artifactId>
-                <version>${testcontainers.version}</version>
+                <groupId>io.floci</groupId>
+                <artifactId>testcontainers-floci-aws</artifactId>
+                <version>${floci.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.testcontainers</groupId>
@@ -1819,7 +1825,7 @@
                                 <ignoredUnusedDeclaredDependency>org.apache.hadoop:hadoop-aws::</ignoredUnusedDeclaredDependency>
                                 <!-- AspectJ wants to be declared as a compile dependency -->
                                 <ignoredUnusedDeclaredDependency>org.aspectj:aspectjrt::</ignoredUnusedDeclaredDependency>
-                                <!-- Ignored due to false positive for dependency in localstack-test -->
+                                <!-- Ignored due to false positive for dependency in local-aws-test -->
                                 <ignoredUnusedDeclaredDependency>com.github.tomakehurst:wiremock-jre8::</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoreAllNonTestScoped>true</ignoreAllNonTestScoped>

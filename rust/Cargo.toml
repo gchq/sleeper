@@ -75,7 +75,7 @@ url = { version = "2.5.8" }                         # URL processing for S3
 uuid = { version = "1.23.3", features = ["v4"] }    # UUID generation
 
 [workspace.metadata.datasketches]
-datasketches_cpp_version = "5.2.0"
+datasketches_cpp_version = "5.3.0"
 
 [profile.release]
 incremental = true

@@ -1,0 +1,61 @@
+/*
+ * Copyright 2022-2026 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.local.aws.test;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.floci.testcontainers.FlociContainer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.DockerClientFactory;
+import org.testcontainers.containers.Network;
+import org.testcontainers.utility.DockerImageName;
+
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+/**
+ * A helper class to create test containers to run local AWS.
+ */
+public class SleeperLocalAwsContainer {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperLocalAwsContainer.class);
+    private static final String FLOCI_DOCKER_IMAGE = "floci/floci:2.3.0";
+
+    private SleeperLocalAwsContainer() {
+    }
+
+    public static final FlociContainer INSTANCE = start();
+
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
+    private static FlociContainer start() {
+        FlociContainer container = new FlociContainer(DockerImageName.parse(FLOCI_DOCKER_IMAGE))
+                .withEnv("FLOCI_HOST", getHostAddress())
+                .withNetwork(Network.newNetwork())
+                .withNetworkAliases("floci")
+                .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()));
+        container.start();
+        return container;
+    }
+
+    private static String getHostAddress() {
+        String dockerHost = DockerClientFactory.instance().dockerHostIpAddress();
+        try {
+            return InetAddress.getByName(dockerHost).getHostAddress();
+        } catch (UnknownHostException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+}

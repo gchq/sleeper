@@ -24,10 +24,10 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.localstack.test.SleeperLocalStackClients;
+import sleeper.local.aws.test.SleeperLocalAwsClients;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
-import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
+import sleeper.systemtest.drivers.testutil.LocalAwsDslTest;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.util.DataFileDuplications;
@@ -41,15 +41,15 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCAL_MAIN;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
-@LocalStackDslTest
+@LocalAwsDslTest
 public class AwsDataFilesDriverIT {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper) {
-        sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
+        sleeper.connectToInstanceNoTables(LOCAL_MAIN);
     }
 
     @Test
@@ -94,7 +94,7 @@ public class AwsDataFilesDriverIT {
         try (ParquetReaderIterator iterator = new ParquetReaderIterator(
                 ParquetRowReaderFactory.parquetRowReaderBuilder(
                         new Path(file.getFilename()), schema(context))
-                        .withConf(SleeperLocalStackClients.HADOOP_CONF)
+                        .withConf(SleeperLocalAwsClients.HADOOP_CONF)
                         .build())) {
             List<Row> rows = new ArrayList<>();
             iterator.forEachRemaining(rows::add);

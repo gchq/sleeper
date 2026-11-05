@@ -32,7 +32,7 @@ on:
       - 'java/example-iterators/**'
       - 'java/common/sketches/**'
       - 'java/core/**'
-      - 'java/common/localstack-test/**'
+      - 'java/common/local-aws-test/**'
 
 jobs:
   chunk-workflow:
