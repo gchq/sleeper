@@ -34,7 +34,7 @@ public class PythonQueryDsl {
 
     public PythonQueryDsl(SystemTestContext context, Path outputDir) {
         this.instance = context.instance();
-        this.driver = context.instance().adminDrivers().pythonQuery(context);
+        this.driver = context.instance().adminRoleDrivers().pythonQuery(context);
         this.outputDir = outputDir;
     }
 

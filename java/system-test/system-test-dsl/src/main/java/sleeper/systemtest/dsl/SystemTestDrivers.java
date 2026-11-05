@@ -29,6 +29,7 @@ import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
+import sleeper.systemtest.dsl.instance.DeadLettersDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.ScheduleRulesDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -43,11 +44,11 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
 import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
-import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestLocalFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.statestore.StateStoreAdminDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
@@ -139,7 +140,9 @@ public interface SystemTestDrivers {
 
     PurgeQueueDriver purgeQueues(SystemTestContext context);
 
-    SnapshotsDriver snapshots();
+    DeadLettersDriver deadLetters(SystemTestContext context);
+
+    StateStoreAdminDriver stateStoreAdmin(SystemTestContext context);
 
     ScheduleRulesDriver schedules();
 }

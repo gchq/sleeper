@@ -22,8 +22,8 @@ use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use sleeper_core::{
-    ColRange, CommonConfigBuilder, OutputType, PartitionBound, SleeperParquetOptions,
-    SleeperRegion,
+    ColRange, CommonConfigBuilder, DEFAULT_PROGRESS_CALLBACK_INTERVAL, OutputType, PartitionBound,
+    SleeperParquetOptions, SleeperRegion,
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
     run_compaction,
     sleeper_context::SleeperContext,
@@ -178,7 +178,13 @@ async fn main() -> color_eyre::Result<()> {
 
     let context = Arc::new(SleeperContext::default());
 
-    let result = run_compaction(&details, &context, Some(progress)).await?;
+    let result = run_compaction(
+        &details,
+        &context,
+        Some(progress),
+        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
+    )
+    .await?;
     info!(
         "Compaction read {} rows and wrote {} rows",
         result.rows_read.to_formatted_string(&Locale::en),

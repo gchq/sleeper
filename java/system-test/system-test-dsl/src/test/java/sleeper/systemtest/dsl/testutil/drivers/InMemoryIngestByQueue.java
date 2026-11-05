@@ -193,7 +193,7 @@ public class InMemoryIngestByQueue {
 
     private IngestJobMessageHandler<IngestJob> messageHandler(SystemTestContext context) {
         SystemTestInstanceContext instance = context.instance();
-        SleeperTablesDriver tablesDriver = instance.adminDrivers().tables(context.parameters());
+        SleeperTablesDriver tablesDriver = instance.adminRoleDrivers().tables(context.parameters());
         TableIndex tableIndex = tablesDriver.tableIndex(instance.getInstanceProperties());
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)

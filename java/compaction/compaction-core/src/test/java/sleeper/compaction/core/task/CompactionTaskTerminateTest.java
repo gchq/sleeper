@@ -228,7 +228,7 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
         }
 
         @Test
-        void shouldTerminateIfInterruptedDuringCommit() throws Exception {
+        void shouldTerminateIfInterruptedDuringCompaction() throws Exception {
             // Given
             setSyncCommit(tableProperties);
             CompactionJob job1 = createJobOnQueue("job1");
@@ -238,9 +238,18 @@ public class CompactionTaskTerminateTest extends CompactionTaskTestBase {
             runTask(processJobs(jobSucceeds().withAction(Thread.currentThread()::interrupt)));
 
             // Then
-            assertThat(consumedJobs).as("interrupted job should be committed and deleted from queue").containsExactly(job1);
-            assertThat(jobsReturnedToQueue).isEmpty();
+            assertThat(jobsReturnedToQueue).as("interrupted job should be put back on queue").containsExactly(job1);
+            assertThat(consumedJobs).as("interrupted job should not be committed").isEmpty();
             assertThat(jobsOnQueue).as("second job should not be processed").containsExactly(job2);
+            assertThat(jobTracker.getJob(job1.getId()).orElseThrow().getRunsLatestFirst())
+                    .singleElement()
+                    .satisfies(run -> {
+                        assertThat(run.isFinishedSuccessfully()).isFalse();
+                        assertThat(run.getFailureReasons()).anyMatch(reason -> reason.contains("InterruptedException"));
+                    });
+            assertThat(taskTracker.getAllTasks())
+                    .singleElement()
+                    .satisfies(task -> assertThat(task.isFinished()).isTrue());
             assertThat(Thread.interrupted()).isTrue(); // clear interrupt flag set during test
         }
     }

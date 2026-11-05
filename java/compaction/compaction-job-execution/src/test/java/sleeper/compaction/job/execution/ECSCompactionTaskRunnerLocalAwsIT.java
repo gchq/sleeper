@@ -36,6 +36,7 @@ import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.task.CompactionTask;
+import sleeper.compaction.core.task.CompactionTaskTestHelper;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
@@ -474,11 +475,24 @@ public class ECSCompactionTaskRunnerLocalAwsIT extends LocalAwsTestBase {
                 instanceProperties, sqsClient);
         StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(
                 tablePropertiesProvider, stateStoreProvider, jobTracker, DynamoDBUtils.retryOnThrottlingException());
-        CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
-                PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
-                waitForFiles, committer, jobTracker, taskTracker, selector, taskId,
-                jobRunIdSupplier, timeSupplier, noWaits(), noJitter(), null);
-        return task;
+        return CompactionTask.builder()
+                .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(tablePropertiesProvider)
+                .propertiesReloader(PropertiesReloader.neverReload())
+                .stateStoreProvider(stateStoreProvider)
+                .messageReceiver(new SqsCompactionQueueHandler(sqsClient, instanceProperties))
+                .waitForFiles(waitForFiles)
+                .jobCommitter(committer)
+                .jobTracker(jobTracker)
+                .taskTracker(taskTracker)
+                .runnerFactory(selector)
+                .taskId(taskId)
+                .watchdogFactory(CompactionTaskTestHelper.failOnStall())
+                .jobRunIdSupplier(jobRunIdSupplier)
+                .timeSupplier(timeSupplier)
+                .threadSleep(noWaits())
+                .randomJitterFunction(noJitter())
+                .build();
     }
 
     private Function<Integer, Row> defaultRowCreator() {

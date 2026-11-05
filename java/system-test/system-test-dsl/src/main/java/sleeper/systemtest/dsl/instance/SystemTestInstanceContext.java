@@ -78,12 +78,12 @@ public class SystemTestInstanceContext {
                 name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver()));
     }
 
-    public SystemTestDrivers adminDrivers() {
+    public SystemTestDrivers adminRoleDrivers() {
         return currentInstance().getInstanceAdminDrivers();
     }
 
     private SleeperTablesDriver tablesDriver() {
-        return adminDrivers().tables(parameters);
+        return adminRoleDrivers().tables(parameters);
     }
 
     public void addDefaultTables(Map<TableProperty, String> extraProperties) {

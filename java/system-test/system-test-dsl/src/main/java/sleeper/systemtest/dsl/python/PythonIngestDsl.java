@@ -39,7 +39,7 @@ public class PythonIngestDsl {
 
     public PythonIngestDsl(SystemTestContext context) {
         sentJobs = context.sentIngestJobs();
-        SystemTestDrivers drivers = context.instance().adminDrivers();
+        SystemTestDrivers drivers = context.instance().adminRoleDrivers();
         fromS3Driver = drivers.pythonIngest(context);
         localFileDriver = drivers.pythonIngestLocalFile(context);
         tasksDriver = drivers.ingestTasks(context);
