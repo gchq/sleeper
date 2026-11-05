@@ -40,7 +40,7 @@ public class PartitioningDsl {
     private final PollWithRetriesDriver pollDriver;
 
     public PartitioningDsl(SystemTestContext context) {
-        SystemTestDrivers drivers = context.instance().adminDrivers();
+        SystemTestDrivers drivers = context.instance().adminRoleDrivers();
         instance = context.instance();
         splittingDriver = drivers.partitionSplitting(context);
         pollDriver = drivers.pollWithRetries();

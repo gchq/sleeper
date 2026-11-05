@@ -16,11 +16,12 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.row.testutils.InMemoryRowStore;
+import sleeper.core.table.TableStatus;
 import sleeper.garbagecollector.GarbageCollector;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
+import java.util.stream.Stream;
 
 public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver {
 
@@ -33,7 +34,7 @@ public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver 
     }
 
     @Override
-    public void invokeGarbageCollection() {
+    public void invokeGarbageCollection(Stream<TableStatus> tables) {
         GarbageCollector collector = new GarbageCollector(
                 (filenames, deletedTracker) -> {
                     filenames.forEach(filename -> {
@@ -45,7 +46,9 @@ public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver 
                 instance.getStateStoreProvider(),
                 request -> {
                 });
-        collector.run(instance.streamTableProperties().collect(toUnmodifiableList()));
+        collector.run(tables
+                .flatMap(table -> instance.getTablePropertiesByDeployedId(table.getTableUniqueId()).stream())
+                .toList());
     }
 
 }

@@ -105,7 +105,7 @@
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
         <kerby.version>2.1.2</kerby.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. -->
-        <dnsjava.version>3.7.0</dnsjava.version>
+        <dnsjava.version>3.7.1</dnsjava.version>
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
         <xz.version>1.12</xz.version>
         <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. -->
@@ -2454,6 +2454,19 @@
                         </executions>
                     </plugin>
                 </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!-- Builds in an Eclipse-based IDE (including VS Code's Java support) use a separate directory, so they
+                 don't clash with command line Maven builds running at the same time. -->
+            <id>ideBuildDirectory</id>
+            <activation>
+                <property>
+                    <name>m2e.version</name>
+                </property>
+            </activation>
+            <build>
+                <directory>target-ide</directory>
             </build>
         </profile>
     </profiles>

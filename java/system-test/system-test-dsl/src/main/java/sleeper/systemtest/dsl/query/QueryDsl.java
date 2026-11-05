@@ -35,7 +35,7 @@ public class QueryDsl {
     public QueryDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.context = context;
         this.baseDrivers = baseDrivers;
-        this.adminDrivers = context.instance().adminDrivers();
+        this.adminDrivers = context.instance().adminRoleDrivers();
     }
 
     public QueryDsl byQueue() {

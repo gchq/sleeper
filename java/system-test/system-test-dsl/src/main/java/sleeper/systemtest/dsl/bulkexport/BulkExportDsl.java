@@ -32,7 +32,7 @@ public class BulkExportDsl {
 
     public BulkExportDsl(SystemTestContext context) {
         this.instance = context.instance();
-        driver = instance.adminDrivers().bulkExport(context);
+        driver = instance.adminRoleDrivers().bulkExport(context);
     }
 
     public BulkExportDsl sendAllRowsQuery() {

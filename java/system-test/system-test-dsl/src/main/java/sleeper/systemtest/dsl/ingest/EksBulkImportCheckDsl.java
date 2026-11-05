@@ -35,7 +35,7 @@ public class EksBulkImportCheckDsl {
 
     public EksBulkImportCheckDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.baseDriver = baseDrivers.eksBulkImport(context);
-        this.adminDriver = context.instance().adminDrivers().eksBulkImport(context);
+        this.adminDriver = context.instance().adminRoleDrivers().eksBulkImport(context);
         this.pollDriver = baseDrivers.pollWithRetries();
     }
 
