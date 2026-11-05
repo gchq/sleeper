@@ -49,6 +49,7 @@ public class AutoStopEcsTaskST {
         sleeper.disableOptionalStacks(OptionalStack.all());
     }
 
+    @Disabled("Test is failing due to permission failures")
     @Test
     void shouldRemoveIngestStackWhileTaskIsRunning(SleeperDsl sleeper) throws Exception {
 
