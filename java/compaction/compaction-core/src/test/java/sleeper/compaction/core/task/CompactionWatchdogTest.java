@@ -29,6 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -116,9 +117,22 @@ public class CompactionWatchdogTest {
 
     @Test
     void shouldThrowAndRestoreInterruptWhenInterruptedWhileClosing() throws Exception {
-        // Given
-        startWatchdog(new CompactionProgressMonitor(supplyTimes()), supplyTimes());
-        sleep.awaitWait();
+        // Given a stall handler is running, so the watchdog thread stays alive while close waits for it
+        CountDownLatch handlerStarted = new CountDownLatch(1);
+        CountDownLatch releaseHandler = new CountDownLatch(1);
+        startWatchdog(new CompactionProgressMonitor(supplyTimes()),
+                supplyTimes(Instant.parse("2026-10-26T10:10:00Z")),
+                stall -> {
+                    handlerStarted.countDown();
+                    try {
+                        releaseHandler.await(10, TimeUnit.SECONDS);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
+                    }
+                });
+        sleep.awaitWaitThenTick();
+        assertThat(handlerStarted.await(10, TimeUnit.SECONDS)).isTrue();
         Thread.currentThread().interrupt();
 
         // When
@@ -130,19 +144,23 @@ public class CompactionWatchdogTest {
         } finally {
             // Clear the interrupt so it does not affect later tests
             interrupted = Thread.interrupted();
+            releaseHandler.countDown();
         }
 
         // Then
         assertThat(interrupted).as("interrupt flag should be restored").isTrue();
-        assertThat(stalls).isEmpty();
     }
 
     private void startWatchdog(CompactionProgressMonitor monitor, TestInstantSupplier checkTimes) {
+        startWatchdog(monitor, checkTimes, stall -> {
+            stalls.add(stall);
+            stallHandled.countDown();
+        });
+    }
+
+    private void startWatchdog(CompactionProgressMonitor monitor, TestInstantSupplier checkTimes, Consumer<CompactionStall> stallHandler) {
         watchdog = new CompactionWatchdog("test-job", JOB_START, monitor, detector, CHECK_PERIOD,
-                checkTimes, sleep, stall -> {
-                    stalls.add(stall);
-                    stallHandled.countDown();
-                });
+                checkTimes, sleep, stallHandler);
         watchdog.start();
     }
 
