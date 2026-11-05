@@ -2456,5 +2456,18 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <!-- Builds in an Eclipse-based IDE (including VS Code's Java support) use a separate directory, so they
+                 don't clash with command line Maven builds running at the same time. -->
+            <id>ideBuildDirectory</id>
+            <activation>
+                <property>
+                    <name>m2e.version</name>
+                </property>
+            </activation>
+            <build>
+                <directory>target-ide</directory>
+            </build>
+        </profile>
     </profiles>
 </project>
