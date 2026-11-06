@@ -102,7 +102,6 @@ public class LambdaBatchFailuresST {
     }
 
     @Test
-    @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8365")
     void shouldReportFailureCommittingSomeCompactionJobs(SleeperDsl sleeper) {
         // Given a Sleeper table with 5 compaction jobs ready to be committed to the state store
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(

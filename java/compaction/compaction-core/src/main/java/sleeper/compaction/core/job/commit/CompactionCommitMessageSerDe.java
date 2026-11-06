@@ -17,11 +17,18 @@ package sleeper.compaction.core.job.commit;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.util.GsonConfig;
 
+import java.util.Optional;
+
 public class CompactionCommitMessageSerDe {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionCommitMessageSerDe.class);
+
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
@@ -40,9 +47,15 @@ public class CompactionCommitMessageSerDe {
         return gsonPrettyPrint.toJson(message);
     }
 
-    public CompactionCommitMessageHandle fromJsonWithCallbackOnFail(String json, Runnable callbackOnFail) {
-        CompactionCommitMessage message = gson.fromJson(json, CompactionCommitMessage.class);
-        return new CompactionCommitMessageHandle(message.tableId(), message.request(), callbackOnFail);
+    public Optional<CompactionCommitMessageHandle> fromJsonWithCallbackOnFail(String json, Runnable callbackOnFail) {
+        try {
+            CompactionCommitMessage message = gson.fromJson(json, CompactionCommitMessage.class);
+            return Optional.of(new CompactionCommitMessageHandle(message.tableId(), message.request(), callbackOnFail));
+        } catch (RuntimeException e) {
+            LOGGER.error("Found invalid compaction commit message: {}", json, e);
+            callbackOnFail.run();
+            return Optional.empty();
+        }
     }
 
 }
