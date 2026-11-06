@@ -97,7 +97,7 @@ public class SystemTestInstanceContext {
                 }).collect(toUnmodifiableList()));
     }
 
-    public List<TableProperties> createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+    public List<String> createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
         InstanceProperties instanceProperties = getInstanceProperties();
         List<TableProperties> tablePropertiesList = IntStream.range(0, numberOfTables)
                 .mapToObj(i -> {
@@ -107,7 +107,13 @@ public class SystemTestInstanceContext {
                 })
                 .toList();
         currentTables().addTablesAndSetCurrent(tablesDriver(), tablePropertiesList);
-        return tablePropertiesList;
+        tablePropertiesList.forEach(properties -> {
+            tablesByTestName.put(properties.get(TABLE_NAME), properties);
+            testNameByTableId.put(properties.get(TABLE_ID), properties.get(TABLE_NAME));
+        });
+        return tablePropertiesList.stream()
+                .map(table -> table.get(TABLE_NAME))
+                .toList();
     }
 
     public void createTable(String name, Schema schema, Map<TableProperty, String> setProperties) {

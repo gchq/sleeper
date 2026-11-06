@@ -188,7 +188,7 @@ public class SystemTestTablesDslTest {
 
             // Then
             assertThat(sleeper.table("A").tableProperties().get(TABLE_NAME))
-                    .contains("-SleeperInstanceTablesTest.DeriveTableName.shouldGenerateNameForTableDefinedInTest-A-");
+                    .contains("-SystemTestTablesDslTest.DeriveTableName.shouldGenerateNameForTableDefinedInTest-A-");
         }
 
         @Test
@@ -198,7 +198,7 @@ public class SystemTestTablesDslTest {
 
             // Then
             assertThat(sleeper.tableProperties().get(TABLE_NAME))
-                    .contains("-SleeperInstanceTablesTest.DeriveTableName.shouldGenerateNameForPredefinedTable-predefined-test-table-");
+                    .contains("-SystemTestTablesDslTest.DeriveTableName.shouldGenerateNameForPredefinedTable-predefined-test-table-");
         }
 
         @Test
@@ -229,6 +229,32 @@ public class SystemTestTablesDslTest {
             // When / Then
             assertThatThrownBy(() -> ingest.numberedRows(LongStream.of(1, 2, 3)))
                     .isInstanceOf(NoTableChosenException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Define multiple groups of tables")
+    class TableGroups {
+
+        @Test
+        void shouldDefineTwoGroupsOfTables(SleeperDsl sleeper) {
+            // Given
+            sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
+            List<String> group1 = sleeper.tables().createMany(2, DEFAULT_SCHEMA);
+            List<String> group2 = sleeper.tables().createMany(2, DEFAULT_SCHEMA);
+
+            // When
+            List<Row> group1Rows = sleeper.generateNumberedRows(DEFAULT_SCHEMA).streamFrom(LongStream.range(0, 10)).toList();
+            List<Row> group2Rows = sleeper.generateNumberedRows(DEFAULT_SCHEMA).streamFrom(LongStream.range(11, 20)).toList();
+            sleeper.tables().forEachOf(group1, () -> sleeper.ingest().direct(null).rows(group1Rows));
+            sleeper.tables().forEachOf(group2, () -> sleeper.ingest().direct(null).rows(group2Rows));
+
+            // Then
+            assertThat(sleeper.directQuery().allRowsByTable()).isEqualTo(Map.of(
+                    group1.get(0), group1Rows,
+                    group1.get(1), group1Rows,
+                    group2.get(0), group2Rows,
+                    group2.get(1), group2Rows));
         }
     }
 }
