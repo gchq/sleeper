@@ -76,7 +76,7 @@ public class StateStoreDsl {
         SystemTestInstanceContext instance = context.instance();
         return instance.streamTableProperties()
                 .collect(toMap(
-                        table -> instance.getTestTableName(table),
+                        table -> instance.getTableDescriptor(table),
                         table -> {
                             Double commitsPerSecond = byTableId.getOrDefault(table.get(TABLE_ID), 0.0);
                             LOGGER.info("Found commits per second for table {}: {}", table.getStatus(), commitsPerSecond);

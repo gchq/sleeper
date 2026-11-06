@@ -57,8 +57,8 @@ public class SystemTestInstanceContext {
     private final SleeperInstanceDriver instanceDriver;
     private final TestContext testContext;
     private final Map<String, DeployedSleeperTablesForTest> instanceShortNameToTables = new HashMap<>();
-    private final Map<String, TableProperties> testNameToTableProperties = new TreeMap<>();
-    private final Map<String, String> tableIdToTestName = new HashMap<>();
+    private final Map<String, TableProperties> descriptorToTableProperties = new TreeMap<>();
+    private final Map<String, String> tableIdToDescriptor = new HashMap<>();
     private DeployedSleeperInstance currentInstance = null;
     private DeployedSleeperTablesForTest currentTables = null;
     private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
@@ -102,37 +102,37 @@ public class SystemTestInstanceContext {
         int groupNumber = nextGroupNumber;
         nextGroupNumber++;
         InstanceProperties instanceProperties = getInstanceProperties();
-        List<String> tableTestNames = IntStream.rangeClosed(1, numberOfTables)
+        List<String> descriptors = IntStream.rangeClosed(1, numberOfTables)
                 .mapToObj(tableNumber -> "group" + groupNumber + "-table" + tableNumber)
                 .toList();
-        currentTables().addTablesAndSetCurrent(tablesDriver(), tableTestNames.stream()
-                .map(tableTestName -> {
+        currentTables().addTablesAndSetCurrent(tablesDriver(), descriptors.stream()
+                .map(descriptor -> {
                     TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
-                    tableProperties.set(TABLE_NAME, buildTableName(tableTestName));
+                    tableProperties.set(TABLE_NAME, buildTableName(descriptor));
                     setProperties.forEach(tableProperties::set);
-                    testNameToTableProperties.put(tableTestName, tableProperties);
+                    descriptorToTableProperties.put(descriptor, tableProperties);
                     return tableProperties;
                 })
                 .toList());
         // Creating tables gives them an ID, so record those after they're created.
-        tableTestNames.forEach(tableTestName -> {
-            TableProperties properties = testNameToTableProperties.get(tableTestName);
-            tableIdToTestName.put(properties.get(TABLE_ID), tableTestName);
+        descriptors.forEach(descriptor -> {
+            TableProperties properties = descriptorToTableProperties.get(descriptor);
+            tableIdToDescriptor.put(properties.get(TABLE_ID), descriptor);
         });
-        return tableTestNames;
+        return descriptors;
     }
 
-    public void createTable(String name, Schema schema, Map<TableProperty, String> setProperties) {
+    public void createTable(String descriptor, Schema schema, Map<TableProperty, String> setProperties) {
         TableProperties tableProperties = parameters.createTableProperties(getInstanceProperties(), schema);
-        tableProperties.set(TABLE_NAME, buildTableName(name));
+        tableProperties.set(TABLE_NAME, buildTableName(descriptor));
         setProperties.forEach(tableProperties::set);
         currentTables().addTablesAndSetCurrent(tablesDriver(), List.of(tableProperties));
-        testNameToTableProperties.put(name, tableProperties);
-        tableIdToTestName.put(tableProperties.get(TABLE_ID), name);
+        descriptorToTableProperties.put(descriptor, tableProperties);
+        tableIdToDescriptor.put(tableProperties.get(TABLE_ID), descriptor);
     }
 
     public void setCurrentTable(String name) {
-        TableProperties tableProperties = Optional.ofNullable(testNameToTableProperties.get(name)).orElseThrow();
+        TableProperties tableProperties = Optional.ofNullable(descriptorToTableProperties.get(name)).orElseThrow();
         currentTables().setCurrent(tableProperties);
     }
 
@@ -208,6 +208,10 @@ public class SystemTestInstanceContext {
         return getTableProperties().getStatus();
     }
 
+    public String getTableDescriptor() {
+        return tableIdToDescriptor.get(getTableProperties().get(TABLE_ID));
+    }
+
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
         generatorOverrides = overrides;
     }
@@ -235,12 +239,12 @@ public class SystemTestInstanceContext {
         currentTables().setCurrent(tableProperties);
     }
 
-    public String getTestTableName(String tableName) {
-        return getTestTableName(getTablePropertiesByDeployedName(tableName).orElseThrow());
+    public String getTableDescriptorByDeployedName(String tableName) {
+        return getTableDescriptor(getTablePropertiesByDeployedName(tableName).orElseThrow());
     }
 
-    public String getTestTableName(TableProperties tableProperties) {
-        return Optional.ofNullable(tableIdToTestName.get(tableProperties.get(TABLE_ID)))
+    public String getTableDescriptor(TableProperties tableProperties) {
+        return Optional.ofNullable(tableIdToDescriptor.get(tableProperties.get(TABLE_ID)))
                 .orElseGet(() -> tableProperties.get(TABLE_NAME));
     }
 

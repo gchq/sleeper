@@ -41,7 +41,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
@@ -76,13 +75,13 @@ public class LambdaBatchFailuresST {
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
         sleeper.tables().forEach(() -> {
-            String tableId = sleeper.tableProperties().get(TABLE_ID);
+            String tableName = sleeper.tableDescriptor();
             sleeper.sourceFiles().inDataBucket().writeSketches()
-                    .createWithNumberedRows(tableId + "-1.parquet", LongStream.range(0, 10))
-                    .createWithNumberedRows(tableId + "-2.parquet", LongStream.range(0, 10));
+                    .createWithNumberedRows(tableName + "-file1.parquet", LongStream.range(0, 10))
+                    .createWithNumberedRows(tableName + "-file2.parquet", LongStream.range(0, 10));
             sleeper.ingest().toStateStore()
-                    .addFileOnEveryPartition(tableId + "-1.parquet", 10)
-                    .addFileOnEveryPartition(tableId + "-2.parquet", 10);
+                    .addFileOnEveryPartition(tableName + "-file1.parquet", 10)
+                    .addFileOnEveryPartition(tableName + "-file2.parquet", 10);
         });
 
         // When we trigger compaction creation for the tables, interleaved with non-existent tables

@@ -109,6 +109,10 @@ public class SleeperDsl {
         return context.instance().getTableProperties();
     }
 
+    public String tableDescriptor() {
+        return context.instance().getTableDescriptor();
+    }
+
     public void updateTableProperties(Map<TableProperty, String> values) {
         context.instance().updateTableProperties(values);
     }
