@@ -70,22 +70,29 @@ public class LambdaBatchFailuresST {
     @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureCreatingCompactionJobsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with files to be compacted
-        sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+        List<String> tablesWithFiles = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
-        sleeper.tables().forEach(() -> {
-            String tableName = sleeper.tableDescriptor();
+        sleeper.tables().forEachOf(tablesWithFiles, () -> {
+            String table = sleeper.tableDescriptor();
             sleeper.sourceFiles().inDataBucket().writeSketches()
-                    .createWithNumberedRows(tableName + "-file1.parquet", LongStream.range(0, 10))
-                    .createWithNumberedRows(tableName + "-file2.parquet", LongStream.range(0, 10));
+                    .createWithNumberedRows(table + "-file1.parquet", LongStream.range(0, 10))
+                    .createWithNumberedRows(table + "-file2.parquet", LongStream.range(0, 10));
             sleeper.ingest().toStateStore()
-                    .addFileOnEveryPartition(tableName + "-file1.parquet", 10)
-                    .addFileOnEveryPartition(tableName + "-file2.parquet", 10);
+                    .addFileOnEveryPartition(table + "-file1.parquet", 10)
+                    .addFileOnEveryPartition(table + "-file2.parquet", 10);
+        });
+        // And 5 Sleeper tables with invalid state
+        List<String> invalidTables = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false"));
+        sleeper.tables().forEachOf(invalidTables, () -> {
+            sleeper.stateStore(); // TODO make table unreadable
         });
 
         // When we trigger compaction creation for the tables, interleaved with non-existent tables
         sleeper.compaction()
+                // TODO create by table descriptors including non-existent ones
                 .createJobsForAllInterleavedWithFakeTables(5,
                         List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))
                 .waitForTasks(1)
