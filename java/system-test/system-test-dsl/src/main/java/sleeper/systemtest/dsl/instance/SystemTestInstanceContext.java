@@ -56,12 +56,13 @@ public class SystemTestInstanceContext {
     private final DeployedSleeperInstances deployedInstances;
     private final SleeperInstanceDriver instanceDriver;
     private final TestContext testContext;
-    private final Map<String, DeployedSleeperTablesForTest> tablesByInstanceShortName = new HashMap<>();
-    private final Map<String, TableProperties> tablesByTestName = new TreeMap<>();
-    private final Map<String, String> testNameByTableId = new HashMap<>();
+    private final Map<String, DeployedSleeperTablesForTest> instanceShortNameToTables = new HashMap<>();
+    private final Map<String, TableProperties> testNameToTableProperties = new TreeMap<>();
+    private final Map<String, String> tableIdToTestName = new HashMap<>();
     private DeployedSleeperInstance currentInstance = null;
     private DeployedSleeperTablesForTest currentTables = null;
     private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
+    private int nextGroupNumber = 1;
 
     public SystemTestInstanceContext(
             SystemTestParameters parameters, DeployedSleeperInstances deployedInstances,
@@ -74,7 +75,7 @@ public class SystemTestInstanceContext {
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
         currentInstance = deployedInstances.connectToAndReset(configuration);
-        currentTables = tablesByInstanceShortName.computeIfAbsent(configuration.getShortName(),
+        currentTables = instanceShortNameToTables.computeIfAbsent(configuration.getShortName(),
                 name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver()));
     }
 
@@ -98,21 +99,28 @@ public class SystemTestInstanceContext {
     }
 
     public List<String> createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+        int groupNumber = nextGroupNumber;
+        nextGroupNumber++;
         InstanceProperties instanceProperties = getInstanceProperties();
-        List<TableProperties> tablePropertiesList = IntStream.range(0, numberOfTables)
-                .mapToObj(i -> {
+        Map<String, String> tableNameToTestName = new HashMap<>();
+        List<TableProperties> tablePropertiesList = IntStream.rangeClosed(1, numberOfTables)
+                .mapToObj(tableNumber -> {
                     TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
+                    String testName = "group" + groupNumber + "-table" + tableNumber;
+                    tableProperties.set(TABLE_NAME, buildTableName(testName));
                     setProperties.forEach(tableProperties::set);
+                    tableNameToTestName.put(tableProperties.get(TABLE_NAME), testName);
                     return tableProperties;
                 })
                 .toList();
         currentTables().addTablesAndSetCurrent(tablesDriver(), tablePropertiesList);
         tablePropertiesList.forEach(properties -> {
-            tablesByTestName.put(properties.get(TABLE_NAME), properties);
-            testNameByTableId.put(properties.get(TABLE_ID), properties.get(TABLE_NAME));
+            String testName = tableNameToTestName.get(properties.get(TABLE_NAME));
+            testNameToTableProperties.put(testName, properties);
+            tableIdToTestName.put(properties.get(TABLE_ID), testName);
         });
         return tablePropertiesList.stream()
-                .map(table -> table.get(TABLE_NAME))
+                .map(table -> tableNameToTestName.get(table.get(TABLE_NAME)))
                 .toList();
     }
 
@@ -121,12 +129,12 @@ public class SystemTestInstanceContext {
         tableProperties.set(TABLE_NAME, buildTableName(name));
         setProperties.forEach(tableProperties::set);
         currentTables().addTablesAndSetCurrent(tablesDriver(), List.of(tableProperties));
-        tablesByTestName.put(name, tableProperties);
-        testNameByTableId.put(tableProperties.get(TABLE_ID), name);
+        testNameToTableProperties.put(name, tableProperties);
+        tableIdToTestName.put(tableProperties.get(TABLE_ID), name);
     }
 
     public void setCurrentTable(String name) {
-        TableProperties tableProperties = Optional.ofNullable(tablesByTestName.get(name)).orElseThrow();
+        TableProperties tableProperties = Optional.ofNullable(testNameToTableProperties.get(name)).orElseThrow();
         currentTables().setCurrent(tableProperties);
     }
 
@@ -234,7 +242,7 @@ public class SystemTestInstanceContext {
     }
 
     public String getTestTableName(TableProperties tableProperties) {
-        return Optional.ofNullable(testNameByTableId.get(tableProperties.get(TABLE_ID)))
+        return Optional.ofNullable(tableIdToTestName.get(tableProperties.get(TABLE_ID)))
                 .orElseGet(() -> tableProperties.get(TABLE_NAME));
     }
 
