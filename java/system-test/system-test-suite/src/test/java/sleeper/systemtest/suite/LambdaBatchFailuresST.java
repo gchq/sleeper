@@ -216,7 +216,7 @@ public class LambdaBatchFailuresST {
                         Stream.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))));
 
         // Then the snapshots are created
-        sleeper.tables().forEach(() -> {
+        sleeper.tables().forEachOf(tablesWithTransactions, () -> {
             sleeper.stateStore()
                     .waitForPartitionsSnapshot(snapshot -> snapshot.getLeafPartitions().size() == 2)
                     .waitForFilesSnapshot(snapshot -> snapshot.getFiles().size() == 1);
@@ -248,14 +248,14 @@ public class LambdaBatchFailuresST {
         });
         // And snapshots are created
         sleeper.stateStore().invokeSnapshotCreation();
-        sleeper.tables().forEach(() -> {
+        sleeper.tables().forEachOf(tablesWithTransactions, () -> {
             sleeper.stateStore()
                     .waitForPartitionsSnapshot(snapshot -> snapshot.getLeafPartitions().size() == 2)
                     .waitForFilesSnapshot(snapshot -> snapshot.getFiles().size() == 1);
         });
         // And we make another, newer snapshot so the previous one can be deleted
         partitions.splitToNewChildren("L", "LL", "LR", "again");
-        sleeper.tables().forEach(() -> {
+        sleeper.tables().forEachOf(tablesWithTransactions, () -> {
             sleeper.stateStore().fakeCommits().setupStateStore(store -> {
                 partitions.applySplit(store, "L");
                 update(store).addFile(FileReferenceFactory.from(partitions.buildTree())
@@ -263,7 +263,7 @@ public class LambdaBatchFailuresST {
             });
         });
         sleeper.stateStore().invokeSnapshotCreation();
-        sleeper.tables().forEach(() -> {
+        sleeper.tables().forEachOf(tablesWithTransactions, () -> {
             sleeper.stateStore()
                     .waitForPartitionsSnapshot(snapshot -> snapshot.getLeafPartitions().size() == 3)
                     .waitForFilesSnapshot(snapshot -> snapshot.getFiles().size() == 2);
@@ -281,7 +281,7 @@ public class LambdaBatchFailuresST {
                         Stream.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))));
 
         // Then the snapshots are deleted
-        sleeper.tables().forEach(() -> {
+        sleeper.tables().forEachOf(tablesWithTransactions, () -> {
             sleeper.stateStore()
                     .waitForPartitionsSnapshotsToDecreaseTo(1)
                     .waitForFilesSnapshotsToDecreaseTo(1);
@@ -298,12 +298,12 @@ public class LambdaBatchFailuresST {
     @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureDeletingTransactionsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables configured to delete unneeded transactions immediately
-        sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+        List<String> tablesWithTransactions = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS, "0",
                 TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, "0"));
         // And we add transactions to the tables
-        sleeper.tables().forEach(() -> {
+        sleeper.tables().forEachOf(tablesWithTransactions, () -> {
             PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "split")
@@ -316,25 +316,35 @@ public class LambdaBatchFailuresST {
         });
         // And we create snapshots of the state so that the transactions are no longer needed
         sleeper.stateStore().invokeSnapshotCreation();
-        sleeper.tables().forEach(() -> {
+        sleeper.tables().forEachOf(tablesWithTransactions, () -> {
             sleeper.stateStore()
                     .waitForPartitionsSnapshot(snapshot -> snapshot.getLeafPartitions().size() == 2)
                     .waitForFilesSnapshot(snapshot -> snapshot.getFiles().size() == 1);
         });
+        // And 5 Sleeper tables with invalid state
+        List<String> invalidTables = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false"));
+        sleeper.tables().forEachOf(invalidTables, () -> sleeper.stateStore().addUnreadableFilesSnapshot());
 
         // When we trigger transaction deletion for the tables, interleaved with non-existent tables
-        sleeper.stateStore().invokeTransactionDeletionForAllInterleavedWithFakeTables(
-                List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"));
+        sleeper.stateStore().invokeTransactionDeletionForTablesByDescriptor(
+                StreamUtils.interleave(List.of(
+                        tablesWithTransactions.stream(),
+                        invalidTables.stream(),
+                        Stream.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))));
 
         // Then the transactions are deleted
-        sleeper.tables().forEach(() -> {
+        sleeper.tables().forEachOf(tablesWithTransactions, () -> {
             sleeper.stateStore()
                     .waitForNoPartitionTransactions()
                     .waitForNoFileTransactions();
         });
         // And the messages for the non-existent tables appear on the dead letter queue
         assertThat(sleeper.deadLetters().drainTransactionDeletionTriggerDLQForWholeInstance(5))
-                .containsExactlyInAnyOrder("missing-1", "missing-2", "missing-3", "missing-4", "missing-5");
+                .containsExactlyInAnyOrderElementsOf(
+                        sleeper.tables().streamPropertiesOf(invalidTables)
+                                .map(properties -> properties.get(TABLE_ID))
+                                .toList());
     }
 
     @Test
