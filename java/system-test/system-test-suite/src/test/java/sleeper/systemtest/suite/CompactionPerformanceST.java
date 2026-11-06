@@ -57,7 +57,8 @@ public class CompactionPerformanceST {
 
     @Test
     void shouldMeetCompactionPerformanceStandards(SleeperDsl sleeper) {
-        // Given 110 ingested files containing 40 million rows each
+
+        // Given many data generation jobs have produced a large number of files across partitions
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"));
         sleeper.systemTestCluster().runDataGenerationJobs(110,
                 builder -> builder.ingestMode(DIRECT).rowsPerIngest(40_000_000),

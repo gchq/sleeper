@@ -56,17 +56,20 @@ public class QueryST {
     @ParameterizedTest
     @MethodSource("queryTypes")
     void shouldRunQuery(QueryTypeDsl queryType, SleeperDsl sleeper) {
-        // Given
+
+        // Given data has been ingested into the table
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
-        // When/Then
+        // When a query is run across multiple row key ranges
         assertThat(queryType.query(sleeper)
                 .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         range("row-10", "row-20"),
                         range("row-30", "row-40")))
+
+                // Then the rows matching those ranges are returned
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableFrom(
                         () -> LongStream.concat(
                                 LongStream.range(10, 20),
@@ -76,9 +79,14 @@ public class QueryST {
     @ParameterizedTest
     @MethodSource("queryTypes")
     void shouldRunQueryReturningNoRows(QueryTypeDsl queryType, SleeperDsl sleeper) {
-        // When/Then
+
+        // Given no data has been ingested into the table
+
+        // When a query is run
         assertThat(queryType.query(sleeper)
                 .allRowsInTable())
+
+                // Then no rows are returned
                 .isEmpty();
     }
 
