@@ -6,6 +6,51 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.38.2
+
+### TBC November 2026
+
+This includes bug fixes for hung compactions, the garbage collector and compaction commits, improvements to query
+tracking and reporting, and EKS Auto Mode with node pools as the default for bulk import
+on EKS.
+
+Bugfixes:
+- The garbage collector no longer removes a file from the state store when only one of its data and sketches files was
+  deleted from S3. The deletion is now retried on a future run.
+- Finished compactions are no longer occasionally delayed by 15 minutes before being committed. The commit batcher
+  lambda timeout now defaults to 30 seconds, and the commit queue visibility timeout is set separately in
+  `sleeper.compaction.commit.queue.visibility.timeout.seconds`.
+- Job status reports no longer show a job as failed when it successfully updated the state store but also had an additional failure.
+- Compaction tasks no longer hang indefinitely when a compaction hangs. Stalled compactions are now detected, the job is
+  returned to the queue and the task is terminated. This is configured in the `sleeper.compaction.task.progress.*`
+  instance properties.
+
+Bulk import:
+- Bulk import on EKS now defaults to EKS Auto Mode with node pool configuration. Node pool configuration is no longer
+  experimental. Fargate can still be used by setting `sleeper.bulk.import.eks.cluster.type=FARGATE`.
+
+Ingest:
+- If an ingest or bulk import job fails to find files under an input directory, e.g. because of missing permissions or
+  S3 being temporarily unavailable, the job is now tracked as failed rather than refused. The job ends up on the dead
+  letter queue, so it can be retried with SQS redrive once the problem is resolved.
+
+Ingest batcher:
+- `scripts/table/sendToIngestBatcher.sh` now checks the paths in S3 before sending anything, lists the files found, and
+  submits those exact files. If any path matches no files, it reports the missing paths and sends nothing.
+
+Query:
+- Added methods to `SleeperClient` to submit a query for processing via the query lambda, get its progress from the
+  query tracker, and wait for it to finish.
+- `scripts/utility/query.sh` and `scripts/utility/lambdaQuery.sh` can now query for multiple keys or ranges listed in a
+  file, with the `f` option. Each line holds a single key for an exact query, or `min,max` for a range.
+
+Reporting:
+- `scripts/report/queryTrackerReport.sh` can now report on a specific query and its subqueries with
+  `--query <query-id>`. This uses `-i` as its short option, so the short option for `--in-progress` is now `-p`.
+- The query tracker report now shows the number of subqueries and how many have finished, and reports queries and
+  subqueries separately.
+
+
 ## Version 0.38.1
 
 ### 12th October 2026
