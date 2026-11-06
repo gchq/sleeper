@@ -34,6 +34,7 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow2;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -60,6 +61,10 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BATCHING;
 // Slow because we need to deploy a separate instance to configure batching sizes over the default of 1.
 @Slow2
 public class LambdaBatchFailuresST {
+    // Failed messages reach a dead letter queue after the visibility timeout of the source queue, for each retry.
+    // The batching instance sets these to at most 70 seconds with no retries, see SystemTestInstance.
+    private static final Duration WAIT_FOR_DEAD_LETTERS = Duration.ofMinutes(2);
+
     @TempDir
     private Path tempDir;
 
@@ -106,7 +111,7 @@ public class LambdaBatchFailuresST {
                 .hasSize(5)
                 .allSatisfy((table, references) -> assertThat(references).hasSize(1));
         // And the messages for the invalid tables appear on the dead letter queue
-        assertThat(sleeper.deadLetters().drainCompactionCreationTriggerDLQForWholeInstance(5))
+        assertThat(sleeper.deadLetters().drainCompactionCreationTriggerDLQForWholeInstance(5, WAIT_FOR_DEAD_LETTERS))
                 .containsExactlyInAnyOrderElementsOf(
                         sleeper.tables().streamPropertiesOf(invalidTables)
                                 .map(properties -> properties.get(TABLE_ID))
@@ -142,7 +147,7 @@ public class LambdaBatchFailuresST {
                 .extracting(FileReference::getFilename)
                 .containsExactly("output-1.parquet", "output-2.parquet", "output-3.parquet", "output-4.parquet", "output-5.parquet");
         // And the messages for the invalid jobs appear on the dead letter queue
-        assertThat(sleeper.deadLetters().drainCompactionCommitDLQForWholeInstance(5))
+        assertThat(sleeper.deadLetters().drainCompactionCommitDLQForWholeInstance(5, WAIT_FOR_DEAD_LETTERS))
                 .containsExactlyInAnyOrder("invalid-1", "invalid-2", "invalid-3", "invalid-4", "invalid-5");
     }
 
@@ -177,7 +182,7 @@ public class LambdaBatchFailuresST {
                 .hasSize(5)
                 .allSatisfy((table, references) -> assertThat(references).hasSize(1));
         // And the messages for the invalid tables appear on the dead letter queue
-        assertThat(sleeper.deadLetters().drainGarbageCollectionTriggerDLQForWholeInstance(5))
+        assertThat(sleeper.deadLetters().drainGarbageCollectionTriggerDLQForWholeInstance(5, WAIT_FOR_DEAD_LETTERS))
                 .containsExactlyInAnyOrderElementsOf(
                         sleeper.tables().streamPropertiesOf(invalidTables)
                                 .map(properties -> properties.get(TABLE_ID))
@@ -220,7 +225,7 @@ public class LambdaBatchFailuresST {
                     .waitForFilesSnapshot(snapshot -> snapshot.getFiles().size() == 1);
         });
         // And the messages for the invalid tables appear on the dead letter queue
-        assertThat(sleeper.deadLetters().drainSnapshotCreationTriggerDLQForWholeInstance(5))
+        assertThat(sleeper.deadLetters().drainSnapshotCreationTriggerDLQForWholeInstance(5, WAIT_FOR_DEAD_LETTERS))
                 .containsExactlyInAnyOrderElementsOf(
                         sleeper.tables().streamPropertiesOf(invalidTables)
                                 .map(properties -> properties.get(TABLE_ID))
@@ -286,7 +291,7 @@ public class LambdaBatchFailuresST {
                     .waitForFilesSnapshotsToDecreaseTo(1);
         });
         // And the messages for the invalid tables appear on the dead letter queue
-        assertThat(sleeper.deadLetters().drainSnapshotDeletionTriggerDLQForWholeInstance(5))
+        assertThat(sleeper.deadLetters().drainSnapshotDeletionTriggerDLQForWholeInstance(5, WAIT_FOR_DEAD_LETTERS))
                 .containsExactlyInAnyOrderElementsOf(
                         sleeper.tables().streamPropertiesOf(invalidTables)
                                 .map(properties -> properties.get(TABLE_ID))
@@ -341,7 +346,7 @@ public class LambdaBatchFailuresST {
                     .waitForNoFileTransactions();
         });
         // And the messages for the invalid tables appear on the dead letter queue
-        assertThat(sleeper.deadLetters().drainTransactionDeletionTriggerDLQForWholeInstance(5))
+        assertThat(sleeper.deadLetters().drainTransactionDeletionTriggerDLQForWholeInstance(5, WAIT_FOR_DEAD_LETTERS))
                 .containsExactlyInAnyOrderElementsOf(
                         sleeper.tables().streamPropertiesOf(invalidTables)
                                 .map(properties -> properties.get(TABLE_ID))
@@ -387,7 +392,7 @@ public class LambdaBatchFailuresST {
                     .build());
         });
         // And the messages for the invalid tables appear on the dead letter queue
-        assertThat(sleeper.deadLetters().drainTableMetricsDLQForWholeInstance(5))
+        assertThat(sleeper.deadLetters().drainTableMetricsDLQForWholeInstance(5, WAIT_FOR_DEAD_LETTERS))
                 .containsExactlyInAnyOrderElementsOf(
                         sleeper.tables().streamPropertiesOf(invalidTables)
                                 .map(properties -> properties.get(TABLE_ID))
