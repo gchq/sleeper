@@ -155,7 +155,7 @@
         Verify with EmrServerlessBulkImportST.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.44.5</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.48.5</aws-crt.version>
+        <aws-crt.version>0.50.0</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.12.2</aws-lambda-java-runtime-interface-client.version>
@@ -193,7 +193,7 @@
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.13.0</jjwt.build.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
-        <guava.version>33.7.2-jre</guava.version>
+        <guava.version>33.8.0-jre</guava.version>
         <google.errorprone.version>2.51.0</google.errorprone.version>
         <google.http-client.version>2.2.0</google.http-client.version>
         <google.grpc.version>1.85.1</google.grpc.version>
@@ -217,9 +217,9 @@
         <!-- This is not managed for the whole project as it conflicts with Trino. -->
         <jersey.build.version>4.0.0</jersey.build.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
-        <netty.version>4.2.19.Final</netty.version>
+        <netty.version>4.2.20.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
-        <netty-tcnative.version>2.0.84.Final</netty-tcnative.version>
+        <netty-tcnative.version>2.0.85.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>
@@ -230,7 +230,7 @@
         <apfloat.version>1.16.0</apfloat.version>
         <joda-time.version>2.15.1</joda-time.version>
         <json-smart.version>2.6.0</json-smart.version>
-        <jnr.ffi.version>2.3.6</jnr.ffi.version>
+        <jnr.ffi.version>2.3.7</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <docker-java.version>3.7.1</docker-java.version>
         <jib.version>0.28.2</jib.version>
