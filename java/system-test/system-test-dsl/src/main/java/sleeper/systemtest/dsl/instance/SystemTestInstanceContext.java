@@ -105,7 +105,7 @@ public class SystemTestInstanceContext {
         List<String> tableTestNames = IntStream.rangeClosed(1, numberOfTables)
                 .mapToObj(tableNumber -> "group" + groupNumber + "-table" + tableNumber)
                 .toList();
-        List<TableProperties> tablePropertiesList = tableTestNames.stream()
+        currentTables().addTablesAndSetCurrent(tablesDriver(), tableTestNames.stream()
                 .map(tableTestName -> {
                     TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
                     tableProperties.set(TABLE_NAME, buildTableName(tableTestName));
@@ -113,8 +113,8 @@ public class SystemTestInstanceContext {
                     testNameToTableProperties.put(tableTestName, tableProperties);
                     return tableProperties;
                 })
-                .toList();
-        currentTables().addTablesAndSetCurrent(tablesDriver(), tablePropertiesList);
+                .toList());
+        // Creating tables gives them an ID, so record those after they're created.
         tableTestNames.forEach(tableTestName -> {
             TableProperties properties = testNameToTableProperties.get(tableTestName);
             tableIdToTestName.put(properties.get(TABLE_ID), tableTestName);
