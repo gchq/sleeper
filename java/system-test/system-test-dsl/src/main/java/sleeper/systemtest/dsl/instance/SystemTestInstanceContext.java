@@ -216,6 +216,12 @@ public class SystemTestInstanceContext {
         return Optional.ofNullable(descriptorToTableProperties.get(descriptor));
     }
 
+    public Stream<TableStatus> streamTableStatusByDescriptors(Stream<String> descriptors) {
+        return descriptors.map(descriptor -> getTablePropertiesByDescriptor(descriptor)
+                .map(TableProperties::getStatus)
+                .orElseGet(() -> TableStatus.uniqueIdAndName(descriptor, descriptor, false)));
+    }
+
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
         generatorOverrides = overrides;
     }

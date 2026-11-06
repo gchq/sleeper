@@ -24,7 +24,6 @@ import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -85,10 +84,7 @@ public class CompactionDsl {
     public CompactionDsl createJobsForTablesByDescriptor(int expectedJobs, Stream<String> tableDescriptors) {
         PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1));
         lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll),
-                () -> driver.triggerCreateJobs(tableDescriptors
-                        .map(descriptor -> instance.getTablePropertiesByDescriptor(descriptor)
-                                .map(TableProperties::getStatus)
-                                .orElseGet(() -> TableStatus.uniqueIdAndName(descriptor, descriptor, false)))));
+                () -> driver.triggerCreateJobs(instance.streamTableStatusByDescriptors(tableDescriptors)));
         return this;
     }
 
