@@ -17,16 +17,14 @@
 package sleeper.systemtest.dsl.gc;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
-import sleeper.systemtest.dsl.util.StreamUtils;
 
 import java.time.Duration;
-import java.util.List;
+import java.util.stream.Stream;
 
 public class GarbageCollectionDsl {
 
@@ -46,10 +44,8 @@ public class GarbageCollectionDsl {
         return this;
     }
 
-    public GarbageCollectionDsl invokeForAllInterleavedWithFakeTables(List<String> fakeTables) {
-        driver.invokeGarbageCollection(StreamUtils.interleave(
-                instance.streamTableProperties().map(TableProperties::getStatus),
-                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
+    public GarbageCollectionDsl invokeForTablesByDescriptor(Stream<String> tableDescriptors) {
+        driver.invokeGarbageCollection(instance.streamTableStatusByDescriptors(tableDescriptors));
         return this;
     }
 

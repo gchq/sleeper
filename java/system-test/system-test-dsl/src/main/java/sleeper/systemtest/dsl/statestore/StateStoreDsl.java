@@ -28,11 +28,9 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
-import sleeper.systemtest.dsl.util.StreamUtils;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -76,7 +74,7 @@ public class StateStoreDsl {
         SystemTestInstanceContext instance = context.instance();
         return instance.streamTableProperties()
                 .collect(toMap(
-                        table -> instance.getTestTableName(table),
+                        table -> instance.getTableDescriptor(table),
                         table -> {
                             Double commitsPerSecond = byTableId.getOrDefault(table.get(TABLE_ID), 0.0);
                             LOGGER.info("Found commits per second for table {}: {}", table.getStatus(), commitsPerSecond);
@@ -98,24 +96,18 @@ public class StateStoreDsl {
         return this;
     }
 
-    public StateStoreDsl invokeSnapshotCreationForAllInterleavedWithFakeTables(List<String> fakeTables) {
-        adminDriver.triggerCreateSnapshots(StreamUtils.interleave(
-                context.instance().streamTableProperties().map(TableProperties::getStatus),
-                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
+    public StateStoreDsl invokeSnapshotCreationForTablesByDescriptor(Stream<String> descriptors) {
+        adminDriver.triggerCreateSnapshots(context.instance().streamTableStatusByDescriptors(descriptors));
         return this;
     }
 
-    public StateStoreDsl invokeSnapshotDeletionForAllInterleavedWithFakeTables(List<String> fakeTables) {
-        adminDriver.triggerDeleteSnapshots(StreamUtils.interleave(
-                context.instance().streamTableProperties().map(TableProperties::getStatus),
-                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
+    public StateStoreDsl invokeSnapshotDeletionForTablesByDescriptor(Stream<String> descriptors) {
+        adminDriver.triggerDeleteSnapshots(context.instance().streamTableStatusByDescriptors(descriptors));
         return this;
     }
 
-    public StateStoreDsl invokeTransactionDeletionForAllInterleavedWithFakeTables(List<String> fakeTables) {
-        adminDriver.triggerDeleteTransactions(StreamUtils.interleave(
-                context.instance().streamTableProperties().map(TableProperties::getStatus),
-                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
+    public StateStoreDsl invokeTransactionDeletionForTablesByDescriptor(Stream<String> descriptors) {
+        adminDriver.triggerDeleteTransactions(context.instance().streamTableStatusByDescriptors(descriptors));
         return this;
     }
 
@@ -182,6 +174,11 @@ public class StateStoreDsl {
 
     private Stream<TransactionLogEntry> partitionTransactions() {
         return adminDriver.loadAllPartitionTransactions(
+                context.instance().getInstanceProperties(), context.instance().getTableProperties());
+    }
+
+    public void addUnreadableFilesSnapshot() {
+        adminDriver.addUnreadableFilesSnapshot(
                 context.instance().getInstanceProperties(), context.instance().getTableProperties());
     }
 

@@ -23,6 +23,7 @@ import sleeper.core.table.TableStatus;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class SystemTestTablesDsl {
 
@@ -32,8 +33,8 @@ public class SystemTestTablesDsl {
         this.instance = instance;
     }
 
-    public void createMany(int numberOfTables, Schema schema) {
-        createManyWithProperties(numberOfTables, schema, Map.of());
+    public List<String> createMany(int numberOfTables, Schema schema) {
+        return createManyWithProperties(numberOfTables, schema, Map.of());
     }
 
     public SystemTestTablesDsl create(String name, Schema schema) {
@@ -55,8 +56,8 @@ public class SystemTestTablesDsl {
         return this;
     }
 
-    public void createManyWithProperties(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
-        instance.createTables(numberOfTables, schema, setProperties);
+    public List<String> createManyWithProperties(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+        return instance.createTables(numberOfTables, schema, setProperties);
     }
 
     public List<TableStatus> list() {
@@ -69,5 +70,17 @@ public class SystemTestTablesDsl {
             runnable.run();
         });
         instance.setCurrentTable((TableProperties) null);
+    }
+
+    public void forEachOf(List<String> tableNames, Runnable runnable) {
+        tableNames.forEach(name -> {
+            instance.setCurrentTable(name);
+            runnable.run();
+        });
+        instance.setCurrentTable((TableProperties) null);
+    }
+
+    public Stream<TableProperties> streamPropertiesOf(List<String> descriptors) {
+        return descriptors.stream().map(descriptor -> instance.getTablePropertiesByDescriptor(descriptor).orElseThrow());
     }
 }

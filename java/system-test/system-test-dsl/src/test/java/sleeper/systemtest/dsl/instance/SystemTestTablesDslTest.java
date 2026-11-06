@@ -35,6 +35,7 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -50,7 +51,7 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.PREDEFINED_TA
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @InMemoryDslTest
-public class SleeperInstanceTablesTest {
+public class SystemTestTablesDslTest {
 
     @Nested
     @DisplayName("Define named tables")
@@ -188,7 +189,7 @@ public class SleeperInstanceTablesTest {
 
             // Then
             assertThat(sleeper.table("A").tableProperties().get(TABLE_NAME))
-                    .contains("-SleeperInstanceTablesTest.DeriveTableName.shouldGenerateNameForTableDefinedInTest-A-");
+                    .contains("-SystemTestTablesDslTest.DeriveTableName.shouldGenerateNameForTableDefinedInTest-A-");
         }
 
         @Test
@@ -198,7 +199,7 @@ public class SleeperInstanceTablesTest {
 
             // Then
             assertThat(sleeper.tableProperties().get(TABLE_NAME))
-                    .contains("-SleeperInstanceTablesTest.DeriveTableName.shouldGenerateNameForPredefinedTable-predefined-test-table-");
+                    .contains("-SystemTestTablesDslTest.DeriveTableName.shouldGenerateNameForPredefinedTable-predefined-test-table-");
         }
 
         @Test
@@ -229,6 +230,66 @@ public class SleeperInstanceTablesTest {
             // When / Then
             assertThatThrownBy(() -> ingest.numberedRows(LongStream.of(1, 2, 3)))
                     .isInstanceOf(NoTableChosenException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Define multiple groups of tables")
+    class TableGroups {
+
+        @Test
+        void shouldDefineTwoGroupsOfTables(SleeperDsl sleeper) {
+            // Given
+            sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
+            List<String> group1 = sleeper.tables().createMany(2, DEFAULT_SCHEMA);
+            List<String> group2 = sleeper.tables().createMany(2, DEFAULT_SCHEMA);
+
+            // When
+            List<Row> group1Rows = sleeper.generateNumberedRows(DEFAULT_SCHEMA).streamFrom(LongStream.range(0, 10)).toList();
+            List<Row> group2Rows = sleeper.generateNumberedRows(DEFAULT_SCHEMA).streamFrom(LongStream.range(11, 20)).toList();
+            sleeper.tables().forEachOf(group1, () -> sleeper.ingest().direct(null).rows(group1Rows));
+            sleeper.tables().forEachOf(group2, () -> sleeper.ingest().direct(null).rows(group2Rows));
+
+            // Then
+            assertThat(sleeper.directQuery().allRowsByTable()).isEqualTo(Map.of(
+                    group1.get(0), group1Rows,
+                    group1.get(1), group1Rows,
+                    group2.get(0), group2Rows,
+                    group2.get(1), group2Rows));
+        }
+
+        @Test
+        void shouldGenerateTableNamesByGroup(SleeperDsl sleeper) {
+            // Given
+            sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
+
+            // When
+            List<String> group1 = sleeper.tables().createMany(2, DEFAULT_SCHEMA);
+            List<String> group2 = sleeper.tables().createMany(2, DEFAULT_SCHEMA);
+
+            // Then
+            assertThat(group1).containsExactly("group1-table1", "group1-table2");
+            assertThat(group2).containsExactly("group2-table1", "group2-table2");
+            assertThat(sleeper.table("group1-table1").tableProperties().get(TABLE_NAME))
+                    .contains("-SystemTestTablesDslTest.TableGroups.shouldGenerateTableNamesByGroup-group1-table1-");
+        }
+
+        @Test
+        void shouldRetrieveTableDescriptorInForEach(SleeperDsl sleeper) {
+            // Given
+            sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
+            List<String> group1 = sleeper.tables().createMany(2, DEFAULT_SCHEMA);
+            List<String> group2 = sleeper.tables().createMany(2, DEFAULT_SCHEMA);
+
+            // When
+            List<String> foundGroup1 = new ArrayList<>();
+            List<String> foundGroup2 = new ArrayList<>();
+            sleeper.tables().forEachOf(group1, () -> foundGroup1.add(sleeper.tableDescriptor()));
+            sleeper.tables().forEachOf(group2, () -> foundGroup2.add(sleeper.tableDescriptor()));
+
+            // Then
+            assertThat(foundGroup1).containsExactly("group1-table1", "group1-table2");
+            assertThat(foundGroup2).containsExactly("group2-table1", "group2-table2");
         }
     }
 }
