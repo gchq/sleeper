@@ -23,6 +23,7 @@ import sleeper.core.table.TableStatus;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class SystemTestTablesDsl {
 
@@ -77,5 +78,9 @@ public class SystemTestTablesDsl {
             runnable.run();
         });
         instance.setCurrentTable((TableProperties) null);
+    }
+
+    public Stream<TableProperties> streamPropertiesOf(List<String> descriptors) {
+        return descriptors.stream().map(descriptor -> instance.getTablePropertiesByDescriptor(descriptor).orElseThrow());
     }
 }
