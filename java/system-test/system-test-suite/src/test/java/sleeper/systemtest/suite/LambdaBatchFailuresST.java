@@ -167,8 +167,11 @@ public class LambdaBatchFailuresST {
         sleeper.tables().forEachOf(invalidTables, () -> sleeper.stateStore().addUnreadableFilesSnapshot());
 
         // When we trigger GC for the tables, interleaved with non-existent tables
-        sleeper.garbageCollection().invokeForAllInterleavedWithFakeTables(
-                List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))
+        sleeper.garbageCollection().invokeForTablesByDescriptor(
+                StreamUtils.interleave(List.of(
+                        tablesReadyForGC.stream(),
+                        invalidTables.stream(),
+                        Stream.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))))
                 .waitFor();
 
         // Then the files are garbage collected
@@ -187,9 +190,9 @@ public class LambdaBatchFailuresST {
     @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureCreatingSnapshotsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with state store transactions
-        sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+        List<String> tablesWithTransactions = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false"));
-        sleeper.tables().forEach(() -> {
+        sleeper.tables().forEachOf(tablesWithTransactions, () -> {
             PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "split")
@@ -200,10 +203,17 @@ public class LambdaBatchFailuresST {
                 update(store).addFile(fileFactory.rootFile("test.parquet", 10));
             });
         });
+        // And 5 Sleeper tables with invalid state
+        List<String> invalidTables = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false"));
+        sleeper.tables().forEachOf(invalidTables, () -> sleeper.stateStore().addUnreadableFilesSnapshot());
 
         // When we trigger snapshot creation for the tables, interleaved with non-existent tables
-        sleeper.stateStore().invokeSnapshotCreationForAllInterleavedWithFakeTables(
-                List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"));
+        sleeper.stateStore().invokeSnapshotCreationForTablesByDescriptor(
+                StreamUtils.interleave(List.of(
+                        tablesWithTransactions.stream(),
+                        invalidTables.stream(),
+                        Stream.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))));
 
         // Then the snapshots are created
         sleeper.tables().forEach(() -> {
@@ -213,7 +223,10 @@ public class LambdaBatchFailuresST {
         });
         // And the messages for the non-existent tables appear on the dead letter queue
         assertThat(sleeper.deadLetters().drainSnapshotCreationTriggerDLQForWholeInstance(5))
-                .containsExactlyInAnyOrder("missing-1", "missing-2", "missing-3", "missing-4", "missing-5");
+                .containsExactlyInAnyOrderElementsOf(
+                        sleeper.tables().streamPropertiesOf(invalidTables)
+                                .map(properties -> properties.get(TABLE_ID))
+                                .toList());
     }
 
     @Test

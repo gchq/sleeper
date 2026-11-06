@@ -98,10 +98,18 @@ public class StateStoreDsl {
         return this;
     }
 
-    public StateStoreDsl invokeSnapshotCreationForAllInterleavedWithFakeTables(List<String> fakeTables) {
-        adminDriver.triggerCreateSnapshots(StreamUtils.interleave(
-                context.instance().streamTableProperties().map(TableProperties::getStatus),
-                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
+    public StateStoreDsl invokeSnapshotCreationForTablesByDescriptor(Stream<String> descriptors) {
+        adminDriver.triggerCreateSnapshots(context.instance().streamTableStatusByDescriptors(descriptors));
+        return this;
+    }
+
+    public StateStoreDsl invokeSnapshotDeletionForTablesByDescriptor(Stream<String> descriptors) {
+        adminDriver.triggerDeleteSnapshots(context.instance().streamTableStatusByDescriptors(descriptors));
+        return this;
+    }
+
+    public StateStoreDsl invokeTransactionDeletionForTablesByDescriptor(Stream<String> descriptors) {
+        adminDriver.triggerDeleteTransactions(context.instance().streamTableStatusByDescriptors(descriptors));
         return this;
     }
 
