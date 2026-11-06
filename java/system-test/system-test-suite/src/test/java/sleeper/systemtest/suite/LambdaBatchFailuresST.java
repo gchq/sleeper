@@ -271,6 +271,7 @@ public class LambdaBatchFailuresST {
         // And we add 5 Sleeper tables with invalid state
         List<String> invalidTables = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false"));
+        // TODO how do we fail snapshot deletion?
         sleeper.tables().forEachOf(invalidTables, () -> sleeper.stateStore().addUnreadableFilesSnapshot());
 
         // When we trigger snapshot deletion for the tables, interleaved with non-existent tables
@@ -324,6 +325,7 @@ public class LambdaBatchFailuresST {
         // And 5 Sleeper tables with invalid state
         List<String> invalidTables = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false"));
+        // TODO how do we fail transaction deletion?
         sleeper.tables().forEachOf(invalidTables, () -> sleeper.stateStore().addUnreadableFilesSnapshot());
 
         // When we trigger transaction deletion for the tables, interleaved with non-existent tables
@@ -339,7 +341,7 @@ public class LambdaBatchFailuresST {
                     .waitForNoPartitionTransactions()
                     .waitForNoFileTransactions();
         });
-        // And the messages for the non-existent tables appear on the dead letter queue
+        // And the messages for the invalid tables appear on the dead letter queue
         assertThat(sleeper.deadLetters().drainTransactionDeletionTriggerDLQForWholeInstance(5))
                 .containsExactlyInAnyOrderElementsOf(
                         sleeper.tables().streamPropertiesOf(invalidTables)
@@ -351,12 +353,12 @@ public class LambdaBatchFailuresST {
     @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureWritingMetricsForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with file references
-        sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA,
+        List<String> tablesWithFiles = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA,
                 Map.of(TABLE_ONLINE, "false"));
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-        sleeper.tables().forEach(() -> {
+        sleeper.tables().forEachOf(tablesWithFiles, () -> {
             sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "row-50")
@@ -365,22 +367,32 @@ public class LambdaBatchFailuresST {
                     .numberedRows(LongStream.range(0, 100))
                     .numberedRows(LongStream.range(0, 23));
         });
+        // And 5 Sleeper tables with invalid state
+        List<String> invalidTables = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false"));
+        sleeper.tables().forEachOf(invalidTables, () -> sleeper.stateStore().addUnreadableFilesSnapshot());
 
         // When we trigger table metrics for the tables, interleaved with non-existent tables
-        sleeper.tableMetrics().triggerForAllInterleavedWithFakeTables(
-                List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"));
+        sleeper.tableMetrics().triggerForTablesByDescriptor(
+                StreamUtils.interleave(List.of(
+                        tablesWithFiles.stream(),
+                        invalidTables.stream(),
+                        Stream.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))));
 
         // Then the metrics are published
-        sleeper.tables().forEach(() -> {
+        sleeper.tables().forEachOf(tablesWithFiles, () -> {
             assertThat(sleeper.tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                     .partitionCount(3).leafPartitionCount(2)
                     .fileCount(2).rowCount(123)
                     .averageFileReferencesPerPartition(1.5)
                     .build());
         });
-        // And the messages for the non-existent tables appear on the dead letter queue
+        // And the messages for the invalid tables appear on the dead letter queue
         assertThat(sleeper.deadLetters().drainTableMetricsDLQForWholeInstance(5))
-                .containsExactlyInAnyOrder("missing-1", "missing-2", "missing-3", "missing-4", "missing-5");
+                .containsExactlyInAnyOrderElementsOf(
+                        sleeper.tables().streamPropertiesOf(invalidTables)
+                                .map(properties -> properties.get(TABLE_ID))
+                                .toList());
     }
 
 }

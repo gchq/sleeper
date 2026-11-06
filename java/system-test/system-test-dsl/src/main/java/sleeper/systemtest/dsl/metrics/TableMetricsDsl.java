@@ -23,6 +23,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.StreamUtils;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class TableMetricsDsl {
 
@@ -43,6 +44,11 @@ public class TableMetricsDsl {
         driver.triggerTableMetricsGeneration(StreamUtils.interleave(
                 instance.streamTableProperties().map(TableProperties::getStatus),
                 fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
+        return this;
+    }
+
+    public TableMetricsDsl triggerForTablesByDescriptor(Stream<String> descriptors) {
+        driver.triggerTableMetricsGeneration(instance.streamTableStatusByDescriptors(descriptors));
         return this;
     }
 
