@@ -8,7 +8,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.38.2
 
-### TBC November 2026
+### 9th November 2026
 
 This includes bug fixes for hung compactions, the garbage collector and compaction commits, improvements to query
 tracking and reporting, and EKS Auto Mode with node pools as the default for bulk import
