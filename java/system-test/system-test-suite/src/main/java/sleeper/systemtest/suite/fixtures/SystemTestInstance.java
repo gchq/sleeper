@@ -48,9 +48,12 @@ import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_
 import static sleeper.core.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCH_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_MAX_RETRIES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_QUEUE_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
@@ -67,6 +70,7 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOM
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
@@ -87,9 +91,11 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_ROW_BATCH_TYPE;
 import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_CREATION_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_DELETION_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_PLATFORM;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_TIMEOUT_SECS;
 import static sleeper.core.properties.model.OptionalStack.CompactionStack;
 import static sleeper.core.properties.model.OptionalStack.EmrBulkImportStack;
 import static sleeper.core.properties.model.OptionalStack.EmrServerlessBulkImportStack;
@@ -347,6 +353,16 @@ public class SystemTestInstance {
         properties.setNumber(SNAPSHOT_DELETION_BATCH_SIZE, 10);
         properties.setNumber(TRANSACTION_DELETION_BATCH_SIZE, 10);
         properties.setNumber(METRICS_TABLE_BATCH_SIZE, 10);
+        // Failed messages only move to a dead letter queue after the visibility timeout, for each retry.
+        // These queues' visibility timeouts are set from these lambda timeouts, which default to 14-15 minutes.
+        // The snapshot deletion and table metrics queues have a fixed visibility timeout of 70 seconds.
+        properties.setNumber(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, 60);
+        properties.setNumber(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_SECONDS, 60);
+        properties.setNumber(SNAPSHOT_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, 60);
+        properties.setNumber(TRANSACTION_DELETION_LAMBDA_TIMEOUT_SECS, 60);
+        // This must be greater than the commit batcher lambda timeout (default 30 seconds) plus the batching window
+        properties.setNumber(COMPACTION_COMMIT_QUEUE_TIMEOUT_IN_SECONDS, 40);
+        properties.setNumber(COMPACTION_COMMIT_MAX_RETRIES, 1);
         setSystemTestTags(properties, "batching", "Sleeper Maven system test instance with lambdas configured with controlled batch sizes");
         return createInstanceConfiguration(properties);
     }

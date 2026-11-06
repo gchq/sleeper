@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.dsl.instance;
 
+import java.time.Duration;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_DLQ_URL;
@@ -33,32 +34,32 @@ public class DeadLettersDsl {
         this.driver = driver;
     }
 
-    public List<String> drainCompactionCommitDLQForWholeInstance(int expectedMessages) {
-        return driver.drainQueueForWholeInstance(expectedMessages, COMPACTION_COMMIT_DLQ_URL);
+    public List<String> drainCompactionCommitDLQForWholeInstance(int expectedMessages, Duration initialWait) {
+        return driver.drainQueueForWholeInstance(expectedMessages, initialWait, COMPACTION_COMMIT_DLQ_URL);
     }
 
-    public List<String> drainCompactionCreationTriggerDLQForWholeInstance(int expectedMessages) {
-        return driver.drainQueueForWholeInstance(expectedMessages, COMPACTION_JOB_CREATION_DLQ_URL);
+    public List<String> drainCompactionCreationTriggerDLQForWholeInstance(int expectedMessages, Duration initialWait) {
+        return driver.drainQueueForWholeInstance(expectedMessages, initialWait, COMPACTION_JOB_CREATION_DLQ_URL);
     }
 
-    public List<String> drainGarbageCollectionTriggerDLQForWholeInstance(int expectedMessages) {
-        return driver.drainQueueForWholeInstance(expectedMessages, GARBAGE_COLLECTOR_DLQ_URL);
+    public List<String> drainGarbageCollectionTriggerDLQForWholeInstance(int expectedMessages, Duration initialWait) {
+        return driver.drainQueueForWholeInstance(expectedMessages, initialWait, GARBAGE_COLLECTOR_DLQ_URL);
     }
 
-    public List<String> drainSnapshotCreationTriggerDLQForWholeInstance(int expectedMessages) {
-        return driver.drainQueueForWholeInstance(expectedMessages, TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL);
+    public List<String> drainSnapshotCreationTriggerDLQForWholeInstance(int expectedMessages, Duration initialWait) {
+        return driver.drainQueueForWholeInstance(expectedMessages, initialWait, TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL);
     }
 
-    public List<String> drainSnapshotDeletionTriggerDLQForWholeInstance(int expectedMessages) {
-        return driver.drainQueueForWholeInstance(expectedMessages, TRANSACTION_LOG_SNAPSHOT_DELETION_DLQ_URL);
+    public List<String> drainSnapshotDeletionTriggerDLQForWholeInstance(int expectedMessages, Duration initialWait) {
+        return driver.drainQueueForWholeInstance(expectedMessages, initialWait, TRANSACTION_LOG_SNAPSHOT_DELETION_DLQ_URL);
     }
 
-    public List<String> drainTransactionDeletionTriggerDLQForWholeInstance(int expectedMessages) {
-        return driver.drainQueueForWholeInstance(expectedMessages, TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_URL);
+    public List<String> drainTransactionDeletionTriggerDLQForWholeInstance(int expectedMessages, Duration initialWait) {
+        return driver.drainQueueForWholeInstance(expectedMessages, initialWait, TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_URL);
     }
 
-    public List<String> drainTableMetricsDLQForWholeInstance(int expectedMessages) {
-        return driver.drainQueueForWholeInstance(expectedMessages, TABLE_METRICS_DLQ_URL);
+    public List<String> drainTableMetricsDLQForWholeInstance(int expectedMessages, Duration initialWait) {
+        return driver.drainQueueForWholeInstance(expectedMessages, initialWait, TABLE_METRICS_DLQ_URL);
     }
 
 }
