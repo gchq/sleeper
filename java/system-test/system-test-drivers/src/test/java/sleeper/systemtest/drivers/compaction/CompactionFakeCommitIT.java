@@ -96,7 +96,7 @@ public class CompactionFakeCommitIT {
     }
 
     private CompactionCommitMessageHandle readCommitMessage(Message message) {
-        return serDe.fromJsonWithCallbackOnFail(message.body(), null);
+        return serDe.fromJsonWithCallbackOnFail(message.body(), null).orElseThrow();
     }
 
     private CompactionCommitMessageHandle handle(ReplaceFileReferencesRequest request) {

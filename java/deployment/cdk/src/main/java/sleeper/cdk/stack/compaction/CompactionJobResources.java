@@ -335,6 +335,7 @@ public class CompactionJobResources {
                 .batchSize(instanceProperties.getInt(COMPACTION_COMMIT_BATCH_SIZE))
                 .maxBatchingWindow(Duration.seconds(instanceProperties.getInt(COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS)))
                 .maxConcurrency(instanceProperties.getIntOrNull(COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_MAXIMUM))
+                .reportBatchItemFailures(true)
                 .build());
         coreStacks.grantSendStateStoreCommits(function);
     }
