@@ -270,7 +270,8 @@ public class LambdaBatchFailuresST {
         });
         // And we add 5 Sleeper tables with invalid state
         List<String> invalidTables = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
-                TABLE_ONLINE, "false"));
+                TABLE_ONLINE, "false",
+                TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, "0"));
         sleeper.tables().forEachOf(invalidTables, () -> sleeper.stateStore().addUnreadableFilesSnapshot());
 
         // When we trigger snapshot deletion for the tables, interleaved with non-existent tables
@@ -323,7 +324,9 @@ public class LambdaBatchFailuresST {
         });
         // And 5 Sleeper tables with invalid state
         List<String> invalidTables = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
-                TABLE_ONLINE, "false"));
+                TABLE_ONLINE, "false",
+                TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS, "0",
+                TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, "0"));
         sleeper.tables().forEachOf(invalidTables, () -> sleeper.stateStore().addUnreadableFilesSnapshot());
 
         // When we trigger transaction deletion for the tables, interleaved with non-existent tables
