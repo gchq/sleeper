@@ -61,7 +61,7 @@ public class ECSStateStoreCommitterThroughputST {
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
-        // When commit processing updates the ingest job tracker
+        // When fake commits are sent to the state store
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
@@ -69,7 +69,8 @@ public class ECSStateStoreCommitterThroughputST {
                         .map(StateStoreCommitMessage::addFile))
                 .waitForCommitLogs();
 
-        // Then commit throughput is not reduced below the expected threshold
+        // Then all files were committed
+        // And the commit throughput meets the expected commits per second
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
