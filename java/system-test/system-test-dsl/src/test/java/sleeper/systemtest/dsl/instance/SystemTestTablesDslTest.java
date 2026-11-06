@@ -50,7 +50,7 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.PREDEFINED_TA
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @InMemoryDslTest
-public class SleeperInstanceTablesTest {
+public class SystemTestTablesDslTest {
 
     @Nested
     @DisplayName("Define named tables")
