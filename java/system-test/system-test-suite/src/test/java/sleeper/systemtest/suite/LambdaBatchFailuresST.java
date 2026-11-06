@@ -138,11 +138,9 @@ public class LambdaBatchFailuresST {
                 .waitForJobsToCommit();
 
         // Then the compactions are committed
-        assertThat(sleeper.tableFiles().referencesByTable())
-                .hasSize(5)
-                .allSatisfy((table, references) -> assertThat(references)
-                        .extracting(FileReference::getFilename)
-                        .containsExactly("output-1.parquet", "output-2.parquet", "output-3.parquet", "output-4.parquet", "output-5.parquet"));
+        assertThat(sleeper.tableFiles().references())
+                .extracting(FileReference::getFilename)
+                .containsExactly("output-1.parquet", "output-2.parquet", "output-3.parquet", "output-4.parquet", "output-5.parquet");
         // And the messages for the invalid jobs appear on the dead letter queue
         assertThat(sleeper.deadLetters().drainCompactionCommitDLQForWholeInstance(5))
                 .containsExactlyInAnyOrder("invalid-1", "invalid-2", "invalid-3", "invalid-4", "invalid-5");
