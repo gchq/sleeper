@@ -212,6 +212,10 @@ public class SystemTestInstanceContext {
         return tableIdToDescriptor.get(getTableProperties().get(TABLE_ID));
     }
 
+    public Optional<TableProperties> getTablePropertiesByDescriptor(String descriptor) {
+        return Optional.ofNullable(descriptorToTableProperties.get(descriptor));
+    }
+
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
         generatorOverrides = overrides;
     }

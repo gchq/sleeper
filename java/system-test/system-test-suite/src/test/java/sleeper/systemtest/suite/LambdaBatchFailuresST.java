@@ -86,9 +86,7 @@ public class LambdaBatchFailuresST {
         // And 5 Sleeper tables with invalid state
         List<String> invalidTables = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false"));
-        sleeper.tables().forEachOf(invalidTables, () -> {
-            sleeper.stateStore(); // TODO make table unreadable
-        });
+        sleeper.tables().forEachOf(invalidTables, () -> sleeper.stateStore().addUnreadableFilesSnapshot());
 
         // When we trigger compaction creation for the tables, interleaved with non-existent tables
         sleeper.compaction()
