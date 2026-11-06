@@ -32,8 +32,8 @@ public class SystemTestTablesDsl {
         this.instance = instance;
     }
 
-    public void createMany(int numberOfTables, Schema schema) {
-        createManyWithProperties(numberOfTables, schema, Map.of());
+    public List<TableProperties> createMany(int numberOfTables, Schema schema) {
+        return createManyWithProperties(numberOfTables, schema, Map.of());
     }
 
     public SystemTestTablesDsl create(String name, Schema schema) {
@@ -55,8 +55,8 @@ public class SystemTestTablesDsl {
         return this;
     }
 
-    public void createManyWithProperties(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
-        instance.createTables(numberOfTables, schema, setProperties);
+    public List<TableProperties> createManyWithProperties(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+        return instance.createTables(numberOfTables, schema, setProperties);
     }
 
     public List<TableStatus> list() {
