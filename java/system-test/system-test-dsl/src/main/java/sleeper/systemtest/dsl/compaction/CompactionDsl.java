@@ -90,6 +90,16 @@ public class CompactionDsl {
         return this;
     }
 
+    public CompactionDsl createJobsForTablesByDescriptor(int expectedJobs, List<String> tableDescriptors) {
+        PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1));
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll),
+                () -> driver.triggerCreateJobs(tableDescriptors.stream()
+                        .map(descriptor -> instance.getTablePropertiesByDescriptor(descriptor)
+                                .map(TableProperties::getStatus)
+                                .orElseGet(() -> TableStatus.uniqueIdAndName(descriptor, descriptor, false)))));
+        return this;
+    }
+
     public CompactionDsl putCurrentTablesOnlineUntilJobsAreCreated(int expectedJobs) {
         putCurrentTablesOnlineWaitForJobCreation(expectedJobs);
         instance.updateTableProperties(Map.of(TABLE_ONLINE, "false"));
