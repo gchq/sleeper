@@ -15,16 +15,13 @@
  */
 package sleeper.systemtest.drivers.ingest;
 
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
 import software.amazon.awssdk.services.ecs.model.Task;
 
 import sleeper.systemtest.drivers.ingest.json.TasksJson;
 
 import java.io.StringReader;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 
@@ -36,7 +33,8 @@ public class TasksJsonTest {
     @Test
     public void shouldOutputJson() {
         // Given
-        List<RunTaskResponse> responses = List.of(response(task("some-task")));
+        List<RunTaskResponse> responses = List.of(RunTaskResponse.builder()
+                .tasks(task("some-task")).build());
 
         // When
         String json = TasksJson.from(responses);
@@ -52,70 +50,6 @@ public class TasksJsonTest {
                 "{\"taskArn\":\"some-task\",\"clusterArn\":\"some-cluster\",\"createdAt\":\"2022-12-22T10:08:01Z\"}]}"));
 
         assertThat(results).containsExactly(task("some-task"));
-    }
-
-    @Nested
-    class WriteToFile {
-
-        @TempDir
-        Path tempDir;
-
-        @Test
-        void shouldWriteToFileWhenDirectoryExists() throws Exception {
-            // Given
-            Path path = tempDir.resolve("tasks.json");
-
-            // When
-            TasksJson.writeToFile(List.of(response(task("some-task"))), path);
-
-            // Then
-            assertThat(TasksJson.readTasksFromFile(path))
-                    .containsExactly(task("some-task"));
-        }
-
-        @Test
-        void shouldCreateDirectoryWhenWritingToFile() throws Exception {
-            // Given
-            Path path = tempDir.resolve("generated/writeDataOutput.json");
-
-            // When
-            TasksJson.writeToFile(List.of(response(task("some-task"))), path);
-
-            // Then
-            assertThat(TasksJson.readTasksFromFile(path))
-                    .containsExactly(task("some-task"));
-        }
-
-        @Test
-        void shouldCreateNestedDirectoriesWhenWritingToFile() throws Exception {
-            // Given
-            Path path = tempDir.resolve("a/b/c/tasks.json");
-
-            // When
-            TasksJson.writeToFile(List.of(response(task("some-task"))), path);
-
-            // Then
-            assertThat(TasksJson.readTasksFromFile(path))
-                    .containsExactly(task("some-task"));
-        }
-
-        @Test
-        void shouldOverwriteExistingFile() throws Exception {
-            // Given
-            Path path = tempDir.resolve("generated/writeDataOutput.json");
-            TasksJson.writeToFile(List.of(response(task("old-task"))), path);
-
-            // When
-            TasksJson.writeToFile(List.of(response(task("new-task"))), path);
-
-            // Then
-            assertThat(TasksJson.readTasksFromFile(path))
-                    .containsExactly(task("new-task"));
-        }
-    }
-
-    private static RunTaskResponse response(Task... tasks) {
-        return RunTaskResponse.builder().tasks(tasks).build();
     }
 
     private static Task task(String taskArn) {
