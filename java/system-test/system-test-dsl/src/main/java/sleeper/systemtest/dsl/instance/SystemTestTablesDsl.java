@@ -32,7 +32,7 @@ public class SystemTestTablesDsl {
         this.instance = instance;
     }
 
-    public List<TableProperties> createMany(int numberOfTables, Schema schema) {
+    public List<String> createMany(int numberOfTables, Schema schema) {
         return createManyWithProperties(numberOfTables, schema, Map.of());
     }
 
@@ -55,7 +55,7 @@ public class SystemTestTablesDsl {
         return this;
     }
 
-    public List<TableProperties> createManyWithProperties(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+    public List<String> createManyWithProperties(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
         return instance.createTables(numberOfTables, schema, setProperties);
     }
 
@@ -66,6 +66,14 @@ public class SystemTestTablesDsl {
     public void forEach(Runnable runnable) {
         instance.streamTableProperties().forEach(properties -> {
             instance.setCurrentTable(properties);
+            runnable.run();
+        });
+        instance.setCurrentTable((TableProperties) null);
+    }
+
+    public void forEachOf(List<String> tableNames, Runnable runnable) {
+        tableNames.forEach(name -> {
+            instance.setCurrentTable(name);
             runnable.run();
         });
         instance.setCurrentTable((TableProperties) null);
