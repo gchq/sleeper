@@ -102,26 +102,24 @@ public class SystemTestInstanceContext {
         int groupNumber = nextGroupNumber;
         nextGroupNumber++;
         InstanceProperties instanceProperties = getInstanceProperties();
-        Map<String, String> tableNameToTestName = new HashMap<>();
-        List<TableProperties> tablePropertiesList = IntStream.rangeClosed(1, numberOfTables)
-                .mapToObj(tableNumber -> {
+        List<String> tableTestNames = IntStream.rangeClosed(1, numberOfTables)
+                .mapToObj(tableNumber -> "group" + groupNumber + "-table" + tableNumber)
+                .toList();
+        List<TableProperties> tablePropertiesList = tableTestNames.stream()
+                .map(tableTestName -> {
                     TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
-                    String testName = "group" + groupNumber + "-table" + tableNumber;
-                    tableProperties.set(TABLE_NAME, buildTableName(testName));
+                    tableProperties.set(TABLE_NAME, buildTableName(tableTestName));
                     setProperties.forEach(tableProperties::set);
-                    tableNameToTestName.put(tableProperties.get(TABLE_NAME), testName);
+                    testNameToTableProperties.put(tableTestName, tableProperties);
                     return tableProperties;
                 })
                 .toList();
         currentTables().addTablesAndSetCurrent(tablesDriver(), tablePropertiesList);
-        tablePropertiesList.forEach(properties -> {
-            String testName = tableNameToTestName.get(properties.get(TABLE_NAME));
-            testNameToTableProperties.put(testName, properties);
-            tableIdToTestName.put(properties.get(TABLE_ID), testName);
+        tableTestNames.forEach(tableTestName -> {
+            TableProperties properties = testNameToTableProperties.get(tableTestName);
+            tableIdToTestName.put(properties.get(TABLE_ID), tableTestName);
         });
-        return tablePropertiesList.stream()
-                .map(table -> tableNameToTestName.get(table.get(TABLE_NAME)))
-                .toList();
+        return tableTestNames;
     }
 
     public void createTable(String name, Schema schema, Map<TableProperty, String> setProperties) {
