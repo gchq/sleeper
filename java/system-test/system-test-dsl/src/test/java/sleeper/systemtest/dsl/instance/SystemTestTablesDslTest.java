@@ -35,6 +35,7 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -271,6 +272,24 @@ public class SystemTestTablesDslTest {
             assertThat(group2).containsExactly("group2-table1", "group2-table2");
             assertThat(sleeper.table("group1-table1").tableProperties().get(TABLE_NAME))
                     .contains("-SystemTestTablesDslTest.TableGroups.shouldGenerateTableNamesByGroup-group1-table1-");
+        }
+
+        @Test
+        void shouldRetrieveTableDescriptorInForEach(SleeperDsl sleeper) {
+            // Given
+            sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
+            List<String> group1 = sleeper.tables().createMany(2, DEFAULT_SCHEMA);
+            List<String> group2 = sleeper.tables().createMany(2, DEFAULT_SCHEMA);
+
+            // When
+            List<String> foundGroup1 = new ArrayList<>();
+            List<String> foundGroup2 = new ArrayList<>();
+            sleeper.tables().forEachOf(group1, () -> foundGroup1.add(sleeper.tableDescriptor()));
+            sleeper.tables().forEachOf(group2, () -> foundGroup2.add(sleeper.tableDescriptor()));
+
+            // Then
+            assertThat(foundGroup1).containsExactly("group1-table1", "group1-table2");
+            assertThat(foundGroup2).containsExactly("group2-table1", "group2-table2");
         }
     }
 }
