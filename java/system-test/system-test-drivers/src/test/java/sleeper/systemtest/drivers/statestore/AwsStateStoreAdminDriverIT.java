@@ -19,8 +19,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.StateStoreException;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.systemtest.drivers.testutil.LocalAwsDslTest;
+import sleeper.systemtest.drivers.testutil.LocalAwsSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperDsl;
+import sleeper.systemtest.dsl.SystemTestContext;
+
+import java.time.Duration;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCAL_MAIN;
@@ -28,9 +34,15 @@ import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCAL_MAI
 @LocalAwsDslTest
 public class AwsStateStoreAdminDriverIT {
 
+    DynamoDBTransactionLogSnapshotMetadataStore metadataStore;
+
     @BeforeEach
-    void setUp(SleeperDsl sleeper) {
+    void setUp(SleeperDsl sleeper, SystemTestContext context, LocalAwsSystemTestDrivers drivers) {
         sleeper.connectToInstanceAddOnlineTable(LOCAL_MAIN);
+        metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(
+                context.instance().getInstanceProperties(),
+                context.instance().getTableProperties(),
+                drivers.clients().getDynamo());
     }
 
     @Test
@@ -41,6 +53,8 @@ public class AwsStateStoreAdminDriverIT {
         // Then
         assertThatThrownBy(() -> sleeper.tableFiles().all())
                 .isInstanceOf(StateStoreException.class);
+        assertThatThrownBy(() -> metadataStore.getLatestSnapshotsBefore(Instant.now().plus(Duration.ofDays(1))))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
 }
