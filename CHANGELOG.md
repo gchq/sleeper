@@ -24,6 +24,7 @@ Bugfixes:
 - Compaction tasks no longer hang indefinitely when a compaction hangs. Stalled compactions are now detected, the job is
   returned to the queue and the task is terminated. This is configured in the `sleeper.compaction.task.progress.*`
   instance properties.
+- The demonstration deployment now creates any directories it needs for generated data.
 
 Bulk import:
 - Bulk import on EKS now defaults to EKS Auto Mode with node pool configuration. Node pool configuration is no longer
