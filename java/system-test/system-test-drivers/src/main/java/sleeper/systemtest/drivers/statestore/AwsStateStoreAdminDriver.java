@@ -30,6 +30,7 @@ import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.table.TableStatus;
 import sleeper.invoke.tables.InvokeForTables;
 import sleeper.statestore.StateStoreArrowFileReadStore;
+import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
@@ -113,6 +114,21 @@ public class AwsStateStoreAdminDriver implements StateStoreAdminDriver {
         List<TransactionLogSnapshotMetadata> snapshots = metadataStore(instanceProperties, tableProperties).getPartitionsSnapshots();
         LOGGER.info("Found {} partitions snapshots", snapshots.size());
         return snapshots.size();
+    }
+
+    @Override
+    public void addUnreadableFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        long transactionNumber = DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, clients.getDynamo(), clients.getS3())
+                .readTransactions(TransactionLogRange.fromMinimum(0))
+                .mapToLong(TransactionLogEntry::getTransactionNumber)
+                .max().orElse(1);
+        String basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
+        try {
+            metadataStore(instanceProperties, tableProperties)
+                    .saveSnapshot(TransactionLogSnapshotMetadata.forFiles(basePath, transactionNumber));
+        } catch (DuplicateSnapshotException e) {
+            throw new RuntimeException("Failed to save unreadable snapshot - to take control of snapshot creation, ensure the table is not online", e);
+        }
     }
 
     private Optional<TransactionLogSnapshot> loadLatestSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties, SnapshotType snapshotType) {
