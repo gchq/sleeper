@@ -33,8 +33,6 @@ import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
-import sleeper.systemtest.dsl.statestore.StateStoreAdminDriver;
-import sleeper.systemtest.dsl.util.NoStateStoreAdminDriver;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
 import static sleeper.local.aws.test.LocalAwsHadoopConfigurationProvider.configureHadoop;
@@ -83,11 +81,6 @@ public class LocalAwsSystemTestDrivers extends AwsSystemTestDrivers {
 
     public BulkExportDriver bulkExport(SystemTestContext context) {
         return new AwsBulkExportDriver(context, clients);
-    }
-
-    @Override
-    public StateStoreAdminDriver stateStoreAdmin(SystemTestContext context) {
-        return new NoStateStoreAdminDriver();
     }
 
     @Override

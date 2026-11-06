@@ -185,4 +185,9 @@ public class StateStoreDsl {
                 context.instance().getInstanceProperties(), context.instance().getTableProperties());
     }
 
+    public void addUnreadableFilesSnapshot() {
+        adminDriver.addUnreadableFilesSnapshot(
+                context.instance().getInstanceProperties(), context.instance().getTableProperties());
+    }
+
 }
