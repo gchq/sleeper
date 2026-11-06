@@ -28,6 +28,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.compaction.StreamFakeCompactions;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.util.StreamUtils;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow2;
@@ -36,11 +37,13 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
@@ -90,9 +93,11 @@ public class LambdaBatchFailuresST {
 
         // When we trigger compaction creation for the tables, interleaved with non-existent tables
         sleeper.compaction()
-                // TODO create by table descriptors including non-existent ones
-                .createJobsForAllInterleavedWithFakeTables(5,
-                        List.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))
+                .createJobsForTablesByDescriptor(5,
+                        StreamUtils.interleave(List.of(
+                                tablesWithFiles.stream(),
+                                invalidTables.stream(),
+                                Stream.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))))
                 .waitForTasks(1)
                 .waitForJobs();
 
@@ -100,9 +105,12 @@ public class LambdaBatchFailuresST {
         assertThat(sleeper.tableFiles().referencesByTable())
                 .hasSize(5)
                 .allSatisfy((table, references) -> assertThat(references).hasSize(1));
-        // And the messages for the non-existent tables appear on the dead letter queue
+        // And the messages for the invalid tables appear on the dead letter queue
         assertThat(sleeper.deadLetters().drainCompactionCreationTriggerDLQForWholeInstance(5))
-                .containsExactlyInAnyOrder("missing-1", "missing-2", "missing-3", "missing-4", "missing-5");
+                .containsExactlyInAnyOrderElementsOf(
+                        sleeper.tables().streamPropertiesOf(invalidTables)
+                                .map(properties -> properties.get(TABLE_ID))
+                                .toList());
     }
 
     @Test
