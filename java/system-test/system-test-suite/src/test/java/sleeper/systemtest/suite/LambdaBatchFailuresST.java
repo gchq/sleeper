@@ -152,15 +152,19 @@ public class LambdaBatchFailuresST {
     @Disabled("Failing until issue https://github.com/gchq/sleeper/issues/8363")
     void shouldReportFailureRunningGCForSomeTables(SleeperDsl sleeper) {
         // Given 5 Sleeper tables with files ready for GC
-        sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+        List<String> tablesReadyForGC = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
-        sleeper.tables().forEach(() -> {
+        sleeper.tables().forEachOf(tablesReadyForGC, () -> {
             sleeper.ingest().direct(tempDir)
                     .splitIngests(2, sleeper.scrambleNumberedRows(
                             LongStream.range(0, 10)));
             sleeper.stateStore().fakeCommits().compactAllFilesToOnePerPartition();
         });
+        // And 5 Sleeper tables with invalid state
+        List<String> invalidTables = sleeper.tables().createManyWithProperties(5, DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false"));
+        sleeper.tables().forEachOf(invalidTables, () -> sleeper.stateStore().addUnreadableFilesSnapshot());
 
         // When we trigger GC for the tables, interleaved with non-existent tables
         sleeper.garbageCollection().invokeForAllInterleavedWithFakeTables(
@@ -173,7 +177,10 @@ public class LambdaBatchFailuresST {
                 .allSatisfy((table, references) -> assertThat(references).hasSize(1));
         // And the messages for the non-existent tables appear on the dead letter queue
         assertThat(sleeper.deadLetters().drainGarbageCollectionTriggerDLQForWholeInstance(5))
-                .containsExactlyInAnyOrder("missing-1", "missing-2", "missing-3", "missing-4", "missing-5");
+                .containsExactlyInAnyOrderElementsOf(
+                        sleeper.tables().streamPropertiesOf(invalidTables)
+                                .map(properties -> properties.get(TABLE_ID))
+                                .toList());
     }
 
     @Test
