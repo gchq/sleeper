@@ -97,15 +97,17 @@ public class SystemTestInstanceContext {
                 }).collect(toUnmodifiableList()));
     }
 
-    public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+    public List<TableProperties> createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
         InstanceProperties instanceProperties = getInstanceProperties();
-        currentTables().addTablesAndSetCurrent(tablesDriver(), IntStream.range(0, numberOfTables)
+        List<TableProperties> tablePropertiesList = IntStream.range(0, numberOfTables)
                 .mapToObj(i -> {
                     TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
                     setProperties.forEach(tableProperties::set);
                     return tableProperties;
                 })
-                .collect(toUnmodifiableList()));
+                .toList();
+        currentTables().addTablesAndSetCurrent(tablesDriver(), tablePropertiesList);
+        return tablePropertiesList;
     }
 
     public void createTable(String name, Schema schema, Map<TableProperty, String> setProperties) {
