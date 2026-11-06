@@ -256,5 +256,21 @@ public class SystemTestTablesDslTest {
                     group2.get(0), group2Rows,
                     group2.get(1), group2Rows));
         }
+
+        @Test
+        void shouldGenerateTableNamesByGroup(SleeperDsl sleeper) {
+            // Given
+            sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
+
+            // When
+            List<String> group1 = sleeper.tables().createMany(2, DEFAULT_SCHEMA);
+            List<String> group2 = sleeper.tables().createMany(2, DEFAULT_SCHEMA);
+
+            // Then
+            assertThat(group1).containsExactly("group1-table1", "group1-table2");
+            assertThat(group2).containsExactly("group2-table1", "group2-table2");
+            assertThat(sleeper.table("group1-table1").tableProperties().get(TABLE_NAME))
+                    .contains("-SystemTestTablesDslTest.TableGroups.shouldGenerateTableNamesByGroup-group1-table1-");
+        }
     }
 }
