@@ -28,11 +28,9 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
-import sleeper.systemtest.dsl.util.StreamUtils;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -110,13 +108,6 @@ public class StateStoreDsl {
 
     public StateStoreDsl invokeTransactionDeletionForTablesByDescriptor(Stream<String> descriptors) {
         adminDriver.triggerDeleteTransactions(context.instance().streamTableStatusByDescriptors(descriptors));
-        return this;
-    }
-
-    public StateStoreDsl invokeTransactionDeletionForAllInterleavedWithFakeTables(List<String> fakeTables) {
-        adminDriver.triggerDeleteTransactions(StreamUtils.interleave(
-                context.instance().streamTableProperties().map(TableProperties::getStatus),
-                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
         return this;
     }
 
