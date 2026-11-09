@@ -26,17 +26,17 @@ public class StreamUtils {
     }
 
     public static <T> Stream<T> interleave(Stream<T> streamA, Stream<T> streamB) {
-        Iterator<T> iteratorA = streamA.iterator();
-        Iterator<T> iteratorB = streamB.iterator();
+        return interleave(List.of(streamA, streamB));
+    }
+
+    public static <T> Stream<T> interleave(Stream<T> streamA, Stream<T> streamB, Stream<T> streamC) {
+        return interleave(List.of(streamA, streamB, streamC));
+    }
+
+    public static <T> Stream<T> interleave(List<Stream<T>> streams) {
+        List<Iterator<T>> iterators = streams.stream().map(Stream::iterator).toList();
         List<T> result = new ArrayList<>();
-        while (iteratorA.hasNext() || iteratorB.hasNext()) {
-            if (iteratorA.hasNext()) {
-                result.add(iteratorA.next());
-            }
-            if (iteratorB.hasNext()) {
-                result.add(iteratorB.next());
-            }
-        }
+        new InterleavingIterator<>(iterators).forEachRemaining(result::add);
         return result.stream();
     }
 

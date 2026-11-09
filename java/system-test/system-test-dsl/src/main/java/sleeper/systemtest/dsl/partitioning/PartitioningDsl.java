@@ -64,7 +64,7 @@ public class PartitioningDsl {
     public Map<String, PartitionTree> treeByTable() {
         return instance.streamTableProperties()
                 .map(properties -> entry(
-                        instance.getTestTableName(properties),
+                        instance.getTableDescriptor(properties),
                         tree(instance.getStateStore(properties))))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }

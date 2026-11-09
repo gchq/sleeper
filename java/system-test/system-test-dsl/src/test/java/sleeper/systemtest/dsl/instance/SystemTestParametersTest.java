@@ -23,6 +23,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper.UNIT_TEST_PARAMETERS;
@@ -37,6 +38,7 @@ public class SystemTestParametersTest {
 
         // When
         TableProperties tableProperties = UNIT_TEST_PARAMETERS.createTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_NAME, "test-table");
 
         // Then
         assertThatCode(tableProperties::validate).doesNotThrowAnyException();

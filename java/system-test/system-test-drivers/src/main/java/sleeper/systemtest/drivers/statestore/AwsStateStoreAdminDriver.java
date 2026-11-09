@@ -17,6 +17,7 @@ package sleeper.systemtest.drivers.statestore;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -30,6 +31,7 @@ import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.table.TableStatus;
 import sleeper.invoke.tables.InvokeForTables;
 import sleeper.statestore.StateStoreArrowFileReadStore;
+import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
@@ -40,14 +42,19 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreAdminDriver;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.fromMinimum;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 public class AwsStateStoreAdminDriver implements StateStoreAdminDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsStateStoreAdminDriver.class);
@@ -113,6 +120,33 @@ public class AwsStateStoreAdminDriver implements StateStoreAdminDriver {
         List<TransactionLogSnapshotMetadata> snapshots = metadataStore(instanceProperties, tableProperties).getPartitionsSnapshots();
         LOGGER.info("Found {} partitions snapshots", snapshots.size());
         return snapshots.size();
+    }
+
+    @Override
+    public void addUnreadableFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        long transactionNumber = DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, clients.getDynamo(), clients.getS3())
+                .readTransactions(TransactionLogRange.fromMinimum(0))
+                .mapToLong(TransactionLogEntry::getTransactionNumber)
+                .max().orElse(1);
+        String basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
+        try {
+            metadataStore(instanceProperties, tableProperties)
+                    .saveSnapshot(TransactionLogSnapshotMetadata.forFiles(basePath, transactionNumber));
+        } catch (DuplicateSnapshotException e) {
+            throw new RuntimeException("Failed to save unreadable snapshot - to take control of snapshot creation, ensure the table is not online", e);
+        }
+        // Mangle snapshot metadata
+        clients.getDynamo().updateItem(UpdateItemRequest.builder()
+                .tableName(instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME))
+                .key(Map.of(
+                        DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID_AND_SNAPSHOT_TYPE,
+                        createStringAttribute(tableProperties.get(TABLE_ID) + "|FILES"),
+                        DynamoDBTransactionLogSnapshotMetadataStore.TRANSACTION_NUMBER,
+                        createNumberAttribute(transactionNumber)))
+                .updateExpression("SET #SnapshotType = :unreadable_type")
+                .expressionAttributeNames(Map.of("#SnapshotType", DynamoDBTransactionLogSnapshotMetadataStore.SNAPSHOT_TYPE))
+                .expressionAttributeValues(Map.of(":unreadable_type", createStringAttribute("unreadable_type")))
+                .build());
     }
 
     private Optional<TransactionLogSnapshot> loadLatestSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties, SnapshotType snapshotType) {

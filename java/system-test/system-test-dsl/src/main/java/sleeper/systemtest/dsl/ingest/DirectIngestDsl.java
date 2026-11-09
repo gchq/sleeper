@@ -60,6 +60,10 @@ public class DirectIngestDsl {
     }
 
     public void rows(Row... rows) {
-        driver.ingest(tempDir, List.of(rows).iterator());
+        rows(List.of(rows));
+    }
+
+    public void rows(List<Row> rows) {
+        driver.ingest(tempDir, rows.iterator());
     }
 }

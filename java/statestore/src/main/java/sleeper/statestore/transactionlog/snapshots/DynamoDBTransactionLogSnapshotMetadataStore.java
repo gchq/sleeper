@@ -67,7 +67,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     private static final String PATH = "PATH";
     public static final String TRANSACTION_NUMBER = "TRANSACTION_NUMBER";
     private static final String UPDATE_TIME = "UPDATE_TIME";
-    private static final String SNAPSHOT_TYPE = "SNAPSHOT_TYPE";
+    public static final String SNAPSHOT_TYPE = "SNAPSHOT_TYPE";
     private static final String FILES_TRANSACTION_NUMBER = "FILES_TRANSACTION_NUMBER";
     private static final String PARTITIONS_TRANSACTION_NUMBER = "PARTITIONS_TRANSACTION_NUMBER";
     private static final String FILES_SNAPSHOT_PATH = "FILES_SNAPSHOT_PATH";

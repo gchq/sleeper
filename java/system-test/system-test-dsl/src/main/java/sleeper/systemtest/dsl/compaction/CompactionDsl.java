@@ -24,7 +24,6 @@ import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -41,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
@@ -81,12 +81,10 @@ public class CompactionDsl {
         return this;
     }
 
-    public CompactionDsl createJobsForAllInterleavedWithFakeTables(int expectedJobs, List<String> fakeTables) {
+    public CompactionDsl createJobsForTablesByDescriptor(int expectedJobs, Stream<String> tableDescriptors) {
         PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1));
         lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll),
-                () -> driver.triggerCreateJobs(StreamUtils.interleave(
-                        instance.streamTableProperties().map(TableProperties::getStatus),
-                        fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false)))));
+                () -> driver.triggerCreateJobs(instance.streamTableStatusByDescriptors(tableDescriptors)));
         return this;
     }
 

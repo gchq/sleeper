@@ -17,18 +17,20 @@
 package sleeper.systemtest.dsl.gc;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
-import sleeper.systemtest.dsl.util.StreamUtils;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class GarbageCollectionDsl {
+
+    private static final PollWithRetries DEFAULT_WAIT_FOR_GC = PollWithRetries.intervalAndPollingTimeout(
+            Duration.ofSeconds(5), Duration.ofMinutes(2));
 
     private final GarbageCollectionDriver driver;
     private final PollWithRetriesDriver pollDriver;
@@ -46,18 +48,24 @@ public class GarbageCollectionDsl {
         return this;
     }
 
-    public GarbageCollectionDsl invokeForAllInterleavedWithFakeTables(List<String> fakeTables) {
-        driver.invokeGarbageCollection(StreamUtils.interleave(
-                instance.streamTableProperties().map(TableProperties::getStatus),
-                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
+    public GarbageCollectionDsl invokeForTablesByDescriptor(Stream<String> tableDescriptors) {
+        driver.invokeGarbageCollection(instance.streamTableStatusByDescriptors(tableDescriptors));
         return this;
     }
 
     public void waitFor() {
-        waitFor(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2)));
+        waitFor(DEFAULT_WAIT_FOR_GC);
     }
 
     public void waitFor(PollWithRetries poll) {
         WaitForGC.waitUntilNoUnreferencedFiles(instance, pollDriver.poll(poll));
+    }
+
+    public void waitForTables(List<String> tableDescriptors) {
+        waitForTables(tableDescriptors, DEFAULT_WAIT_FOR_GC);
+    }
+
+    public void waitForTables(List<String> tableDescriptors, PollWithRetries poll) {
+        WaitForGC.waitUntilNoUnreferencedFiles(instance, tableDescriptors, pollDriver.poll(poll));
     }
 }
