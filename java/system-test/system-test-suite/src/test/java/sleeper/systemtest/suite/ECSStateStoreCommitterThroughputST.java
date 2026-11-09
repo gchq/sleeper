@@ -61,7 +61,7 @@ public class ECSStateStoreCommitterThroughputST {
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
-        // When fake commits are sent to the state store
+        // When commit processing updates the ingest job tracker
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
@@ -69,8 +69,7 @@ public class ECSStateStoreCommitterThroughputST {
                         .map(StateStoreCommitMessage::addFile))
                 .waitForCommitLogs();
 
-        // Then all files were committed
-        // And the commit throughput meets the expected commits per second
+        // Then commit throughput is not reduced below the expected threshold
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogOnly());
@@ -206,7 +205,7 @@ public class ECSStateStoreCommitterThroughputST {
                     .collect(toUnmodifiableList()));
         });
 
-        // When commit processing updates the compaction job tracker
+        // When committing files that will trigger ingest job tracker updates
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.commitCompactionForPartitionOnTaskInRun(
@@ -214,8 +213,8 @@ public class ECSStateStoreCommitterThroughputST {
                                 "test-task", jobRunId(i), summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2))))
                 .waitForCommitLogs();
 
-        // Then all compaction jobs complete successfully
-        // And the commit throughput meets the expected commits per second
+        // Then all files were committed
+        // And the job tracker being updated doesn't impact the throughput of the committer
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
                 .isEqualTo(printFiles(partitions, referencedAndUnreferencedFiles(
                         IntStream.rangeClosed(1, 1000)

@@ -56,7 +56,7 @@ public class StateStoreCommitterThroughputST {
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable(SleeperDsl sleeper) throws Exception {
 
-        // Given an offline table with a single partition
+        // Given an offline table with a single root partition
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
@@ -101,7 +101,7 @@ public class StateStoreCommitterThroughputST {
     @Test
     void shouldMeetExpectedThroughputWhenCommittingLargeRequestsOnOneTable(SleeperDsl sleeper) throws Exception {
 
-        // Given an offline table with a single partition
+        // Given an offline table with a single root partition
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition(UUID.randomUUID().toString()).buildTree();
         sleeper.partitioning().setPartitions(partitions);
