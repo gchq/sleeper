@@ -20,7 +20,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFailure;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -64,15 +63,12 @@ public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, S
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         List<BatchItemFailure> failures = new ArrayList<>();
         List<CompactionCommitMessageHandle> requests = event.getRecords().stream()
-                .map(message -> readMessageTrackingFailure(message, failures))
+                .flatMap(message -> serDe.fromJsonWithCallbackOnFail(message.getBody(),
+                        () -> failures.add(new BatchItemFailure(message.getMessageId())))
+                        .stream())
                 .toList();
         batcher.sendBatch(requests);
         return new SQSBatchResponse(failures);
-    }
-
-    private CompactionCommitMessageHandle readMessageTrackingFailure(SQSMessage message, List<BatchItemFailure> failures) {
-        return serDe.fromJsonWithCallbackOnFail(message.getBody(),
-                () -> failures.add(new BatchItemFailure(message.getMessageId())));
     }
 
     /**
