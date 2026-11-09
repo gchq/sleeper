@@ -134,7 +134,9 @@ public class TransactionLogTransactionStack extends NestedStack {
 
         transactionDeletionLambda.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(TRANSACTION_DELETION_BATCH_SIZE))
-                .maxConcurrency(instanceProperties.getIntOrNull(TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM)).build());
+                .maxConcurrency(instanceProperties.getIntOrNull(TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM))
+                .reportBatchItemFailures(true)
+                .build());
 
         coreStacks.grantReadTablesStatus(transactionDeletionTrigger);
         coreStacks.grantInvokeScheduled(transactionDeletionTrigger, queue);

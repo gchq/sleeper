@@ -35,6 +35,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.groupingBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -58,7 +60,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
 
     private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
-    private final GarbageCollector garbageCollector;
+    private final Consumer<List<TableProperties>> garbageCollector;
 
     public GarbageCollectorLambda() {
         S3Client s3Client = S3Client.create();
@@ -78,7 +80,13 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient);
         garbageCollector = new GarbageCollector(new S3DeleteFiles(s3Client),
                 instanceProperties, stateStoreProvider,
-                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)));
+                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)))::run;
+    }
+
+    public GarbageCollectorLambda(TablePropertiesProvider tablePropertiesProvider, PropertiesReloader propertiesReloader, Consumer<List<TableProperties>> garbageCollector) {
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.propertiesReloader = propertiesReloader;
+        this.garbageCollector = garbageCollector;
     }
 
     @Override
@@ -92,7 +100,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         List<SQSBatchResponse.BatchItemFailure> batchItemFailures = new ArrayList<SQSBatchResponse.BatchItemFailure>();
         List<TableProperties> tables = loadTables(messagesByTableId, batchItemFailures);
         try {
-            garbageCollector.run(tables);
+            garbageCollector.accept(tables);
         } catch (FailedGarbageCollectionException e) {
             LOGGER.error("Found {} tables with failures", e.getTableFailures().size(), e);
             e.getTableFailures().stream()
@@ -121,6 +129,8 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
                 TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
                 tables.add(tableProperties);
+            } catch (TableNotFoundException e) {
+                LOGGER.warn("Ignoring non-existent table {}", tableId);
             } catch (RuntimeException e) {
                 LOGGER.error("Failed loading properties for table {}", tableId, e);
                 tableMessages.stream()
