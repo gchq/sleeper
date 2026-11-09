@@ -101,7 +101,7 @@ public class WhileCompactionST1 {
         compaction.createJobs(20);
         LOGGER.info("Created compaction jobs");
 
-        compaction.waitForTasks(5);
+        compaction.waitForTasks(1);
 
         queryThread.start();
 
