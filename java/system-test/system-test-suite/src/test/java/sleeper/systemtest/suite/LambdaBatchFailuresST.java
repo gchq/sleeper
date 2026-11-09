@@ -175,7 +175,7 @@ public class LambdaBatchFailuresST {
                         tablesReadyForGC.stream(),
                         invalidTables.stream(),
                         Stream.of("missing-1", "missing-2", "missing-3", "missing-4", "missing-5"))))
-                .waitFor();
+                .waitForTables(tablesReadyForGC);
 
         // Then the files are garbage collected
         assertThat(sleeper.tableFiles().referencesByTable(tablesReadyForGC))

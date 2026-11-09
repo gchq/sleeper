@@ -24,9 +24,13 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.stream.Stream;
 
 public class GarbageCollectionDsl {
+
+    private static final PollWithRetries DEFAULT_WAIT_FOR_GC = PollWithRetries.intervalAndPollingTimeout(
+            Duration.ofSeconds(5), Duration.ofMinutes(2));
 
     private final GarbageCollectionDriver driver;
     private final PollWithRetriesDriver pollDriver;
@@ -50,10 +54,18 @@ public class GarbageCollectionDsl {
     }
 
     public void waitFor() {
-        waitFor(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2)));
+        waitFor(DEFAULT_WAIT_FOR_GC);
     }
 
     public void waitFor(PollWithRetries poll) {
         WaitForGC.waitUntilNoUnreferencedFiles(instance, pollDriver.poll(poll));
+    }
+
+    public void waitForTables(List<String> tableDescriptors) {
+        waitForTables(tableDescriptors, DEFAULT_WAIT_FOR_GC);
+    }
+
+    public void waitForTables(List<String> tableDescriptors, PollWithRetries poll) {
+        WaitForGC.waitUntilNoUnreferencedFiles(instance, tableDescriptors, pollDriver.poll(poll));
     }
 }
