@@ -8643,9 +8643,6 @@
                 "Arn"
               ]
             },
-            "FunctionResponseTypes": [
-              "ReportBatchItemFailures"
-            ],
             "Tags": [
               {
                 "Key": "DeploymentStack",
