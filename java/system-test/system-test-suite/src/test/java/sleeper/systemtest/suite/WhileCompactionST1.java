@@ -60,7 +60,7 @@ public class WhileCompactionST1 {
         sleeper.tables().createWithProperties("compaction", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "2"));
+                COMPACTION_FILES_BATCH_SIZE, "1"));
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
