@@ -36,6 +36,7 @@ import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.TransactionLogTransactionDeleter;
+import sleeper.statestore.transactionlog.TransactionLogTransactionDeleter.GetLatestSnapshotsBefore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
 import java.time.Instant;
@@ -43,6 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -53,19 +55,23 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 public class TransactionLogTransactionDeletionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogTransactionDeletionLambda.class);
 
-    private final S3Client s3Client;
-    private final DynamoDbClient dynamoClient;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
+    private final Function<TableProperties, TransactionLogStore> getLogStoreForFiles;
+    private final Function<TableProperties, TransactionLogStore> getLogStoreForPartitions;
+    private final Function<TableProperties, GetLatestSnapshotsBefore> getSnapshotStore;
 
     public TransactionLogTransactionDeletionLambda() {
-        s3Client = S3Client.create();
-        dynamoClient = DynamoDbClient.create();
+        S3Client s3Client = S3Client.create();
+        DynamoDbClient dynamoClient = DynamoDbClient.create();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        getLogStoreForFiles = tableProperties -> DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
+        getLogStoreForPartitions = tableProperties -> DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client);
+        getSnapshotStore = tableProperties -> new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient)::getLatestSnapshotsBefore;
     }
 
     @Override
@@ -90,10 +96,10 @@ public class TransactionLogTransactionDeletionLambda implements RequestHandler<S
         for (TableProperties table : tables) {
             LOGGER.info("Deleting old transactions for table {}", table.getStatus());
             try {
-                TransactionLogStore filesLogStore = getLogStoreForFiles(table);
-                TransactionLogStore partitionsLogStore = getLogStoreForPartitions(table);
-                DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoClient);
-                new TransactionLogTransactionDeleter(table, metadataStore::getLatestSnapshotsBefore, filesLogStore, partitionsLogStore, Instant::now)
+                GetLatestSnapshotsBefore snapshotStore = getSnapshotStore.apply(table);
+                TransactionLogStore filesLogStore = getLogStoreForFiles.apply(table);
+                TransactionLogStore partitionsLogStore = getLogStoreForPartitions.apply(table);
+                new TransactionLogTransactionDeleter(table, snapshotStore, filesLogStore, partitionsLogStore, Instant::now)
                         .deleteOldTransactions();
             } catch (RuntimeException e) {
                 LOGGER.error("Failed deleting old transactions for table {}", table.getStatus(), e);
@@ -103,14 +109,6 @@ public class TransactionLogTransactionDeletionLambda implements RequestHandler<S
                         .forEach(batchItemFailures::add);
             }
         }
-    }
-
-    private TransactionLogStore getLogStoreForFiles(TableProperties tableProperties) {
-        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
-    }
-
-    private TransactionLogStore getLogStoreForPartitions(TableProperties tableProperties) {
-        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client);
     }
 
     private List<TableProperties> loadTables(
