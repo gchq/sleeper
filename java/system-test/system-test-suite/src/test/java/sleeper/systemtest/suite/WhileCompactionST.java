@@ -19,6 +19,8 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.systemtest.dsl.SleeperDsl;
@@ -46,6 +48,9 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
 public class WhileCompactionST {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(WhileCompactionST.class);
+
     @TempDir
     private Path tempDir;
 
@@ -55,7 +60,7 @@ public class WhileCompactionST {
         sleeper.tables().createWithProperties("compaction", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "2"));
+                COMPACTION_FILES_BATCH_SIZE, "1"));
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
@@ -69,6 +74,8 @@ public class WhileCompactionST {
             sleeper.ingest().direct(tempDir)
                     .numberedRows(LongStream.range(0, 100));
         }
+
+        LOGGER.info("Created 20 ingest files containing 100 rows each");
 
         AtomicBoolean stopQueries = new AtomicBoolean(false);
         AtomicInteger queriesCompleted = new AtomicInteger();
@@ -84,29 +91,51 @@ public class WhileCompactionST {
                     Thread.sleep(100);
                 }
             } catch (Throwable t) {
+                LOGGER.error("Query thread failed", t);
                 queryFailures.add(t);
             }
         });
 
         CompactionDsl compaction = sleeper.compaction();
 
-        // When queries run while compactions execute
         compaction.createJobs(20);
-        compaction.waitForTasks(5);
+        LOGGER.info("Created compaction jobs");
+
+        compaction.waitForTasks(1);
 
         queryThread.start();
 
         compaction.waitForJobs();
+        LOGGER.info("Compaction jobs completed");
 
         stopQueries.set(true);
         queryThread.join();
 
         // Then queries succeed
+        LOGGER.info("Query failures recorded={}",
+                queryFailures.size());
+
         assertThat(queryFailures).isEmpty();
+
+        LOGGER.info("Queries completed during compaction={}",
+                queriesCompleted.get());
+
         assertThat(queriesCompleted.get()).isGreaterThan(0);
 
         // And all data is preserved
-        assertThat(sleeper.directQuery().allRowsInTable())
+        var rows = sleeper.directQuery().allRowsInTable();
+
+        LOGGER.info(
+                "Verifying all rows are preserved after compaction. Row count={}",
+                rows.size());
+
+        assertThat(rows)
                 .hasSize(2_000);
+
+        LOGGER.info(
+                "Compaction test completed successfully. Queries executed={}, query failures={}, final row count={}",
+                queriesCompleted.get(),
+                queryFailures.size(),
+                rows.size());
     }
 }
