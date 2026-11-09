@@ -107,7 +107,7 @@ public class LambdaBatchFailuresST {
                 .waitForJobs();
 
         // Then the compactions run
-        assertThat(sleeper.tableFiles().referencesByTable())
+        assertThat(sleeper.tableFiles().referencesByTable(tablesWithFiles))
                 .hasSize(5)
                 .allSatisfy((table, references) -> assertThat(references).hasSize(1));
         // And the messages for the invalid tables appear on the dead letter queue
@@ -178,7 +178,7 @@ public class LambdaBatchFailuresST {
                 .waitFor();
 
         // Then the files are garbage collected
-        assertThat(sleeper.tableFiles().referencesByTable())
+        assertThat(sleeper.tableFiles().referencesByTable(tablesReadyForGC))
                 .hasSize(5)
                 .allSatisfy((table, references) -> assertThat(references).hasSize(1));
         // And the messages for the invalid tables appear on the dead letter queue

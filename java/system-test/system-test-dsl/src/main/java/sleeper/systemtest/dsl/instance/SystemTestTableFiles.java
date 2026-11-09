@@ -77,6 +77,14 @@ public class SystemTestTableFiles {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
+    public Map<String, List<FileReference>> referencesByTable(List<String> tableDescriptors) {
+        return tableDescriptors.stream()
+                .map(descriptor -> instance.getTablePropertiesByDescriptor(descriptor).orElseThrow())
+                .parallel()
+                .map(this::getReferences)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
     private Map.Entry<String, List<FileReference>> getReferences(TableProperties properties) {
         StateStore stateStore = instance.getStateStore(properties);
         return entry(instance.getTableDescriptor(properties), stateStore.getFileReferences());
