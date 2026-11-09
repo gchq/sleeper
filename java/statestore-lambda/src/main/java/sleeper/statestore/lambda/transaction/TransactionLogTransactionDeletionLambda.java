@@ -74,6 +74,19 @@ public class TransactionLogTransactionDeletionLambda implements RequestHandler<S
         getSnapshotStore = tableProperties -> new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient)::getLatestSnapshotsBefore;
     }
 
+    public TransactionLogTransactionDeletionLambda(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, PropertiesReloader propertiesReloader,
+            Function<TableProperties, TransactionLogStore> getLogStoreForFiles,
+            Function<TableProperties, TransactionLogStore> getLogStoreForPartitions,
+            Function<TableProperties, GetLatestSnapshotsBefore> getSnapshotStore) {
+        this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.propertiesReloader = propertiesReloader;
+        this.getLogStoreForFiles = getLogStoreForFiles;
+        this.getLogStoreForPartitions = getLogStoreForPartitions;
+        this.getSnapshotStore = getSnapshotStore;
+    }
+
     @Override
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
