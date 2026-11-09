@@ -44,29 +44,31 @@ public class EmrServerlessBulkImportST {
 
     @Test
     void shouldPreSplitPartitionTreeAndBulkImportWithEmrServerlessByQueue(SleeperDsl sleeper) {
-        // Given
+        // Given a source file and a table configured for pre-splitting
         sleeper.updateTableProperties(Map.of(
                 BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8",
                 PARTITION_SPLIT_MIN_ROWS, "100"));
         Iterable<Row> rows = sleeper.generateNumberedRows().iterableOverRange(0, 10_000);
         sleeper.sourceFiles().create("file.parquet", rows);
 
-        // When
+        // When the source file is bulk imported
         sleeper.ingest().bulkImportByQueue().sendSourceFiles(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, "file.parquet")
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
-        // Then
+        // Then all rows are imported successfully
         assertThat(SystemTestSchema.sorted(sleeper.directQuery().allRowsInTable()))
                 .containsExactlyElementsOf(rows);
+        // And the partition tree is pre-split into the expected leaf partitions
         assertThat(sleeper.partitioning().tree().getLeafPartitions())
                 .hasSize(8);
+        // And the imported data is distributed across those partitions
         assertThat(sleeper.tableFiles().references())
                 .hasSize(8);
     }
 
     @Test
     void shouldBulkImportOneRowWithEmrServerlessDirectly(SleeperDsl sleeper) {
-        // Given
+        // Given a source file containing a single row
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         Row row = new Row();
         row.put("key", "some-id");
@@ -74,12 +76,12 @@ public class EmrServerlessBulkImportST {
         row.put("value", "Some value");
         row.put("nullable_value", null);
 
-        // When
+        // When the source file is bulk imported directly
         sleeper.sourceFiles().create("file.parquet", row);
         sleeper.ingest().directEmrServerless().sendSourceFiles("file.parquet")
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
-        // Then
+        // Then the row is imported successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactly(row);
     }

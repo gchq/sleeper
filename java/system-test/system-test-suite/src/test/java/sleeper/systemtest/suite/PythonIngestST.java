@@ -44,54 +44,62 @@ public class PythonIngestST {
 
     @Test
     void shouldBatchWriteOneFile(SleeperDsl sleeper) {
-        // Given
+
+        // Given a local source file containing data for ingestion
         sleeper.localFiles(tempDir)
                 .createWithNumberedRows("file.parquet", LongStream.range(0, 100));
 
-        // When
+        // When the source file is uploaded and ingested
         sleeper.pythonApi()
                 .ingestByQueue().uploadingLocalFile(tempDir, "file.parquet")
                 .waitForTask().waitForJobs();
 
-        // Then
+        // Then all rows are ingested successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 100));
+
+        // And the data is stored in a single table file
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
     @Test
     void shouldIngestTwoFilesFromS3(SleeperDsl sleeper) {
-        // Given
+
+        // Given multiple source files ready for ingestion
         sleeper.sourceFiles()
                 .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
                 .createWithNumberedRows("file2.parquet", LongStream.range(100, 200));
 
-        // When
+        // When the source files are submitted for ingestion
         sleeper.pythonApi()
                 .ingestByQueue().fromS3("file1.parquet", "file2.parquet")
                 .waitForTask().waitForJobs();
 
-        // Then
+        // Then all rows are ingested successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 200));
+
+        // And the data is stored in a single table file
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
     @Test
     void shouldIngestDirectoryFromS3(SleeperDsl sleeper) {
-        // Given
+        // Given a directory containing source files ready for ingestion
         sleeper.sourceFiles()
                 .createWithNumberedRows("test-dir/file1.parquet", LongStream.range(0, 100))
                 .createWithNumberedRows("test-dir/file2.parquet", LongStream.range(100, 200));
 
-        // When
+        // When the directory is submitted for ingestion
         sleeper.pythonApi()
                 .ingestByQueue().fromS3("test-dir")
                 .waitForTask().waitForJobs();
 
-        // Then
+        // Then all rows are ingested successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(0, 200));
+
+        // And the data is stored in a single table file
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 }
