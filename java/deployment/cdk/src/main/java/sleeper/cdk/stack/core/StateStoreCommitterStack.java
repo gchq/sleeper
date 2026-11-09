@@ -253,6 +253,7 @@ public class StateStoreCommitterStack extends NestedStack {
         SqsEventSource eventSource = SqsEventSource.Builder.create(commitQueue)
                 .batchSize(instanceProperties.getInt(STATESTORE_COMMITTER_BATCH_SIZE))
                 .maxConcurrency(instanceProperties.getIntOrNull(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM))
+                .reportBatchItemFailures(true)
                 .build();
         handlerFunction.addEventSource(eventSource);
         instanceProperties.set(STATESTORE_COMMITTER_EVENT_SOURCE_ID, eventSource.getEventSourceMappingId());
