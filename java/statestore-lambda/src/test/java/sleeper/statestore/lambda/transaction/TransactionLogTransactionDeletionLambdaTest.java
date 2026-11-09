@@ -15,6 +15,9 @@
  */
 package sleeper.statestore.lambda.transaction;
 
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,14 +32,24 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
+import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotMetadata;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.function.Supplier;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATime;
 
 public class TransactionLogTransactionDeletionLambdaTest {
 
@@ -45,6 +58,8 @@ public class TransactionLogTransactionDeletionLambdaTest {
     private final InMemoryTransactionLogsPerTable transactionLogsPerTable = new InMemoryTransactionLogsPerTable();
     private final InMemoryTransactionLogs transactionLogs = transactionLogsPerTable.forTable(tableProperties);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, transactionLogs);
+    private final Supplier<Instant> timeSupplier = timePassesAMinuteAtATime();
+    private LatestSnapshots latestSnapshotMetadata;
 
     @BeforeEach
     void setUp() {
@@ -60,10 +75,36 @@ public class TransactionLogTransactionDeletionLambdaTest {
                 .splitToNewChildren("root", "L", "R", "split")
                 .buildList());
         update(stateStore).addFile(FileReferenceFactory.from(stateStore).rootFile("test.parquet", 10));
-        transactionLogs.createSnapshots(tableProperties);
+        createSnapshots();
 
         // When
+        invokeForSingleTable();
 
+        // Then
+        assertThat(transactionLogs.getFilesLogStore().getTransactionEntries())
+                .isEmpty();
+        assertThat(transactionLogs.getPartitionsLogStore().getTransactionEntries())
+                .isEmpty();
+    }
+
+    private void createSnapshots() {
+        transactionLogs.createSnapshots(tableProperties);
+        TransactionLogSnapshot filesSnapshot = transactionLogs.getFilesSnapshots().loadLatestSnapshotInRange(TransactionLogRange.fromMinimum(0)).orElseThrow();
+        TransactionLogSnapshot partitionsSnapshot = transactionLogs.getPartitionsSnapshots().loadLatestSnapshotInRange(TransactionLogRange.fromMinimum(0)).orElseThrow();
+        String basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
+        Instant creationTime = timeSupplier.get();
+        latestSnapshotMetadata = new LatestSnapshots(
+                TransactionLogSnapshotMetadata.forFiles(basePath, filesSnapshot.getTransactionNumber(), creationTime),
+                TransactionLogSnapshotMetadata.forFiles(basePath, partitionsSnapshot.getTransactionNumber()));
+    }
+
+    private SQSBatchResponse invokeForSingleTable() {
+        return invokeForSingleTable(tableProperties.get(TABLE_ID));
+    }
+
+    private SQSBatchResponse invokeForSingleTable(String tableId) {
+        return lambda().handleRequest(event(
+                messageForTableWithId(tableId, "test-message")), null);
     }
 
     private TransactionLogTransactionDeletionLambda lambda() {
@@ -71,7 +112,21 @@ public class TransactionLogTransactionDeletionLambdaTest {
                 instanceProperties, new FixedTablePropertiesProvider(tableProperties), PropertiesReloader.neverReload(),
                 table -> transactionLogsPerTable.forTable(table).getFilesLogStore(),
                 table -> transactionLogsPerTable.forTable(table).getPartitionsLogStore(),
-                table -> time -> LatestSnapshots.empty()); // TODO get latest snapshots before time
+                table -> time -> latestSnapshotMetadata,
+                timeSupplier);
+    }
+
+    private SQSEvent event(SQSMessage... messages) {
+        SQSEvent event = new SQSEvent();
+        event.setRecords(List.of(messages));
+        return event;
+    }
+
+    private SQSMessage messageForTableWithId(String tableId, String messageId) {
+        SQSMessage message = new SQSMessage();
+        message.setBody(tableId);
+        message.setMessageId(messageId);
+        return message;
     }
 
 }

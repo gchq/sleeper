@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -61,6 +62,7 @@ public class TransactionLogTransactionDeletionLambda implements RequestHandler<S
     private final Function<TableProperties, TransactionLogStore> getLogStoreForFiles;
     private final Function<TableProperties, TransactionLogStore> getLogStoreForPartitions;
     private final Function<TableProperties, GetLatestSnapshotsBefore> getSnapshotStore;
+    private final Supplier<Instant> timeSupplier;
 
     public TransactionLogTransactionDeletionLambda() {
         S3Client s3Client = S3Client.create();
@@ -72,19 +74,22 @@ public class TransactionLogTransactionDeletionLambda implements RequestHandler<S
         getLogStoreForFiles = tableProperties -> DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
         getLogStoreForPartitions = tableProperties -> DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client);
         getSnapshotStore = tableProperties -> new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient)::getLatestSnapshotsBefore;
+        timeSupplier = Instant::now;
     }
 
     public TransactionLogTransactionDeletionLambda(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, PropertiesReloader propertiesReloader,
             Function<TableProperties, TransactionLogStore> getLogStoreForFiles,
             Function<TableProperties, TransactionLogStore> getLogStoreForPartitions,
-            Function<TableProperties, GetLatestSnapshotsBefore> getSnapshotStore) {
+            Function<TableProperties, GetLatestSnapshotsBefore> getSnapshotStore,
+            Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
         this.getLogStoreForFiles = getLogStoreForFiles;
         this.getLogStoreForPartitions = getLogStoreForPartitions;
         this.getSnapshotStore = getSnapshotStore;
+        this.timeSupplier = timeSupplier;
     }
 
     @Override
@@ -112,7 +117,7 @@ public class TransactionLogTransactionDeletionLambda implements RequestHandler<S
                 GetLatestSnapshotsBefore snapshotStore = getSnapshotStore.apply(table);
                 TransactionLogStore filesLogStore = getLogStoreForFiles.apply(table);
                 TransactionLogStore partitionsLogStore = getLogStoreForPartitions.apply(table);
-                new TransactionLogTransactionDeleter(table, snapshotStore, filesLogStore, partitionsLogStore, Instant::now)
+                new TransactionLogTransactionDeleter(table, snapshotStore, filesLogStore, partitionsLogStore, timeSupplier)
                         .deleteOldTransactions();
             } catch (RuntimeException e) {
                 LOGGER.error("Failed deleting old transactions for table {}", table.getStatus(), e);
