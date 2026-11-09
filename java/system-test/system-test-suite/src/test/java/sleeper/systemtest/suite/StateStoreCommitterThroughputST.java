@@ -78,12 +78,12 @@ public class StateStoreCommitterThroughputST {
     @Test
     void shouldMeetExpectedThroughputWhenCommittingFilesWithIngestJobOnOneTable(SleeperDsl sleeper) throws Exception {
 
-        // Given an offline table with a single partition
+        // Given an offline table with a single root partition
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
-        // When fake commits are sent to the state store with an ingest job
+        // When committing files that will trigger ingest job tracker updates
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
@@ -92,7 +92,7 @@ public class StateStoreCommitterThroughputST {
                 .waitForCommitLogs();
 
         // Then all files were committed
-        // And the commit throughput meets the expected commits per second
+        // And the job tracker being updated doesn't impact the throughput of the committer
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogAndTracker());
@@ -205,7 +205,7 @@ public class StateStoreCommitterThroughputST {
                     .collect(toUnmodifiableList()));
         });
 
-        // When commit processing updates the compaction job tracker
+        // When committing files that will trigger ingest job tracker updates
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.commitCompactionForPartitionOnTaskInRun(
@@ -213,8 +213,8 @@ public class StateStoreCommitterThroughputST {
                                 "test-task", jobRunId(i), summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2))))
                 .waitForCommitLogs();
 
-        // Then all compaction jobs complete successfully
-        // And the commit throughput meets the expected commits per second
+        // Then all files were committed
+        // And the job tracker being updated doesn't impact the throughput of the committer
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
                 .isEqualTo(printFiles(partitions, referencedAndUnreferencedFiles(
                         IntStream.rangeClosed(1, 1000)
