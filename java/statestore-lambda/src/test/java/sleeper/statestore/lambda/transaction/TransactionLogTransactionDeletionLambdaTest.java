@@ -16,6 +16,7 @@
 package sleeper.statestore.lambda.transaction;
 
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFailure;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
+import sleeper.statestore.transactionlog.TransactionLogTransactionDeleter.GetLatestSnapshotsBefore;
 import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
 import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotMetadata;
 
@@ -59,7 +61,7 @@ public class TransactionLogTransactionDeletionLambdaTest {
     private final InMemoryTransactionLogs transactionLogs = transactionLogsPerTable.forTable(tableProperties);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, transactionLogs);
     private final Supplier<Instant> timeSupplier = timePassesAMinuteAtATime();
-    private LatestSnapshots latestSnapshotMetadata;
+    private GetLatestSnapshotsBefore getLatestSnapshotsBefore;
 
     @BeforeEach
     void setUp() {
@@ -78,13 +80,48 @@ public class TransactionLogTransactionDeletionLambdaTest {
         createSnapshots();
 
         // When
-        invokeForSingleTable();
+        SQSBatchResponse response = invokeForSingleTable();
 
         // Then
         assertThat(transactionLogs.getFilesLogStore().getTransactionEntries())
                 .isEmpty();
         assertThat(transactionLogs.getPartitionsLogStore().getTransactionEntries())
                 .isEmpty();
+        assertThat(response.getBatchItemFailures()).isEmpty();
+    }
+
+    @Test
+    void shouldFailWhenSnapshotMetadataIsUnreadable() {
+        // Given
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "split")
+                .buildList());
+        update(stateStore).addFile(FileReferenceFactory.from(stateStore).rootFile("test.parquet", 10));
+        getLatestSnapshotsBefore = time -> {
+            throw new RuntimeException("Snapshot metadata is unreadable");
+        };
+
+        // When
+        SQSBatchResponse response = invokeForSingleTable();
+
+        // Then
+        assertThat(transactionLogs.getFilesLogStore().getTransactionEntries())
+                .hasSize(1);
+        assertThat(transactionLogs.getPartitionsLogStore().getTransactionEntries())
+                .hasSize(1);
+        assertThat(response.getBatchItemFailures()).singleElement()
+                .extracting(BatchItemFailure::getItemIdentifier)
+                .isEqualTo("test-message");
+    }
+
+    @Test
+    void shouldIgnoreTableThatWasDeleted() {
+        // When
+        SQSBatchResponse response = invokeForSingleTable("missing-table");
+
+        // Then
+        assertThat(response.getBatchItemFailures()).isEmpty();
     }
 
     private void createSnapshots() {
@@ -93,7 +130,7 @@ public class TransactionLogTransactionDeletionLambdaTest {
         TransactionLogSnapshot partitionsSnapshot = transactionLogs.getPartitionsSnapshots().loadLatestSnapshotInRange(TransactionLogRange.fromMinimum(0)).orElseThrow();
         String basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
         Instant creationTime = timeSupplier.get();
-        latestSnapshotMetadata = new LatestSnapshots(
+        getLatestSnapshotsBefore = time -> new LatestSnapshots(
                 TransactionLogSnapshotMetadata.forFiles(basePath, filesSnapshot.getTransactionNumber(), creationTime),
                 TransactionLogSnapshotMetadata.forFiles(basePath, partitionsSnapshot.getTransactionNumber()));
     }
@@ -112,7 +149,7 @@ public class TransactionLogTransactionDeletionLambdaTest {
                 instanceProperties, new FixedTablePropertiesProvider(tableProperties), PropertiesReloader.neverReload(),
                 table -> transactionLogsPerTable.forTable(table).getFilesLogStore(),
                 table -> transactionLogsPerTable.forTable(table).getPartitionsLogStore(),
-                table -> time -> latestSnapshotMetadata,
+                table -> getLatestSnapshotsBefore,
                 timeSupplier);
     }
 

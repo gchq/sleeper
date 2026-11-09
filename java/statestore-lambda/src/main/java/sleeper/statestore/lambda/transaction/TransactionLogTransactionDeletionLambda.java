@@ -33,6 +33,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.TransactionLogTransactionDeleter;
@@ -140,6 +141,8 @@ public class TransactionLogTransactionDeletionLambda implements RequestHandler<S
                 TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
                 tables.add(tableProperties);
+            } catch (TableNotFoundException e) {
+                LOGGER.warn("Ignoring non-existent table {}", tableId);
             } catch (RuntimeException e) {
                 LOGGER.error("Failed loading properties for table {}", tableId, e);
                 tableMessages.stream()
