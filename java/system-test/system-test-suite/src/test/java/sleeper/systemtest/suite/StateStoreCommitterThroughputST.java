@@ -61,7 +61,7 @@ public class StateStoreCommitterThroughputST {
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
-        // When commit processing updates the ingest job tracker
+        // When fake commits are sent to the state store
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
@@ -205,7 +205,7 @@ public class StateStoreCommitterThroughputST {
                     .collect(toUnmodifiableList()));
         });
 
-        // When committing files that will trigger ingest job tracker updates
+        // When committing files that will trigger compaction job tracker updates
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
                         .mapToObj(i -> factory -> factory.commitCompactionForPartitionOnTaskInRun(
@@ -213,7 +213,7 @@ public class StateStoreCommitterThroughputST {
                                 "test-task", jobRunId(i), summary(startTime(i), Duration.ofMinutes(1), i * 2, i * 2))))
                 .waitForCommitLogs();
 
-        // Then all files were committed
+        // Then the state store was updated
         // And the job tracker being updated doesn't impact the throughput of the committer
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
                 .isEqualTo(printFiles(partitions, referencedAndUnreferencedFiles(
