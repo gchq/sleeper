@@ -76,7 +76,11 @@ assignments are committed, then the old commit will always fail.
 If a SplitPartitionTransaction fails or is delayed, the partition can be re-split. If the SplitPartitionTransaction is
 re-processed after the re-split is committed, then the old commit will always fail.
 
-In both of these cases retries are pointless, but only once the new commit is successful.
+In both of these cases retries are pointless, but only once the new commit is successful. We'll want to avoid this ever
+showing up on the dead letter queue, because it doesn't represent a real failure and would result in misleading alarms.
+If these transactions fail to validate in a way that indicates they've been superseded, we can discard them. For
+compaction, we could report this to the job tracker. For partition splitting, it's not clear how we would report on
+this.
 
 #### Compaction creation conflicts
 
