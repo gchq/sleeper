@@ -8,7 +8,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.38.2
 
-### 9th November 2026
+### 10th November 2026
 
 This includes bug fixes for hung compactions, the garbage collector and compaction commits, improvements to query
 tracking and reporting, and EKS Auto Mode with node pools as the default for bulk import
@@ -25,6 +25,14 @@ Bugfixes:
   returned to the queue and the task is terminated. This is configured in the `sleeper.compaction.task.progress.*`
   instance properties.
 - The demonstration deployment now creates any directories it needs for generated data.
+- A number of operations now report failures when previously they were ignored. Failures in these processes will now
+  result in dead letters and alerts after an SQS message reaches is message visibility timeout. This affects the
+  following operations:
+  - Compaction job creation
+  - Compaction job commit batching
+  - Garbage collection
+  - State store snapshot creation and deletion, transaction deletion
+  - Table metrics
 
 Bulk import:
 - Bulk import on EKS now defaults to EKS Auto Mode with node pool configuration. Node pool configuration is no longer
