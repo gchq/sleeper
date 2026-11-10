@@ -32,6 +32,7 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.transactionlog.snapshots.SnapshotDeletionTracker;
 import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -51,19 +53,32 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotDeletionLambda.class);
 
-    private final S3Client s3Client;
-    private final DynamoDbClient dynamoClient;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
+    private final Consumer<TableProperties> deleteSnapshots;
 
     public TransactionLogSnapshotDeletionLambda() {
-        s3Client = S3Client.create();
-        dynamoClient = DynamoDbClient.create();
+        S3Client s3Client = S3Client.create();
+        DynamoDbClient dynamoClient = DynamoDbClient.create();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
+        deleteSnapshots = table -> {
+            SnapshotDeletionTracker snapshotDeleteTracker = new TransactionLogSnapshotDeleter(instanceProperties, table,
+                    dynamoClient, s3Client).deleteSnapshots(Instant.now());
+            LOGGER.info("Total snapshots deleted {}, last deleted transaction number: {}", snapshotDeleteTracker.getDeletedCount(), snapshotDeleteTracker.getLastTransactionNumber());
+        };
+    }
+
+    public TransactionLogSnapshotDeletionLambda(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, PropertiesReloader propertiesReloader,
+            Consumer<TableProperties> deleteSnapshots) {
+        this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.propertiesReloader = propertiesReloader;
+        this.deleteSnapshots = deleteSnapshots;
     }
 
     @Override
@@ -88,9 +103,7 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
         for (TableProperties table : tables) {
             LOGGER.info("Deleting old snapshots for table {}", table.getStatus());
             try {
-                SnapshotDeletionTracker snapshotDeleteTracker = new TransactionLogSnapshotDeleter(instanceProperties, table,
-                        dynamoClient, s3Client).deleteSnapshots(Instant.now());
-                LOGGER.info("Total snapshots deleted {}, last deleted transaction number: {}", snapshotDeleteTracker.getDeletedCount(), snapshotDeleteTracker.getLastTransactionNumber());
+                deleteSnapshots.accept(table);
             } catch (RuntimeException e) {
                 LOGGER.error("Failed deleting old snapshots for table {}", table.getStatus(), e);
                 messagesByTableId.get(table.getStatus().getTableUniqueId()).stream()
@@ -112,6 +125,8 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
                 TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
                 tables.add(tableProperties);
+            } catch (TableNotFoundException e) {
+                LOGGER.warn("Ignoring non-existent table {}", tableId);
             } catch (RuntimeException e) {
                 LOGGER.error("Failed loading properties for table {}", tableId, e);
                 tableMessages.stream()

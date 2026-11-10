@@ -131,6 +131,7 @@ public class GarbageCollectorStack extends NestedStack {
         handlerFunction.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE))
                 .maxConcurrency(instanceProperties.getIntOrNull(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM))
+                .reportBatchItemFailures(true)
                 .build());
         coreStacks.grantInvokeScheduled(triggerFunction, queue);
 

@@ -34,7 +34,7 @@ public class PythonBulkImportDsl {
 
     public PythonBulkImportDsl(SystemTestContext context) {
         sentJobs = context.sentIngestJobs();
-        SystemTestDrivers drivers = context.instance().adminDrivers();
+        SystemTestDrivers drivers = context.instance().adminRoleDrivers();
         ingestDriver = drivers.pythonBulkImport(context);
         waitForJobs = drivers.waitForBulkImport(context);
         pollDriver = drivers.pollWithRetries();

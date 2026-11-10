@@ -47,9 +47,15 @@ pub use objectstore_ext::s3::{AwsConfig, AwsSecrets};
 /// how many compaction output rows have been written.
 pub type ProgressCallback = extern "C" fn(usize);
 
+/// The default interval between progress callback invocations.
+pub const DEFAULT_PROGRESS_CALLBACK_INTERVAL: Duration = Duration::from_secs(5);
+
 /// Compacts the given Parquet files and reads the schema from the first.
 ///
 /// The `aws_creds` are optional if you are not attempting to read/write files from S3.
+///
+/// If a progress callback is given, it will be called with the number of rows read so far at the given interval,
+/// and with the number of rows written once the compaction has finished.
 ///
 /// # Examples
 /// ```no_run
@@ -58,7 +64,7 @@ pub type ProgressCallback = extern "C" fn(usize);
 /// # use std::collections::HashMap;
 /// # use std::sync::Arc;
 /// # use crate::sleeper_core::{sleeper_context::SleeperContext, run_compaction, CommonConfig, CommonConfigBuilder,
-/// # PartitionBound, ColRange, OutputType, SleeperParquetOptions, SleeperRegion};
+/// # PartitionBound, ColRange, OutputType, SleeperParquetOptions, SleeperRegion, DEFAULT_PROGRESS_CALLBACK_INTERVAL};
 /// # fn main() -> Result<(), color_eyre::eyre::Report> {
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// region.insert("key".into(), ColRange {
@@ -77,7 +83,8 @@ pub type ProgressCallback = extern "C" fn(usize);
 ///     .region(SleeperRegion::new(region))
 ///     .build()?;
 /// # tokio_test::block_on(async {
-/// let result = run_compaction(&compaction_input, &Arc::new(SleeperContext::default()), None).await;
+/// let result = run_compaction(&compaction_input, &Arc::new(SleeperContext::default()), None,
+///     DEFAULT_PROGRESS_CALLBACK_INTERVAL).await;
 /// # });
 /// # Ok(())
 /// # }
@@ -85,11 +92,11 @@ pub type ProgressCallback = extern "C" fn(usize);
 ///
 /// # Errors
 /// There must be at least one input file.
-///
 pub async fn run_compaction(
     config: &CommonConfig<'_>,
     sleeper_context: &Arc<SleeperContext>,
     progress_callback: Option<ProgressCallback>,
+    callback_interval: Duration,
 ) -> Result<CompactionResult> {
     let sdk_config = sleeper_context.resolve_sdk_config().await.clone();
     let store_factory = config.create_object_store_factory(sdk_config);
@@ -108,7 +115,7 @@ pub async fn run_compaction(
                     () = task_token.cancelled() => {
                         break;
                     }
-                    () = sleep(Duration::from_secs(5)) => {
+                    () = sleep(callback_interval) => {
                         if let Some(row_count) = context_clone.get_compaction_rows_read(&job_id) {
                             callback(row_count);
                         }

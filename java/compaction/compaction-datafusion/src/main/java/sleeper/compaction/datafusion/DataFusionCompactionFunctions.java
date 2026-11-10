@@ -59,24 +59,27 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
     /**
      * Invokes a native compaction.
      * <p>
-     * Progress updates are delivered periodically by a native thread calling the given progress function. This
-     * parameter may be null.
+     * Progress updates are delivered periodically by a native thread calling the given progress function, at the
+     * given interval. The progress function may be null.
      * <p>
      * The provided context object must be open.
      * <p>
      * The return code will be 0 if successful.
      *
-     * @param  context               Java context object
-     * @param  input                 compaction input configuration
-     * @param  result                compaction result if successful
-     * @param  progressCallback      optional function to be called with progress updates
-     * @return                       indication of success
-     * @throws IllegalStateException if the context has already been closed
+     * @param  context                    Java context object
+     * @param  input                      compaction input configuration
+     * @param  result                     compaction result if successful
+     * @param  progressCallback           optional function to be called with progress updates
+     * @param  progressCallbackIntervalMs interval in milliseconds between progress callbacks, which must be positive
+     * @return                            indication of success
+     * @throws IllegalStateException      if the context has already been closed
      */
-    default int compact(FFIContext<DataFusionCompactionFunctions> context, FFICommonConfig input, FFIFileResult result, ProgressCallback progressCallback) {
-        return native_compact(context.getForeignContext(), input, result, progressCallback);
+    default int compact(FFIContext<DataFusionCompactionFunctions> context, FFICommonConfig input, FFIFileResult result,
+            ProgressCallback progressCallback, long progressCallbackIntervalMs) {
+        return native_compact(context.getForeignContext(), input, result, progressCallback, progressCallbackIntervalMs);
     }
 
     @SuppressWarnings(value = "checkstyle:parametername")
-    int native_compact(@In Pointer ctx_ptr, @In FFICommonConfig input_ptr, @Out FFIFileResult output_ptr, ProgressCallback progressCallback);
+    int native_compact(@In Pointer ctx_ptr, @In FFICommonConfig input_ptr, @Out FFIFileResult output_ptr,
+            ProgressCallback progressCallback, long progress_callback_interval_ms);
 }

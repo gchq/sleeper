@@ -115,6 +115,7 @@ public class TableMetricsStack extends NestedStack {
         tableMetricsPublisher.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE))
                 .maxConcurrency(instanceProperties.getIntOrNull(METRICS_LAMBDA_CONCURRENCY_MAXIMUM))
+                .reportBatchItemFailures(true)
                 .build());
 
         coreStacks.grantReadTablesStatus(tableMetricsTrigger);

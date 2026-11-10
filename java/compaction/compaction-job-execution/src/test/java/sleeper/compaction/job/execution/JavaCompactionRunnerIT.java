@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionRequest;
+import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
 import sleeper.core.partition.PartitionsBuilder;
@@ -34,11 +36,16 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.core.util.ObjectFactory;
 import sleeper.sketches.testutils.SketchesDeciles;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongConsumer;
+import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
@@ -46,6 +53,8 @@ import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUti
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
+
+    private static final int ROWS_PER_FILE = 100_000;
 
     @Test
     void shouldMergeFilesWithLongKey() throws Exception {
@@ -177,6 +186,44 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
             assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(200, 200));
             assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile()))
                     .isEqualTo(CompactionRunnerTestData.combineSortedBySingleKey(data1, data2));
+        }
+
+        @Test
+        void shouldReceivePeriodicProgressUpdatesWithShortInterval() throws Exception {
+            // Given
+            Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
+            tableProperties.setSchema(schema);
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            FileReference file1 = ingestRowsGetFile(rowsWithEveryOtherKey(0, ROWS_PER_FILE));
+            FileReference file2 = ingestRowsGetFile(rowsWithEveryOtherKey(1, ROWS_PER_FILE));
+            CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
+            List<Long> progressUpdates = new CopyOnWriteArrayList<>();
+
+            // When
+            compactWithProgressInterval(compactionJob, progressUpdates::add, Duration.ofMillis(10));
+
+            // Then
+            assertThat(progressUpdates)
+                    .as("periodic progress updates before the final update")
+                    .hasSizeGreaterThan(1)
+                    .endsWith(2L * ROWS_PER_FILE);
+        }
+
+        private List<Row> rowsWithEveryOtherKey(long firstKey, int numRows) {
+            return LongStream.range(0, numRows)
+                    .mapToObj(i -> new Row(Map.of("key", firstKey + 2 * i, "value1", i, "value2", i)))
+                    .toList();
+        }
+
+        private void compactWithProgressInterval(CompactionJob job, LongConsumer progressCallback, Duration interval) throws Exception {
+            CompactionRunner runner = new JavaCompactionRunner(ObjectFactory.noUserJars(), hadoopConfigForECS(), createSketchesStore());
+            runner.compact(CompactionRequest.builder()
+                    .job(job)
+                    .tableProperties(tableProperties)
+                    .region(stateStore.getPartition(job.getPartitionId()).getRegion())
+                    .progressCallback(progressCallback)
+                    .progressCallbackInterval(interval)
+                    .build());
         }
     }
 

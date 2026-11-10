@@ -32,6 +32,7 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
 
@@ -40,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -50,19 +52,26 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogSnapshotCreationLambda.class);
 
-    private final S3Client s3Client;
-    private final DynamoDbClient dynamoClient;
-    private final S3TransferManager s3TransferManager;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final Consumer<TableProperties> createSnapshot;
 
     public TransactionLogSnapshotCreationLambda() {
-        s3Client = S3Client.create();
-        dynamoClient = DynamoDbClient.create();
-        s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build();
+        S3Client s3Client = S3Client.create();
+        DynamoDbClient dynamoClient = DynamoDbClient.create();
+        S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(S3AsyncClient.crtCreate()).build();
         String configBucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        createSnapshot = table -> DynamoDBTransactionLogSnapshotCreator.from(
+                instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
+                .createSnapshot();
+    }
+
+    public TransactionLogSnapshotCreationLambda(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, Consumer<TableProperties> createSnapshot) {
+        this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.createSnapshot = createSnapshot;
     }
 
     @Override
@@ -86,8 +95,7 @@ public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSE
         for (TableProperties table : tables) {
             LOGGER.info("Creating snapshot for table {}", table.getStatus());
             try {
-                DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
-                        .createSnapshot();
+                createSnapshot.accept(table);
             } catch (RuntimeException e) {
                 LOGGER.error("Failed creating snapshot for table {}", table.getStatus(), e);
                 messagesByTableId.get(table.getStatus().getTableUniqueId()).stream()
@@ -109,6 +117,8 @@ public class TransactionLogSnapshotCreationLambda implements RequestHandler<SQSE
                 TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
                 tables.add(tableProperties);
+            } catch (TableNotFoundException e) {
+                LOGGER.warn("Ignoring non-existent table {}", tableId);
             } catch (RuntimeException e) {
                 LOGGER.error("Failed loading properties for table {}", tableId, e);
                 tableMessages.stream()

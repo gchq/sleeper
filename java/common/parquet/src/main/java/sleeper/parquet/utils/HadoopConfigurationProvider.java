@@ -37,7 +37,7 @@ public class HadoopConfigurationProvider {
     public static Configuration getConfigurationForClient() {
         Configuration conf = new Configuration();
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
-            setLocalStackConfiguration(conf); //As per ticket 8333, this can now only be used by manually setting up a local AWS environment e.g. with DeployDockerInstance
+            setLocalAwsConfiguration(conf); //As per ticket 8333, this can now only be used by manually setting up a local AWS environment e.g. with DeployDockerInstance
         } else {
             conf.set("fs.s3a.aws.credentials.provider", DefaultCredentialsProvider.class.getName());
         }
@@ -69,7 +69,7 @@ public class HadoopConfigurationProvider {
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES));
         conf.set("fs.s3a.readahead.range", tableProperties.get(S3A_READAHEAD_RANGE));
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
-            setLocalStackConfiguration(conf);
+            setLocalAwsConfiguration(conf);
         } else {
             conf.set("fs.s3a.endpoint.region", instanceProperties.get(REGION));
             conf.set("fs.s3a.aws.credentials.provider", DefaultCredentialsProvider.class.getName());
@@ -84,7 +84,7 @@ public class HadoopConfigurationProvider {
         conf.set("fs.s3a.bucket.probe", "0");
         conf.set("fs.s3a.fast.upload", "true");
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
-            setLocalStackConfiguration(conf);
+            setLocalAwsConfiguration(conf);
         } else {
             conf.set("fs.s3a.endpoint.region", instanceProperties.get(REGION));
             conf.set("fs.s3a.aws.credentials.provider", ContainerCredentialsProvider.class.getName());
@@ -96,7 +96,7 @@ public class HadoopConfigurationProvider {
         return conf;
     }
 
-    private static void setLocalStackConfiguration(Configuration conf) {
+    private static void setLocalAwsConfiguration(Configuration conf) {
         conf.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
         conf.set("fs.s3a.path.style.access", "true");
         conf.set("fs.s3a.aws.credentials.provider", SimpleAWSCredentialsProvider.class.getName());

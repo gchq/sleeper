@@ -331,6 +331,10 @@ Testcontainers (org.testcontainers:*:2.*)
 
 - MIT License
 
+Floci (io.floci:*:2.*)
+
+- MIT License
+
 AWS CDK (software.amazon.awscdk:aws-cdk-lib:2.*)
 
 - Apache License, Version 2.0

@@ -1,0 +1,172 @@
+/*
+ * Copyright 2022-2026 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.systemtest.drivers.statestore;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
+
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.core.table.TableStatus;
+import sleeper.invoke.tables.InvokeForTables;
+import sleeper.statestore.StateStoreArrowFileReadStore;
+import sleeper.statestore.transactionlog.DuplicateSnapshotException;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.snapshots.SnapshotType;
+import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotMetadata;
+import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.statestore.StateStoreAdminDriver;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.fromMinimum;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
+
+public class AwsStateStoreAdminDriver implements StateStoreAdminDriver {
+    public static final Logger LOGGER = LoggerFactory.getLogger(AwsStateStoreAdminDriver.class);
+    private final SystemTestInstanceContext instance;
+    private final SystemTestClients clients;
+
+    public AwsStateStoreAdminDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
+        this.instance = instance;
+        this.clients = clients;
+    }
+
+    @Override
+    public void triggerCreateSnapshots(Stream<TableStatus> tables) {
+        String queueUrl = instance.getInstanceProperties().get(TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL);
+        InvokeForTables.sendOneMessagePerTable(clients.getSqs(), queueUrl, tables);
+    }
+
+    @Override
+    public void triggerDeleteSnapshots(Stream<TableStatus> tables) {
+        String queueUrl = instance.getInstanceProperties().get(TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL);
+        InvokeForTables.sendOneMessagePerTable(clients.getSqs(), queueUrl, tables);
+    }
+
+    @Override
+    public void triggerDeleteTransactions(Stream<TableStatus> tables) {
+        String queueUrl = instance.getInstanceProperties().get(TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_URL);
+        InvokeForTables.sendOneMessagePerTable(clients.getSqs(), queueUrl, tables);
+    }
+
+    @Override
+    public Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return loadLatestSnapshot(instanceProperties, tableProperties, SnapshotType.FILES)
+                .map(AwsStateStoreAdminDriver::readFiles);
+    }
+
+    @Override
+    public Optional<PartitionTree> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return loadLatestSnapshot(instanceProperties, tableProperties, SnapshotType.PARTITIONS)
+                .map(AwsStateStoreAdminDriver::readPartitions);
+    }
+
+    @Override
+    public Stream<TransactionLogEntry> loadAllFileTransactions(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, clients.getDynamo(), clients.getS3())
+                .readTransactions(TransactionLogRange.fromMinimum(0));
+    }
+
+    @Override
+    public Stream<TransactionLogEntry> loadAllPartitionTransactions(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, clients.getDynamo(), clients.getS3())
+                .readTransactions(TransactionLogRange.fromMinimum(0));
+    }
+
+    @Override
+    public int countFilesSnapshots(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        List<TransactionLogSnapshotMetadata> snapshots = metadataStore(instanceProperties, tableProperties).getFilesSnapshots();
+        LOGGER.info("Found {} files snapshots", snapshots.size());
+        return snapshots.size();
+    }
+
+    @Override
+    public int countPartitionsSnapshots(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        List<TransactionLogSnapshotMetadata> snapshots = metadataStore(instanceProperties, tableProperties).getPartitionsSnapshots();
+        LOGGER.info("Found {} partitions snapshots", snapshots.size());
+        return snapshots.size();
+    }
+
+    @Override
+    public void addUnreadableFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        long transactionNumber = DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, clients.getDynamo(), clients.getS3())
+                .readTransactions(TransactionLogRange.fromMinimum(0))
+                .mapToLong(TransactionLogEntry::getTransactionNumber)
+                .max().orElse(1);
+        String basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
+        try {
+            metadataStore(instanceProperties, tableProperties)
+                    .saveSnapshot(TransactionLogSnapshotMetadata.forFiles(basePath, transactionNumber));
+        } catch (DuplicateSnapshotException e) {
+            throw new RuntimeException("Failed to save unreadable snapshot - to take control of snapshot creation, ensure the table is not online", e);
+        }
+        // Mangle snapshot metadata
+        clients.getDynamo().updateItem(UpdateItemRequest.builder()
+                .tableName(instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME))
+                .key(Map.of(
+                        DynamoDBTransactionLogSnapshotMetadataStore.TABLE_ID_AND_SNAPSHOT_TYPE,
+                        createStringAttribute(tableProperties.get(TABLE_ID) + "|FILES"),
+                        DynamoDBTransactionLogSnapshotMetadataStore.TRANSACTION_NUMBER,
+                        createNumberAttribute(transactionNumber)))
+                .updateExpression("SET #SnapshotType = :unreadable_type")
+                .expressionAttributeNames(Map.of("#SnapshotType", DynamoDBTransactionLogSnapshotMetadataStore.SNAPSHOT_TYPE))
+                .expressionAttributeValues(Map.of(":unreadable_type", createStringAttribute("unreadable_type")))
+                .build());
+    }
+
+    private Optional<TransactionLogSnapshot> loadLatestSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties, SnapshotType snapshotType) {
+        DynamoDBTransactionLogSnapshotMetadataStore metadataStore = metadataStore(instanceProperties, tableProperties);
+        StateStoreArrowFileReadStore fileStore = new StateStoreArrowFileReadStore(instanceProperties, clients.getS3());
+        return new DynamoDBTransactionLogSnapshotLoader(metadataStore, fileStore, snapshotType)
+                .loadLatestSnapshotInRange(fromMinimum(0));
+    }
+
+    private DynamoDBTransactionLogSnapshotMetadataStore metadataStore(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, clients.getDynamo());
+    }
+
+    private static AllReferencesToAllFiles readFiles(TransactionLogSnapshot snapshot) {
+        StateStoreFiles state = snapshot.getState();
+        return state.allReferencesToAllFiles();
+    }
+
+    private static PartitionTree readPartitions(TransactionLogSnapshot snapshot) {
+        StateStorePartitions state = snapshot.getState();
+        return new PartitionTree(state.all().stream().collect(toUnmodifiableList()));
+    }
+}

@@ -54,6 +54,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -97,6 +99,11 @@ public class CompactionTaskTestBase {
     protected final List<CompactionCommitMessage> batcherCommitQueue = new ArrayList<>();
     protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();
     private ThreadSleep waiterForFileAssignment = ThreadSleepTestHelper.recordWaits(foundWaitsForFileAssignment);
+    protected final List<String> terminations = new CopyOnWriteArrayList<>();
+    protected CompactionTaskTerminator terminator = terminations::add;
+    // By default the watchdog never checks for a stall, as it waits until it is stopped
+    private Supplier<Instant> watchdogTimeSupplier = () -> Instant.parse("2026-01-01T00:00:00Z");
+    private ThreadSleep watchdogSleep = millis -> new CountDownLatch(1).await();
 
     @BeforeEach
     void setUpBase() {
@@ -164,11 +171,36 @@ public class CompactionTaskTestBase {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider(), stateStoreProvider(),
                 jobTracker, stateStoreCommitQueue::add, batcherCommitQueue::add, timeSupplier);
-        CompactionRunnerFactory selector = (job, properties) -> compactor;
-        new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
-                stateStoreProvider(), messageReceiver, fileAssignmentCheck,
-                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps), maxTimeAliveJitter, null)
-                .run();
+        CompactionTask.builder()
+                .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(tablePropertiesProvider())
+                .propertiesReloader(PropertiesReloader.neverReload())
+                .stateStoreProvider(stateStoreProvider())
+                .messageReceiver(messageReceiver)
+                .waitForFiles(fileAssignmentCheck)
+                .jobCommitter(committer)
+                .jobTracker(jobTracker)
+                .taskTracker(taskTracker)
+                .runnerFactory((job, properties) -> compactor)
+                .taskId(taskId)
+                .watchdogFactory(CompactionWatchdogFactory.terminateOnStall(terminator, watchdogTimeSupplier, watchdogSleep))
+                .jobRunIdSupplier(jobRunIdSupplier)
+                .timeSupplier(timeSupplier)
+                .threadSleep(recordWaits(sleeps))
+                .randomJitterFunction(maxTimeAliveJitter)
+                .build().run();
+    }
+
+    /**
+     * Sets how the watchdog behaves for a compaction that is monitored for stalls. The watchdog runs on its own thread,
+     * so it uses its own clock and wait, separate from the compaction task.
+     *
+     * @param timeSupplier      the clock for the watchdog, used to time progress updates and checks
+     * @param waitBetweenChecks the wait between progress checks
+     */
+    protected void setWatchdogClockAndWait(Supplier<Instant> timeSupplier, ThreadSleep waitBetweenChecks) {
+        watchdogTimeSupplier = timeSupplier;
+        watchdogSleep = waitBetweenChecks;
     }
 
     private StateStoreWaitForFiles noWaitForFileAssignment() {

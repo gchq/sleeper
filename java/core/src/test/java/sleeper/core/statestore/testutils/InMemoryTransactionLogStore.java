@@ -167,6 +167,10 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
         return transactionEntries.get(transactionEntries.size() - 1);
     }
 
+    public List<TransactionLogEntry> getTransactionEntries() {
+        return transactionEntries;
+    }
+
     private void doStartOfAddTransaction() {
         startOfAdd.run();
     }

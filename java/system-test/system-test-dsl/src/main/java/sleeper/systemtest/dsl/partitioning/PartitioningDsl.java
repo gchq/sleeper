@@ -40,7 +40,7 @@ public class PartitioningDsl {
     private final PollWithRetriesDriver pollDriver;
 
     public PartitioningDsl(SystemTestContext context) {
-        SystemTestDrivers drivers = context.instance().adminDrivers();
+        SystemTestDrivers drivers = context.instance().adminRoleDrivers();
         instance = context.instance();
         splittingDriver = drivers.partitionSplitting(context);
         pollDriver = drivers.pollWithRetries();
@@ -64,7 +64,7 @@ public class PartitioningDsl {
     public Map<String, PartitionTree> treeByTable() {
         return instance.streamTableProperties()
                 .map(properties -> entry(
-                        instance.getTestTableName(properties),
+                        instance.getTableDescriptor(properties),
                         tree(instance.getStateStore(properties))))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }

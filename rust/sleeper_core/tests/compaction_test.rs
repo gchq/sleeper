@@ -16,8 +16,8 @@
 use color_eyre::eyre::Error;
 use datafusion::arrow::datatypes::{DataType, Field, Schema};
 use sleeper_core::{
-    CommonConfigBuilder, OutputType, SleeperParquetOptions, SleeperRegion,
-    filter_aggregation_config::aggregate::Aggregate, run_compaction,
+    CommonConfigBuilder, DEFAULT_PROGRESS_CALLBACK_INTERVAL, OutputType, SleeperParquetOptions,
+    SleeperRegion, filter_aggregation_config::aggregate::Aggregate, run_compaction,
     sleeper_context::SleeperContext,
 };
 use std::{
@@ -63,7 +63,13 @@ async fn should_merge_two_files() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
+    let result = run_compaction(
+        &input,
+        &Arc::new(SleeperContext::default()),
+        None,
+        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
+    )
+    .await?;
 
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 3, 4]);
@@ -104,6 +110,7 @@ async fn should_call_progress_callback_during_compaction() -> Result<(), Error> 
         &input,
         &Arc::new(SleeperContext::default()),
         Some(progress_callback),
+        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
     )
     .await?;
 
@@ -143,7 +150,13 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
+    let result = run_compaction(
+        &input,
+        &Arc::new(SleeperContext::default()),
+        None,
+        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
+    )
+    .await?;
 
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 2, 3]);
@@ -172,7 +185,13 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
+    let result = run_compaction(
+        &input,
+        &Arc::new(SleeperContext::default()),
+        None,
+        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
+    )
+    .await?;
 
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![2, 3]);
@@ -210,7 +229,13 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
         .build()?;
 
     // When
-    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
+    let result = run_compaction(
+        &input,
+        &Arc::new(SleeperContext::default()),
+        None,
+        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
+    )
+    .await?;
 
     // Then
     assert_eq!(
@@ -251,7 +276,13 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
+    let result = run_compaction(
+        &input,
+        &Arc::new(SleeperContext::default()),
+        None,
+        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
+    )
+    .await?;
 
     // Then
     assert_eq!(
@@ -301,7 +332,13 @@ async fn should_aggregate_ints() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
+    let result = run_compaction(
+        &input,
+        &Arc::new(SleeperContext::default()),
+        None,
+        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
+    )
+    .await?;
 
     // Then
     assert_eq!(
@@ -348,7 +385,13 @@ async fn should_not_alter_aggregate_schema() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
+    let result = run_compaction(
+        &input,
+        &Arc::new(SleeperContext::default()),
+        None,
+        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
+    )
+    .await?;
 
     // Then
     assert_eq!(
@@ -382,7 +425,13 @@ async fn should_merge_empty_files() -> Result<(), Error> {
         .build()?;
 
     // When
-    let result = run_compaction(&input, &Arc::new(SleeperContext::default()), None).await?;
+    let result = run_compaction(
+        &input,
+        &Arc::new(SleeperContext::default()),
+        None,
+        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
+    )
+    .await?;
 
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, Vec::<i32>::new());

@@ -41,7 +41,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>localstack-test</artifactId>
+            <artifactId>local-aws-test</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>

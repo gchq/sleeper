@@ -29,7 +29,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 # Install the package in editable mode along with development dependencies.
-#This includes `pytest`, `ruff` (linter/formatter), and `testcontainers` for running tests against a local AWS environment via LocalStack.
+#This includes `pytest`, `ruff` (linter/formatter), and `testcontainers` for running tests against a local AWS environment.
 pip install -e ".[dev]"
 
 # Run Ruff linting checks
