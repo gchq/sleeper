@@ -11,8 +11,7 @@ available [here](docs/development/roadmap.md).
 ### 10th November 2026
 
 This includes bug fixes for hung compactions, the garbage collector and compaction commits, improvements to query
-tracking and reporting, and EKS Auto Mode with node pools as the default for bulk import
-on EKS.
+tracking and reporting, and EKS Auto Mode with a custom node pool as the default for bulk import on EKS.
 
 Bugfixes:
 - The garbage collector no longer removes a file from the state store when only one of its data and sketches files was
