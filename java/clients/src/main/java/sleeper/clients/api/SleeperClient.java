@@ -15,6 +15,9 @@
  */
 package sleeper.clients.api;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -34,6 +37,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.query.core.model.Query;
@@ -41,7 +45,11 @@ import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
+import sleeper.query.core.tracker.QueryTrackerException;
+import sleeper.query.core.tracker.QueryTrackerStore;
+import sleeper.query.core.tracker.TrackedQuery;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -61,7 +69,10 @@ import java.util.stream.Stream;
  */
 public class SleeperClient implements AutoCloseable {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperClient.class);
     private static final Predicate<String> LOWER_ALPHANUMERICS_AND_DASHES = Pattern.compile("^[a-z0-9-]+$").asPredicate();
+    private static final PollWithRetries DEFAULT_QUERY_POLL = PollWithRetries.intervalAndPollingTimeout(
+            Duration.ofSeconds(2), Duration.ofMinutes(15));
 
     private final InstanceProperties instanceProperties;
     private final TableIndex tableIndex;
@@ -74,6 +85,8 @@ public class SleeperClient implements AutoCloseable {
     private final BulkExportQuerySender bulkExportQuerySender;
     private final BulkImportJobSender bulkImportJobSender;
     private final QueryWebSocketSender queryWebSocketSender;
+    private final QuerySender querySender;
+    private final QueryTrackerStore queryTrackerStore;
     private final IngestBatcherSender ingestBatcherSender;
     private final Runnable shutdown;
 
@@ -89,6 +102,8 @@ public class SleeperClient implements AutoCloseable {
         bulkExportQuerySender = Objects.requireNonNull(builder.bulkExportQuerySender, "bulkExportQuerySender must not be null");
         bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
         queryWebSocketSender = Objects.requireNonNull(builder.queryWebSocketSender, "queryWebSocketSender must not be null");
+        querySender = Objects.requireNonNull(builder.querySender, "querySender must not be null");
+        queryTrackerStore = Objects.requireNonNull(builder.queryTrackerStore, "queryTrackerStore must not be null");
         ingestBatcherSender = Objects.requireNonNull(builder.ingestBatcherSender, "ingestBatcherSender must not be null");
         shutdown = Objects.requireNonNull(builder.shutdown, "shutdown must not be null");
     }
@@ -325,6 +340,130 @@ public class SleeperClient implements AutoCloseable {
     }
 
     /**
+     * Submits a query to be processed by the query lambdas. The query is sent to an SQS queue. This triggers a lambda
+     * which plans the query, creates subqueries and sends those to a second SQS queue from where they trigger a
+     * lambda for processing. The results are published to the results output set in the query's processing config, by
+     * default as Parquet files in the query results bucket under the query ID.
+     * <p>
+     * Progress is recorded in the query tracker against the query ID, which can be checked
+     * with {@link #getQueryStatus}.
+     *
+     * @param  query the query to run
+     * @return       the ID of the query for tracking
+     */
+    public String submitQuery(Query query) {
+        querySender.sendQuery(query);
+        return query.getQueryId();
+    }
+
+    /**
+     * Reads the status of a query and its subqueries from the query tracker. The entry for the query itself comes
+     * first when it is tracked. This includes its progress (counts of the expected, succeeded and failed subquery
+     * counts), and the number of rows returned by finished subqueries. Entries for the subqueries follow; note that
+     * an entry for a subquery is only written to the tracker when processing begins.
+     *
+     * @param  queryId the query ID
+     * @return         the tracked query first, then its subqueries; empty if the query is not tracked
+     */
+    public List<TrackedQuery> getQueryStatus(String queryId) {
+        return queryTrackerStore.getQueryAndSubQueries(queryId);
+    }
+
+    /**
+     * Waits for a query submitted for processing by the query lambdas to finish, by polling the query tracker with
+     * default settings. A query is finished when it has completed, failed or partially failed.
+     *
+     * @param  queryId                            the query ID
+     * @return                                    the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException               if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     */
+    public TrackedQuery waitForQuery(String queryId) throws InterruptedException {
+        return waitForQuery(queryId, DEFAULT_QUERY_POLL);
+    }
+
+    /**
+     * Submits a query to be processed by the query lambdas and waits for it to finish, by polling the query tracker
+     * with default settings. This behaves like {@link #submitQuery} followed by {@link #waitForQuery}. The results
+     * are published to the results output set in the query's processing config, by default as Parquet files in the
+     * query results bucket under the query ID.
+     *
+     * @param  query                              the query to run
+     * @return                                    the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException               if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     */
+    public TrackedQuery submitQueryAndWait(Query query) throws InterruptedException {
+        return submitQueryAndWait(query, DEFAULT_QUERY_POLL);
+    }
+
+    /**
+     * Submits a query to be processed by the query lambdas and waits for it to finish, by polling the query tracker.
+     * This behaves like {@link #submitQuery} followed by {@link #waitForQuery}. The results are published to the
+     * results output set in the query's processing config, by default as Parquet files in the query results bucket
+     * under the query ID. The query's progress is logged on each poll.
+     *
+     * @param  query                              the query to run
+     * @param  poll                               the polling interval and timeout
+     * @return                                    the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException               if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     */
+    public TrackedQuery submitQueryAndWait(Query query, PollWithRetries poll) throws InterruptedException {
+        return waitForQuery(submitQuery(query), poll);
+    }
+
+    /**
+     * Waits for a query submitted for processing by the query lambdas to finish, by polling the query tracker. A
+     * query is finished when it has completed, failed or partially failed. The returned entry includes the query's
+     * progress: the expected, succeeded and failed subquery counts, and the number of rows returned by finished
+     * subqueries. A query that is not yet tracked is polled until it appears, as its entry is only written when the
+     * query lambda starts processing it. The query's progress is logged on each poll.
+     *
+     * @param  queryId                            the query ID
+     * @param  poll                               the polling interval and timeout
+     * @return                                    the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException               if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     */
+    public TrackedQuery waitForQuery(String queryId, PollWithRetries poll) throws InterruptedException {
+        return poll.queryUntil("query " + queryId + " is finished",
+                () -> getTrackedQuery(queryId),
+                status -> {
+                    if (status == null) {
+                        LOGGER.info("Query {} is not yet in the query tracker, waiting for it to start", queryId);
+                        return false;
+                    }
+                    if (status.getLastKnownState().isFinished()) {
+                        LOGGER.info("Query {} finished with state {}, rows returned: {}",
+                                queryId, status.getLastKnownState(), status.getRowCount());
+                        return true;
+                    }
+                    logProgress(status);
+                    return false;
+                });
+    }
+
+    private static void logProgress(TrackedQuery status) {
+        if (status.getExpectedSubQueryCount() != null) {
+            LOGGER.info("Query {} is {}: {} of {} subqueries finished ({} failed), {} rows returned so far",
+                    status.getQueryId(), status.getLastKnownState(),
+                    status.getFinishedSubQueryCount(), status.getExpectedSubQueryCount(),
+                    status.getFailedSubQueryCount(), status.getFinishedSubQueryRowCount());
+        } else {
+            LOGGER.info("Query {} is {}", status.getQueryId(), status.getLastKnownState());
+        }
+    }
+
+    private TrackedQuery getTrackedQuery(String queryId) {
+        try {
+            return queryTrackerStore.getStatus(queryId);
+        } catch (QueryTrackerException e) {
+            throw new RuntimeException("Failed reading status of query " + queryId + " from the query tracker", e);
+        }
+    }
+
+    /**
      * Submits files to the ingest batcher, to be ingested to a Sleeper table. Once the files are in the ingest batcher,
      * they will be added to an ingest or bulk import job at some point in the future, depending on the configuration of
      * the batcher. The files can be tracked individually by their filename in the ingest batcher store, which will
@@ -395,6 +534,8 @@ public class SleeperClient implements AutoCloseable {
         private BulkExportQuerySender bulkExportQuerySender;
         private BulkImportJobSender bulkImportJobSender;
         private QueryWebSocketSender queryWebSocketSender;
+        private QuerySender querySender;
+        private QueryTrackerStore queryTrackerStore;
         private IngestBatcherSender ingestBatcherSender;
         private Runnable shutdown = () -> {
         };
@@ -528,6 +669,28 @@ public class SleeperClient implements AutoCloseable {
          */
         public Builder queryWebSocketSender(QueryWebSocketSender queryWebSocketSender) {
             this.queryWebSocketSender = queryWebSocketSender;
+            return this;
+        }
+
+        /**
+         * Sets the client to submit a query to be processed by the query lambdas.
+         *
+         * @param  querySender the client
+         * @return             this builder for chaining
+         */
+        public Builder querySender(QuerySender querySender) {
+            this.querySender = querySender;
+            return this;
+        }
+
+        /**
+         * Sets the store to read the status of queries from the query tracker.
+         *
+         * @param  queryTrackerStore the store
+         * @return                   this builder for chaining
+         */
+        public Builder queryTrackerStore(QueryTrackerStore queryTrackerStore) {
+            this.queryTrackerStore = queryTrackerStore;
             return this;
         }
 

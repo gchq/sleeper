@@ -35,6 +35,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static sleeper.bulkimport.starter.BulkImportStarterLambdaTestHelper.getSqsEvent;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
@@ -137,6 +138,28 @@ public class BulkImportStarterLambdaTest {
                         rejectedRun("test-job-id", json, validationTime,
                                 "Missing property \"files\"",
                                 "Table not found")));
+    }
+
+    @Test
+    void shouldRethrowWhenExpandingDirectoriesFails() {
+        // Given
+        String json = "{" +
+                "\"id\":\"test-job-id\"," +
+                "\"tableName\":\"test-table\"," +
+                "\"files\":[\"dir\"]" +
+                "}";
+        SQSEvent event = getSqsEvent(json);
+        RuntimeException failure = new RuntimeException("Access Denied");
+        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
+                messageHandlerBuilder()
+                        .expandDirectories(files -> {
+                            throw failure;
+                        })
+                        .build());
+
+        // When / Then
+        assertThatThrownBy(() -> bulkImportStarter.handleRequest(event, mock(Context.class)))
+                .isSameAs(failure);
     }
 
     private IngestJobMessageHandler.Builder<BulkImportJob> messageHandlerBuilder() {

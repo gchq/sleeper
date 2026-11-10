@@ -59,6 +59,10 @@ public class TasksJson {
     }
 
     public static void writeToFile(List<RunTaskResponse> responses, Path path) throws IOException {
+        Path parent = path.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
         Files.write(path, from(responses).getBytes(StandardCharsets.UTF_8));
     }
 

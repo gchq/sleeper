@@ -24,7 +24,7 @@ Once you've installed or built Sleeper, here are the dependencies you will need 
 deploy and interact with an instance:
 
 * [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
-* [Docker](https://docs.docker.com/get-docker/)
+* [Docker Engine](https://docs.docker.com/engine/install/)
 * Java: Minimum version 17, we recommend and test against [Amazon Corretto JDK 17](https://docs.aws.amazon.com/corretto/latest/corretto-17-ug/downloads-list.html).
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating)
 * [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html)

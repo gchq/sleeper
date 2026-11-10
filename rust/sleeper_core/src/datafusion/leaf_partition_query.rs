@@ -32,7 +32,7 @@ use datafusion::{
     logical_expr::{Expr, ident},
     physical_plan::displayable,
 };
-use log::{debug, info};
+use log::debug;
 use objectstore_ext::s3::ObjectStoreFactory;
 use query_sql::add_sql_stage;
 use std::{
@@ -101,7 +101,7 @@ impl<'a> LeafPartitionQuery<'a> {
             return plan_err!("No query regions specified");
         }
         let ops = SleeperOperations::new(&self.config.common);
-        info!("DataFusion query: {}", self.config);
+        debug!("DataFusion query: {}", self.config);
         // Create query frame and sketches if it has been enabled
         let (sketcher, frame, ctx) = self.build_query_dataframe(&ops).await?;
 

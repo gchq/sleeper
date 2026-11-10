@@ -38,6 +38,9 @@ import sleeper.core.table.TableStatus;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -102,7 +105,7 @@ public abstract class QueryCommandLineClient {
         RangeFactory rangeFactory = new RangeFactory(schema);
 
         while (true) {
-            String type = in.promptLine("Exact (e) or range (r) query? ");
+            String type = in.promptLine("Exact (e), range (r), or file of keys/ranges (f) query? ");
             if ("".equals(type)) {
                 break;
             }
@@ -111,12 +114,75 @@ public abstract class QueryCommandLineClient {
                 query = constructExactQuery(tableName, schema, rangeFactory);
             } else if ("r".equalsIgnoreCase(type)) {
                 query = constructRangeQuery(tableName, schema, rangeFactory);
+            } else if ("f".equalsIgnoreCase(type)) {
+                query = constructQueryFromFile(tableName, schema, rangeFactory);
+                if (query == null) {
+                    continue;
+                }
             } else {
                 continue;
             }
 
             submitQuery(tablePropertiesProvider.getByName(tableName), query);
         }
+    }
+
+    private Query constructQueryFromFile(String tableName, Schema schema, RangeFactory rangeFactory) {
+        String path = in.promptLine("Enter path to file of keys/ranges, one per line (single value for an exact query, min,max for a range): ");
+        if ("".equals(path)) {
+            return null;
+        }
+        List<String> lines;
+        try {
+            lines = Files.readAllLines(Paths.get(path));
+        } catch (IOException e) {
+            out.println("Failed to read file " + path + ": " + e);
+            return null;
+        }
+        Field field = schema.getRowKeyFields().get(0);
+        PrimitiveType fieldType = (PrimitiveType) field.getType();
+        List<Region> regions = new ArrayList<>();
+        int lineNumber = 0;
+        for (String rawLine : lines) {
+            lineNumber++;
+            String line = rawLine.strip();
+            if (line.isEmpty()) {
+                continue;
+            }
+            try {
+                regions.add(new Region(readRangeFromLine(line, field, fieldType, rangeFactory)));
+            } catch (RuntimeException e) {
+                out.println("Failed reading line " + lineNumber + " \"" + line + "\": " + e);
+                return null;
+            }
+        }
+        if (regions.isEmpty()) {
+            out.println("Found no keys or ranges in file " + path);
+            return null;
+        }
+        String sqlQuery = promptSQLQuery();
+
+        return Query.builder()
+                .tableName(tableName)
+                .queryId(queryIdSupplier.get())
+                .regions(regions)
+                .processingConfig(QueryProcessingConfig
+                        .builder()
+                        .sqlQuery(sqlQuery)
+                        .build())
+                .build();
+    }
+
+    private Range readRangeFromLine(String line, Field field, PrimitiveType fieldType, RangeFactory rangeFactory) {
+        int separatorIndex = line.indexOf(',');
+        if (separatorIndex < 0) {
+            return rangeFactory.createExactRange(field, parse(line, fieldType));
+        }
+        String minString = line.substring(0, separatorIndex).strip();
+        String maxString = line.substring(separatorIndex + 1).strip();
+        Object min = minString.isEmpty() ? getMinimum(fieldType) : parse(minString, fieldType);
+        Object max = maxString.isEmpty() ? null : parse(maxString, fieldType);
+        return rangeFactory.createRange(field, min, max);
     }
 
     private Query constructRangeQuery(String tableName, Schema schema, Range.RangeFactory rangeFactory) {

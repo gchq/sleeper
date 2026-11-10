@@ -24,7 +24,7 @@ import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -33,9 +33,9 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
 /**
- * A base class for tests storing table properties in S3 with a DynamoDB table index, in LocalStack.
+ * A base class for tests storing table properties in S3 with a DynamoDB table index, in local AWS.
  */
-public abstract class TablePropertiesITBase extends LocalStackTestBase {
+public abstract class TablePropertiesITBase extends LocalAwsTestBase {
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))

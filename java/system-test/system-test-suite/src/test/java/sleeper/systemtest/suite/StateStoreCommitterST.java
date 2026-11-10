@@ -43,11 +43,12 @@ public class StateStoreCommitterST {
 
     @Test
     void shouldAddManyFiles(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given a table with a single partition
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);
 
-        // When
+        // When many files are added to the state store
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits()
                 .sendBatched(IntStream.rangeClosed(1, 1000)
@@ -55,7 +56,7 @@ public class StateStoreCommitterST {
                         .map(StateStoreCommitMessage::addFile))
                 .waitForCommitLogs();
 
-        // Then
+        // Then all files are present with the expected row counts
         assertThat(sleeper.tableFiles().rowsByFilename()).isEqualTo(
                 LongStream.rangeClosed(1, 1000).mapToObj(i -> i)
                         .collect(toMap(i -> "file-" + i + ".parquet", i -> i)));

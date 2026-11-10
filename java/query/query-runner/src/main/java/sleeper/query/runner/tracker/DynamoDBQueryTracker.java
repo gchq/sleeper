@@ -170,6 +170,28 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
                 .toList();
     }
 
+    @Override
+    public List<TrackedQuery> getQueryAndSubQueries(String queryId) {
+        QueryIterable response = dynamoClient.queryPaginator(request -> request
+                .tableName(trackerTableName)
+                .keyConditionExpression("#QueryId = :queryId")
+                .expressionAttributeNames(Map.of("#QueryId", QUERY_ID))
+                .expressionAttributeValues(Map.of(":queryId", AttributeValue.fromS(queryId))));
+        List<Map<String, AttributeValue>> items = response.items().stream().toList();
+        Map<String, ParentQueryState> countersByQueryId = new HashMap<>();
+        for (Map<String, AttributeValue> item : items) {
+            if (isCounterShardItem(item)) {
+                countersByQueryId.computeIfAbsent(queryId, id -> new ParentQueryState())
+                        .addCountersFrom(item);
+            }
+        }
+        // DynamoDB returns items in sort key order, so the parent query's placeholder comes first, then the counter
+        // shards (which are filtered out), then the subqueries.
+        return items.stream()
+                .filter(item -> !isCounterShardItem(item))
+                .map(item -> toTrackedQueryWithCounters(item, countersByQueryId))
+                .toList();
+    }
     /**
      * Converts an item from the tracker to the model, summing the counters of finished subqueries into
      * a parent query's entry when the scan found counter shards for it.

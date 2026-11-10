@@ -1,8 +1,15 @@
 
 Query Tracker Report
 --------------------
-Total queries completed: 1
-------------------------------------------------------------------------------
-| STATE     | QUERY_ID     | SUB_QUERY_ID | LAST_UPDATE_TIME     | ROW_COUNT |
-| COMPLETED | test-query-1 | -            | 2023-09-28T18:50:00Z | 456       |
-------------------------------------------------------------------------------
+Queries completed: 1, subqueries completed: 0
+
+Queries:
+---------------------------------------------------------------------------------------------------------
+| STATE     | QUERY_ID     | LAST_UPDATE_TIME     | SUBQUERIES_FINISHED | SUBQUERIES_FAILED | ROW_COUNT |
+| COMPLETED | test-query-1 | 2023-09-28T18:50:00Z |                     |                   | 456       |
+---------------------------------------------------------------------------------------------------------
+
+Subqueries:
+-------------------------------------------------------------------------------
+| STATE | QUERY_ID | SUB_QUERY_ID | ATTEMPT_ID | LAST_UPDATE_TIME | ROW_COUNT |
+-------------------------------------------------------------------------------

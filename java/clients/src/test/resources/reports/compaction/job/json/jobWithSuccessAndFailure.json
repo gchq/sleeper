@@ -1,0 +1,42 @@
+[
+  {
+    "jobId": "job11111-1111-1111-1111-111111111111",
+    "partitionId": "root",
+    "inputFilesCount": 1,
+    "createUpdateTime": "2022-10-13T12:00:00.001Z",
+    "jobRuns": [
+      {
+        "taskId": "task-id",
+        "updates": [
+          {
+            "updateTime": "2022-10-13T12:00:10.123Z",
+            "startTime": "2022-10-13T12:00:10Z",
+            "type": "STARTED"
+          },
+          {
+            "updateTime": "2022-10-13T12:00:10.123Z",
+            "finishTime": "2022-10-13T12:00:10.123Z",
+            "rowsProcessed": {
+              "rowsRead": 600,
+              "rowsWritten": 300
+            },
+            "type": "FINISHED_WHEN_COMMITTED"
+          },
+          {
+            "commitTime": "2022-10-13T12:00:30Z",
+            "updateTime": "2022-10-13T12:00:30.123Z",
+            "type": "COMMITTED"
+          },
+          {
+            "updateTime": "2022-10-13T12:00:31.123Z",
+            "failureTime": "2022-10-13T12:00:31Z",
+            "failureReasons": [
+              "File not found"
+            ],
+            "type": "FAILED"
+          }
+        ]
+      }
+    ]
+  }
+]

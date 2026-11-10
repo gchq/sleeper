@@ -49,6 +49,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -82,14 +83,14 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
     }
 
     @Override
-    public void generateTableMetrics() {
+    public void triggerTableMetricsGeneration(Stream<TableStatus> tables) {
         String queueUrl = instance.getInstanceProperties().get(TABLE_METRICS_QUEUE_URL);
-        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, instance.streamTableProperties().map(TableProperties::getStatus));
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, tables);
     }
 
     @Override
-    public TableMetrics getTableMetrics() {
-        Dimensions dimensions = new Dimensions(instance);
+    public TableMetrics getTableMetrics(TableProperties tableProperties) {
+        Dimensions dimensions = new Dimensions(instance.getInstanceProperties(), tableProperties);
         Map<String, List<Double>> map = pollTableMetrics(dimensions);
         return TableMetrics.builder()
                 .instanceId(dimensions.instanceId)
@@ -165,10 +166,6 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
         private final String namespace;
         private final String instanceId;
         private final TableStatus table;
-
-        private Dimensions(SystemTestInstanceContext instance) {
-            this(instance.getInstanceProperties(), instance.getTableProperties());
-        }
 
         private Dimensions(InstanceProperties instanceProperties, TableProperties tableProperties) {
             instanceId = instanceProperties.get(ID);

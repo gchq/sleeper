@@ -198,7 +198,13 @@ class DynamoDBQueryTrackerEntry {
                 .succeededSubQueryCount(readOptionalLong(stringAttributeValueMap, SUCCEEDED_SUB_QUERY_COUNT))
                 .failedSubQueryCount(readOptionalLong(stringAttributeValueMap, FAILED_SUB_QUERY_COUNT))
                 .finishedSubQueryRowCount(readOptionalLong(stringAttributeValueMap, FINISHED_SUB_QUERY_ROW_COUNT))
+                .attemptId(readOptionalString(stringAttributeValueMap, ATTEMPT_ID))
                 .build();
+    }
+
+    private static String readOptionalString(Map<String, AttributeValue> item, String attribute) {
+        AttributeValue value = item.get(attribute);
+        return value != null ? value.s() : null;
     }
 
     private static Long readOptionalLong(Map<String, AttributeValue> item, String attribute) {

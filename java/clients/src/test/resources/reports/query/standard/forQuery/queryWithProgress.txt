@@ -1,0 +1,18 @@
+
+Query Tracker Report
+--------------------
+Query parent-query-1 is IN_PROGRESS
+
+Queries:
+--------------------------------------------------------------------------------------------------------------
+| STATE       | QUERY_ID       | LAST_UPDATE_TIME     | SUBQUERIES_FINISHED | SUBQUERIES_FAILED | ROW_COUNT  |
+| IN_PROGRESS | parent-query-1 | 2023-09-28T19:15:00Z | 1/3                 | 0                 | 456 so far |
+--------------------------------------------------------------------------------------------------------------
+
+Subqueries:
+---------------------------------------------------------------------------------------------------
+| STATE       | QUERY_ID       | SUB_QUERY_ID | ATTEMPT_ID     | LAST_UPDATE_TIME     | ROW_COUNT |
+| COMPLETED   | parent-query-1 | sub-query-1  | test-attempt-1 | 2023-09-28T19:16:00Z | 456       |
+| IN_PROGRESS | parent-query-1 | sub-query-2  | test-attempt-1 | 2023-09-28T19:17:00Z | 0         |
+| IN_PROGRESS | parent-query-1 | sub-query-3  | test-attempt-1 | 2023-09-28T19:18:00Z | 0         |
+---------------------------------------------------------------------------------------------------

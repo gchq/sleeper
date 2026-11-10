@@ -56,7 +56,8 @@ public class TableMetricsST {
 
     @Test
     void shouldReportTableMetrics(SleeperDsl sleeper) {
-        // Given
+
+        // Given a table with partitions and ingested data
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA,
                 Map.of(TABLE_ONLINE, "false"));
         sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
@@ -67,10 +68,10 @@ public class TableMetricsST {
                 .numberedRows(LongStream.range(0, 100))
                 .numberedRows(LongStream.range(0, 23));
 
-        // When
+        // When table metrics are generated
         TableMetrics metrics = sleeper.tableMetrics().generate().get();
 
-        // Then
+        // Then the metrics reflect the current state of the table
         assertThat(metrics).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
                 .fileCount(2).rowCount(123)
@@ -80,7 +81,8 @@ public class TableMetricsST {
 
     @Test
     void shouldReportTableMetricsForMoreTablesThanBatchSize(SleeperDsl sleeper) {
-        // Given
+
+        // Given multiple tables with partitions and ingested data
         sleeper.tables().createWithProperties(
                 List.of("A", "B", "C"), DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"))
                 .forEach(() -> {
@@ -94,11 +96,13 @@ public class TableMetricsST {
         sleeper.table("A").ingest().direct(tempDir)
                 .numberedRows(LongStream.range(0, 23));
 
-        // When
+        // When table metrics are generated
         sleeper.tableMetrics().generate();
 
-        // Then
+        // Then metrics are generated for all tables
         assertThat(sleeper.tables().list()).hasSize(3);
+
+        // And the metrics reflect the current state of each table
         assertThat(sleeper.table("A").tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
                 .fileCount(2).rowCount(123)

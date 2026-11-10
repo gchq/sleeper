@@ -56,14 +56,18 @@ public class AutoDeleteS3ObjectsST {
 
     @Test
     void shouldRemoveQueryStackWithDataInQueryBucket(SleeperDsl sleeper) {
-        // When there is data in the query results bucket
+
+        // Given a query results bucket with data in it
         sleeper.enableOptionalStacks(List.of(OptionalStack.QueryStack));
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
         List<Row> queryResults = sleeper.query().byQueue().allRowsWithProcessingConfig(config -> config
                 .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, S3ResultsOutput.S3)));
 
-        // Then I can remove the query stack
+        // When we delete the query results bucket and the associated query stack
         sleeper.disableOptionalStacks(List.of(OptionalStack.QueryStack));
+
+        // Then the CDK deployed successfully
+        // And the query was really written to the query results bucket
         assertThat(queryResults).containsExactlyElementsOf(
                 sleeper.generateNumberedRows().iterableOverRange(0, 100));
     }

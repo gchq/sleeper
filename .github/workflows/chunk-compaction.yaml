@@ -36,7 +36,7 @@ on:
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
       - 'java/common/parquet/**'
-      - 'java/common/localstack-test/**'
+      - 'java/common/local-aws-test/**'
       - 'java/example-iterators/**'
       - 'java/core/**'
       - 'java/common/foreign-bridge/**'

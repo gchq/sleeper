@@ -17,7 +17,7 @@
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures::{StreamExt, TryStreamExt, future::ready, stream::BoxStream};
-use log::{debug, info};
+use log::debug;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
     CopyMode, CopyOptions, GetOptions, GetRange, GetResult, ListResult, MultipartUpload,
@@ -116,7 +116,7 @@ impl<T: ObjectStore> std::fmt::Display for LoggingObjectStore<T> {
 
 impl<T: ObjectStore> Drop for LoggingObjectStore<T> {
     fn drop(&mut self) {
-        info!(
+        debug!(
             "LoggingObjectStore \"{}\" to \"{}\" made {} GET and {} HEAD requests and requested a total of {} bytes (range bounded)",
             self.prefix,
             self.path_prefix,
@@ -489,7 +489,7 @@ mod tests {
                 captured_logs[2].body,
                 "LoggingObjectStore \"TEST\" to \"memory:/\" made 1 GET and 0 HEAD requests and requested a total of 4 bytes (range bounded)"
             );
-            assert_eq!(captured_logs[2].level, Level::Info);
+            assert_eq!(captured_logs[2].level, Level::Debug);
         });
 
         Ok(())

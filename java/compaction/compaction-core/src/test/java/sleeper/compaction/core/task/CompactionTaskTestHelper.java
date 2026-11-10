@@ -87,13 +87,37 @@ public class CompactionTaskTestHelper {
     }
 
     public void runTask(CompactionRunner compactionRunner, LongConsumer progressCallback, MessageReceiver messageReceiver) throws IOException {
-        new CompactionTask(
-                instanceProperties, tablePropertiesProvider, PropertiesReloader.neverReload(),
-                stateStoreProvider, messageReceiver, stateStoreWaitForFiles(), jobCommitter(),
-                jobTracker, CompactionTaskTracker.NONE,
-                runnerFactory(compactionRunner), "test-task", supplyNumberedUuidsWithPrefix("testrun"),
-                timeSupplier, threadSleep, randomJitterFunction, progressCallback)
-                .run();
+        CompactionTask.builder()
+                .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(tablePropertiesProvider)
+                .propertiesReloader(PropertiesReloader.neverReload())
+                .stateStoreProvider(stateStoreProvider)
+                .messageReceiver(messageReceiver)
+                .waitForFiles(stateStoreWaitForFiles())
+                .jobCommitter(jobCommitter())
+                .jobTracker(jobTracker)
+                .taskTracker(CompactionTaskTracker.NONE)
+                .runnerFactory(runnerFactory(compactionRunner))
+                .taskId("test-task")
+                .watchdogFactory(failOnStall())
+                .jobRunIdSupplier(supplyNumberedUuidsWithPrefix("testrun"))
+                .timeSupplier(timeSupplier)
+                .threadSleep(threadSleep)
+                .randomJitterFunction(randomJitterFunction)
+                .progressTracker(progressCallback)
+                .build().run();
+    }
+
+    /**
+     * Creates a watchdog factory which fails if a compaction stalls. Uses the system clock with the configured
+     * timeouts, so a stall is not expected in a test.
+     *
+     * @return the watchdog factory
+     */
+    public static CompactionWatchdogFactory failOnStall() {
+        return CompactionWatchdogFactory.terminateOnStall(reason -> {
+            throw new IllegalStateException("Unexpected compaction task termination: " + reason);
+        });
     }
 
     private StateStoreWaitForFiles stateStoreWaitForFiles() {

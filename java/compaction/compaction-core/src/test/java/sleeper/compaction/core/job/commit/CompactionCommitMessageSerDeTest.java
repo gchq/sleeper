@@ -30,7 +30,9 @@ import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.table.TableIdGenerator;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,7 +70,7 @@ public class CompactionCommitMessageSerDeTest {
 
         // When
         String json = serDe.toJson(message);
-        CompactionCommitMessageHandle found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail);
+        CompactionCommitMessageHandle found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail).orElseThrow();
 
         // Then
         assertThat(found).isEqualTo(new CompactionCommitMessageHandle("test-table", filesRequest, callbackOnFail));
@@ -84,7 +86,7 @@ public class CompactionCommitMessageSerDeTest {
 
         // When
         String json = serDe.toJson(message);
-        CompactionCommitMessageHandle found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail);
+        CompactionCommitMessageHandle found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail).orElseThrow();
 
         // Then
         assertThat(found).isEqualTo(new CompactionCommitMessageHandle(tableId, filesRequest, callbackOnFail));
@@ -98,6 +100,21 @@ public class CompactionCommitMessageSerDeTest {
         // When / Then
         Approvals.verify(serDe.toJsonPrettyPrint(message), new Options().forFile()
                 .withName("example-compaction-commit", ".json"));
+    }
+
+    @Test
+    void shouldTrackDeserialisationFailure() {
+        // Given
+        List<Boolean> callbackResults = new ArrayList<>();
+        Runnable callbackOnFail = () -> callbackResults.add(true);
+        String json = "not-a-commit";
+
+        // When
+        Optional<CompactionCommitMessageHandle> found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail);
+
+        // Then
+        assertThat(found).isEmpty();
+        assertThat(callbackResults).containsExactly(true);
     }
 
     private ReplaceFileReferencesRequest createExampleFilesRequestOfRepresentativeSize() {

@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -210,9 +211,37 @@ public class SplitIntoBatchesTest {
         }
 
         @Test
+        void shouldTakeConsistentFullBatchesWhateverTheAvailableParallelism() throws Exception {
+            // Given
+            List<Integer> input = IntStream.rangeClosed(1, 10_500)
+                    .mapToObj(i -> i).collect(toUnmodifiableList());
+
+            // When / Then
+            // The number of batches must not depend on how many processors the test runs on.
+            for (int parallelism : List.of(1, 2, 4, 8, 16, 32, 64)) {
+                List<List<Integer>> batches = batchesInPoolOfSize(parallelism, 10, input);
+
+                assertThat(distinctValuesInBatches(batches)).isEqualTo(new TreeSet<>(input));
+                assertThat(countByBatchSize(batches)).matches(
+                        countByBatchSizeMeetsMaximumTotalBatches(1152),
+                        "meets a maximum number of batches with parallelism " + parallelism);
+            }
+        }
+
+        @Test
         void shouldFailWithBatchSizeLowerThanOne() {
             assertThatThrownBy(() -> SplitIntoBatches.streamBatchesOf(0, Stream.of("A", "B")))
                     .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        private <T> List<List<T>> batchesInPoolOfSize(int parallelism, int batchSize, List<T> input) throws Exception {
+            ForkJoinPool pool = new ForkJoinPool(parallelism);
+            try {
+                return pool.submit(() -> SplitIntoBatches.streamBatchesOf(batchSize, input.stream())
+                        .parallel().collect(toUnmodifiableList())).get();
+            } finally {
+                pool.shutdown();
+            }
         }
 
         private Collection<String> consumeParallelBatchesOf(int batchSize, Stream<String> stream) throws Exception {

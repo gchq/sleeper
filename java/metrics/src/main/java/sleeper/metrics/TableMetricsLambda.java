@@ -41,6 +41,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.statestore.StateStoreFactory;
@@ -155,6 +156,8 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
                 TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
                 tables.add(tableProperties);
+            } catch (TableNotFoundException e) {
+                LOGGER.warn("Ignoring non-existent table {}", tableId);
             } catch (RuntimeException e) {
                 LOGGER.error("Failed loading properties for table {}", tableId, e);
                 tableMessages.stream()

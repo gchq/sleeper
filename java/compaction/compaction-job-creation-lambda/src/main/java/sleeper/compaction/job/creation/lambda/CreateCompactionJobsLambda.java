@@ -37,6 +37,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -87,6 +88,12 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
                 objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client, sqsClient);
     }
 
+    public CreateCompactionJobsLambda(TablePropertiesProvider tablePropertiesProvider, PropertiesReloader propertiesReloader, CreateCompactionJobs createJobs) {
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.propertiesReloader = propertiesReloader;
+        this.createJobs = createJobs;
+    }
+
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         Instant startTime = Instant.now();
         LOGGER.info("Lambda started at {}", startTime);
@@ -102,6 +109,8 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
                 TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
                 createJobs.createJobsWithStrategy(tableProperties);
+            } catch (TableNotFoundException e) {
+                LOGGER.warn("Ignoring non-existent table {}", tableId);
             } catch (RuntimeException | ObjectFactoryException e) {
                 LOGGER.error("Failed creating jobs for table {}", tableId, e);
                 tableMessages.stream()

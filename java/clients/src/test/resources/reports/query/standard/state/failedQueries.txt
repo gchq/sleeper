@@ -1,10 +1,17 @@
 
 Query Tracker Report
 --------------------
-Total queries partially failed: 1
-Total queries failed: 1
-------------------------------------------------------------------------------------------------------
-| STATE            | QUERY_ID     | SUB_QUERY_ID | LAST_UPDATE_TIME     | ROW_COUNT | ERRORS         |
-| PARTIALLY_FAILED | test-query-1 | -            | 2023-09-28T18:50:00Z | 123       | Test failure 1 |
-| FAILED           | test-query-2 | -            | 2023-09-28T18:52:00Z | 0         | Test failure 2 |
-------------------------------------------------------------------------------------------------------
+Queries partially failed: 1, subqueries partially failed: 0
+Queries failed: 1, subqueries failed: 0
+
+Queries:
+---------------------------------------------------------------------------------------------------------------------------------
+| STATE            | QUERY_ID     | LAST_UPDATE_TIME     | SUBQUERIES_FINISHED | SUBQUERIES_FAILED | ROW_COUNT | ERRORS         |
+| PARTIALLY_FAILED | test-query-1 | 2023-09-28T18:50:00Z |                     |                   | 123       | Test failure 1 |
+| FAILED           | test-query-2 | 2023-09-28T18:52:00Z |                     |                   | 0         | Test failure 2 |
+---------------------------------------------------------------------------------------------------------------------------------
+
+Subqueries:
+-------------------------------------------------------------------------------
+| STATE | QUERY_ID | SUB_QUERY_ID | ATTEMPT_ID | LAST_UPDATE_TIME | ROW_COUNT |
+-------------------------------------------------------------------------------

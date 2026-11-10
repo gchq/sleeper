@@ -29,7 +29,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
+import sleeper.systemtest.drivers.testutil.LocalAwsDslTest;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -45,9 +45,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalAwsTestInstance.LOCAL_MAIN;
 
-@LocalStackDslTest
+@LocalAwsDslTest
 public class SleeperInstanceTablesLocalIT {
     @TempDir
     private Path tempDir;
@@ -57,7 +57,7 @@ public class SleeperInstanceTablesLocalIT {
     class DefineNamedTables {
         @BeforeEach
         void setUp(SleeperDsl sleeper) {
-            sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
+            sleeper.connectToInstanceNoTables(LOCAL_MAIN);
         }
 
         @Test
@@ -112,7 +112,7 @@ public class SleeperInstanceTablesLocalIT {
     class InspectAllTables {
         @BeforeEach
         void setUp(SleeperDsl sleeper) {
-            sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
+            sleeper.connectToInstanceNoTables(LOCAL_MAIN);
         }
 
         @Test
@@ -185,7 +185,7 @@ public class SleeperInstanceTablesLocalIT {
         @Test
         void shouldFailToIngestWhenNoTableChosen(SleeperDsl sleeper) {
             // Given
-            sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
+            sleeper.connectToInstanceNoTables(LOCAL_MAIN);
             var ingest = sleeper.ingest().direct(null);
 
             // When / Then

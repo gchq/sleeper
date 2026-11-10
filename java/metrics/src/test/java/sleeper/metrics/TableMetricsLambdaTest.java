@@ -15,6 +15,8 @@
  */
 package sleeper.metrics;
 
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFailure;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.junit.jupiter.api.AfterEach;
@@ -40,6 +42,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -54,8 +57,9 @@ public class TableMetricsLambdaTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties,
             createSchemaWithKey("key"));
+    private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore
-            .createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
+            .createProvider(instanceProperties, transactionLogs);
     private final PrintStream standardOut = System.out;
     private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
 
@@ -91,8 +95,38 @@ public class TableMetricsLambdaTest {
                 .isEqualTo(example("example/one-file.json"));
     }
 
-    private void invokeForSingleTable() {
-        lambda().handleRequest(event(messageForTableWithId(tableProperties, "test-message")), null);
+    @Test
+    void shouldFailWhenTableIsUnreadable() {
+        // Given
+        transactionLogs.forTable(tableProperties).getFilesLogStore().atStartOfReadTransactions(() -> {
+            throw new RuntimeException("The file transaction log is unreadable");
+        });
+
+        // When
+        SQSBatchResponse response = invokeForSingleTable();
+
+        // Then
+        assertThat(response.getBatchItemFailures()).singleElement()
+                .extracting(BatchItemFailure::getItemIdentifier)
+                .isEqualTo("test-message");
+    }
+
+    @Test
+    void shouldIgnoreTableThatWasDeleted() {
+        // When
+        SQSBatchResponse response = invokeForSingleTable("missing-table");
+
+        // Then
+        assertThat(response.getBatchItemFailures()).isEmpty();
+    }
+
+    private SQSBatchResponse invokeForSingleTable() {
+        return invokeForSingleTable(tableProperties.get(TABLE_ID));
+    }
+
+    private SQSBatchResponse invokeForSingleTable(String tableId) {
+        return lambda().handleRequest(event(
+                messageForTableWithId(tableId, "test-message")), null);
     }
 
     private StateStore stateStore() {
@@ -114,9 +148,9 @@ public class TableMetricsLambdaTest {
         return event;
     }
 
-    private SQSMessage messageForTableWithId(TableProperties tableProperties, String messageId) {
+    private SQSMessage messageForTableWithId(String tableId, String messageId) {
         SQSMessage message = new SQSMessage();
-        message.setBody(tableProperties.get(TABLE_ID));
+        message.setBody(tableId);
         message.setMessageId(messageId);
         return message;
     }

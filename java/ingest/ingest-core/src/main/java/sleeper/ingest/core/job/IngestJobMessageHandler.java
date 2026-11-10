@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 
 import java.time.Instant;
@@ -51,6 +52,7 @@ public class IngestJobMessageHandler<T> {
     private final BiFunction<T, IngestJob, T> applyIngestJobChanges;
     private final ExpandDirectories expandDirectories;
     private final Supplier<String> jobIdSupplier;
+    private final Supplier<String> jobRunIdSupplier;
     private final Supplier<Instant> timeSupplier;
 
     private IngestJobMessageHandler(Builder<T> builder) {
@@ -61,6 +63,7 @@ public class IngestJobMessageHandler<T> {
         applyIngestJobChanges = Objects.requireNonNull(builder.applyIngestJobChanges, "applyIngestJobChanges must not be null");
         expandDirectories = Objects.requireNonNull(builder.expandDirectories, "expandDirectories must not be null");
         jobIdSupplier = Objects.requireNonNull(builder.jobIdSupplier, "jobIdSupplier must not be null");
+        jobRunIdSupplier = Objects.requireNonNull(builder.jobRunIdSupplier, "jobRunIdSupplier must not be null");
         timeSupplier = Objects.requireNonNull(builder.timeSupplier, "timeSupplier must not be null");
     }
 
@@ -89,6 +92,8 @@ public class IngestJobMessageHandler<T> {
      * job will be rejected.
      * - Generates a random job ID if one was not provided by the job. Jobs that have been deserialised without a job ID
      * will not fail validation.
+     * - If listing the files fails (for example an S3 error reading the input bucket), the job is recorded as failed in
+     * the tracker and the exception is rethrown, so the message can be retried via the dead letter queue.
      *
      * @param  message the JSON string
      * @return         an optional containing the validated job, or an empty optional if the deserialisation or
@@ -153,14 +158,15 @@ public class IngestJobMessageHandler<T> {
             expanded = expandDirectories.expandPaths(files);
         } catch (RuntimeException e) {
             LOGGER.warn("Failed expanding directories for job {}", jobId, e);
-            ingestJobTracker.jobValidated(
-                    refusedEventBuilder()
+            ingestJobTracker.jobFailed(
+                    IngestJobFailedEvent.builder()
                             .jobId(jobId)
                             .tableId(table.getTableUniqueId())
-                            .jsonMessage(message)
-                            .reasons("Error listing files. Reason: " + e.getMessage())
+                            .jobRunId(jobRunIdSupplier.get())
+                            .failureTime(timeSupplier.get())
+                            .failure(e)
                             .build());
-            return Optional.empty();
+            throw e;
         }
 
         if (!expanded.missingPaths().isEmpty()) {
@@ -213,6 +219,7 @@ public class IngestJobMessageHandler<T> {
         private BiFunction<T, IngestJob, T> applyIngestJobChanges;
         private ExpandDirectories expandDirectories;
         private Supplier<String> jobIdSupplier = () -> UUID.randomUUID().toString();
+        private Supplier<String> jobRunIdSupplier = () -> UUID.randomUUID().toString();
         private Supplier<Instant> timeSupplier = Instant::now;
 
         private Builder() {
@@ -310,6 +317,17 @@ public class IngestJobMessageHandler<T> {
 
         public IngestJobMessageHandler<T> build() {
             return new IngestJobMessageHandler<>(this);
+        }
+
+        /**
+         * Sets the job run ID supplier. Used to generate a run ID when a job fails during validation.
+         *
+         * @param  jobRunIdSupplier the job run ID supplier
+         * @return                  the builder
+         */
+        public Builder<T> jobRunIdSupplier(Supplier<String> jobRunIdSupplier) {
+            this.jobRunIdSupplier = jobRunIdSupplier;
+            return this;
         }
     }
 }

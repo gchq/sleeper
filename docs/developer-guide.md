@@ -75,7 +75,7 @@ You will need the following software:
 * [AWS CDK](https://docs.aws.amazon.com/cdk/latest/guide/cli.html)
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 * [Bash](https://www.gnu.org/software/bash/): Minimum v3.2. Use `bash --version`.
-* [Docker](https://docs.docker.com/get-docker/)
+* [Docker Engine](https://docs.docker.com/engine/install/)
 * Java: Requires version 21, we recommend the [Amazon Corretto JDK](https://docs.aws.amazon.com/corretto/latest/corretto-21-ug/downloads-list.html).
 * [Maven](https://maven.apache.org/)
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating)
@@ -206,9 +206,9 @@ tracking of compaction, and the interactions of compaction with the state of a S
 links the application code for compaction to AWS.
 
 The "common" modules are shared utilities for interacting with external dependencies in common ways. They sit under the
-directory `java/common`. This includes tools for working with DynamoDB, testing code using AWS clients against
-LocalStack, and some infrastructure code to do with invoking lambdas, running jobs in a task, and starting tasks that
-will run jobs. Here a job is some process that needs to run, and a task is a piece of infrastructure that can run jobs,
+directory `java/common`. This includes tools for working with DynamoDB, testing code using AWS clients against a local
+AWS, and some infrastructure code to do with invoking lambdas, running jobs in a task, and starting tasks that will run
+jobs. Here a job is some process that needs to run, and a task is a piece of infrastructure that can run jobs,
 e.g. an AWS ECS task.
 
 ### Linting

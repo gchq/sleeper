@@ -153,6 +153,30 @@ public class FilesToDeleteTest {
         }
     }
 
+    @Nested
+    @DisplayName("Find S3 objects for each file")
+    class ObjectKeysByFilename {
+
+        @Test
+        void shouldGroupDataAndSketchesObjectKeysByFilename() {
+            // Given
+            instanceProperties.set(DATA_BUCKET, "test-bucket");
+            String filename1 = buildFullFilename("root", "test-file1");
+            String filename2 = buildFullFilename("root", "test-file2");
+            FilesToDeleteInBucket files = FilesToDelete.from(List.of(filename1, filename2)).getBuckets().get(0);
+
+            // When / Then
+            assertThat(files.getObjectKeysByFilename())
+                    .containsOnlyKeys(filename1, filename2)
+                    .hasEntrySatisfying(filename1, keys -> assertThat(keys).containsExactlyInAnyOrder(
+                            buildObjectKey("root", "test-file1"),
+                            buildObjectKeyForSketches("root", "test-file1")))
+                    .hasEntrySatisfying(filename2, keys -> assertThat(keys).containsExactlyInAnyOrder(
+                            buildObjectKey("root", "test-file2"),
+                            buildObjectKeyForSketches("root", "test-file2")));
+        }
+    }
+
     private String buildFullFilename(String partitionId, String fileName) {
         return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties).constructPartitionParquetFilePath(partitionId, fileName);
     }

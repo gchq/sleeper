@@ -41,6 +41,7 @@ public class TrackedQuery {
     private final Long succeededSubQueryCount;
     private final Long failedSubQueryCount;
     private final Long finishedSubQueryRowCount;
+    private final String attemptId;
 
     private TrackedQuery(Builder builder) {
         queryId = builder.queryId;
@@ -54,6 +55,7 @@ public class TrackedQuery {
         succeededSubQueryCount = builder.succeededSubQueryCount;
         failedSubQueryCount = builder.failedSubQueryCount;
         finishedSubQueryRowCount = builder.finishedSubQueryRowCount;
+        attemptId = builder.attemptId;
     }
 
     public static Builder builder() {
@@ -67,7 +69,8 @@ public class TrackedQuery {
                 .expectedSubQueryCount(expectedSubQueryCount)
                 .succeededSubQueryCount(succeededSubQueryCount)
                 .failedSubQueryCount(failedSubQueryCount)
-                .finishedSubQueryRowCount(finishedSubQueryRowCount);
+                .finishedSubQueryRowCount(finishedSubQueryRowCount)
+                .attemptId(attemptId);
     }
 
     public String getQueryId() {
@@ -112,6 +115,10 @@ public class TrackedQuery {
 
     public Long getFinishedSubQueryRowCount() {
         return finishedSubQueryRowCount;
+    }
+
+    public String getAttemptId() {
+        return attemptId;
     }
 
     /**
@@ -163,13 +170,14 @@ public class TrackedQuery {
                 && Objects.equals(expectedSubQueryCount, that.expectedSubQueryCount)
                 && Objects.equals(succeededSubQueryCount, that.succeededSubQueryCount)
                 && Objects.equals(failedSubQueryCount, that.failedSubQueryCount)
-                && Objects.equals(finishedSubQueryRowCount, that.finishedSubQueryRowCount);
+                && Objects.equals(finishedSubQueryRowCount, that.finishedSubQueryRowCount)
+                && Objects.equals(attemptId, that.attemptId);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(queryId, subQueryId, lastUpdateTime, expiryDate, lastKnownState, rowCount, errorMessage,
-                expectedSubQueryCount, succeededSubQueryCount, failedSubQueryCount, finishedSubQueryRowCount);
+                expectedSubQueryCount, succeededSubQueryCount, failedSubQueryCount, finishedSubQueryRowCount, attemptId);
     }
 
     @Override
@@ -186,6 +194,7 @@ public class TrackedQuery {
                 ", succeededSubQueryCount=" + succeededSubQueryCount +
                 ", failedSubQueryCount=" + failedSubQueryCount +
                 ", finishedSubQueryRowCount=" + finishedSubQueryRowCount +
+                ", attemptId='" + attemptId + '\'' +
                 '}';
     }
 
@@ -206,6 +215,7 @@ public class TrackedQuery {
         private Long succeededSubQueryCount;
         private Long failedSubQueryCount;
         private Long finishedSubQueryRowCount;
+        private String attemptId;
 
         private Builder() {
         }
@@ -354,6 +364,18 @@ public class TrackedQuery {
          */
         public Builder finishedSubQueryRowCount(Long finishedSubQueryRowCount) {
             this.finishedSubQueryRowCount = finishedSubQueryRowCount;
+            return this;
+        }
+
+        /**
+         * Provides an id for the attempt at processing the query that last updated this entry. This is only
+         * set when the query is processed by the query processor lambda.
+         *
+         * @param  attemptId the attempt ID
+         * @return           the builder
+         */
+        public Builder attemptId(String attemptId) {
+            this.attemptId = attemptId;
             return this;
         }
 

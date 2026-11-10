@@ -31,7 +31,7 @@ below.
 
 See [publishing artefacts](./publishing.md).
 
-We can use `scripts/dev/publishMaven.sh` and `scripts/dev/publishDocker.sh` to publish artefacts to external
+We can use Maven and `scripts/dev/publishDocker.sh` to publish artefacts to external
 repositories.
 
 We can use `scripts/deploy/installJarsFromMaven.sh` to retrieve the jars locally from Maven,

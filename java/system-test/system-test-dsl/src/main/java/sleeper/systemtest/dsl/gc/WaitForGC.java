@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -35,8 +36,18 @@ public class WaitForGC {
     }
 
     public static void waitUntilNoUnreferencedFiles(SystemTestInstanceContext instance, PollWithRetries poll) {
-        Map<String, TableProperties> tablesById = instance.streamTableProperties()
-                .collect(toMap(table -> table.get(TABLE_ID), table -> table));
+        waitUntilNoUnreferencedFiles(instance, instance.streamTableProperties(), poll);
+    }
+
+    public static void waitUntilNoUnreferencedFiles(SystemTestInstanceContext instance, List<String> tableDescriptors, PollWithRetries poll) {
+        waitUntilNoUnreferencedFiles(instance,
+                tableDescriptors.stream()
+                        .map(descriptor -> instance.getTablePropertiesByDescriptor(descriptor).orElseThrow()),
+                poll);
+    }
+
+    private static void waitUntilNoUnreferencedFiles(SystemTestInstanceContext instance, Stream<TableProperties> tables, PollWithRetries poll) {
+        Map<String, TableProperties> tablesById = tables.collect(toMap(table -> table.get(TABLE_ID), table -> table));
         try {
             poll.pollUntil("no unreferenced files are present", () -> {
                 List<String> emptyTableIds = tablesById.values().stream()

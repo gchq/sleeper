@@ -61,28 +61,32 @@ public class EksAutoBulkImportST {
 
     @Test
     void shouldPreSplitPartitionTreeAndBulkImport(SleeperDsl sleeper, SystemTestParameters parameters) {
-        // Given
+        // Given a source file and a table configured for pre-splitting
         sleeper.updateTableProperties(Map.of(
                 BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "8",
                 PARTITION_SPLIT_MIN_ROWS, "100"));
         Iterable<Row> rows = sleeper.generateNumberedRows().iterableOverRange(0, 10_000);
         sleeper.sourceFiles().create("test.parquet", rows);
 
-        // When
+        // When the source file is bulk imported
         sleeper.ingest().bulkImportByQueue()
                 .sendSourceFiles(BULK_IMPORT_EKS_JOB_QUEUE_URL, "test.parquet")
                 .waitForJobs();
 
-        // Then
+        // Then all rows are imported successfully
         assertThat(SystemTestSchema.sorted(sleeper.directQuery().allRowsInTable()))
                 .containsExactlyElementsOf(rows);
+        // And the partition tree is pre-split into the expected leaf partitions
         assertThat(sleeper.partitioning().tree().getLeafPartitions())
                 .hasSize(8);
+        // And the imported data is distributed across those partitions
         assertThat(sleeper.tableFiles().references())
                 .hasSize(8);
+        // And all bulk import jobs complete successfully
         assertThat(sleeper.eksBulkImportCheck().waitUntilExecutionsFinishedGetStatuses(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5))))
                 .containsOnly("SUCCEEDED");
+        // And no bulk import resources remain running
         assertThat(sleeper.eksBulkImportCheck().getDriverPods())
                 .isEmpty();
         assertThat(sleeper.eksBulkImportCheck().getJobs())

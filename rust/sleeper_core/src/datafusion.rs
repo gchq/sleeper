@@ -188,7 +188,7 @@ impl<'a> SleeperOperations<'a> {
     ) -> Result<DataFrame, DataFusionError> {
         let po = if self.config.input_files_sorted() {
             let sort_order = self.create_sort_order();
-            info!("Row and sort key field order: {sort_order:?}");
+            debug!("Row and sort key field order: {sort_order:?}");
             ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()])
         } else {
             warn!(

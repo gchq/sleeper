@@ -29,3 +29,13 @@ vulnerabilities:
   - id: CVE-2026-91777
     purls:
       - pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.22.2
+
+
+  # Guava 32 is bundled in .apache.hadoop.thirdparty:hadoop-shaded-guava:1.4.0.
+  # This is a dependency of org.apache.hadoop:hadoop-common.
+  # We're not able to upgrade this because Hadoop is tied to the version of EMR.
+
+  # com.google.guava:guava
+  - id: CVE-2026-102554
+    purls:
+      - pkg:maven/com.google.guava/guava@32.0.1-jre

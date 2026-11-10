@@ -68,8 +68,11 @@ public enum IngestJobStatusType {
      * @return     the status type
      */
     public static IngestJobStatusType statusTypeOfJobRun(JobRun run) {
-        return IngestJobUpdateType.typeOfFurthestUpdateInRun(run)
-                .statusTypeAfterThisInRun(run);
+        if (IngestJobUpdateType.isRunCommitted(run)) {
+            return FINISHED;
+        } else {
+            return IngestJobUpdateType.typeOfFurthestUpdateInRun(run).getJobStatusTypeAfterUpdate();
+        }
     }
 
     /**

@@ -48,7 +48,7 @@ public class FilteringIteratorTest {
     void shouldCloseSourceIterator() throws Exception {
         // Given
         AtomicBoolean closed = new AtomicBoolean(false);
-        EmptyIteratorWithFakeOnClose iterator = new EmptyIteratorWithFakeOnClose(() -> closed.set(true));
+        EmptyIteratorWithFakeOnClose<Row> iterator = new EmptyIteratorWithFakeOnClose<>(() -> closed.set(true));
 
         // When
         new FilteringIterator<>(iterator, row -> true).close();

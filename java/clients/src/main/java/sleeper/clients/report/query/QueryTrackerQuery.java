@@ -25,7 +25,7 @@ import sleeper.query.core.tracker.TrackedQuery;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
@@ -35,20 +35,22 @@ import static java.util.stream.Collectors.joining;
  */
 public enum QueryTrackerQuery {
     ALL(option("all", 'a', "Reports on all queries."),
-            QueryTrackerStore::getAllQueries),
+            (store, queryId) -> store.getAllQueries()),
     QUEUED(option("queued", 'q', "Reports on queued queries."),
-            store -> store.getQueriesWithState(QueryState.QUEUED)),
-    IN_PROGRESS(option("in-progress", 'i', "Reports on queries in progress."),
-            store -> store.getQueriesWithState(QueryState.IN_PROGRESS)),
+            (store, queryId) -> store.getQueriesWithState(QueryState.QUEUED)),
+    IN_PROGRESS(option("in-progress", 'p', "Reports on queries in progress."),
+            (store, queryId) -> store.getQueriesWithState(QueryState.IN_PROGRESS)),
     COMPLETED(option("completed", 'c', "Reports on completed queries."),
-            store -> store.getQueriesWithState(QueryState.COMPLETED)),
+            (store, queryId) -> store.getQueriesWithState(QueryState.COMPLETED)),
     FAILED(option("failed", 'f', "Reports on failed and partially failed queries."),
-            QueryTrackerStore::getFailedQueries);
+            (store, queryId) -> store.getFailedQueries()),
+    FOR_QUERY(optionWithArg("query", 'i', "<query-id>", "Reports on the query with the given ID and its subqueries."),
+            QueryTrackerStore::getQueryAndSubQueries);
 
     private final CommandOption option;
-    private final Function<QueryTrackerStore, List<TrackedQuery>> runner;
+    private final BiFunction<QueryTrackerStore, String, List<TrackedQuery>> runner;
 
-    QueryTrackerQuery(CommandOption option, Function<QueryTrackerStore, List<TrackedQuery>> runner) {
+    QueryTrackerQuery(CommandOption option, BiFunction<QueryTrackerStore, String, List<TrackedQuery>> runner) {
         this.option = option;
         this.runner = runner;
     }
@@ -56,11 +58,12 @@ public enum QueryTrackerQuery {
     /**
      * Retrieves the data for the report.
      *
-     * @param  store the tracker store
-     * @return       the status of queries covered by this query
+     * @param  store   the tracker store
+     * @param  queryId the query ID to report on, only set when the query type is for a single query
+     * @return         the status of queries covered by this query
      */
-    public List<TrackedQuery> run(QueryTrackerStore store) {
-        return runner.apply(store);
+    public List<TrackedQuery> run(QueryTrackerStore store, String queryId) {
+        return runner.apply(store, queryId);
     }
 
     /**
@@ -102,5 +105,14 @@ public enum QueryTrackerQuery {
 
     private static CommandOption option(String longName, char shortName, String helpText) {
         return CommandOption.withLongName(longName).shortName(shortName).helpText(helpText).build();
+    }
+
+    private static CommandOption optionWithArg(String longName, char shortName, String argsHelpText, String helpText) {
+        return CommandOption.withLongName(longName)
+                .shortName(shortName)
+                .numArgs(CommandOption.NumArgs.ONE)
+                .argsHelpText(argsHelpText)
+                .helpText(helpText)
+                .build();
     }
 }

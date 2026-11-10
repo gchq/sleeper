@@ -56,12 +56,13 @@ public class SystemTestInstanceContext {
     private final DeployedSleeperInstances deployedInstances;
     private final SleeperInstanceDriver instanceDriver;
     private final TestContext testContext;
-    private final Map<String, DeployedSleeperTablesForTest> tablesByInstanceShortName = new HashMap<>();
-    private final Map<String, TableProperties> tablesByTestName = new TreeMap<>();
-    private final Map<String, String> testNameByTableId = new HashMap<>();
+    private final Map<String, DeployedSleeperTablesForTest> instanceShortNameToTables = new HashMap<>();
+    private final Map<String, TableProperties> descriptorToTableProperties = new TreeMap<>();
+    private final Map<String, String> tableIdToDescriptor = new HashMap<>();
     private DeployedSleeperInstance currentInstance = null;
     private DeployedSleeperTablesForTest currentTables = null;
     private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
+    private int nextGroupNumber = 1;
 
     public SystemTestInstanceContext(
             SystemTestParameters parameters, DeployedSleeperInstances deployedInstances,
@@ -74,16 +75,16 @@ public class SystemTestInstanceContext {
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
         currentInstance = deployedInstances.connectToAndReset(configuration);
-        currentTables = tablesByInstanceShortName.computeIfAbsent(configuration.getShortName(),
+        currentTables = instanceShortNameToTables.computeIfAbsent(configuration.getShortName(),
                 name -> new DeployedSleeperTablesForTest(currentInstance.getInstanceProperties(), tablesDriver()));
     }
 
-    public SystemTestDrivers adminDrivers() {
+    public SystemTestDrivers adminRoleDrivers() {
         return currentInstance().getInstanceAdminDrivers();
     }
 
     private SleeperTablesDriver tablesDriver() {
-        return adminDrivers().tables(parameters);
+        return adminRoleDrivers().tables(parameters);
     }
 
     public void addDefaultTables(Map<TableProperty, String> extraProperties) {
@@ -97,28 +98,41 @@ public class SystemTestInstanceContext {
                 }).collect(toUnmodifiableList()));
     }
 
-    public void createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+    public List<String> createTables(int numberOfTables, Schema schema, Map<TableProperty, String> setProperties) {
+        int groupNumber = nextGroupNumber;
+        nextGroupNumber++;
         InstanceProperties instanceProperties = getInstanceProperties();
-        currentTables().addTablesAndSetCurrent(tablesDriver(), IntStream.range(0, numberOfTables)
-                .mapToObj(i -> {
+        List<String> descriptors = IntStream.rangeClosed(1, numberOfTables)
+                .mapToObj(tableNumber -> "group" + groupNumber + "-table" + tableNumber)
+                .toList();
+        currentTables().addTablesAndSetCurrent(tablesDriver(), descriptors.stream()
+                .map(descriptor -> {
                     TableProperties tableProperties = parameters.createTableProperties(instanceProperties, schema);
+                    tableProperties.set(TABLE_NAME, buildTableName(descriptor));
                     setProperties.forEach(tableProperties::set);
+                    descriptorToTableProperties.put(descriptor, tableProperties);
                     return tableProperties;
                 })
-                .collect(toUnmodifiableList()));
+                .toList());
+        // Creating tables gives them an ID, so record those after they're created.
+        descriptors.forEach(descriptor -> {
+            TableProperties properties = descriptorToTableProperties.get(descriptor);
+            tableIdToDescriptor.put(properties.get(TABLE_ID), descriptor);
+        });
+        return descriptors;
     }
 
-    public void createTable(String name, Schema schema, Map<TableProperty, String> setProperties) {
+    public void createTable(String descriptor, Schema schema, Map<TableProperty, String> setProperties) {
         TableProperties tableProperties = parameters.createTableProperties(getInstanceProperties(), schema);
-        tableProperties.set(TABLE_NAME, buildTableName(name));
+        tableProperties.set(TABLE_NAME, buildTableName(descriptor));
         setProperties.forEach(tableProperties::set);
         currentTables().addTablesAndSetCurrent(tablesDriver(), List.of(tableProperties));
-        tablesByTestName.put(name, tableProperties);
-        testNameByTableId.put(tableProperties.get(TABLE_ID), name);
+        descriptorToTableProperties.put(descriptor, tableProperties);
+        tableIdToDescriptor.put(tableProperties.get(TABLE_ID), descriptor);
     }
 
     public void setCurrentTable(String name) {
-        TableProperties tableProperties = Optional.ofNullable(tablesByTestName.get(name)).orElseThrow();
+        TableProperties tableProperties = Optional.ofNullable(descriptorToTableProperties.get(name)).orElseThrow();
         currentTables().setCurrent(tableProperties);
     }
 
@@ -194,6 +208,20 @@ public class SystemTestInstanceContext {
         return getTableProperties().getStatus();
     }
 
+    public String getTableDescriptor() {
+        return tableIdToDescriptor.get(getTableProperties().get(TABLE_ID));
+    }
+
+    public Optional<TableProperties> getTablePropertiesByDescriptor(String descriptor) {
+        return Optional.ofNullable(descriptorToTableProperties.get(descriptor));
+    }
+
+    public Stream<TableStatus> streamTableStatusByDescriptors(Stream<String> descriptors) {
+        return descriptors.map(descriptor -> getTablePropertiesByDescriptor(descriptor)
+                .map(TableProperties::getStatus)
+                .orElseGet(() -> TableStatus.uniqueIdAndName(descriptor, descriptor, false)));
+    }
+
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
         generatorOverrides = overrides;
     }
@@ -221,12 +249,12 @@ public class SystemTestInstanceContext {
         currentTables().setCurrent(tableProperties);
     }
 
-    public String getTestTableName(String tableName) {
-        return getTestTableName(getTablePropertiesByDeployedName(tableName).orElseThrow());
+    public String getTableDescriptorByDeployedName(String tableName) {
+        return getTableDescriptor(getTablePropertiesByDeployedName(tableName).orElseThrow());
     }
 
-    public String getTestTableName(TableProperties tableProperties) {
-        return Optional.ofNullable(testNameByTableId.get(tableProperties.get(TABLE_ID)))
+    public String getTableDescriptor(TableProperties tableProperties) {
+        return Optional.ofNullable(tableIdToDescriptor.get(tableProperties.get(TABLE_ID)))
                 .orElseGet(() -> tableProperties.get(TABLE_NAME));
     }
 

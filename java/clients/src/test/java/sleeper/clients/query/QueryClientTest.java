@@ -19,6 +19,7 @@ package sleeper.clients.query;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
@@ -46,6 +47,8 @@ import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -56,12 +59,14 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.query.QueryClientTestConstants.EXACT_QUERY_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.EXIT_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.FILE_QUERY_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.NO_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_EXACT_KEY_LONG_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_INCLUSIVE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_LONG_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_INCLUSIVE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_LONG_TYPE;
+import static sleeper.clients.query.QueryClientTestConstants.PROMPT_QUERY_FILE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_QUERY_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_SQL_FILTER;
 import static sleeper.clients.query.QueryClientTestConstants.RANGE_QUERY_OPTION;
@@ -305,6 +310,95 @@ public class QueryClientTest {
                             PROMPT_SQL_FILTER +
                             "Returned Rows:\n")
                     .containsSubsequence("Query took", "seconds to return 0 rows");
+        }
+    }
+
+    @Nested
+    @DisplayName("Query from a file of keys/ranges")
+    class FileQuery {
+        @TempDir
+        private Path tempDir;
+
+        @Test
+        void shouldRunQueryFromFileOfKeysAndRanges() throws Exception {
+            // Given
+            Schema schema = createSchemaWithKey("key");
+            TableProperties tableProperties = createTable("test-table", schema);
+            List<Row> rows = LongStream.rangeClosed(0, 10)
+                    .mapToObj(num -> new Row(Map.of("key", num)))
+                    .collect(Collectors.toList());
+            ingestData(tableProperties, rows);
+            Path queryFile = tempDir.resolve("queries.txt");
+            Files.write(queryFile, List.of("1", "4,6", ",1", "9,"));
+
+            // When
+            in.enterNextPrompts(FILE_QUERY_OPTION, queryFile.toString(), "", EXIT_OPTION);
+            runQueryClient();
+
+            // Then
+            assertThat(out.toString())
+                    .startsWith("Querying table test-table")
+                    .contains(PROMPT_QUERY_TYPE +
+                            PROMPT_QUERY_FILE +
+                            PROMPT_SQL_FILTER +
+                            "Returned Rows:\n" +
+                            "Row{key=0}\n" +
+                            "Row{key=1}\n" +
+                            "Row{key=4}\n" +
+                            "Row{key=5}\n" +
+                            "Row{key=9}\n" +
+                            "Row{key=10}")
+                    .containsSubsequence("Query took", "seconds to return 6 rows");
+        }
+
+        @Test
+        void shouldReportFailureWhenFileDoesNotExist() throws Exception {
+            // Given
+            Schema schema = createSchemaWithKey("key");
+            createTable("test-table", schema);
+            Path queryFile = tempDir.resolve("does-not-exist.txt");
+
+            // When
+            in.enterNextPrompts(FILE_QUERY_OPTION, queryFile.toString(), EXIT_OPTION);
+            runQueryClient();
+
+            // Then
+            assertThat(out.toString())
+                    .contains("Failed to read file " + queryFile);
+        }
+
+        @Test
+        void shouldReportFailureWhenLineDoesNotMatchKeyType() throws Exception {
+            // Given
+            Schema schema = createSchemaWithKey("key");
+            createTable("test-table", schema);
+            Path queryFile = tempDir.resolve("queries.txt");
+            Files.write(queryFile, List.of("1", "abc"));
+
+            // When
+            in.enterNextPrompts(FILE_QUERY_OPTION, queryFile.toString(), EXIT_OPTION);
+            runQueryClient();
+
+            // Then
+            assertThat(out.toString())
+                    .contains("Failed reading line 2 \"abc\"");
+        }
+
+        @Test
+        void shouldReportFailureWhenFileIsEmpty() throws Exception {
+            // Given
+            Schema schema = createSchemaWithKey("key");
+            createTable("test-table", schema);
+            Path queryFile = tempDir.resolve("queries.txt");
+            Files.write(queryFile, List.of("", "   "));
+
+            // When
+            in.enterNextPrompts(FILE_QUERY_OPTION, queryFile.toString(), EXIT_OPTION);
+            runQueryClient();
+
+            // Then
+            assertThat(out.toString())
+                    .contains("Found no keys or ranges in file " + queryFile);
         }
     }
 

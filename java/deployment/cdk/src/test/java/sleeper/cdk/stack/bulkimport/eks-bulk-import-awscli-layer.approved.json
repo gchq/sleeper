@@ -1768,6 +1768,25 @@
               "Statement": [
                 {
                   "Action": "sts:AssumeRole",
+                  "Condition": {
+                    "ArnLike": {
+                      "aws:SourceArn": {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":states:test-region:test-account:stateMachine:*"
+                          ]
+                        ]
+                      }
+                    },
+                    "StringEquals": {
+                      "aws:SourceAccount": "test-account"
+                    }
+                  },
                   "Effect": "Allow",
                   "Principal": {
                     "Service": "states.amazonaws.com"

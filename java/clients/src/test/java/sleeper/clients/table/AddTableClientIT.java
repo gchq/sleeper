@@ -31,7 +31,7 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -49,7 +49,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class AddTableClientIT extends LocalStackTestBase {
+public class AddTableClientIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key1");

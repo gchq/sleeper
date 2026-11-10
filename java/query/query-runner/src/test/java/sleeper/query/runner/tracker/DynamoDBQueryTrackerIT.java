@@ -42,7 +42,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleepTestHelper;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
@@ -75,7 +75,7 @@ import static sleeper.query.core.tracker.QueryState.IN_PROGRESS;
 import static sleeper.query.core.tracker.QueryState.PARTIALLY_FAILED;
 import static sleeper.query.core.tracker.QueryState.QUEUED;
 
-public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
+public class DynamoDBQueryTrackerIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
 
@@ -604,6 +604,41 @@ public class DynamoDBQueryTrackerIT extends LocalStackTestBase {
 
             // Then
             assertThat(queryTracker().getStatus("parent", DynamoDBQueryTrackerEntry.counterShardSortKey(0))).isNull();
+        }
+
+        @Test
+        void shouldTrackAttemptIdOnSubQuery() throws QueryTrackerException {
+            // When
+            queryTracker().queryInProgress(sub1.withAttemptId("attempt-1"));
+
+            // Then
+            assertThat(queryTracker().getStatus("parent", "sub-1").getAttemptId()).isEqualTo("attempt-1");
+        }
+
+        @Test
+        void shouldGetQueryAndSubQueries() throws QueryTrackerException {
+            // When
+            queryTracker().queryInProgress(sub1);
+            queryTracker().queryCompleted(sub2, new ResultsOutputInfo(25, Collections.emptyList()));
+
+            // Then the parent comes first with the summed counters, then the subqueries, with no counter shard items
+            assertThat(queryTracker().getQueryAndSubQueries("parent"))
+                    .extracting(TrackedQuery::getSubQueryId, TrackedQuery::getLastKnownState)
+                    .containsExactly(
+                            tuple("-", IN_PROGRESS),
+                            tuple("sub-1", IN_PROGRESS),
+                            tuple("sub-2", COMPLETED));
+            assertThat(queryTracker().getQueryAndSubQueries("parent"))
+                    .filteredOn(query -> "-".equals(query.getSubQueryId()))
+                    .extracting(TrackedQuery::getExpectedSubQueryCount, TrackedQuery::getSucceededSubQueryCount,
+                            TrackedQuery::getFinishedSubQueryRowCount)
+                    .containsExactly(tuple(2L, 1L, 25L));
+        }
+
+        @Test
+        void shouldGetNoEntriesForUnknownQuery() throws QueryTrackerException {
+            // When / Then
+            assertThat(queryTracker().getQueryAndSubQueries("not-a-query")).isEmpty();
         }
 
         @Test

@@ -68,7 +68,6 @@ use futures::{
     stream::{BoxStream, empty},
 };
 use log::debug;
-use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
     Attributes, CopyMode, CopyOptions, GetOptions, GetRange, GetResult, GetResultPayload,
@@ -535,7 +534,7 @@ impl<T: ObjectStore> ReadaheadStore<T> {
 
 impl<T: ObjectStore> Drop for ReadaheadStore<T> {
     fn drop(&mut self) {
-        info!(
+        debug!(
             "ReadaheadStore made {} GET and {} HEAD requests to underlying location {}",
             self.underlying_gets
                 .load(Ordering::Relaxed)

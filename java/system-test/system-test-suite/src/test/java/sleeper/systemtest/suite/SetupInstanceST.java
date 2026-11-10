@@ -46,6 +46,10 @@ public class SetupInstanceST {
 
     @Test
     void shouldConnectToInstance(SleeperDsl sleeper) {
+
+        // When the instance properties are read
+
+        // Then the expected property values are returned
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
                 .isFalse();
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_LOGS_AFTER_DESTROY))
@@ -54,17 +58,18 @@ public class SetupInstanceST {
 
     @Test
     void shouldIngestOneRow(SleeperDsl sleeper) {
-        // Given
+
+        // Given a row ready for ingestion
         Row row = new Row();
         row.put("key", "some-id");
         row.put("timestamp", 1234L);
         row.put("value", "Some value");
         row.put("nullable_value", null);
 
-        // When
+        // When the row is ingested
         sleeper.ingest().direct(tempDir).rows(row);
 
-        // Then
+        // Then the row can be queried from the table
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactly(row);
     }
@@ -75,14 +80,16 @@ public class SetupInstanceST {
             return;
         }
 
-        // When
+        // When data generation jobs are run using queued ingest
         sleeper.systemTestCluster().runDataGenerationJobs(2,
                 builder -> builder.ingestMode(QUEUE).ingestQueue(STANDARD_INGEST).rowsPerIngest(123))
                 .waitForStandardIngestTask().waitForIngestJobs();
 
-        // Then
+        // Then all generated rows are ingested successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .hasSize(246);
+
+        // And the ingest jobs are reported correctly
         assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
                 .hasSize(2)
                 .containsExactlyInAnyOrderElementsOf(sleeper.reporting().ingestJobs().jobIds());
@@ -94,14 +101,16 @@ public class SetupInstanceST {
             return;
         }
 
-        // When
+        // When data generation jobs are run using direct ingest
         sleeper.systemTestCluster().runDataGenerationJobs(2,
                 builder -> builder.ingestMode(DIRECT).rowsPerIngest(123))
                 .waitForTotalFileReferences(2);
 
-        // Then
+        // Then all generated rows are ingested successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .hasSize(246);
+
+        // And direct ingest does not create source bucket files
         assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
                 .isEmpty();
     }
