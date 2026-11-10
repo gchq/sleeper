@@ -40,4 +40,5 @@ public class QueryClientTestConstants {
             "Enter SQL statement (blank for none): \n";
     public static final String SEND_TO_S3_OPTION = "s";
     public static final String SEND_TO_SQS_OPTION = "q";
+    public static final String SEND_TO_CONSOLE_OPTION = "c";
 }

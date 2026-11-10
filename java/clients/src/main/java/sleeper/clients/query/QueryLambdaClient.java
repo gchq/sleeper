@@ -20,16 +20,21 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.api.QueryResultsReader;
 import sleeper.clients.api.QuerySender;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.row.Row;
+import sleeper.core.schema.Schema;
 import sleeper.core.table.TableIndex;
+import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.tracker.QueryState;
@@ -39,6 +44,7 @@ import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -54,17 +60,22 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
 public class QueryLambdaClient extends QueryCommandLineClient {
     private static final String S3_PROMPT_RESPONSE = "s";
     private static final String SQS_PROMPT_RESPONSE = "q";
+    private static final String CONSOLE_PROMPT_RESPONSE = "c";
 
     private final QuerySender querySender;
     private final QueryTrackerStore queryTracker;
+    private final QueryResultsReader queryResultsReader;
     private Map<String, String> resultsPublisherConfig;
+    private boolean printResultsToConsole;
 
     public QueryLambdaClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            QuerySender querySender, QueryTrackerStore queryTracker, ConsoleInput in, ConsoleOutput out) {
+            QuerySender querySender, QueryTrackerStore queryTracker, QueryResultsReader queryResultsReader,
+            ConsoleInput in, ConsoleOutput out) {
         super(instanceProperties, tableIndex, tablePropertiesProvider, in, out);
         this.querySender = querySender;
         this.queryTracker = queryTracker;
+        this.queryResultsReader = queryResultsReader;
     }
 
     @Override
@@ -106,8 +117,27 @@ public class QueryLambdaClient extends QueryCommandLineClient {
             if (trackedQuery.getRowCount() != null) {
                 out.println("Query returned " + trackedQuery.getRowCount() + " rows");
             }
+            if (printResultsToConsole && state == QueryState.COMPLETED) {
+                printResults(tableProperties, query);
+            }
         } catch (QueryTrackerException | InterruptedException e) {
             out.println("Failed to get status");
+            out.printStackTrace(e);
+        }
+    }
+
+    private void printResults(TableProperties tableProperties, Query query) {
+        Schema schema = tableProperties.getSchema();
+        try (CloseableIterator<Row> rows = queryResultsReader.getResults(query)) {
+            out.println("Returned Rows:");
+            while (rows.hasNext()) {
+                out.println(rows.next().toString(schema));
+            }
+        } catch (RuntimeException e) {
+            out.println("Encountered an error while reading results of query " + query.getQueryId());
+            out.printStackTrace(e);
+        } catch (IOException e) {
+            out.println("Encountered an error while closing iterator for query " + query.getQueryId());
             out.printStackTrace(e);
         }
     }
@@ -115,10 +145,11 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     @Override
     protected void runQueries(TableProperties tableProperties) throws InterruptedException {
         resultsPublisherConfig = new HashMap<>();
+        printResultsToConsole = false;
         boolean chosen = false;
 
         while (!chosen) {
-            String type = in.promptLine("Send output to S3 results bucket (s) or SQS (q)? [s]");
+            String type = in.promptLine("Send output to S3 results bucket (s), SQS (q), or the console (c)? [s]");
 
             chosen = switch (type.toLowerCase(Locale.ROOT)) {
                 case "", S3_PROMPT_RESPONSE -> {
@@ -133,6 +164,16 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                             + getInstanceProperties().get(QUERY_RESULTS_QUEUE_URL));
 
                     resultsPublisherConfig.put(ResultsOutput.DESTINATION, SQSResultsOutput.SQS);
+
+                    yield true;
+                }
+
+                case CONSOLE_PROMPT_RESPONSE -> {
+                    out.println("Results will be published to S3 bucket "
+                            + getInstanceProperties().get(QUERY_RESULTS_BUCKET)
+                            + ", then printed to the console");
+
+                    printResultsToConsole = true;
 
                     yield true;
                 }
@@ -202,6 +243,8 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                     instanceProperties, tableIndex, tablePropertiesProvider,
                     QuerySender.toSqs(instanceProperties, tablePropertiesProvider, sqsClient),
                     new DynamoDBQueryTracker(instanceProperties, dynamoClient),
+                    QueryResultsReader.fromS3(instanceProperties, tablePropertiesProvider,
+                            TableHadoopConfigurationProvider.forClient(instanceProperties)),
                     ConsoleInput.stdIn(), ConsoleOutput.stdOut());
             queryLambdaClient.run();
         }
