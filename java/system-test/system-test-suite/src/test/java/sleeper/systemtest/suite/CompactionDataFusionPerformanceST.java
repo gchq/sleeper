@@ -58,7 +58,8 @@ public class CompactionDataFusionPerformanceST {
 
     @Test
     void shouldMeetCompactionPerformanceStandards(SleeperDsl sleeper) {
-        // Given 110 ingest jobs have generated 40 million rows each
+
+        // Given many data generation jobs have produced a large enough number of files that would trigger compaction
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 DATA_ENGINE, DataEngine.DATAFUSION.toString()));

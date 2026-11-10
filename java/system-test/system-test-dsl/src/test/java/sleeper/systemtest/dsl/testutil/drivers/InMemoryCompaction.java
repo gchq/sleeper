@@ -17,7 +17,6 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.creation.CreateCompactionJobBatches;
 import sleeper.compaction.core.job.creation.CreateCompactionJobBatches.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
@@ -26,6 +25,9 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.CountingIterator;
+import sleeper.core.iterator.closeable.MergingIterator;
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
@@ -36,6 +38,7 @@ import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
@@ -52,16 +55,15 @@ import sleeper.core.util.ObjectFactoryException;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.compaction.CompactionCommitMessageWrapper;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -117,15 +119,16 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public void triggerCreateJobs() {
+        public void triggerCreateJobs(Stream<TableStatus> tables) {
             CreateCompactionJobs jobCreator = jobCreator();
-            instance.streamTableProperties().forEach(table -> {
-                try {
-                    jobCreator.createJobsWithStrategy(table);
-                } catch (ObjectFactoryException e) {
-                    throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
-                }
-            });
+            tables.flatMap(table -> instance.getTablePropertiesByDeployedId(table.getTableUniqueId()).stream())
+                    .forEach(table -> {
+                        try {
+                            jobCreator.createJobsWithStrategy(table);
+                        } catch (ObjectFactoryException e) {
+                            throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
+                        }
+                    });
         }
 
         @Override
@@ -157,9 +160,9 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public void sendCompactionCommits(Stream<CompactionCommitMessage> commits) {
+        public void sendCompactionCommits(Stream<CompactionCommitMessageWrapper> commits) {
             TablePropertiesProvider tablesProvider = instance.getTablePropertiesProvider();
-            commits.forEach(commit -> {
+            commits.map(CompactionCommitMessageWrapper::message).forEach(commit -> {
                 ReplaceFileReferencesRequest request = commit.request();
                 TableProperties tableProperties = tablesProvider.getById(commit.tableId());
                 update(instance.getStateStore(tableProperties)).atomicallyReplaceFileReferencesWithNewOnes(List.of(request));
@@ -245,12 +248,12 @@ public class InMemoryCompaction {
 
     private RowsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema) {
         List<CloseableIterator<Row>> inputIterators = job.getInputFiles().stream()
-                .map(file -> new CountingIterator(file, partition.getRegion(), schema))
+                .map(file -> new CountingIterator<Row>(fileIterator(file, partition.getRegion(), schema)))
                 .collect(toUnmodifiableList());
         CloseableIterator<Row> mergingIterator;
         try {
-            mergingIterator = JavaCompactionRunner.getMergingIterator(
-                    ObjectFactory.noUserJars(), schema, job, inputIterators);
+            mergingIterator = JavaCompactionRunner.applyIteratorConfig(
+                    ObjectFactory.noUserJars(), schema, job, new MergingIterator(schema, inputIterators));
         } catch (IteratorCreationException e) {
             throw new RuntimeException(e);
         }
@@ -263,8 +266,8 @@ public class InMemoryCompaction {
         dataStore.addFile(job.getOutputFile(), rows);
         sketchesStore.saveFileSketches(job.getOutputFile(), sketches);
         return new RowsProcessed(rows.size(), inputIterators.stream()
-                .map(it -> (CountingIterator) it)
-                .mapToLong(it -> it.count)
+                .map(it -> (CountingIterator<Row>) it)
+                .mapToLong(CountingIterator::getCount)
                 .sum());
     }
 
@@ -282,33 +285,10 @@ public class InMemoryCompaction {
         });
     }
 
-    private class CountingIterator implements CloseableIterator<Row> {
-
-        private final Iterator<Row> iterator;
-        private long count = 0;
-
-        CountingIterator(String filename, Region region, Schema schema) {
-            iterator = dataStore.streamRows(List.of(filename))
-                    .filter(row -> region.isKeyInRegion(schema, row.getRowKeys(schema)))
-                    .iterator();
-        }
-
-        @Override
-        public boolean hasNext() {
-            return iterator.hasNext();
-        }
-
-        @Override
-        public Row next() {
-            Row row = iterator.next();
-            count++;
-            return row;
-        }
-
-        @Override
-        public void close() throws IOException {
-        }
-
+    private CloseableIterator<Row> fileIterator(String filename, Region region, Schema schema) {
+        return new WrappedIterator<>(dataStore.streamRows(List.of(filename))
+                .filter(row -> region.isKeyInRegion(schema, row.getRowKeys(schema)))
+                .iterator());
     }
 
 }

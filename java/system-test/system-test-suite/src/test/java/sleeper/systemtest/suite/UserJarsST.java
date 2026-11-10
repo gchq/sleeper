@@ -62,63 +62,67 @@ public class UserJarsST {
 
     @Test
     void shouldApplyTableIteratorFromUserJarDuringIngest(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given a table configured with a custom iterator
         sleeper.sourceFiles().createWithNumberedRows("test.parquet", LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
                 ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
                 ITERATOR_CONFIG, "timestamp,50"));
 
-        // When
+        // When the source file is ingested
         sleeper.ingest().byQueue().sendSourceFiles("test.parquet").waitForTask().waitForJobs();
 
-        // Then
+        // Then only rows matching the iterator criteria are returned
         assertThat(sleeper.query().byQueue().allRowsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows().iterableOverRange(50, 100));
     }
 
     @Test
     void shouldApplyTableIteratorFromUserJarDuringCompaction(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given ingested data and a table configured with a custom iterator
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
                 ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
                 ITERATOR_CONFIG, "timestamp,50"));
 
-        // When
+        // When compaction is run
         sleeper.compaction().forceCreateJobs(1);
 
-        // Then
+        // Then only rows matching the iterator criteria are returned
         assertThat(sleeper.query().byQueue().allRowsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows().iterableOverRange(50, 100));
     }
 
     @Test
     void shouldApplyTableIteratorFromUserJarDuringQuery(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given ingested data and a table configured with a custom iterator
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
                 ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
                 ITERATOR_CONFIG, "timestamp,50"));
 
-        // When
+        // When the table is queried
         List<Row> rows = sleeper.query().byQueue().allRowsInTable();
 
-        // Then
+        // Then only rows matching the iterator criteria are returned
         assertThat(rows).containsExactlyInAnyOrderElementsOf(
                 sleeper.generateNumberedRows().iterableOverRange(50, 100));
     }
 
     @Test
     void shouldApplyQueryIteratorFromUserJar(SleeperDsl sleeper) throws Exception {
-        // Given
+
+        // Given data has been ingested into the table
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
-        // When
+        // When the table is queried using a custom iterator
         List<Row> rows = sleeper.query().byQueue().allRowsWithProcessingConfig(builder -> builder
                 .queryTimeIteratorClassName("sleeper.example.iterator.FixedAgeOffIterator")
                 .queryTimeIteratorConfig("timestamp,50"));
 
-        // Then
+        // Then only rows matching the iterator criteria are returned
         assertThat(rows).containsExactlyInAnyOrderElementsOf(
                 sleeper.generateNumberedRows().iterableOverRange(50, 100));
     }

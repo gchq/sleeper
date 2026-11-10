@@ -24,7 +24,7 @@ import sleeper.clients.deploy.jar.JarsBucketCreator;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -36,7 +36,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUN
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public abstract class JarsBucketITBase extends LocalStackTestBase {
+public abstract class JarsBucketITBase extends LocalAwsTestBase {
 
     @TempDir
     protected Path tempDir;

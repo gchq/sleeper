@@ -32,7 +32,7 @@ import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.List;
 import java.util.UUID;
@@ -43,7 +43,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
+public class CompactionCommitBatcherLambdaIT extends LocalAwsTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final CompactionCommitMessageSerDe compactionSerDe = new CompactionCommitMessageSerDe();
@@ -85,7 +85,30 @@ public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
         assertThat(response.getBatchItemFailures())
                 .extracting(BatchItemFailure::getItemIdentifier)
                 .containsExactly(sqsMessage.getMessageId());
+    }
 
+    @Test
+    void shouldFailWhenInvalidAndValidMessagesAreMixedInOneBatch() {
+        // Given
+        ReplaceFileReferencesRequest filesRequest = createFilesRequest();
+        List<SQSMessage> messages = List.of(
+                createMessageWithId("1-valid", new CompactionCommitMessage("table-1", filesRequest)),
+                createMessageWithId("2-invalid", "not-a-commit"),
+                createMessageWithId("3-valid", new CompactionCommitMessage("table-2", filesRequest)),
+                createMessageWithId("4-invalid", "not-a-commit"));
+
+        // When
+        SQSBatchResponse response = lambda().handleRequest(createEvent(messages), null);
+
+        // Then
+        assertThat(receiveCommitRequests()).containsExactly(
+                StateStoreCommitRequest.create("table-1",
+                        new ReplaceFileReferencesTransaction(List.of(filesRequest))),
+                StateStoreCommitRequest.create("table-2",
+                        new ReplaceFileReferencesTransaction(List.of(filesRequest))));
+        assertThat(response.getBatchItemFailures())
+                .extracting(BatchItemFailure::getItemIdentifier)
+                .containsExactly("2-invalid", "4-invalid");
     }
 
     private ReplaceFileReferencesRequest createFilesRequest() {
@@ -109,15 +132,27 @@ public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
     }
 
     private SQSEvent createEvent(SQSMessage... messages) {
+        return createEvent(List.of(messages));
+    }
+
+    private SQSEvent createEvent(List<SQSMessage> messages) {
         SQSEvent event = new SQSEvent();
-        event.setRecords(List.of(messages));
+        event.setRecords(messages);
         return event;
     }
 
     private SQSMessage createMessage(String tableId, ReplaceFileReferencesRequest request) {
+        return createMessageWithId(UUID.randomUUID().toString(), new CompactionCommitMessage(tableId, request));
+    }
+
+    private SQSMessage createMessageWithId(String id, CompactionCommitMessage commit) {
+        return createMessageWithId(id, compactionSerDe.toJson(commit));
+    }
+
+    private SQSMessage createMessageWithId(String id, String body) {
         SQSMessage message = new SQSMessage();
-        message.setMessageId(UUID.randomUUID().toString());
-        message.setBody(compactionSerDe.toJson(new CompactionCommitMessage(tableId, request)));
+        message.setMessageId(id);
+        message.setBody(body);
         return message;
     }
 

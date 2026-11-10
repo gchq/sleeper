@@ -30,9 +30,11 @@ public interface CompactionRunner {
      *
      * The supplied {@link CompactionRequest} carries the job, the table configuration, the region to read, and a
      * progress callback. The progress callback is always non-null: if the caller does not specify one, the request will
-     * carry a no-op consumer. The rate and regularity of progress updates is at the discretion of the implementation.
-     * Callbacks may receive the same row count multiple times. Implementations MUST call the callback function when the
-     * compaction has finished to guarantee at least one update.
+     * carry a no-op consumer. Implementations MUST call the callback regularly, at the interval given in the request,
+     * with the number of rows read from the input files so far. This is used to detect a stalled compaction, so updates
+     * must be sent regardless of how many rows are read or written. Callbacks may receive the same row count multiple
+     * times. Implementations MUST call the callback function when the compaction has finished to guarantee at least one
+     * update.
      *
      * <strong>Note:</strong> Callback code must be thread safe as it is not specified which thread will call it, i.e.
      * it may not be the thread running the compaction that sends progress notifications.

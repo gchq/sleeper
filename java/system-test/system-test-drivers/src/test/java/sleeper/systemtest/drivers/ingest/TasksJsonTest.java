@@ -34,11 +34,7 @@ public class TasksJsonTest {
     public void shouldOutputJson() {
         // Given
         List<RunTaskResponse> responses = List.of(RunTaskResponse.builder()
-                .tasks(Task.builder()
-                        .taskArn("some-task").clusterArn("some-cluster")
-                        .createdAt(Instant.parse("2022-12-22T10:08:01Z"))
-                        .build())
-                .build());
+                .tasks(task("some-task")).build());
 
         // When
         String json = TasksJson.from(responses);
@@ -53,10 +49,13 @@ public class TasksJsonTest {
         List<Task> results = TasksJson.readTasks(new StringReader("{\"tasks\":[" +
                 "{\"taskArn\":\"some-task\",\"clusterArn\":\"some-cluster\",\"createdAt\":\"2022-12-22T10:08:01Z\"}]}"));
 
-        assertThat(results)
-                .containsExactly(Task.builder()
-                        .taskArn("some-task").clusterArn("some-cluster")
-                        .createdAt(Instant.parse("2022-12-22T10:08:01Z"))
-                        .build());
+        assertThat(results).containsExactly(task("some-task"));
+    }
+
+    private static Task task(String taskArn) {
+        return Task.builder()
+                .taskArn(taskArn).clusterArn("some-cluster")
+                .createdAt(Instant.parse("2022-12-22T10:08:01Z"))
+                .build();
     }
 }

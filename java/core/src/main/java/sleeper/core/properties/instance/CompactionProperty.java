@@ -50,7 +50,8 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.commit.batching.window.seconds")
             .description("The time in seconds that the batcher will wait for compaction commits to appear if the " +
                     "batch size is not filled. This will be set in the SQS event source for the lambda. This can be " +
-                    "a maximum of 300, i.e. 5 minutes.")
+                    "a maximum of 300, i.e. 5 minutes.\n" +
+                    "Also see sleeper.compaction.commit.queue.visibility.timeout.seconds.")
             .defaultValue("30")
             .validationPredicate(value -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(value, 300))
             .propertyGroup(InstancePropertyGroup.COMPACTION)
@@ -144,6 +145,29 @@ public interface CompactionProperty {
             .defaultValue("3")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_PROGRESS_FIRST_UPDATE_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.progress.first.update.timeout.seconds")
+            .description("The maximum time in seconds that a compaction task will wait for the first progress update " +
+                    "from a running compaction job, before deciding that the compaction has stalled.\n" +
+                    "If a compaction stalls, the job is returned to the queue and the compaction task is terminated.")
+            .defaultValue("600")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_PROGRESS_STALL_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.progress.stall.timeout.seconds")
+            .description("The maximum time in seconds that the number of rows processed by a running compaction job " +
+                    "can stay unchanged, before the compaction task decides that the compaction has stalled.\n" +
+                    "If a compaction stalls, the job is returned to the queue and the compaction task is terminated.")
+            .defaultValue("300")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_PROGRESS_CHECK_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.progress.check.period.seconds")
+            .description("The frequency, in seconds, with which a compaction task checks whether a running " +
+                    "compaction job has stalled.\n" +
+                    "This must be less than the values of " +
+                    "sleeper.compaction.task.progress.first.update.timeout.seconds and " +
+                    "sleeper.compaction.task.progress.stall.timeout.seconds.")
+            .defaultValue("30")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.job.creation.period.minutes")
             .description("The rate at which the compaction job creation lambda runs (in minutes, must be >=1).")
             .defaultValue("1")
@@ -202,9 +226,17 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHER_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.commit.batcher.timeout.seconds")
-            .description("The timeout for the lambda that batches up compaction commits in seconds.")
-            .defaultValue("900")
+            .description("The timeout for the lambda that batches up compaction commits, in seconds.\n" +
+                    "Also see sleeper.compaction.commit.queue.visibility.timeout.seconds.")
+            .defaultValue("30")
             .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_COMMIT_QUEUE_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.commit.queue.visibility.timeout.seconds")
+            .description("The visibility timeout for the queue of compaction commits, in seconds. " +
+                    "This should be greater than sleeper.compaction.commit.batcher.timeout.seconds plus sleeper.compaction.job.commit.batching.window.seconds.")
+            .defaultValue("90")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.compaction.commit.batcher.concurrency.reserved")

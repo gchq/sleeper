@@ -51,6 +51,6 @@ public class ReportingDsl {
     }
 
     private SystemTestDrivers adminDrivers() {
-        return context.instance().adminDrivers();
+        return context.instance().adminRoleDrivers();
     }
 }

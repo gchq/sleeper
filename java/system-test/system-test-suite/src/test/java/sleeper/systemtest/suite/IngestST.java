@@ -47,79 +47,83 @@ public class IngestST {
 
     @Test
     void shouldIngest1File(SleeperDsl sleeper) {
-        // Given
+        // Given a source file containing rows to ingest
         sleeper.sourceFiles()
                 .createWithNumberedRows("file.parquet", LongStream.range(0, 100));
 
-        // When
+        // When the source file is ingested by the queue
         sleeper.ingest().byQueue().sendSourceFiles("file.parquet")
                 .waitForTask().waitForJobs();
 
-        // Then
+        // Then all rows are imported successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows()
                         .iterableOverRange(0, 100));
+        // And the data is stored in a single table file
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
     @Test
     void shouldIngest4FilesInOneJob(SleeperDsl sleeper) {
-        // Given
+        // Given multiple source files containing rows to ingest
         sleeper.sourceFiles()
                 .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
                 .createWithNumberedRows("file2.parquet", LongStream.range(100, 200))
                 .createWithNumberedRows("file3.parquet", LongStream.range(200, 300))
                 .createWithNumberedRows("file4.parquet", LongStream.range(300, 400));
 
-        // When
+        // When the source files are ingested in a single job
         sleeper.ingest().byQueue().sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
                 .waitForTask().waitForJobs();
 
-        // Then
+        // Then all rows are imported successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows()
                         .iterableOverRange(0, 400));
+        // And the data is stored in a single table file
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
     @Test
     void shouldIngest4FilesInTwoJobs(SleeperDsl sleeper) {
-        // Given
+        // Given multiple source files containing rows to ingest
         sleeper.sourceFiles()
                 .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
                 .createWithNumberedRows("file2.parquet", LongStream.range(100, 200))
                 .createWithNumberedRows("file3.parquet", LongStream.range(200, 300))
                 .createWithNumberedRows("file4.parquet", LongStream.range(300, 400));
 
-        // When
+        // When the source files are ingested in multiple jobs
         sleeper.ingest().byQueue()
                 .sendSourceFiles("file1.parquet", "file2.parquet")
                 .sendSourceFiles("file3.parquet", "file4.parquet")
                 .waitForTask().waitForJobs();
 
-        // Then
+        // Then all rows are imported successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows()
                         .iterableOverRange(0, 400));
+        // And the data is stored in multiple table files
         assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 
     @ParameterizedTest
     @MethodSource("ingestTypesToTestWithManyRows")
     void shouldIngest20kRowsWithIngestType(IngestTypeDsl ingestType, SleeperDsl sleeper) {
-        // Given
+        // Given a source file containing many rows to ingest
         sleeper.sourceFiles()
                 .createWithNumberedRows("file.parquet", LongStream.range(0, 20000));
 
-        // When
+        // When the source file is ingested
         sleeper.ingest().setType(ingestType)
                 .byQueue().sendSourceFiles("file.parquet")
                 .waitForTask().waitForJobs();
 
-        // Then
+        // Then all rows are imported successfully
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows()
                         .iterableOverRange(0, 20000));
+        // And the data is stored in a single table file
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1)
                 .matches(files -> numberOfRowsIn(files) == 20_000L,

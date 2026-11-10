@@ -29,8 +29,6 @@ import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 import sleeper.common.task.EC2Scaler;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
-import sleeper.compaction.core.job.commit.CompactionCommitMessage;
-import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.job.creation.CreateCompactionJobBatches;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
@@ -39,8 +37,8 @@ import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.job.creation.CompactionBatchJobsWriterToS3;
 import sleeper.compaction.job.creation.CompactionBatchMessageSenderToSqs;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -48,6 +46,7 @@ import sleeper.core.util.SplitIntoBatches;
 import sleeper.invoke.tables.InvokeForTables;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
+import sleeper.systemtest.dsl.compaction.CompactionCommitMessageWrapper;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -110,9 +109,9 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     @Override
-    public void triggerCreateJobs() {
+    public void triggerCreateJobs(Stream<TableStatus> tables) {
         String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_CREATION_QUEUE_URL);
-        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, instance.streamTableProperties().map(TableProperties::getStatus));
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, tables);
     }
 
     @Override
@@ -155,22 +154,19 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     @Override
-    public void sendCompactionCommits(Stream<CompactionCommitMessage> commits) {
+    public void sendCompactionCommits(Stream<CompactionCommitMessageWrapper> commits) {
         SplitIntoBatches.streamBatchesOf(10000, commits).forEach(bigBatch -> {
             LOGGER.info("Processing batch of {} commits", bigBatch.size());
             SplitIntoBatches.streamBatchesOf(10, bigBatch)
                     .map(batch -> {
-                        return EXECUTOR.submit(() -> {
-                            CompactionCommitMessageSerDe serDe = new CompactionCommitMessageSerDe();
-                            sqsClient.sendMessageBatch(builder -> builder
-                                    .queueUrl(instance.getInstanceProperties().get(COMPACTION_COMMIT_QUEUE_URL))
-                                    .entries(batch.stream()
-                                            .map(commit -> SendMessageBatchRequestEntry.builder()
-                                                    .id(commit.request().getJobId())
-                                                    .messageBody(serDe.toJson(commit))
-                                                    .build())
-                                            .toList()));
-                        });
+                        return EXECUTOR.submit(() -> sqsClient.sendMessageBatch(builder -> builder
+                                .queueUrl(instance.getInstanceProperties().get(COMPACTION_COMMIT_QUEUE_URL))
+                                .entries(batch.stream()
+                                        .map(commit -> SendMessageBatchRequestEntry.builder()
+                                                .id(commit.jobId())
+                                                .messageBody(commit.body())
+                                                .build())
+                                        .toList())));
                     })
                     .forEach(future -> {
                         try {

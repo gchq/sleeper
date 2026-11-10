@@ -32,6 +32,7 @@ import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.BatchedC
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.task.CompactionTask;
+import sleeper.compaction.core.task.CompactionWatchdogFactory;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
@@ -117,9 +118,20 @@ public class ECSCompactionTaskRunner {
 
             CompactionJobCommitterOrSendToLambda committerOrLambda = committerOrSendToLambda(
                     tablePropertiesProvider, stateStoreProvider, jobTracker, instanceProperties, sqsClient);
-            CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider, propertiesReloader,
-                    stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
-                    waitForFiles, committerOrLambda, jobTracker, taskTracker, compactionSelector, taskId);
+            CompactionTask task = CompactionTask.builder()
+                    .instanceProperties(instanceProperties)
+                    .tablePropertiesProvider(tablePropertiesProvider)
+                    .propertiesReloader(propertiesReloader)
+                    .stateStoreProvider(stateStoreProvider)
+                    .messageReceiver(new SqsCompactionQueueHandler(sqsClient, instanceProperties))
+                    .waitForFiles(waitForFiles)
+                    .jobCommitter(committerOrLambda)
+                    .jobTracker(jobTracker)
+                    .taskTracker(taskTracker)
+                    .runnerFactory(compactionSelector)
+                    .taskId(taskId)
+                    .watchdogFactory(CompactionWatchdogFactory.terminateOnStall(new ExitJvmCompactionTaskTerminator()))
+                    .build();
             task.run();
         } finally {
             LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, Instant.now()));

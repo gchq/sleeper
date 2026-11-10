@@ -71,7 +71,7 @@ public class SystemTestReports {
 
         private SystemTestBuilder(SystemTestContext context) {
             super(context.reporting());
-            SystemTestDrivers drivers = context.instance().adminDrivers();
+            SystemTestDrivers drivers = context.instance().adminRoleDrivers();
             this.partitionDriver = drivers.partitionReports(context);
             this.ingestDriver = drivers.ingestReports(context);
             this.compactionDriver = drivers.compactionReports(context);

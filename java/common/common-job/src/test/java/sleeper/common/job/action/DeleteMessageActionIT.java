@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.local.aws.test.LocalAwsTestBase;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +30,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class DeleteMessageActionIT extends LocalStackTestBase {
+public class DeleteMessageActionIT extends LocalAwsTestBase {
 
     private String createQueue() {
         Map<QueueAttributeName, String> attributes = new HashMap<>();

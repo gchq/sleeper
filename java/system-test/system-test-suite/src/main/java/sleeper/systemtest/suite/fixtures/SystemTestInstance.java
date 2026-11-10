@@ -47,8 +47,13 @@ import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCH_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_MAX_RETRIES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_QUEUE_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
@@ -60,11 +65,14 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
+import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 import static sleeper.core.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
@@ -72,6 +80,7 @@ import static sleeper.core.properties.instance.MetricsProperty.METRICS_TABLE_BAT
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
+import static sleeper.core.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
@@ -81,13 +90,20 @@ import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_ROW_BATCH_TYPE;
+import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_CREATION_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_DELETION_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_PLATFORM;
+import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_TIMEOUT_SECS;
 import static sleeper.core.properties.model.OptionalStack.CompactionStack;
 import static sleeper.core.properties.model.OptionalStack.EmrBulkImportStack;
 import static sleeper.core.properties.model.OptionalStack.EmrServerlessBulkImportStack;
 import static sleeper.core.properties.model.OptionalStack.GarbageCollectorStack;
 import static sleeper.core.properties.model.OptionalStack.IngestBatcherStack;
 import static sleeper.core.properties.model.OptionalStack.IngestStack;
+import static sleeper.core.properties.model.OptionalStack.PartitionSplittingStack;
+import static sleeper.core.properties.model.OptionalStack.TableMetricsStack;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
 
@@ -119,6 +135,7 @@ public class SystemTestInstance {
             .deployConfig(SystemTestInstance::createOptionalFeaturesDisabledConfiguration)
             .useSystemTestIngestSourceBucket(false)
             .build();
+    public static final SystemTestInstanceConfiguration BATCHING = usingSystemTestDefaults("batch", SystemTestInstance::createBatchingConfiguration);
 
     // These instance types are set to give EMR more options when creating a cluster, and avoid problems due to
     // insufficient resource availability. This is not used during performance tests.
@@ -246,6 +263,7 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EksBulkImportStack));
         properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE.toString());
+        properties.set(BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL, "true");
         setSystemTestTags(properties, "bulkImportOnEksAuto", "Sleeper Maven system test bulk import on EKS Auto Mode");
         return createInstanceConfiguration(properties);
     }
@@ -254,6 +272,7 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.EksBulkImportStack));
         properties.set(BULK_IMPORT_EKS_CLUSTER_TYPE, EksClusterType.AUTOMODE.toString());
+        properties.set(BULK_IMPORT_EKS_AUTOMODE_CONFIGURE_NODEPOOL, "true");
         properties.setNumber(BULK_IMPORT_EKS_JOB_CONCURRENCY_LEVEL, 5);
         properties.setNumber(BULK_IMPORT_EKS_AUTOMODE_NODEPOOL_CPU_LIMIT, 640); // 5 jobs x 4 cores x (29 executors + 1 driver), plus 1 submitter per job and slack
         setSystemTestTags(properties, "bulkImportPerformanceOnEks", "Sleeper Maven system test bulk import performance on EKS");
@@ -317,6 +336,34 @@ public class SystemTestInstance {
         properties.set(COMPACTION_TRACKER_ENABLED, "false");
         properties.set(INGEST_TRACKER_ENABLED, "false");
         setSystemTestTags(properties, "optionalFeaturesDisabled", "Sleeper Maven system test optional features disabled");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static SleeperInstanceConfiguration createBatchingConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setEnumList(OPTIONAL_STACKS, List.of(
+                CompactionStack, GarbageCollectorStack, PartitionSplittingStack, TableMetricsStack));
+        properties.set(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.LAMBDA.toString());
+        properties.setNumber(COMPACTION_JOB_CREATION_BATCH_SIZE, 10);
+        properties.setNumber(COMPACTION_COMMIT_BATCH_SIZE, 10);
+        properties.setNumber(COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS, 1);
+        properties.setNumber(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE, 10);
+        properties.setNumber(FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE, 10);
+        properties.setNumber(SNAPSHOT_CREATION_BATCH_SIZE, 10);
+        properties.setNumber(SNAPSHOT_DELETION_BATCH_SIZE, 10);
+        properties.setNumber(TRANSACTION_DELETION_BATCH_SIZE, 10);
+        properties.setNumber(METRICS_TABLE_BATCH_SIZE, 10);
+        // Failed messages only move to a dead letter queue after the visibility timeout, for each retry.
+        // These queues' visibility timeouts are set from these lambda timeouts, which default to 14-15 minutes.
+        // The snapshot deletion and table metrics queues have a fixed visibility timeout of 70 seconds.
+        properties.setNumber(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, 60);
+        properties.setNumber(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_SECONDS, 60);
+        properties.setNumber(SNAPSHOT_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, 60);
+        properties.setNumber(TRANSACTION_DELETION_LAMBDA_TIMEOUT_SECS, 60);
+        // This must be greater than the commit batcher lambda timeout (default 30 seconds) plus the batching window
+        properties.setNumber(COMPACTION_COMMIT_QUEUE_TIMEOUT_IN_SECONDS, 40);
+        properties.setNumber(COMPACTION_COMMIT_MAX_RETRIES, 1);
+        setSystemTestTags(properties, "batching", "Sleeper Maven system test instance with lambdas configured with controlled batch sizes");
         return createInstanceConfiguration(properties);
     }
 

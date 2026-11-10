@@ -22,8 +22,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
-import software.amazon.awssdk.services.s3.model.DeletedObject;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.S3Error;
 
 import sleeper.core.util.ThreadSleep;
 import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
@@ -54,12 +54,14 @@ public class S3DeleteFiles implements DeleteFiles {
     public void deleteFiles(List<String> filenames, TableFilesDeleted deleted) {
         FilesToDelete files = FilesToDelete.from(filenames);
         for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
+            FileDeletionTracker tracker = new FileDeletionTracker(filesInBucket);
             filesInBucket.objectKeysInBatchesOf(s3BatchSize)
-                    .forEach(batch -> deleteS3Batch(filesInBucket, batch, deleted));
+                    .forEach(batch -> deleteS3Batch(filesInBucket, batch, tracker));
+            tracker.recordFileResults(deleted);
         }
     }
 
-    private void deleteS3Batch(FilesToDeleteInBucket filesInBucket, List<String> objectKeys, TableFilesDeleted deleted) {
+    private void deleteS3Batch(FilesToDeleteInBucket filesInBucket, List<String> objectKeys, FileDeletionTracker tracker) {
         DeleteObjectsRequest deleteRequest = createDeleteObjectsRequest(filesInBucket, objectKeys);
         boolean retry;
         do {
@@ -67,9 +69,11 @@ public class S3DeleteFiles implements DeleteFiles {
             try {
                 LOGGER.debug("Sending request to delete {} objects", objectKeys.size());
                 DeleteObjectsResponse response = s3Client.deleteObjects(deleteRequest);
-                for (DeletedObject object : response.deleted()) {
-                    deleted.deleted(filesInBucket.getFilenameForObjectKey(object.key()));
-                }
+                response.deleted().forEach(object -> tracker.objectDeleted(object.key()));
+                response.errors().forEach(error -> {
+                    LOGGER.error("Failed to delete object {}: {} - {}", error.key(), error.code(), error.message());
+                    tracker.objectFailed(error.key(), deleteFailure(error));
+                });
             } catch (Exception e) {
                 if (isSlowDownException(e)) {
                     retry = true;
@@ -77,10 +81,15 @@ public class S3DeleteFiles implements DeleteFiles {
                     sleep.waitForMillisWrappingInterrupt(1000);
                 } else {
                     LOGGER.error("Failed to delete batch: {}", objectKeys, e);
-                    deleted.failed(filesInBucket.getAllFilenamesInBatch(objectKeys), e);
+                    tracker.objectsFailed(objectKeys, e);
                 }
             }
         } while (retry);
+    }
+
+    private static RuntimeException deleteFailure(S3Error error) {
+        return new RuntimeException(
+                "Failed to delete object " + error.key() + ": " + error.code() + " - " + error.message());
     }
 
     private static boolean isSlowDownException(Exception e) {

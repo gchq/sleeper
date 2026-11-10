@@ -52,7 +52,7 @@ public class GarbageCollectionST {
 
     @Test
     void shouldGarbageCollectFilesAfterCompaction(SleeperDsl sleeper) {
-        // Given
+        // Given a table with compacted files awaiting garbage collection
         int numberOfFilesToGC = 11_000;
         int rowsPerFile = 100;
         int numberOfRows = rowsPerFile * numberOfFilesToGC;
@@ -66,11 +66,11 @@ public class GarbageCollectionST {
                 .splitIngests(numberOfFilesToGC, rows);
         sleeper.stateStore().fakeCommits().compactAllFilesToOnePerPartition();
 
-        // When
+        // When garbage collection is invoked
         sleeper.garbageCollection().invoke().waitFor(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(1)));
 
-        // Then
+        // Then only active file references remain
         assertThat(sleeper.tableFiles().all()).satisfies(files -> {
             assertThat(files.getFilesWithNoReferences()).isEmpty();
             assertThat(files.streamFileReferences()).hasSize(1);
