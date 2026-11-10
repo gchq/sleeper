@@ -54,6 +54,7 @@ public class TransactionLogSnapshotTestBase extends LocalAwsTestBase {
     protected final Schema schema = createSchemaWithKey("key", new LongType());
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
+    protected String snapshotId = "test-snapshot";
 
     @BeforeEach
     public void setup() throws IOException {
@@ -91,7 +92,7 @@ public class TransactionLogSnapshotTestBase extends LocalAwsTestBase {
                 transactionLogs.forTable(table).getPartitionsLogStore(),
                 transactionLogs.getTransactionBodyStore(),
                 s3Client, s3TransferManager,
-                latestSnapshotsLoader, snapshotSaver)
+                latestSnapshotsLoader, snapshotSaver, () -> snapshotId)
                 .createSnapshot();
     }
 
@@ -131,11 +132,11 @@ public class TransactionLogSnapshotTestBase extends LocalAwsTestBase {
     }
 
     protected TransactionLogSnapshotMetadata filesSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshotMetadata.forFiles(TransactionLogSnapshotMetadata.getBasePath(instanceProperties, table), transactionNumber);
+        return TransactionLogSnapshotMetadata.forFiles(TransactionLogSnapshotMetadata.getBasePath(instanceProperties, table), transactionNumber, snapshotId);
     }
 
     protected TransactionLogSnapshotMetadata partitionsSnapshot(TableProperties table, long transactionNumber) {
-        return TransactionLogSnapshotMetadata.forPartitions(TransactionLogSnapshotMetadata.getBasePath(instanceProperties, table), transactionNumber);
+        return TransactionLogSnapshotMetadata.forPartitions(TransactionLogSnapshotMetadata.getBasePath(instanceProperties, table), transactionNumber, snapshotId);
     }
 
     protected String filesSnapshotObjectKey(TableProperties table, long transactionNumber) {

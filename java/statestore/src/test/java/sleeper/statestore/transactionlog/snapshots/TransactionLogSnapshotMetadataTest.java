@@ -74,4 +74,34 @@ public class TransactionLogSnapshotMetadataTest {
         assertThat(metadata.getObjectKey()).isEqualTo(
                 "test-table-id/statestore/snapshots/123-partitions.arrow");
     }
+
+    @Test
+    void shouldGetFilesPathWithSnapshotId() {
+        // Given
+        String basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
+
+        // When
+        TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forFiles(basePath, 123, "test-snapshot");
+
+        // Then
+        assertThat(metadata.getPath()).isEqualTo(
+                "s3a://test-bucket/test-table-id/statestore/snapshots/123-test-snapshot-files.arrow");
+        assertThat(metadata.getObjectKey()).isEqualTo(
+                "test-table-id/statestore/snapshots/123-test-snapshot-files.arrow");
+    }
+
+    @Test
+    void shouldGetPartitionsPathWithSnapshotId() {
+        // Given
+        String basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
+
+        // When
+        TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forPartitions(basePath, 123, "test-snapshot");
+
+        // Then
+        assertThat(metadata.getPath()).isEqualTo(
+                "s3a://test-bucket/test-table-id/statestore/snapshots/123-test-snapshot-partitions.arrow");
+        assertThat(metadata.getObjectKey()).isEqualTo(
+                "test-table-id/statestore/snapshots/123-test-snapshot-partitions.arrow");
+    }
 }

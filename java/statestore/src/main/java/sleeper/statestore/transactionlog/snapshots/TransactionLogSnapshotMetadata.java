@@ -98,6 +98,32 @@ public class TransactionLogSnapshotMetadata {
         return new TransactionLogSnapshotMetadata(getPartitionsPath(basePath, transactionNumber), SnapshotType.PARTITIONS, transactionNumber, createdTime);
     }
 
+    /**
+     * Creates metadata about a snapshot of files, with a path unique to this snapshot. This means a failed save cannot
+     * delete a file that another snapshot at the same transaction number refers to.
+     *
+     * @param  basePath          the base path under which data is held for the given Sleeper table
+     * @param  transactionNumber the transaction number the snapshot was made against
+     * @param  snapshotId        a unique ID for the snapshot, included in the file name
+     * @return                   the metadata
+     */
+    public static TransactionLogSnapshotMetadata forFiles(String basePath, long transactionNumber, String snapshotId) {
+        return new TransactionLogSnapshotMetadata(getFilesPath(basePath, transactionNumber + "-" + snapshotId), SnapshotType.FILES, transactionNumber);
+    }
+
+    /**
+     * Creates metadata about a snapshot of partitions, with a path unique to this snapshot. This means a failed save
+     * cannot delete a file that another snapshot at the same transaction number refers to.
+     *
+     * @param  basePath          the base path under which data is held for the given Sleeper table
+     * @param  transactionNumber the transaction number the snapshot was made against
+     * @param  snapshotId        a unique ID for the snapshot, included in the file name
+     * @return                   the metadata
+     */
+    public static TransactionLogSnapshotMetadata forPartitions(String basePath, long transactionNumber, String snapshotId) {
+        return new TransactionLogSnapshotMetadata(getPartitionsPath(basePath, transactionNumber + "-" + snapshotId), SnapshotType.PARTITIONS, transactionNumber);
+    }
+
     public TransactionLogSnapshotMetadata(String path, SnapshotType type, long transactionNumber) {
         this(path, type, transactionNumber, null);
     }
@@ -137,11 +163,19 @@ public class TransactionLogSnapshotMetadata {
     }
 
     private static String getFilesPath(String basePath, long transactionNumber) {
-        return basePath + "/statestore/snapshots/" + transactionNumber + "-files.arrow";
+        return getFilesPath(basePath, String.valueOf(transactionNumber));
     }
 
     private static String getPartitionsPath(String basePath, long transactionNumber) {
-        return basePath + "/statestore/snapshots/" + transactionNumber + "-partitions.arrow";
+        return getPartitionsPath(basePath, String.valueOf(transactionNumber));
+    }
+
+    private static String getFilesPath(String basePath, String filePrefix) {
+        return basePath + "/statestore/snapshots/" + filePrefix + "-files.arrow";
+    }
+
+    private static String getPartitionsPath(String basePath, String filePrefix) {
+        return basePath + "/statestore/snapshots/" + filePrefix + "-partitions.arrow";
     }
 
     @Override

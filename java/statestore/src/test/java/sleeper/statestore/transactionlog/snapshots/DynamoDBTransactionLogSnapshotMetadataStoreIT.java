@@ -88,6 +88,34 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends LocalAwsTestB
             assertThatThrownBy(() -> store.saveSnapshot(filesSnapshot(1)))
                     .isInstanceOf(DuplicateSnapshotException.class);
         }
+
+        @Test
+        void shouldNotReplaceFilesSnapshotPathIfSnapshotAlreadyExists() throws Exception {
+            // Given
+            store.saveSnapshot(filesSnapshot(1, "snapshot-a"));
+
+            // When / Then
+            assertThatThrownBy(() -> store.saveSnapshot(filesSnapshot(1, "snapshot-b")))
+                    .isInstanceOf(DuplicateSnapshotException.class);
+            assertThat(store.getFilesSnapshots())
+                    .containsExactly(filesSnapshot(1, "snapshot-a"));
+            assertThat(store.getLatestSnapshots().getFilesSnapshot())
+                    .contains(filesSnapshot(1, "snapshot-a"));
+        }
+
+        @Test
+        void shouldFailToAddFilesSnapshotOlderThanLatestSnapshot() throws Exception {
+            // Given
+            store.saveSnapshot(filesSnapshot(2));
+
+            // When / Then
+            assertThatThrownBy(() -> store.saveSnapshot(filesSnapshot(1)))
+                    .isInstanceOf(DuplicateSnapshotException.class);
+            assertThat(store.getFilesSnapshots())
+                    .containsExactly(filesSnapshot(2));
+            assertThat(store.getLatestSnapshots().getFilesSnapshot())
+                    .contains(filesSnapshot(2));
+        }
     }
 
     @Nested
@@ -126,6 +154,34 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends LocalAwsTestB
             // Then
             assertThatThrownBy(() -> store.saveSnapshot(partitionsSnapshot(1)))
                     .isInstanceOf(DuplicateSnapshotException.class);
+        }
+
+        @Test
+        void shouldNotReplacePartitionsSnapshotPathIfSnapshotAlreadyExists() throws Exception {
+            // Given
+            store.saveSnapshot(partitionsSnapshot(1, "snapshot-a"));
+
+            // When / Then
+            assertThatThrownBy(() -> store.saveSnapshot(partitionsSnapshot(1, "snapshot-b")))
+                    .isInstanceOf(DuplicateSnapshotException.class);
+            assertThat(store.getPartitionsSnapshots())
+                    .containsExactly(partitionsSnapshot(1, "snapshot-a"));
+            assertThat(store.getLatestSnapshots().getPartitionsSnapshot())
+                    .contains(partitionsSnapshot(1, "snapshot-a"));
+        }
+
+        @Test
+        void shouldFailToAddPartitionsSnapshotOlderThanLatestSnapshot() throws Exception {
+            // Given
+            store.saveSnapshot(partitionsSnapshot(2));
+
+            // When / Then
+            assertThatThrownBy(() -> store.saveSnapshot(partitionsSnapshot(1)))
+                    .isInstanceOf(DuplicateSnapshotException.class);
+            assertThat(store.getPartitionsSnapshots())
+                    .containsExactly(partitionsSnapshot(2));
+            assertThat(store.getLatestSnapshots().getPartitionsSnapshot())
+                    .contains(partitionsSnapshot(2));
         }
     }
 
@@ -443,11 +499,19 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends LocalAwsTestB
         return TransactionLogSnapshotMetadata.forFiles(tableProperties.get(TABLE_ID), transactionNumber);
     }
 
+    private TransactionLogSnapshotMetadata filesSnapshot(long transactionNumber, String snapshotId) {
+        return TransactionLogSnapshotMetadata.forFiles(tableProperties.get(TABLE_ID), transactionNumber, snapshotId);
+    }
+
     private TransactionLogSnapshotMetadata partitionsSnapshot(long transactionNumber) {
         return partitionsSnapshot(tableProperties, transactionNumber);
     }
 
     private TransactionLogSnapshotMetadata partitionsSnapshot(TableProperties tableProperties, long transactionNumber) {
         return TransactionLogSnapshotMetadata.forPartitions(tableProperties.get(TABLE_ID), transactionNumber);
+    }
+
+    private TransactionLogSnapshotMetadata partitionsSnapshot(long transactionNumber, String snapshotId) {
+        return TransactionLogSnapshotMetadata.forPartitions(tableProperties.get(TABLE_ID), transactionNumber, snapshotId);
     }
 }

@@ -332,6 +332,27 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                         partitionsSnapshotObjectKey(table, 1));
     }
 
+    @Test
+    void shouldKeepLatestSnapshotFileWhenOutOfDateRunBuildsDuplicate() throws Exception {
+        // Given a snapshot at transaction 1
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
+        update(stateStore).initialise(schema);
+        createSnapshots(table);
+        String originalSnapshotId = snapshotId;
+
+        // When another run reads an out of date latest snapshot and builds a duplicate at transaction 1
+        snapshotId = "other-snapshot";
+        createSnapshots(table, LatestSnapshots::empty);
+
+        // Then the original snapshot is kept and the duplicate file is removed
+        snapshotId = originalSnapshotId;
+        assertThat(snapshotStore(table).getLatestSnapshots())
+                .isEqualTo(new LatestSnapshots(null, partitionsSnapshot(table, 1)));
+        assertThat(snapshotStore(table).getPartitionsSnapshots()).containsExactly(partitionsSnapshot(table, 1));
+        assertThat(filesInDataBucket()).containsExactly(partitionsSnapshotObjectKey(table, 1));
+    }
+
     private StateStore createStateStore(TableProperties tableProperties) {
         StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoClient, s3Client).build();
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);

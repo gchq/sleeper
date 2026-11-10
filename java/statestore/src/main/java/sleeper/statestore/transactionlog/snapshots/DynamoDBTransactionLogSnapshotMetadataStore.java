@@ -96,7 +96,8 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
      * Saves a new snapshot to the index.
      *
      * @param  snapshot                   the metadata of the snapshot to be indexed
-     * @throws DuplicateSnapshotException if a snapshot already exists for the given transaction number
+     * @throws DuplicateSnapshotException if a snapshot already exists for the given transaction number, or the latest
+     *                                    snapshot is at a later transaction number
      */
     public void saveSnapshot(TransactionLogSnapshotMetadata snapshot) throws DuplicateSnapshotException {
         Instant updateTime = timeSupplier.get();
@@ -129,6 +130,8 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
                         .number(UPDATE_TIME, updateTime.toEpochMilli())
                         .string(SNAPSHOT_TYPE, snapshot.getType().name())
                         .build())
+                .conditionExpression("attribute_not_exists(#TransactionNumber)")
+                .expressionAttributeNames(Map.of("#TransactionNumber", TRANSACTION_NUMBER))
                 .build();
     }
 
@@ -149,7 +152,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
                         "#Path = :path, " +
                         "#TransactionNumber = :transaction_number, " +
                         "#UpdateTime = :update_time")
-                .conditionExpression("#TransactionNumber <> :transaction_number")
+                .conditionExpression("attribute_not_exists(#TransactionNumber) OR #TransactionNumber < :transaction_number")
                 .expressionAttributeNames(Map.of(
                         "#Path", pathKey,
                         "#TransactionNumber", transactionNumberKey,
@@ -192,6 +195,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     public LatestSnapshots getLatestSnapshots() {
         QueryResponse response = dynamo.query(QueryRequest.builder()
                 .tableName(latestSnapshotsTable)
+                .consistentRead(true)
                 .keyConditionExpression("#TableId = :table_id")
                 .expressionAttributeNames(Map.of("#TableId", TABLE_ID))
                 .expressionAttributeValues(new DynamoDBRecordBuilder()

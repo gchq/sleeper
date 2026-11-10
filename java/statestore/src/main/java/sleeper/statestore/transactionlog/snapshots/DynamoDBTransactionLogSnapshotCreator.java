@@ -38,6 +38,8 @@ import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapsho
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * Creates a snapshot of the current state of a state store if it has changed since the previous snapshot.
@@ -74,21 +76,22 @@ public class DynamoDBTransactionLogSnapshotCreator {
                 instanceProperties, tableProperties, dynamoDBClient);
         return new DynamoDBTransactionLogSnapshotCreator(instanceProperties, tableProperties,
                 fileTransactionStore, partitionTransactionStore, transactionBodyStore, s3Client, s3TransferManager,
-                snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
+                snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot, () -> UUID.randomUUID().toString());
     }
 
     public DynamoDBTransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore, TransactionBodyStore transactionBodyStore,
             S3Client s3Client, S3TransferManager s3TransferManager,
-            LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver) {
+            LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
+            Supplier<String> snapshotIdSupplier) {
         this.tableProperties = tableProperties;
         this.filesLogStore = filesLogStore;
         this.partitionsLogStore = partitionsLogStore;
         this.transactionBodyStore = transactionBodyStore;
         this.latestMetadataLoader = latestMetadataLoader;
         this.snapshotSaver = new DynamoDBTransactionLogSnapshotSaver(
-                latestMetadataLoader, metadataSaver, instanceProperties, tableProperties, s3Client, s3TransferManager);
+                latestMetadataLoader, metadataSaver, instanceProperties, tableProperties, s3Client, s3TransferManager, snapshotIdSupplier);
         this.fileStore = new StateStoreArrowFileReadStore(instanceProperties, s3Client);
     }
 
@@ -114,7 +117,10 @@ public class DynamoDBTransactionLogSnapshotCreator {
                 snapshotSaver.saveFilesSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new files snapshot");
             }
-        } catch (DuplicateSnapshotException | IOException e) {
+        } catch (DuplicateSnapshotException e) {
+            LOGGER.info("Skipped saving files snapshot for table {}, another run already saved a snapshot at or after this transaction: {}",
+                    tableProperties.getStatus(), e.getMessage());
+        } catch (IOException e) {
             LOGGER.error("Failed to create files snapshot for table {}", tableProperties.getStatus());
             throw new RuntimeException(e);
         }
@@ -131,7 +137,10 @@ public class DynamoDBTransactionLogSnapshotCreator {
                 snapshotSaver.savePartitionsSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new partitions snapshot");
             }
-        } catch (DuplicateSnapshotException | IOException e) {
+        } catch (DuplicateSnapshotException e) {
+            LOGGER.info("Skipped saving partitions snapshot for table {}, another run already saved a snapshot at or after this transaction: {}",
+                    tableProperties.getStatus(), e.getMessage());
+        } catch (IOException e) {
             LOGGER.error("Failed to create partitions snapshot for table {}", tableProperties.getStatus());
             throw new RuntimeException(e);
         }

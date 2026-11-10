@@ -207,15 +207,16 @@ public class DeleteTableIT extends LocalAwsTestBase {
         DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
                 .createSnapshot();
 
+        LatestSnapshots snapshots = snapshotMetadataStore(table).getLatestSnapshots();
         assertThat(listDataBucketObjectKeys())
                 .extracting(FilenameUtils::getName)
-                .containsExactly(
+                .containsExactlyInAnyOrder(
                         // Data files
                         FilenameUtils.getName(file.getFilename()),
                         FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"),
                         // Snapshot files
-                        "1-files.arrow",
-                        "1-partitions.arrow");
+                        FilenameUtils.getName(snapshots.getFilesSnapshot().orElseThrow().getPath()),
+                        FilenameUtils.getName(snapshots.getPartitionsSnapshot().orElseThrow().getPath()));
 
         // When
         deleteTable("table-1");

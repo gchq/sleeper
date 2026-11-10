@@ -44,6 +44,7 @@ import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapsho
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
@@ -283,7 +284,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     instanceProperties, tableProperties,
                     snapshotSetup.getFilesLog(), snapshotSetup.getPartitionsLog(), snapshotSetup.getTransactionBodyStore(),
                     s3Client, s3TransferManager,
-                    snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot)
+                    snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot, () -> UUID.randomUUID().toString())
                     .createSnapshot();
         }
     }

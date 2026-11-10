@@ -31,6 +31,8 @@ import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator.LatestSnapshotsMetadataLoader;
 
 import java.io.IOException;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * Stores snapshots derived from a transaction log. Holds an index of snapshots in DynamoDB, and stores snapshot data in
@@ -42,6 +44,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
     private final SnapshotMetadataSaver metadataSaver;
     private final StateStoreArrowFileUploadStore fileUploadStore;
     private final String basePath;
+    private final Supplier<String> snapshotIdSupplier;
 
     public DynamoDBTransactionLogSnapshotSaver(
             InstanceProperties instanceProperties, TableProperties tableProperties, DynamoDbClient dynamo,
@@ -53,16 +56,18 @@ public class DynamoDBTransactionLogSnapshotSaver {
     private DynamoDBTransactionLogSnapshotSaver(
             DynamoDBTransactionLogSnapshotMetadataStore metadataStore,
             InstanceProperties instanceProperties, TableProperties tableProperties, S3Client s3Client, S3TransferManager s3TransferManager) {
-        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, s3Client, s3TransferManager);
+        this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, s3Client, s3TransferManager,
+                () -> UUID.randomUUID().toString());
     }
 
     DynamoDBTransactionLogSnapshotSaver(
             LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            S3Client s3Client, S3TransferManager s3TransferManager) {
+            S3Client s3Client, S3TransferManager s3TransferManager, Supplier<String> snapshotIdSupplier) {
         this.metadataSaver = metadataSaver;
         this.fileUploadStore = new StateStoreArrowFileUploadStore(instanceProperties, tableProperties, s3Client, s3TransferManager);
         this.basePath = TransactionLogSnapshotMetadata.getBasePath(instanceProperties, tableProperties);
+        this.snapshotIdSupplier = snapshotIdSupplier;
     }
 
     /**
@@ -74,7 +79,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
      */
     public void saveFilesSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forFiles(
-                basePath, snapshot.getTransactionNumber());
+                basePath, snapshot.getTransactionNumber(), snapshotIdSupplier.get());
         StateStoreFiles state = snapshot.getState();
         fileUploadStore.saveFiles(metadata.getObjectKey(), state);
         saveMetadata(metadata);
@@ -90,7 +95,7 @@ public class DynamoDBTransactionLogSnapshotSaver {
      */
     public void savePartitionsSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forPartitions(
-                basePath, snapshot.getTransactionNumber());
+                basePath, snapshot.getTransactionNumber(), snapshotIdSupplier.get());
         StateStorePartitions state = snapshot.getState();
         fileUploadStore.savePartitions(metadata.getObjectKey(), state.all());
         saveMetadata(metadata);
