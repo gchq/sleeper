@@ -98,6 +98,7 @@ public class WhileCompactionST {
 
         CompactionDsl compaction = sleeper.compaction();
 
+        // When compactions are running and queries are executed concurrently
         compaction.createJobs(20);
         LOGGER.info("Created compaction jobs");
 
@@ -122,7 +123,7 @@ public class WhileCompactionST {
 
         assertThat(queriesCompleted.get()).isGreaterThan(0);
 
-        // And all data is preserved
+        // And all data is preserved after compaction
         var rows = sleeper.directQuery().allRowsInTable();
 
         LOGGER.info(
