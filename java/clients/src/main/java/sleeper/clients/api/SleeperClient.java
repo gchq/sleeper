@@ -22,6 +22,7 @@ import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.clients.api.aws.AwsSleeperClientBuilder;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -41,16 +42,20 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
+import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
+import sleeper.query.runner.output.S3ResultsOutput;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -86,6 +91,7 @@ public class SleeperClient implements AutoCloseable {
     private final BulkImportJobSender bulkImportJobSender;
     private final QueryWebSocketSender queryWebSocketSender;
     private final QuerySender querySender;
+    private final QueryResultsReader queryResultsReader;
     private final QueryTrackerStore queryTrackerStore;
     private final IngestBatcherSender ingestBatcherSender;
     private final Runnable shutdown;
@@ -103,6 +109,7 @@ public class SleeperClient implements AutoCloseable {
         bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
         queryWebSocketSender = Objects.requireNonNull(builder.queryWebSocketSender, "queryWebSocketSender must not be null");
         querySender = Objects.requireNonNull(builder.querySender, "querySender must not be null");
+        queryResultsReader = Objects.requireNonNull(builder.queryResultsReader, "queryResultsReader must not be null");
         queryTrackerStore = Objects.requireNonNull(builder.queryTrackerStore, "queryTrackerStore must not be null");
         ingestBatcherSender = Objects.requireNonNull(builder.ingestBatcherSender, "ingestBatcherSender must not be null");
         shutdown = Objects.requireNonNull(builder.shutdown, "shutdown must not be null");
@@ -373,10 +380,10 @@ public class SleeperClient implements AutoCloseable {
      * Waits for a query submitted for processing by the query lambdas to finish, by polling the query tracker with
      * default settings. A query is finished when it has completed, failed or partially failed.
      *
-     * @param  queryId                            the query ID
-     * @return                                    the entry for the query in the query tracker, in its finished state
-     * @throws InterruptedException               if the thread was interrupted while waiting
-     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     * @param  queryId                           the query ID
+     * @return                                   the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException              if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException if the query did not finish within the polling timeout
      */
     public TrackedQuery waitForQuery(String queryId) throws InterruptedException {
         return waitForQuery(queryId, DEFAULT_QUERY_POLL);
@@ -388,10 +395,10 @@ public class SleeperClient implements AutoCloseable {
      * are published to the results output set in the query's processing config, by default as Parquet files in the
      * query results bucket under the query ID.
      *
-     * @param  query                              the query to run
-     * @return                                    the entry for the query in the query tracker, in its finished state
-     * @throws InterruptedException               if the thread was interrupted while waiting
-     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     * @param  query                             the query to run
+     * @return                                   the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException              if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException if the query did not finish within the polling timeout
      */
     public TrackedQuery submitQueryAndWait(Query query) throws InterruptedException {
         return submitQueryAndWait(query, DEFAULT_QUERY_POLL);
@@ -403,11 +410,11 @@ public class SleeperClient implements AutoCloseable {
      * results output set in the query's processing config, by default as Parquet files in the query results bucket
      * under the query ID. The query's progress is logged on each poll.
      *
-     * @param  query                              the query to run
-     * @param  poll                               the polling interval and timeout
-     * @return                                    the entry for the query in the query tracker, in its finished state
-     * @throws InterruptedException               if the thread was interrupted while waiting
-     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     * @param  query                             the query to run
+     * @param  poll                              the polling interval and timeout
+     * @return                                   the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException              if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException if the query did not finish within the polling timeout
      */
     public TrackedQuery submitQueryAndWait(Query query, PollWithRetries poll) throws InterruptedException {
         return waitForQuery(submitQuery(query), poll);
@@ -420,11 +427,11 @@ public class SleeperClient implements AutoCloseable {
      * subqueries. A query that is not yet tracked is polled until it appears, as its entry is only written when the
      * query lambda starts processing it. The query's progress is logged on each poll.
      *
-     * @param  queryId                            the query ID
-     * @param  poll                               the polling interval and timeout
-     * @return                                    the entry for the query in the query tracker, in its finished state
-     * @throws InterruptedException               if the thread was interrupted while waiting
-     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     * @param  queryId                           the query ID
+     * @param  poll                              the polling interval and timeout
+     * @return                                   the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException              if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException if the query did not finish within the polling timeout
      */
     public TrackedQuery waitForQuery(String queryId, PollWithRetries poll) throws InterruptedException {
         return poll.queryUntil("query " + queryId + " is finished",
@@ -442,6 +449,95 @@ public class SleeperClient implements AutoCloseable {
                     logProgress(status);
                     return false;
                 });
+    }
+
+    /**
+     * Submits a query to be processed by the query lambdas, waits for it to finish, then reads the results. This
+     * behaves like {@link #submitQueryAndWait} followed by {@link #getQueryResults}, polling the query tracker with
+     * default settings. The results are read as Parquet files in the query results bucket under the query ID. The
+     * query must publish its results there, so its results publisher config must be empty or explicitly set that
+     * output. The returned iterator must be closed after use.
+     *
+     * @param  query                             the query to run
+     * @return                                   an iterator over the rows in the results
+     * @throws IllegalArgumentException          if the query's results publisher config does not publish the results
+     *                                           to the default location in the query results bucket
+     * @throws InterruptedException              if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException if the query did not finish within the polling timeout
+     * @throws QueryFailedException              if the query failed or partially failed
+     */
+    public CloseableIterator<Row> submitQueryAndGetResults(Query query) throws InterruptedException {
+        return submitQueryAndGetResults(query, DEFAULT_QUERY_POLL);
+    }
+
+    /**
+     * Submits a query to be processed by the query lambdas, waits for it to finish, then reads the results. This
+     * behaves like {@link #submitQueryAndWait} followed by {@link #getQueryResults}. The results are read as Parquet
+     * files in the query results bucket under the query ID. The query must publish its results there, so its results
+     * publisher config must be empty or explicitly set that output. The returned iterator must be closed after use.
+     *
+     * @param  query                             the query to run
+     * @param  poll                              the polling interval and timeout
+     * @return                                   an iterator over the rows in the results
+     * @throws IllegalArgumentException          if the query's results publisher config does not publish the results
+     *                                           to the default location in the query results bucket
+     * @throws InterruptedException              if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException if the query did not finish within the polling timeout
+     * @throws QueryFailedException              if the query failed or partially failed
+     */
+    public CloseableIterator<Row> submitQueryAndGetResults(Query query, PollWithRetries poll) throws InterruptedException {
+        validateResultsWillBePublishedToDefaultLocation(query);
+        TrackedQuery status = submitQueryAndWait(query, poll);
+        if (status.getLastKnownState() != QueryState.COMPLETED) {
+            throw new QueryFailedException(status);
+        }
+        return getQueryResults(query);
+    }
+
+    private static void validateResultsWillBePublishedToDefaultLocation(Query query) {
+        Map<String, String> config = query.getResultsPublisherConfig();
+        if (config == null || config.isEmpty()) {
+            return;
+        }
+        if (!S3ResultsOutput.S3.equals(config.get(ResultsOutput.DESTINATION))) {
+            throw new IllegalArgumentException("Query results will not be published to S3, " +
+                    "so they cannot be read back. Results publisher config: " + config);
+        }
+        if (config.containsKey(S3ResultsOutput.S3_BUCKET)) {
+            throw new IllegalArgumentException("Query results will not be published to the default " +
+                    "query results bucket, so they cannot be read back. Results publisher config: " + config);
+        }
+    }
+
+    /**
+     * Reads the results of a query that was executed via lambda and wrote its results to the S3 query results bucket.
+     * The returned iterator must be closed after use.
+     * <p>
+     * If this fails with a QueryResultsNotFoundException it means that either the query was run with a different
+     * results output to the default S3 one or the results have been deleted or expired.
+     *
+     * @param  tableName                     the name of the table the query ran against
+     * @param  queryId                       the query ID
+     * @return                               an iterator over the rows in the results
+     * @throws QueryResultsNotFoundException if no results were published for the query
+     */
+    public CloseableIterator<Row> getQueryResults(String tableName, String queryId) {
+        return queryResultsReader.getResults(tableName, queryId);
+    }
+
+    /**
+     * Reads the results of a query that was executed via lambda and wrote its results to the S3 query results bucket.
+     * The returned iterator must be closed after use.
+     * <p>
+     * If this fails with a QueryResultsNotFoundException it means that either the query was run with a different
+     * results output to the default S3 one or the results have been deleted or expired.
+     *
+     * @param  query                         the query that has finished
+     * @return                               an iterator over the rows in the results
+     * @throws QueryResultsNotFoundException if no results were published for the query
+     */
+    public CloseableIterator<Row> getQueryResults(Query query) {
+        return queryResultsReader.getResults(query);
     }
 
     private static void logProgress(TrackedQuery status) {
@@ -535,6 +631,7 @@ public class SleeperClient implements AutoCloseable {
         private BulkImportJobSender bulkImportJobSender;
         private QueryWebSocketSender queryWebSocketSender;
         private QuerySender querySender;
+        private QueryResultsReader queryResultsReader;
         private QueryTrackerStore queryTrackerStore;
         private IngestBatcherSender ingestBatcherSender;
         private Runnable shutdown = () -> {
@@ -680,6 +777,17 @@ public class SleeperClient implements AutoCloseable {
          */
         public Builder querySender(QuerySender querySender) {
             this.querySender = querySender;
+            return this;
+        }
+
+        /**
+         * Sets the client to read the results of a finished query.
+         *
+         * @param  queryResultsReader the client
+         * @return                    this builder for chaining
+         */
+        public Builder queryResultsReader(QueryResultsReader queryResultsReader) {
+            this.queryResultsReader = queryResultsReader;
             return this;
         }
 

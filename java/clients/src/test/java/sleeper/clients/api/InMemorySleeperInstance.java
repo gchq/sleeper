@@ -20,11 +20,13 @@ import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.clients.query.FakeWebSocketConnection;
 import sleeper.clients.query.QueryWebSocketClient;
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
+import sleeper.core.row.Row;
 import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
@@ -41,6 +43,7 @@ import sleeper.sketches.testutils.InMemorySketchesStore;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
@@ -62,6 +65,7 @@ public class InMemorySleeperInstance {
     private final Queue<IngestBatcherSubmitRequest> ingestBatcherQueue = new LinkedList<>();
     private final Queue<BulkExportQuery> bulkExportQueue = new LinkedList<>();
     private final Queue<Query> queryQueue = new LinkedList<>();
+    private final Map<String, List<Row>> queryResultsById = new HashMap<>();
     private final InMemoryQueryTracker queryTracker;
     private final FakeWebSocketConnection webSocketConnection;
 
@@ -96,6 +100,13 @@ public class InMemorySleeperInstance {
                 .bulkExportQuerySender(bulkExportQueue::add)
                 .queryWebSocketSender(queryWebSocketSender())
                 .querySender(queryQueue::add)
+                .queryResultsReader((tableName, queryId) -> {
+                    List<Row> results = queryResultsById.get(queryId);
+                    if (results == null) {
+                        throw new QueryResultsNotFoundException(queryId, null);
+                    }
+                    return new WrappedIterator<>(results.iterator());
+                })
                 .queryTrackerStore(queryTracker);
     }
 
@@ -240,6 +251,16 @@ public class InMemorySleeperInstance {
      */
     public InMemoryQueryTracker queryTracker() {
         return queryTracker;
+    }
+
+    /**
+     * Sets the rows that will be returned when reading the results of a query with the given ID.
+     *
+     * @param queryId the query ID
+     * @param results the rows in the results of the query
+     */
+    public void setQueryResults(String queryId, List<Row> results) {
+        queryResultsById.put(queryId, results);
     }
 
     /**

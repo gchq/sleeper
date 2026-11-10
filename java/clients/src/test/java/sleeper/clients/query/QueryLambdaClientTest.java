@@ -22,6 +22,7 @@ import sleeper.clients.testutil.ExceptionWithOutput;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -57,6 +58,7 @@ import java.io.UncheckedIOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -73,6 +75,7 @@ import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_QUERY_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_SQL_FILTER;
 import static sleeper.clients.query.QueryClientTestConstants.RANGE_QUERY_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.SEND_TO_CONSOLE_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.SEND_TO_S3_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.YES_OPTION;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -91,7 +94,7 @@ public class QueryLambdaClientTest {
     private final TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStore(tableIndex);
     private final InMemoryRowStore rowStore = new InMemoryRowStore();
     private final InMemoryQueryTracker queryTracker = new InMemoryQueryTracker(instanceProperties);
-    private final List<Row> outputRows = new ArrayList<>();
+    private final Map<String, List<Row>> resultsByQueryId = new HashMap<>();
 
     @Test
     void shouldReportSubQueryProgressWhileQueryIsInProgress() throws Exception {
@@ -184,6 +187,59 @@ public class QueryLambdaClientTest {
                         "Finished query processing with final state of: COMPLETED");
     }
 
+    @Test
+    void shouldRunRangeQueryReturningResultsToConsole() throws Exception {
+        // Given
+        Schema schema = createSchemaWithKey("key");
+        TableProperties tableProperties = createTable("test-table", schema);
+        List<Row> rows = LongStream.rangeClosed(0, 10)
+                .mapToObj(num -> new Row(Map.of("key", num)))
+                .collect(Collectors.toList());
+        ingestData(tableProperties, rows);
+
+        // When
+        in.enterNextPrompts(
+                SEND_TO_CONSOLE_OPTION,
+                RANGE_QUERY_OPTION,
+                NO_OPTION, YES_OPTION,
+                "3", "6", "",
+                EXIT_OPTION);
+        runQueryClient();
+
+        // Then
+        assertThat(out.toString())
+                .contains("Results will be published to S3 bucket")
+                .contains("then printed to the console")
+                .contains("Finished query processing with final state of: COMPLETED\n" +
+                        "Query returned 3 rows\n" +
+                        "Returned Rows:\n" +
+                        "Row{key=4}\n" +
+                        "Row{key=5}\n" +
+                        "Row{key=6}");
+    }
+
+    @Test
+    void shouldNotPrintResultsToConsoleWhenSendingToS3() throws Exception {
+        // Given
+        Schema schema = createSchemaWithKey("key");
+        TableProperties tableProperties = createTable("test-table", schema);
+        ingestData(tableProperties, List.of(new Row(Map.of("key", 5L))));
+
+        // When
+        in.enterNextPrompts(
+                SEND_TO_S3_OPTION,
+                RANGE_QUERY_OPTION,
+                NO_OPTION, YES_OPTION,
+                "3", "6", "",
+                EXIT_OPTION);
+        runQueryClient();
+
+        // Then
+        assertThat(out.toString())
+                .contains("Finished query processing with final state of: COMPLETED")
+                .doesNotContain("Returned Rows:");
+    }
+
     private TableProperties createTable(String tableName, Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_NAME, tableName);
@@ -214,6 +270,8 @@ public class QueryLambdaClientTest {
         try {
             new QueryLambdaClient(instanceProperties, tableIndex, tablePropertiesProvider(),
                     querySender, trackerStore,
+                    (tableName, queryId) -> new WrappedIterator<>(
+                            resultsByQueryId.getOrDefault(queryId, List.of()).iterator()),
                     in.consoleIn(), out.consoleOut())
                     .run();
         } catch (Exception e) {
@@ -276,7 +334,7 @@ public class QueryLambdaClientTest {
         try (CloseableIterator<Row> rowsIt = queryExecutor(tableProperties).execute(query)) {
             List<Row> rows = new ArrayList<>();
             rowsIt.forEachRemaining(rows::add);
-            outputRows.addAll(rows);
+            resultsByQueryId.put(query.getQueryId(), rows);
             queryTracker.queryCompleted(query, new ResultsOutputInfo(rows.size(),
                     List.of(new ResultsOutputLocation("s3", "test.parquet"))));
         } catch (QueryException e) {

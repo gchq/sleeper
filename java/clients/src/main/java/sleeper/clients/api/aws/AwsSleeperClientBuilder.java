@@ -21,6 +21,7 @@ import sleeper.clients.api.BulkExportQuerySender;
 import sleeper.clients.api.BulkImportJobSender;
 import sleeper.clients.api.IngestBatcherSender;
 import sleeper.clients.api.IngestJobSender;
+import sleeper.clients.api.QueryResultsReader;
 import sleeper.clients.api.QuerySender;
 import sleeper.clients.api.QueryWebSocketSender;
 import sleeper.clients.api.SleeperClient;
@@ -86,6 +87,7 @@ public class AwsSleeperClientBuilder {
                 .queryWebSocketSender(QueryWebSocketSender.query(instanceProperties, tablePropertiesProvider,
                         awsClients.awsCredentialsProvider()))
                 .querySender(QuerySender.toSqs(instanceProperties, tablePropertiesProvider, awsClients.sqs()))
+                .queryResultsReader(QueryResultsReader.fromS3(instanceProperties, tablePropertiesProvider, hadoop))
                 .queryTrackerStore(new DynamoDBQueryTracker(instanceProperties, awsClients.dynamo()))
                 .shutdown(new UncheckedAutoCloseables(List.of(awsClients, rowRetrieverProvider)))
                 .build();

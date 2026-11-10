@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import software.amazon.awssdk.services.sts.StsClient;
 
+import sleeper.clients.api.QueryResultsReader;
 import sleeper.clients.api.QuerySender;
 import sleeper.clients.query.QueryLambdaClient;
 import sleeper.clients.util.console.ConsoleInput;
@@ -41,6 +42,7 @@ import sleeper.core.row.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
+import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.systemtest.configuration.SystemTestProperties;
@@ -90,6 +92,8 @@ public class MultipleQueries {
                 systemTestProperties, tableIndex, tablePropertiesProvider,
                 QuerySender.toSqs(systemTestProperties, tablePropertiesProvider, sqsClient),
                 new DynamoDBQueryTracker(systemTestProperties, dynamoClient),
+                QueryResultsReader.fromS3(systemTestProperties, tablePropertiesProvider,
+                        TableHadoopConfigurationProvider.forClient(systemTestProperties)),
                 ConsoleInput.stdIn(), ConsoleOutput.stdOut());
 
         Schema schema = tablePropertiesProvider.getByName(tableName).getSchema();
