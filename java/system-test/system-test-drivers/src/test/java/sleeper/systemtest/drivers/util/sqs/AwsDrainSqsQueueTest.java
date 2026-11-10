@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.model.Message;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -162,6 +163,55 @@ class AwsDrainSqsQueueTest {
         }
     }
 
+    @Nested
+    @DisplayName("Drain queue with initial wait for first message")
+    class DrainQueueWithInitialWait {
+
+        @Test
+        void shouldWaitForFirstMessageForMoreRetriesThanAfterFirstMessage() {
+            // Given we have two messages
+            addMessages("A", "B");
+            // And we fake the behaviour of SQS to have two empty receives before the messages arrive
+            receiveMessages = receiveActions(
+                    receiveNoMessages(), receiveNoMessages(),
+                    receiveFromQueue(), receiveFromQueue(), receiveNoMessages());
+
+            // When we wait 30 seconds with 10 seconds per receive, allowing 2 retries before the first message
+            Set<Message> messages = drainQueueOneMessageAtATimeWaitingSeconds(10)
+                    .drainExpectingMessagesWithInitialWait(2, Duration.ofSeconds(30), 0, "queue").collect(toSet());
+
+            // Then
+            assertThat(messages).isEqualTo(
+                    streamMessages("A", "B").collect(toSet()));
+        }
+
+        @Test
+        void shouldStopWaitingForFirstMessageAfterInitialWait() {
+            // Given we fake the behaviour of SQS to only return empty responses
+            receiveMessages = receiveActions(receiveNoMessages(), receiveNoMessages(), receiveNoMessages());
+
+            // When / Then we wait 30 seconds with 10 seconds per receive, allowing 2 retries
+            AwsDrainSqsQueue drainSqsQueue = drainQueueOneMessageAtATimeWaitingSeconds(10);
+            assertThatThrownBy(() -> drainSqsQueue.drainExpectingMessagesWithInitialWait(1, Duration.ofSeconds(30), 0, "queue").toList())
+                    .isInstanceOf(RetriesLimitHitException.class)
+                    .hasMessage("Found 3 empty receives with maximum of 2 retries");
+        }
+
+        @Test
+        void shouldStopRetryingAfterFirstMessageWithConfiguredLimit() {
+            // Given we have one message
+            addMessages("A");
+            // And we fake the behaviour of SQS to receive one message, followed by an empty response
+            receiveMessages = receiveActions(receiveFromQueue(), receiveNoMessages());
+
+            // When / Then
+            AwsDrainSqsQueue drainSqsQueue = drainQueueOneMessageAtATimeWaitingSeconds(10);
+            assertThatThrownBy(() -> drainSqsQueue.drainExpectingMessagesWithInitialWait(2, Duration.ofSeconds(30), 0, "queue").toList())
+                    .isInstanceOf(RetriesLimitHitException.class)
+                    .hasMessage("Found 1 empty receives with maximum of 0 retries");
+        }
+    }
+
     private void addMessages(String... ids) {
         queue.addAll(streamMessages(ids).toList());
     }
@@ -188,6 +238,15 @@ class AwsDrainSqsQueueTest {
                 .numThreads(1)
                 .messagesPerBatchPerThread(1)
                 .messagesPerReceive(1)
+                .build();
+    }
+
+    private AwsDrainSqsQueue drainQueueOneMessageAtATimeWaitingSeconds(int waitTimeSeconds) {
+        return drainSqsQueueBuilder()
+                .numThreads(1)
+                .messagesPerBatchPerThread(1)
+                .messagesPerReceive(1)
+                .waitTimeSeconds(waitTimeSeconds)
                 .build();
     }
 

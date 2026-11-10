@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -103,19 +104,44 @@ public class AwsDrainSqsQueue {
     }
 
     public Stream<Message> drainExpectingMessagesWithRetriesWhenEmpty(int expectedMessages, int retriesWhenEmpty, String queueUrl) {
+        return drainExpectingMessages(expectedMessages, retriesWhenEmpty, retriesWhenEmpty, queueUrl);
+    }
+
+    /**
+     * Drains a queue, waiting for messages to arrive. Waits for at least the given time before the first message is
+     * received. After that, retries a given number of times when a receive finds no messages.
+     *
+     * @param  expectedMessages the number of messages we expect to receive
+     * @param  initialWait      the minimum time to wait for the first message
+     * @param  retriesWhenEmpty the number of empty receives to retry after the first message
+     * @param  queueUrl         the queue URL
+     * @return                  the messages
+     */
+    public Stream<Message> drainExpectingMessagesWithInitialWait(int expectedMessages, Duration initialWait, int retriesWhenEmpty, String queueUrl) {
+        // Each empty receive waits for waitTimeSeconds, and we receive once more than the number of retries
+        long emptyReceivesToCoverWait = (initialWait.toSeconds() + waitTimeSeconds - 1) / waitTimeSeconds;
+        int retriesBeforeFirstMessage = (int) Math.max(0, emptyReceivesToCoverWait - 1);
+        return drainExpectingMessages(expectedMessages, retriesBeforeFirstMessage, retriesWhenEmpty, queueUrl);
+    }
+
+    private Stream<Message> drainExpectingMessages(int expectedMessages, int retriesBeforeFirstMessage, int retriesWhenEmpty, String queueUrl) {
         LOGGER.info("Draining queue until empty, expecting {} messages: {}", expectedMessages, queueUrl);
         return Stream.iterate(
                 ReceiveBatchResult.first(receiveMessageBatch(queueUrl)),
-                lastResult -> keepCheckingQueue(lastResult, expectedMessages, retriesWhenEmpty),
+                lastResult -> keepCheckingQueue(lastResult, expectedMessages, retriesBeforeFirstMessage, retriesWhenEmpty),
                 lastResult -> lastResult.receiveNext(receiveMessageBatch(queueUrl)))
                 .flatMap(ReceiveBatchResult::stream);
     }
 
-    private static boolean keepCheckingQueue(ReceiveBatchResult lastResult, int expectedMessages, int retriesWhenEmpty) {
-        if (lastResult.numEmptyReceives > retriesWhenEmpty) {
-            throw new RetriesLimitHitException("Found " + lastResult.numEmptyReceives + " empty receives with maximum of " + retriesWhenEmpty + " retries");
+    private static boolean keepCheckingQueue(ReceiveBatchResult lastResult, int expectedMessages, int retriesBeforeFirstMessage, int retriesWhenEmpty) {
+        if (!lastResult.hasMessages() && lastResult.totalMessages() >= expectedMessages) {
+            return false;
         }
-        return lastResult.hasMessages() || lastResult.totalMessages() < expectedMessages;
+        int maxRetries = lastResult.totalMessages() == 0 ? retriesBeforeFirstMessage : retriesWhenEmpty;
+        if (lastResult.numEmptyReceives > maxRetries) {
+            throw new RetriesLimitHitException("Found " + lastResult.numEmptyReceives + " empty receives with maximum of " + maxRetries + " retries");
+        }
+        return true;
     }
 
     public EmptyQueueResults empty(List<String> queueUrls) {

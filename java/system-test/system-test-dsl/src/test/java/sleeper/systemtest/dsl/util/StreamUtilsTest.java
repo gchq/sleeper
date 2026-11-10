@@ -89,4 +89,16 @@ public class StreamUtilsTest {
                 .isEmpty();
     }
 
+    @Test
+    void shouldInterleaveThreeStreams() {
+        // Given
+        Stream<String> stream1 = Stream.of("1", "2", "3");
+        Stream<String> stream2 = Stream.of("a", "b", "c");
+        Stream<String> stream3 = Stream.of("A", "B", "C");
+
+        // When / Then
+        assertThat(StreamUtils.interleave(stream1, stream2, stream3))
+                .containsExactly("1", "a", "A", "2", "b", "B", "3", "c", "C");
+    }
+
 }

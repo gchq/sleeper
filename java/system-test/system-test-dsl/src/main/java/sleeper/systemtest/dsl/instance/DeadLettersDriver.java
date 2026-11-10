@@ -17,10 +17,11 @@ package sleeper.systemtest.dsl.instance;
 
 import sleeper.core.properties.instance.InstanceProperty;
 
+import java.time.Duration;
 import java.util.List;
 
 public interface DeadLettersDriver {
 
-    List<String> drainQueueForWholeInstance(int expectedMessages, InstanceProperty queueUrlProperty);
+    List<String> drainQueueForWholeInstance(int expectedMessages, Duration initialWait, InstanceProperty queueUrlProperty);
 
 }

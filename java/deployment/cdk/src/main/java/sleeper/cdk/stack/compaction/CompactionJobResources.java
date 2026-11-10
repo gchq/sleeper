@@ -204,6 +204,7 @@ public class CompactionJobResources {
         handlerFunction.addEventSource(SqsEventSource.Builder.create(jobCreationQueue)
                 .batchSize(instanceProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE))
                 .maxConcurrency(instanceProperties.getIntOrNull(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM))
+                .reportBatchItemFailures(true)
                 .build());
 
         jobCreationQueue.grantSendMessages(triggerFunction);

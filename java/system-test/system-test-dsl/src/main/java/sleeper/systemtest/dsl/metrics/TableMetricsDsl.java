@@ -18,11 +18,9 @@ package sleeper.systemtest.dsl.metrics;
 
 import sleeper.core.metrics.TableMetrics;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.table.TableStatus;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.util.StreamUtils;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 public class TableMetricsDsl {
 
@@ -39,10 +37,8 @@ public class TableMetricsDsl {
         return this;
     }
 
-    public TableMetricsDsl triggerForAllInterleavedWithFakeTables(List<String> fakeTables) {
-        driver.triggerTableMetricsGeneration(StreamUtils.interleave(
-                instance.streamTableProperties().map(TableProperties::getStatus),
-                fakeTables.stream().map(fake -> TableStatus.uniqueIdAndName(fake, fake, false))));
+    public TableMetricsDsl triggerForTablesByDescriptor(Stream<String> descriptors) {
+        driver.triggerTableMetricsGeneration(instance.streamTableStatusByDescriptors(descriptors));
         return this;
     }
 

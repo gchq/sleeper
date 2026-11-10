@@ -31,7 +31,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Map.entry;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class SystemTestTableFiles {
     public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestTableFiles.class);
@@ -78,14 +77,22 @@ public class SystemTestTableFiles {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
+    public Map<String, List<FileReference>> referencesByTable(List<String> tableDescriptors) {
+        return tableDescriptors.stream()
+                .map(descriptor -> instance.getTablePropertiesByDescriptor(descriptor).orElseThrow())
+                .parallel()
+                .map(this::getReferences)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
     private Map.Entry<String, List<FileReference>> getReferences(TableProperties properties) {
         StateStore stateStore = instance.getStateStore(properties);
-        return entry(properties.get(TABLE_NAME), stateStore.getFileReferences());
+        return entry(instance.getTableDescriptor(properties), stateStore.getFileReferences());
     }
 
     private Map.Entry<String, AllReferencesToAllFiles> getFiles(TableProperties properties) {
         StateStore stateStore = instance.getStateStore(properties);
-        return entry(properties.get(TABLE_NAME),
+        return entry(instance.getTableDescriptor(properties),
                 stateStore.getAllFilesWithMaxUnreferenced(100));
     }
 }

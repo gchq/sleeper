@@ -84,4 +84,11 @@ public class NoStateStoreAdminDriver implements StateStoreAdminDriver {
                         ", table " + tableProperties.getStatus() + ", not currently implemented for this driver");
     }
 
+    @Override
+    public void addUnreadableFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        throw new UnsupportedOperationException(
+                "Requested adding unreadable files snapshot for instance " + instanceProperties.get(ID) +
+                        ", table " + tableProperties.getStatus() + ", not currently implemented for this driver");
+    }
+
 }

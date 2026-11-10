@@ -49,65 +49,84 @@ public class PythonQueryST {
 
     @Test
     void shouldRunExactKeyQuery(SleeperDsl sleeper) {
-        // Given
+
+        // Given data has been ingested into the table
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
-        // When/Then
+        // When an exact key query is run
         assertThat(sleeper.pythonApi()
                 .query(tempDir).exactKeys("key",
                         "row-0000000000000000001",
                         "row-0000000000000000002")
                 .results())
+
+                // Then the matching rows are returned
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRangeClosed(1, 2));
     }
 
     @Test
     void shouldRunRangeKeyQuery(SleeperDsl sleeper) {
-        // Given
+
+        // Given data has been ingested into the table
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
-        // When/Then
+        // When a range key query is run
         assertThat(sleeper.pythonApi()
                 .query(tempDir).range("key",
                         "row-0000000000000000010",
                         "row-0000000000000000020")
                 .results())
+
+                // Then the rows within the range are returned
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRange(10, 20));
     }
 
     @Test
     void shouldRunRangeKeyQueryWithMinAndMaxInclusive(SleeperDsl sleeper) {
-        // Given
+
+        // Given data has been ingested into the table
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
-        // When/Then
+        // When a range key query is run with inclusive bounds
         assertThat(sleeper.pythonApi()
                 .query(tempDir).range("key",
                         "row-0000000000000000010", true,
                         "row-0000000000000000020", true)
                 .results())
+
+                // Then the rows including both bounds are returned
                 .containsExactlyElementsOf(sleeper.generateNumberedRows().iterableOverRangeClosed(10, 20));
     }
 
     @Test
     void shouldFailToRunRangeKeyQueryWithNonExistentTable(SleeperDsl sleeper) {
-        // When/Then
+
+        // Given a query references a table that does not exist
+
+        // When the query is run
         assertThatThrownBy(() -> sleeper.pythonApi()
                 .query(tempDir).range("key", "not-a-table",
                         "row-0000000000000000010",
                         "row-0000000000000000020")
                 .results())
+
+                // Then the query fails
                 .isInstanceOf(CommandFailedException.class);
     }
 
     @Test
     void shouldFailToRunRangeKeyQueryWithNonExistentKey(SleeperDsl sleeper) {
-        // When/Then
+
+        // Given a query references a key that does not exist
+
+        // When the query is run
         assertThatThrownBy(() -> sleeper.pythonApi()
                 .query(tempDir).range("not-a-key",
                         "row-0000000000000000010",
                         "row-0000000000000000020")
                 .results())
+
+                // Then the query fails
                 .isInstanceOf(CommandFailedException.class);
     }
 }

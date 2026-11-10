@@ -23,6 +23,7 @@ import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.instance.DeadLettersDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.time.Duration;
 import java.util.List;
 
 public class AwsDeadLettersDriver implements DeadLettersDriver {
@@ -36,9 +37,9 @@ public class AwsDeadLettersDriver implements DeadLettersDriver {
     }
 
     @Override
-    public List<String> drainQueueForWholeInstance(int expectedMessages, InstanceProperty queueUrlProperty) {
+    public List<String> drainQueueForWholeInstance(int expectedMessages, Duration initialWait, InstanceProperty queueUrlProperty) {
         String queueUrl = instance.getInstanceProperties().get(queueUrlProperty);
-        return drainQueue.drainExpectingMessagesWithRetriesWhenEmpty(expectedMessages, 5, queueUrl)
+        return drainQueue.drainExpectingMessagesWithInitialWait(expectedMessages, initialWait, 5, queueUrl)
                 .map(Message::body)
                 .toList();
     }

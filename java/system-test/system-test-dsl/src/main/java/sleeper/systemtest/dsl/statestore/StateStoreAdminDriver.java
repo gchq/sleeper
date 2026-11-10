@@ -44,4 +44,6 @@ public interface StateStoreAdminDriver {
     int countFilesSnapshots(InstanceProperties instanceProperties, TableProperties tableProperties);
 
     int countPartitionsSnapshots(InstanceProperties instanceProperties, TableProperties tableProperties);
+
+    void addUnreadableFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
 }
