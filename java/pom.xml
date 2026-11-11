@@ -63,7 +63,7 @@
         -->
         <spark.version>3.5.8</spark.version>
         <hadoop.version>3.4.2</hadoop.version>
-        <parquet.version>1.18.1</parquet.version>
+        <parquet.version>1.18.2</parquet.version>
         <joom.spark.platform.version>0.4.10</joom.spark.platform.version>
         <!-- The version of Arrow should match the version used by Spark, under spark-sql-api. -->
         <arrow.version>12.0.1</arrow.version>
@@ -99,7 +99,7 @@
         <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of LZ4 Java with vulnerabilities. -->
         <org.lz4.version>1.8.1</org.lz4.version>
-        <yawk.lz4.version>1.13.0</yawk.lz4.version>
+        <yawk.lz4.version>1.14.0</yawk.lz4.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.2</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.57.10</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.57.11</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         It's not compatible with the latest version, so we match the version that it provides.
@@ -184,11 +184,11 @@
         <!-- Trino and its dependencies declare different versions of Airlift. -->
         <airlift.version>241</airlift.version>
         <!-- Trino and its dependencies declare different versions of OpenTelemetry. -->
-        <opentelemetry.version>1.66.0</opentelemetry.version>
+        <opentelemetry.version>1.68.0</opentelemetry.version>
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
         <zookeeper.version>3.9.7</zookeeper.version>
-        <jackson.version>2.22.4</jackson.version>
+        <jackson.version>2.23.0</jackson.version>
         <jackson.annotations.version>2.23</jackson.annotations.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.13.0</jjwt.build.version>
