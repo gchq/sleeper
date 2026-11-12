@@ -241,7 +241,13 @@ log entries.
 6. Ensure that transaction body files are only deleted after it has remained unreferenced for some longer period of
    time. This can involve extra tracking that can happen at transaction deletion.
 7. Give each commit a unique ID, save it in the log entry, but don't track it anywhere else. Don't use it as an
-   idempotency token in the committer, but consider where else we could use it.
+   idempotency token in the committer, but consider where else we could use it. This is option 4 without making the
+   committer idempotent.
+8. Have the state store committer always make a copy of a transaction body file before adding to the log. An S3 copy is
+   cheap, but it does add latency to the committer. We'd need some cleanup for these files. This is option 2 without the
+   check for a redelivery.
+9. Instead of deleting transaction body files in the transaction deleter, use an S3 lifecycle rule instead. This would
+   rely on a snapshot being created, so if snapshots are disabled for any reason this would cause problems.
 
 ### Pending compaction job batch failures
 
