@@ -26,4 +26,4 @@ VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 source "${SCRIPTS_DIR}/functions/jvmUtils.sh"
 read_jvm_options "$@"
 
-java "${JVM_OPTIONS[@]}" -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.report.CompactionJobStatusReport "${APP_ARGS[@]}"
+run_java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.report.CompactionJobStatusReport "${APP_ARGS[@]}"

@@ -59,6 +59,22 @@ heap space") then this is likely due to the tasks not being able to store the sp
 Try reducing the number of rows that will be held in memory. When reducing this parameter it is a good idea to also
 reduce the number of rows held on the local disk.
 
+## Out of memory error from the compaction job status report
+
+The compaction job status report can run out of memory for tables with a large number of compaction jobs. It will stop
+with "Terminating due to java.lang.OutOfMemoryError: Java heap space".
+
+You can give the report more memory with the `--jvm-memory` option of the report script, for example:
+
+```bash
+./scripts/report/compactionJobStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME} --all --jvm-memory 8g
+```
+
+The value is a whole number followed by `m` or `g`. If this is more than the memory currently available, you will be
+asked to confirm before the report runs. You can skip this with `--force`.
+
+This option is only available when running the report script directly, not through the administration client.
+
 ## Sleeper instance re-creation failures
 
 If you attempt to re-create a Sleeper instance using the same instance ID, but resources have been retained from the previous deployment, the deployment will fail.

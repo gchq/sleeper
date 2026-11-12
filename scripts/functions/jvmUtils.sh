@@ -88,3 +88,15 @@ check_jvm_memory() {
     esac
   fi
 }
+
+# Runs Java with JVM_OPTIONS and the given arguments, and returns its exit code.
+# If the JVM ran out of memory, explains how to give it more. The JVM exits with code 3 when ExitOnOutOfMemoryError
+# is triggered.
+run_java() {
+  local EXIT_CODE=0
+  java "${JVM_OPTIONS[@]}" "$@" || EXIT_CODE=$?
+  if [[ "$EXIT_CODE" -eq 3 ]]; then
+    echo "Ran out of memory. You can give it more memory with --jvm-memory, e.g. --jvm-memory 8g"
+  fi
+  return "$EXIT_CODE"
+}

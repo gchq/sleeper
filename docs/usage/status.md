@@ -59,6 +59,10 @@ with `./scripts/utility/adminClient.sh ${INSTANCE_ID}`, or with the commands bel
 | Partitions Status Report      | Summarises the partitions within the system       | ```./scripts/report/partitionsStatusReport.sh ${INSTANCE_ID} ${TABLE_NAME}```                                                                             |                                                                    |
 | Query Tracker Report          | Lists the queries held in the query tracker       | ```./scripts/report/queryTrackerReport.sh ${INSTANCE_ID} [--format <format>] [<query-type-option>]``` | FORMAT = standard, QUERY_TYPE = prompt. Run with `--help` for the query type options |
 
+The compaction job status report can run out of memory for tables with a large number of compaction jobs. See
+[common problems and their solutions](../common-problems-and-their-solutions.md#out-of-memory-error-from-the-compaction-job-status-report)
+for how to give it more memory.
+
 ## Retrying messages on DLQs
 
 In addition to checking the dead letter queues, you can also send messages on them back to the original queue so that
