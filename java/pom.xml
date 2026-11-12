@@ -160,7 +160,7 @@
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.12.2</aws-lambda-java-runtime-interface-client.version>
         <aws-lambda-powertools.version>2.11.0</aws-lambda-powertools.version>
-        <commons-lang3.version>3.21.0</commons-lang3.version>
+        <commons-lang3.version>3.22.0</commons-lang3.version>
         <commons-codec.version>1.23.0</commons-codec.version>
         <commons-io.version>2.22.0</commons-io.version>
         <commons-configuration.version>2.15.1</commons-configuration.version>
