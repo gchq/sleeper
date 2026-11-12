@@ -156,6 +156,14 @@ In the first two cases the message returns to SQS and can be retried, either dir
 despite having committed successfully. In the third case the same commit message is added to the queue twice at the
 producer side.
 
+In the second case, it's also possible to add a duplicate transaction to the log without ever retrying the commit
+message. This will only happen for transactions validated at read time, where a DuplicateTransactionNumberException
+results in a retry that is not rejected by validation. For transactions validated at write time the retry is rejected
+by validation and sent back to SQS.
+
+The impact of this duplication will be the same whether it gets back to SQS or not, except that a retry through SQS can
+result in dead letters.
+
 #### Transactions validated at read time
 
 For AddFiles and ReplaceFileReferences, two copies can potentially both be added to the log. If parts do not validate,
