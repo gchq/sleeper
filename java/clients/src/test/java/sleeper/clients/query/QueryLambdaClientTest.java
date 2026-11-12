@@ -17,6 +17,7 @@ package sleeper.clients.query;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.api.QueryResultsReader;
 import sleeper.clients.api.QuerySender;
 import sleeper.clients.testutil.ExceptionWithOutput;
 import sleeper.clients.testutil.TestConsoleInput;
@@ -68,6 +69,8 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.query.QueryClientTestConstants.EXIT_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.NO_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.PRINT_AS_SUBQUERIES_FINISH_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.PRINT_WHEN_FINISHED_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_INCLUSIVE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_LONG_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_INCLUSIVE;
@@ -200,6 +203,7 @@ public class QueryLambdaClientTest {
         // When
         in.enterNextPrompts(
                 SEND_TO_CONSOLE_OPTION,
+                PRINT_WHEN_FINISHED_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
                 "3", "6", "",
@@ -210,12 +214,45 @@ public class QueryLambdaClientTest {
         assertThat(out.toString())
                 .contains("Results will be published to S3 bucket")
                 .contains("then printed to the console")
+                .contains("Results will be printed when the query has finished")
                 .contains("Finished query processing with final state of: COMPLETED\n" +
                         "Query returned 3 rows\n" +
                         "Returned Rows:\n" +
                         "Row{key=4}\n" +
                         "Row{key=5}\n" +
                         "Row{key=6}");
+    }
+
+    @Test
+    void shouldRunRangeQueryStreamingResultsToConsole() throws Exception {
+        // Given
+        Schema schema = createSchemaWithKey("key");
+        TableProperties tableProperties = createTable("test-table", schema);
+        List<Row> rows = LongStream.rangeClosed(0, 10)
+                .mapToObj(num -> new Row(Map.of("key", num)))
+                .collect(Collectors.toList());
+        ingestData(tableProperties, rows);
+
+        // When
+        in.enterNextPrompts(
+                SEND_TO_CONSOLE_OPTION,
+                PRINT_AS_SUBQUERIES_FINISH_OPTION,
+                RANGE_QUERY_OPTION,
+                NO_OPTION, YES_OPTION,
+                "3", "6", "",
+                EXIT_OPTION);
+        runQueryClient();
+
+        // Then
+        assertThat(out.toString())
+                .contains("Results will be published to S3 bucket")
+                .contains("then printed to the console")
+                .contains("Results will be printed as each subquery finishes")
+                .contains("Returned Rows:\n" +
+                        "Row{key=4}\n" +
+                        "Row{key=5}\n" +
+                        "Row{key=6}\n" +
+                        "Query finished, returned 3 rows");
     }
 
     @Test
@@ -270,8 +307,8 @@ public class QueryLambdaClientTest {
         try {
             new QueryLambdaClient(instanceProperties, tableIndex, tablePropertiesProvider(),
                     querySender, trackerStore,
-                    (tableName, queryId) -> new WrappedIterator<>(
-                            resultsByQueryId.getOrDefault(queryId, List.of()).iterator()),
+                    (tableName, queryId) -> List.of(new QueryResultsReader.ResultsFile("results.parquet",
+                            () -> new WrappedIterator<>(resultsByQueryId.getOrDefault(queryId, List.of()).iterator()))),
                     in.consoleIn(), out.consoleOut())
                     .run();
         } catch (Exception e) {

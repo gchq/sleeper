@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.api.QueryResultsReader;
 import sleeper.clients.api.QuerySender;
+import sleeper.clients.api.StreamingQueryResultsIterator;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -34,6 +35,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableIndex;
+import sleeper.core.util.PollWithRetries;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutput;
@@ -45,6 +47,7 @@ import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -61,12 +64,17 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     private static final String S3_PROMPT_RESPONSE = "s";
     private static final String SQS_PROMPT_RESPONSE = "q";
     private static final String CONSOLE_PROMPT_RESPONSE = "c";
+    private static final String WHEN_FINISHED_PROMPT_RESPONSE = "f";
+    private static final String AS_SUBQUERIES_FINISH_PROMPT_RESPONSE = "a";
+    private static final PollWithRetries STREAM_RESULTS_POLL = PollWithRetries.intervalAndPollingTimeout(
+            Duration.ofSeconds(2), Duration.ofMinutes(15));
 
     private final QuerySender querySender;
     private final QueryTrackerStore queryTracker;
     private final QueryResultsReader queryResultsReader;
     private Map<String, String> resultsPublisherConfig;
     private boolean printResultsToConsole;
+    private boolean streamResultsToConsole;
 
     public QueryLambdaClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
@@ -87,6 +95,11 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     protected void submitQuery(TableProperties tableProperties, Query query) {
         String queryId = query.getQueryId();
         out.println("Submitting query with id " + queryId);
+
+        if (streamResultsToConsole) {
+            submitQueryAndStreamResults(tableProperties, query);
+            return;
+        }
 
         submitQuery(query);
 
@@ -142,10 +155,49 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         }
     }
 
+    /**
+     * Submits a query and prints its results to the console as they are published, without waiting for the whole
+     * query to finish.
+     *
+     * @param tableProperties the properties of the table the query runs against
+     * @param query           the query
+     */
+    private void submitQueryAndStreamResults(TableProperties tableProperties, Query query) {
+        Schema schema = tableProperties.getSchema();
+        submitQuery(query);
+        long count = 0;
+        try (CloseableIterator<Row> rows = new StreamingQueryResultsIterator(
+                query.getTableName(), query.getQueryId(), queryResultsReader,
+                () -> getTrackedQueryOrNull(query.getQueryId()), STREAM_RESULTS_POLL)) {
+            out.println("Returned Rows:");
+            while (rows.hasNext()) {
+                out.println(rows.next().toString(schema));
+                count++;
+            }
+            out.println("Query finished, returned " + count + " rows");
+        } catch (RuntimeException e) {
+            out.println("Encountered an error while streaming results of query " + query.getQueryId()
+                    + ", printed " + count + " rows so far");
+            out.printStackTrace(e);
+        } catch (IOException e) {
+            out.println("Encountered an error while closing iterator for query " + query.getQueryId());
+            out.printStackTrace(e);
+        }
+    }
+
+    private TrackedQuery getTrackedQueryOrNull(String queryId) {
+        try {
+            return queryTracker.getStatus(queryId);
+        } catch (QueryTrackerException e) {
+            throw new RuntimeException("Failed reading status of query " + queryId + " from the query tracker", e);
+        }
+    }
+
     @Override
     protected void runQueries(TableProperties tableProperties) throws InterruptedException {
         resultsPublisherConfig = new HashMap<>();
         printResultsToConsole = false;
+        streamResultsToConsole = false;
         boolean chosen = false;
 
         while (!chosen) {
@@ -174,6 +226,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                             + ", then printed to the console");
 
                     printResultsToConsole = true;
+                    streamResultsToConsole = promptStreamResults();
 
                     yield true;
                 }
@@ -183,6 +236,27 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         }
 
         super.runQueries(tableProperties);
+    }
+
+    private boolean promptStreamResults() {
+        while (true) {
+            String type = in.promptLine("Print results when the query has finished (f), " +
+                    "or as each subquery finishes (a)? [f]");
+
+            switch (type.toLowerCase(Locale.ROOT)) {
+                case "", WHEN_FINISHED_PROMPT_RESPONSE -> {
+                    out.println("Results will be printed when the query has finished");
+                    return false;
+                }
+                case AS_SUBQUERIES_FINISH_PROMPT_RESPONSE -> {
+                    out.println("Results will be printed as each subquery finishes");
+                    return true;
+                }
+                default -> {
+                    // Prompt again
+                }
+            }
+        }
     }
 
     /**

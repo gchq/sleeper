@@ -33,9 +33,14 @@ import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.util.PollWithRetries;
+import sleeper.core.util.ThreadSleepTestHelper;
 import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.runner.tracker.DynamoDBQueryTracker;
+import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
@@ -47,6 +52,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -64,6 +70,7 @@ public class SleeperClientIT extends LocalAwsTestBase {
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
+        instanceProperties.set(QUERY_QUEUE_URL, createSqsQueueGetUrl());
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
@@ -159,6 +166,48 @@ public class SleeperClientIT extends LocalAwsTestBase {
         assertThatThrownBy(() -> sleeperClient.getQueryResults(query))
                 .isInstanceOf(QueryResultsNotFoundException.class)
                 .hasMessageContaining("untracked-query");
+    }
+
+    @Test
+    void shouldStreamQueryResultsFromS3AsSubQueriesFinish() throws Exception {
+        // Given a table and a query in progress that has published the results of one subquery
+        String tableName = "streaming-query-table";
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TABLE_NAME, tableName);
+        sleeperClient.addTable(tableProperties, List.of());
+        createBucket(instanceProperties.get(QUERY_RESULTS_BUCKET));
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
+        Query query = Query.builder()
+                .tableName(tableName)
+                .queryId("streaming-query")
+                .regions(List.of(new Region(new RangeFactory(schema).createExactRange("key", "A"))))
+                .build();
+        queryTracker.queryInProgress(query);
+        writeQueryResults(query, "file-1.parquet", List.of(new Row(Map.of("key", "A"))));
+
+        // When the results are streamed, and a second subquery publishes its results and the query completes
+        // during the first wait for more results
+        List<Row> rows = new ArrayList<>();
+        List<Integer> rowsReadBeforeEachWait = new ArrayList<>();
+        PollWithRetries poll = PollWithRetries.builder()
+                .pollIntervalMillis(10).maxRetries(10)
+                .sleepInInterval(ThreadSleepTestHelper.withActionAfterWait(
+                        millis -> rowsReadBeforeEachWait.add(rows.size()),
+                        () -> {
+                            writeQueryResults(query, "file-2.parquet", List.of(new Row(Map.of("key", "B"))));
+                            queryTracker.queryCompleted(query, new ResultsOutputInfo(2L, List.of()));
+                        }))
+                .build();
+        try (CloseableIterator<Row> iterator = sleeperClient.submitQueryAndStreamResults(query, poll)) {
+            iterator.forEachRemaining(rows::add);
+        }
+
+        // Then the first file was read before the query finished
+        assertThat(rows).containsExactly(
+                new Row(Map.of("key", "A")),
+                new Row(Map.of("key", "B")));
+        assertThat(rowsReadBeforeEachWait).containsExactly(1);
     }
 
     private void writeQueryResults(Query query, String filename, List<Row> rows) throws IOException {

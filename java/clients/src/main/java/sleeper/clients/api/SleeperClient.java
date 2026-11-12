@@ -494,6 +494,51 @@ public class SleeperClient implements AutoCloseable {
         return getQueryResults(query);
     }
 
+    /**
+     * Submits a query to be processed by AWS lambda. It streams through the results as they are published,
+     * polling the query tracker to know when new subquery results are avaialble. This behaves like
+     * {@link #submitQueryAndGetResults}, except that results are returned as soon as each subquery finishes and
+     * publishes its results (i.e it does not wait until the whole query has finished). The iterator that is returned
+     * should be closed after it has been used.
+     * <p>
+     * The iterator blocks waiting for more results when all results published so far have been read. Each wait has
+     * the full polling timeout, so the timeout applies to the time with no new results, rather than the time for the
+     * whole query. If the query fails or partially fails, the iterator throws a {@link QueryFailedException}.
+     *
+     * @param  query                    the query to run
+     * @return                          an iterator over the rows in the results, as they are published
+     * @throws IllegalArgumentException if the query's results publisher config does not publish the results to the
+     *                                  default location in the query results bucket
+     */
+    public CloseableIterator<Row> submitQueryAndStreamResults(Query query) {
+        return submitQueryAndStreamResults(query, DEFAULT_QUERY_POLL);
+    }
+
+    /**
+     * Submits a query to be processed by AWS lambda. It streams through the results as they are published,
+     * polling the query tracker to know when new subquery results are avaialble. This behaves like
+     * {@link #submitQueryAndGetResults}, except that results are returned as soon as each subquery finishes and
+     * publishes its results (i.e it does not wait until the whole query has finished). The iterator that is returned
+     * should be closed after it has been used.
+     * <p>
+     * The iterator blocks waiting for more results when all results published so far have been read. Each wait has
+     * the full polling timeout, so the timeout applies to the time with no new results, rather than the time for the
+     * whole query. If the query fails or partially fails, the iterator throws a {@link QueryFailedException}.
+     *
+     * @param  query                    the query to run
+     * @param  poll                     the polling interval and timeout for each wait for more results
+     * @return                          an iterator over the rows in the results, as they are published
+     * @throws IllegalArgumentException if the query's results publisher config does not publish the results to the
+     *                                  default location in the query results bucket
+     */
+    public CloseableIterator<Row> submitQueryAndStreamResults(Query query, PollWithRetries poll) {
+        validateResultsWillBePublishedToDefaultLocation(query);
+        submitQuery(query);
+        return new StreamingQueryResultsIterator(
+                query.getTableName(), query.getQueryId(), queryResultsReader,
+                () -> getTrackedQuery(query.getQueryId()), poll);
+    }
+
     private static void validateResultsWillBePublishedToDefaultLocation(Query query) {
         Map<String, String> config = query.getResultsPublisherConfig();
         if (config == null || config.isEmpty()) {
