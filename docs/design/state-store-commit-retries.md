@@ -183,7 +183,8 @@ From a standpoint of ordering of commits, it's safe to enable retries on the que
 For validation failures adding commits, we can introduce handling to avoid retries, track failures for reporting, and
 delete the invalid commits. This lets us focus retries on infrastructure problems.
 
-For commits validated at read time, failures are already handled and reported correctly. At time of writing this is just
-ingest and compaction commit.
+For commits validated at read time, failures are already handled and reported correctly, but there's a case where the
+same transaction body file can be included in multiple log entries, and that needs extra handling. At time of writing
+this is just ingest and compaction commit.
 
 We need to review how batches of pending compaction jobs are handled when they fail.
