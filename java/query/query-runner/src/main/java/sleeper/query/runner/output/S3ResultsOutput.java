@@ -25,6 +25,7 @@ import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
+import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
@@ -35,9 +36,11 @@ import sleeper.query.core.output.ResultsOutputLocation;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -85,7 +88,7 @@ public class S3ResultsOutput implements ResultsOutput {
 
         LOGGER.info("Opening writer for results of query {} to {}", query.getQueryId(), outputFile);
         long count = 0L;
-        try (ParquetWriter<Row> writer = buildParquetWriter(new Path(outputFile))) {
+        try (ParquetWriter<Row> writer = buildParquetWriter(new Path(outputFile), query)) {
             Instant startTime = Instant.now();
             while (results.hasNext()) {
                 writer.write(results.next());
@@ -105,13 +108,31 @@ public class S3ResultsOutput implements ResultsOutput {
         }
     }
 
-    private ParquetWriter<Row> buildParquetWriter(Path path) throws IOException {
+    private ParquetWriter<Row> buildParquetWriter(Path path, QueryOrLeafPartitionQuery query) throws IOException {
         String defaultRowGroupSize = instanceProperties.get(DEFAULT_RESULTS_ROW_GROUP_SIZE);
         String defaultPageSize = instanceProperties.get(DEFAULT_RESULTS_PAGE_SIZE);
-        ParquetRowWriterFactory.Builder builder = parquetRowWriterBuilder(path, tableProperties).withConf(hadoopConf)
+        ParquetRowWriterFactory.Builder builder = parquetRowWriterBuilder(path, writerTableProperties(query)).withConf(hadoopConf)
                 .withRowGroupSize(Long.parseLong(config.getOrDefault(ROW_GROUP_SIZE, defaultRowGroupSize)))
                 .withPageSize(Integer.parseInt(config.getOrDefault(PAGE_SIZE, defaultPageSize)));
         Optional.ofNullable(config.get(COMPRESSION_CODEC)).ifPresent(builder::withCompressionCodec);
         return builder.build();
+    }
+
+    private TableProperties writerTableProperties(QueryOrLeafPartitionQuery query) {
+        List<String> requestedValueFields = query.getProcessingConfig().getRequestedValueFields();
+        if (requestedValueFields == null) {
+            return tableProperties;
+        }
+        Schema schema = tableProperties.getSchema();
+        Schema narrowedSchema = Schema.builder()
+                .rowKeyFields(schema.getRowKeyFields())
+                .sortKeyFields(schema.getSortKeyFields())
+                .valueFields(schema.getValueFields().stream()
+                        .filter(field -> requestedValueFields.contains(field.getName()))
+                        .collect(Collectors.toList()))
+                .build();
+        TableProperties narrowedTableProperties = TableProperties.copyOf(tableProperties);
+        narrowedTableProperties.setSchema(narrowedSchema);
+        return narrowedTableProperties;
     }
 }
