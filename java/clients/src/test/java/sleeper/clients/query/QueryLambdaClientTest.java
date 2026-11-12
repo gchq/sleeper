@@ -98,6 +98,7 @@ public class QueryLambdaClientTest {
     private final InMemoryRowStore rowStore = new InMemoryRowStore();
     private final InMemoryQueryTracker queryTracker = new InMemoryQueryTracker(instanceProperties);
     private final Map<String, List<Row>> resultsByQueryId = new HashMap<>();
+    private final List<String> listedResultsQueryIds = new ArrayList<>();
 
     @Test
     void shouldReportSubQueryProgressWhileQueryIsInProgress() throws Exception {
@@ -277,6 +278,31 @@ public class QueryLambdaClientTest {
                 .doesNotContain("Returned Rows:");
     }
 
+    @Test
+    void shouldNotReadResultsFilesWhenQueryReturnedNoRows() throws Exception {
+        // Given a query that will match no rows
+        Schema schema = createSchemaWithKey("key");
+        TableProperties tableProperties = createTable("test-table", schema);
+        ingestData(tableProperties, List.of(new Row(Map.of("key", 5L))));
+
+        // When a range query is run that matches no rows, with results printed to the console
+        in.enterNextPrompts(
+                SEND_TO_CONSOLE_OPTION,
+                PRINT_WHEN_FINISHED_OPTION,
+                RANGE_QUERY_OPTION,
+                NO_OPTION, YES_OPTION,
+                "100", "200", "",
+                EXIT_OPTION);
+        runQueryClient();
+
+        // Then the query finished with no rows, and the results output was never read
+        assertThat(out.toString())
+                .contains("Finished query processing with final state of: COMPLETED\n" +
+                        "Query returned 0 rows")
+                .doesNotContain("Returned Rows:");
+        assertThat(listedResultsQueryIds).isEmpty();
+    }
+
     private TableProperties createTable(String tableName, Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_NAME, tableName);
@@ -307,8 +333,11 @@ public class QueryLambdaClientTest {
         try {
             new QueryLambdaClient(instanceProperties, tableIndex, tablePropertiesProvider(),
                     querySender, trackerStore,
-                    (tableName, queryId) -> List.of(new QueryResultsReader.ResultsFile("results.parquet",
-                            () -> new WrappedIterator<>(resultsByQueryId.getOrDefault(queryId, List.of()).iterator()))),
+                    (tableName, queryId) -> {
+                        listedResultsQueryIds.add(queryId);
+                        return List.of(new QueryResultsReader.ResultsFile("results.parquet",
+                                () -> new WrappedIterator<>(resultsByQueryId.getOrDefault(queryId, List.of()).iterator())));
+                    },
                     in.consoleIn(), out.consoleOut())
                     .run();
         } catch (Exception e) {

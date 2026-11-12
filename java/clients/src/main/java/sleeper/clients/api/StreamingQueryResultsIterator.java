@@ -40,6 +40,10 @@ import java.util.function.Supplier;
  * wait for more results has the full polling timeout, so the timeout applies to the time with no new results, rather
  * than the time for the whole query.
  * <p>
+ * With more than one thread, results files are read in parallel in a thread pool as they are discovered, and rows are
+ * interleaved across files in no particular order. With one thread, files are read one at a time in the order they
+ * are discovered.
+ * <p>
  * If the query fails or partially fails, this throws a {@link QueryFailedException} from {@link #hasNext}. Rows from
  * subqueries that finished before the failure may already have been returned, so any rows read so far must be treated
  * as a partial result.
@@ -53,14 +57,17 @@ public class StreamingQueryResultsIterator implements CloseableIterator<Row> {
     private final QueryResultsReader resultsReader;
     private final Supplier<TrackedQuery> statusSupplier;
     private final PollWithRetries poll;
+    private final ParallelResultsFileReader parallelReader;
     private final Set<String> seenFiles = new HashSet<>();
     private final Deque<ResultsFile> unreadFiles = new ArrayDeque<>();
     private CloseableIterator<Row> currentFile;
+    private Row nextRow;
     private Long finishedSubQueryCountAtLastListing;
     private boolean queryFinished;
 
     /**
-     * Creates an iterator streaming through the results of a query that has been submitted.
+     * Creates an iterator streaming through the results of a query that has been submitted, reading one results file
+     * at a time.
      *
      * @param tableName      the name of the table the query ran against
      * @param queryId        the query ID
@@ -71,15 +78,37 @@ public class StreamingQueryResultsIterator implements CloseableIterator<Row> {
     public StreamingQueryResultsIterator(
             String tableName, String queryId, QueryResultsReader resultsReader,
             Supplier<TrackedQuery> statusSupplier, PollWithRetries poll) {
+        this(tableName, queryId, resultsReader, statusSupplier, poll, 1);
+    }
+
+    /**
+     * Creates an iterator streaming through the results of a query that has been submitted. With more than one thread,
+     * results files are read in parallel in a thread pool as they are discovered, and rows are interleaved across
+     * files in no particular order.
+     *
+     * @param tableName      the name of the table the query ran against
+     * @param queryId        the query ID
+     * @param resultsReader  the reader to find results files published for the query
+     * @param statusSupplier retrieves the entry for the query in the query tracker, null if it is not tracked yet
+     * @param poll           the polling interval and timeout for each wait for more results
+     * @param threads        the number of threads to read results files in parallel
+     */
+    public StreamingQueryResultsIterator(
+            String tableName, String queryId, QueryResultsReader resultsReader,
+            Supplier<TrackedQuery> statusSupplier, PollWithRetries poll, int threads) {
         this.tableName = tableName;
         this.queryId = queryId;
         this.resultsReader = resultsReader;
         this.statusSupplier = statusSupplier;
         this.poll = poll;
+        this.parallelReader = threads > 1 ? new ParallelResultsFileReader(threads) : null;
     }
 
     @Override
     public boolean hasNext() {
+        if (parallelReader != null) {
+            return hasNextParallel();
+        }
         while (true) {
             if (currentFile != null) {
                 if (currentFile.hasNext()) {
@@ -100,17 +129,40 @@ public class StreamingQueryResultsIterator implements CloseableIterator<Row> {
         }
     }
 
+    private boolean hasNextParallel() {
+        while (nextRow == null) {
+            nextRow = parallelReader.takeNextRow();
+            if (nextRow != null) {
+                return true;
+            }
+            // All files submitted so far have been fully read
+            if (queryFinished) {
+                return false;
+            }
+            waitForNewResults();
+        }
+        return true;
+    }
+
     @Override
     @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR") // hasNext sets currentFile when it returns true
     public Row next() {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
+        if (parallelReader != null) {
+            Row row = nextRow;
+            nextRow = null;
+            return row;
+        }
         return currentFile.next();
     }
 
     @Override
     public void close() throws IOException {
+        if (parallelReader != null) {
+            parallelReader.close();
+        }
         if (currentFile != null) {
             CloseableIterator<Row> file = currentFile;
             currentFile = null;
@@ -150,7 +202,7 @@ public class StreamingQueryResultsIterator implements CloseableIterator<Row> {
                 if (newSubQueriesFinishedSinceLastListing(status)) {
                     listNewFiles();
                 }
-                return !unreadFiles.isEmpty();
+                return hasPendingResults();
             });
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -181,9 +233,20 @@ public class StreamingQueryResultsIterator implements CloseableIterator<Row> {
     private void listNewFiles() {
         for (ResultsFile file : resultsReader.listResultsFiles(tableName, queryId)) {
             if (seenFiles.add(file.name())) {
-                unreadFiles.add(file);
+                if (parallelReader != null) {
+                    parallelReader.submit(file);
+                } else {
+                    unreadFiles.add(file);
+                }
             }
         }
+    }
+
+    private boolean hasPendingResults() {
+        if (parallelReader != null) {
+            return parallelReader.activeFiles() > 0;
+        }
+        return !unreadFiles.isEmpty();
     }
 
     private void closeCurrentFile() {
