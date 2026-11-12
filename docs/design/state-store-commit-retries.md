@@ -95,7 +95,7 @@ with its input files stuck assigned to those jobs.
 
 This is dealt with by committing file assignments to the state store for a whole batch of compaction jobs at once.
 The whole batch is committed atomically in a single transaction, so the input files can only be stuck assigned if the
-dispatcher fails to send the batch to the ingest jobs queue. In that case the message to dispatch the batch will be
+dispatcher fails to send the batch to the compaction jobs queue. In that case the message to dispatch the batch will be
 retried in SQS. This can produce duplicate copies of a job, but the impact of that is duplication of work, and a failed
 commit the second time it runs. We'll deal with that failed commit in a separate section.
 
