@@ -240,6 +240,26 @@ class SleeperClientTest {
     }
 
     @Test
+    void shouldGetNoResultsWithoutReadingResultsOutputWhenQueryCompletedWithNoRows() throws Exception {
+        // Given a query that completes with no rows and publishes no results files, e.g. when it was split into no
+        // subqueries
+        Query query = exactQuery("test-query", "A", "query-table");
+        List<Duration> foundWaits = new ArrayList<>();
+        PollWithRetries poll = pollWithWaitAction(foundWaits,
+                () -> instance.queryTracker().queryCompleted(query, new ResultsOutputInfo(0L, List.of())));
+
+        // When
+        List<Row> rows = new ArrayList<>();
+        try (CloseableIterator<Row> iterator = sleeperClient.submitQueryAndGetResults(query, poll)) {
+            iterator.forEachRemaining(rows::add);
+        }
+
+        // Then no results were read, and no attempt was made to read the results output, which would have failed as
+        // no results were published
+        assertThat(rows).isEmpty();
+    }
+
+    @Test
     void shouldFailGettingResultsForQueryThatFailed() {
         // Given a query that fails during the first wait between polls, after it was submitted
         Query query = exactQuery("test-query", "A", "query-table");
@@ -437,21 +457,29 @@ class SleeperClientTest {
 
     @Test
     void shouldStreamNoResultsWhenQueryCompletesWithNoResultsFiles() throws Exception {
-        // Given
+        // Given a query that completes with no rows before any results are read
         Query query = exactQuery("test-query", "A", "query-table");
         instance.queryTracker().queryCompleted(query, new ResultsOutputInfo(0L, List.of()));
         List<Duration> foundWaits = new ArrayList<>();
         PollWithRetries poll = pollRecordingWaits(foundWaits);
+        List<String> listedQueryIds = new ArrayList<>();
+        SleeperClient client = instance.sleeperClientBuilder()
+                .queryResultsReader((tableName, queryId) -> {
+                    listedQueryIds.add(queryId);
+                    return List.of();
+                })
+                .build();
 
         // When
         List<Row> rows = new ArrayList<>();
-        try (CloseableIterator<Row> iterator = sleeperClient.submitQueryAndStreamResults(query, poll)) {
+        try (CloseableIterator<Row> iterator = client.submitQueryAndStreamResults(query, poll)) {
             iterator.forEachRemaining(rows::add);
         }
 
-        // Then
+        // Then no results were read, without waiting or listing the results output
         assertThat(rows).isEmpty();
         assertThat(foundWaits).isEmpty();
+        assertThat(listedQueryIds).isEmpty();
     }
 
     @Test

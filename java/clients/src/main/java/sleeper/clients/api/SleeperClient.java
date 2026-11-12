@@ -23,6 +23,7 @@ import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.clients.api.aws.AwsSleeperClientBuilder;
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -54,6 +55,7 @@ import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.output.S3ResultsOutput;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -457,6 +459,8 @@ public class SleeperClient implements AutoCloseable {
      * default settings. The results are read as Parquet files in the query results bucket under the query ID. The
      * query must publish its results there, so its results publisher config must be empty or explicitly set that
      * output. The returned iterator must be closed after use.
+     * <p>
+     * Note that this method does not guarantee that the results are returned globally sorted by key.
      *
      * @param  query                             the query to run
      * @return                                   an iterator over the rows in the results
@@ -491,6 +495,10 @@ public class SleeperClient implements AutoCloseable {
         if (status.getLastKnownState() != QueryState.COMPLETED) {
             throw new QueryFailedException(status);
         }
+        if (status.getRowCount() != null && status.getRowCount() == 0) {
+            // An optimisation to avoid reading empty files when no results were returned
+            return new WrappedIterator<>(Collections.emptyIterator());
+        }
         return getQueryResults(query);
     }
 
@@ -500,6 +508,9 @@ public class SleeperClient implements AutoCloseable {
      * {@link #submitQueryAndGetResults}, except that results are returned as soon as each subquery finishes and
      * publishes its results (i.e it does not wait until the whole query has finished). The iterator that is returned
      * should be closed after it has been used.
+     * <p>
+     * Note that this method does not guarantee that the results are returned globally sorted by key, as the results
+     * from subqueries are returned when they are ready.
      * <p>
      * The iterator blocks waiting for more results when all results published so far have been read. Each wait has
      * the full polling timeout, so the timeout applies to the time with no new results, rather than the time for the
@@ -520,6 +531,9 @@ public class SleeperClient implements AutoCloseable {
      * {@link #submitQueryAndGetResults}, except that results are returned as soon as each subquery finishes and
      * publishes its results (i.e it does not wait until the whole query has finished). The iterator that is returned
      * should be closed after it has been used.
+     * <p>
+     * Note that this method does not guarantee that the results are returned globally sorted by key, as the results
+     * from subqueries are returned when they are ready.
      * <p>
      * The iterator blocks waiting for more results when all results published so far have been read. Each wait has
      * the full polling timeout, so the timeout applies to the time with no new results, rather than the time for the
