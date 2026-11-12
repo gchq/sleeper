@@ -82,7 +82,7 @@ If these transactions fail to validate in a way that indicates they've been supe
 compaction, we could report this to the job tracker. For partition splitting, it's not clear how we would report on
 this.
 
-### Compaction creation conflicts
+#### Compaction creation conflicts
 
 If we allow retries of AssignJobIdsTransaction, we can get further transactions created that assign the same input
 files. This can create conflicts between transactions that assign the same input files to different compaction jobs.
@@ -98,7 +98,15 @@ batch fails to send. In that case it will be retried in SQS. This can produce du
 of that is duplication of work, and a failed commit the second time it runs. We'll deal with that failed commit in a
 separate section.
 
-### Impact when file assignment fails
+### Failures in batched transactions
+
+AddFilesTransaction, AssignJobIdsTransaction and ReplaceFileReferencesTransaction all apply a batch of multiple
+operations in a single transaction. For AddFilesTransaction and ReplaceFileReferencesTransaction, or ingest and
+compaction commit, if any of the individual operations are invalid, the transaction is still applied to the log, but is
+validated at read time to decide how the state should be updated. For AssignJobIdsTransaction, or file assignment, the
+whole transaction is rejected if any of the files cannot be assigned, in order to refuse the batch as a whole.
+
+#### Impact when file assignment fails
 
 In the case where a batch of compaction jobs fails all retries to send, it will reach the dead letter queue. This needs
 manual intervention to unlock the files or proceed with the compaction jobs, but it's not necessarily related to state
@@ -114,11 +122,9 @@ since been locked for compaction.
 If we discard an invalid AssignJobIdsTransaction, this would result in a dead letter for the pending compaction
 creation batch queue, but a redrive could never succeed because the commit to assign the input files has been discarded.
 If we don't discard an invalid AssignJobIdsTransaction, it can still become permanently invalid and this still means a
-redrive of the compaction creation batch can never succeed.
+redrive of the compaction creation batch can never succeed. We could consider handling for this.
 
-TODO investigate possible handling
-
-### Impact when compaction commit fails
+#### Impact when compaction or ingest commit fails
 
 When a compaction job is duplicated, or processed twice, the second commit cannot be applied to the state store.
 Compaction commits are applied in batches, where many commits are included in a single transaction. Each transaction can
@@ -128,3 +134,40 @@ also allows us to report on failed commits in the job tracker by processing thes
 
 This means that every failed compaction commit is always retryable, because when it is added to the log the appropriate
 action will be taken to update the state and the job tracker based on the validity of the transaction.
+
+The same thing applies to ingest, since they are also validated at read-time and reported to the job tracker in the same
+way.
+
+### Duplicate delivery problems
+
+For the five transaction types on the queue, we can look at what will happen if they are delivered more than once.
+
+#### Transactions validated at read time
+
+For AddFiles and ReplaceFileReferences, two copies can potentially both be added to the log. If parts do not validate,
+the transaction will still be added. The state will not be updated because it will detect that it has already been
+applied and skip it. This still has a couple of impacts:
+
+1. The jobs are reported to the job tracker as failed on the second commit.
+2. If the transaction is big enough that its body is held in S3, both log entries will point to the same file.
+
+The first point is okay and correct, because the reports will still show them as successful, and will also show the
+failure.
+
+The second point means that when the first transaction is deleted from the log during cleanup, the second transaction
+will become unreadable. This probably needs some handling.
+
+#### Transactions validated at write time
+
+For AssignJobIds, DeleteFiles and SplitPartition, a second copy of the same transaction will fail validation before it
+is added to the log, and will fail. We could consider discarding these validation failures to avoid noisy messages on
+the dead letter queue. These will be permanently invalid, and a redrive could never succeed.
+
+### Conflict between manual operations and asynchronous commits
+
+If a manual operation in a client clears the state of a table, there can still be asynchronous commits on the queue.
+For example, if you clear partitions there may be a transaction on the queue to add files to a partition that has now
+been deleted, but those files would still be added to partitions that no longer exist.
+
+This is an additional operational concern if you want to delete a Sleeper table. We could consider what happens during
+deletion or reinitialisation in more depth.
