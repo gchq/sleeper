@@ -217,3 +217,32 @@ same transaction body file can be included in multiple log entries, and that nee
 this is just ingest and compaction commit.
 
 We need to review how batches of pending compaction jobs are handled when they fail.
+
+### Transaction body file references
+
+We can consider some options for how to improve on the case where the same transaction body file is used for multiple
+log entries.
+
+1. When the committer brings itself up to date, check whether any of the entries it reads have a body file it's about to
+   add to the log. This would only catch the case where the retry happens in the same invocation, so it might not be
+   worth the complication.
+2. Detect when a message is redelivered, and copy the transaction body file to a fresh key before committing. This could
+   orphan the original copy of the file, and we can't reliably detect when a message is delivered, although SQS gives
+   an ApproximateReceiveCount.
+3. Before deleting transactions, read the rest of the transaction log from the deletion point to the head, and don't
+   delete any body files that we find references for. This can still result in unreadable commits if a committer writes
+   a retry to the log at the same time as the deletion happens.
+4. Give each commit a unique ID, and track that that ID has been committed in the same DynamoDB transaction as the log
+   entry is added. This could solve the problem, but may decrease the throughput through the committer, which is
+   important to the scalability of the system.
+5. Ignore transaction log entries where the transaction body file has been deleted. We may be able to rely on the fact
+   that in all cases where the same file is in multiple entries, the second entry will not validate at read time, and
+   will result in no changes to the state.
+6. Ensure that transaction body files are only deleted after it has remained unreferenced for some longer period of
+   time. This can involve extra tracking that can happen at transaction deletion.
+7. Give each commit a unique ID, save it in the log entry, but don't track it anywhere else. Don't use it as an
+   idempotency token in the committer, but consider where else we could use it.
+
+### Pending compaction job batch failures
+
+TODO
