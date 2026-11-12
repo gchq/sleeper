@@ -15,6 +15,7 @@ unset CDPATH
 
 # Separates options for the JVM from the arguments for the Java application.
 # Sets JVM_OPTIONS to the options to pass to the JVM, and APP_ARGS to the remaining arguments.
+# The JVM is always set to exit if it runs out of memory.
 #
 # Supported options:
 #   --jvm-memory <size>  Maximum heap size for the JVM, e.g. 512m or 8g.
@@ -23,7 +24,8 @@ read_jvm_options() {
   local JVM_MEMORY=""
   local JVM_MEMORY_SET=false
   local FORCE=false
-  JVM_OPTIONS=()
+  # Exit as soon as the JVM runs out of memory, rather than continuing with errors that hide the cause
+  JVM_OPTIONS=("-XX:+ExitOnOutOfMemoryError")
   APP_ARGS=()
   while [[ "$#" -gt 0 ]]; do
     case $1 in

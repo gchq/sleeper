@@ -101,7 +101,8 @@ public class CompactionJobStatusReport {
                     "rather than the report:\n" +
                     "--jvm-memory <size>: The maximum memory for the JVM, e.g. 512m or 8g. If this is more than " +
                     "the memory currently available, you will be asked to confirm before the report runs. If it uses " +
-                    "more memory than is available, the report may run slowly or be killed by the operating system.\n" +
+                    "more memory than is available, the report may run slowly or be killed by the operating system. " +
+                    "If the report needs more memory than this, it will stop with an OutOfMemoryError.\n" +
                     "--force: Skips the confirmation prompt for --jvm-memory.")
             .build();
 
