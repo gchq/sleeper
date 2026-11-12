@@ -30,7 +30,8 @@ The rest are always committed synchronously:
 | ClearFiles                       | Client                    |
 | ClearPartitions                  | Client                    |
 
-The synchronous commits are always in the log before any dependent queued commit is created.
+The synchronous commits are always in the log before any dependent queued commit is created. There could still be
+unexpected behaviour that results from the two separate paths.
 
 ## Dependent commits
 
