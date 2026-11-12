@@ -162,8 +162,8 @@ applied and skip it. This still has a couple of impacts:
 2. If the transaction is big enough that its body is held in S3, both log entries will point to the same file.
 
 The first point is okay and correct, because the reports will still show them as successful, and will also show the
-failure. This does leave a risk that future code might not take this case into account, and incorrectly consider the job
-as failed.
+failure. This does leave a risk that it can be misleading, or that future code might not take this case into account,
+and incorrectly consider the job as failed.
 
 The second point means that when the first transaction is deleted from the log during cleanup, the second transaction
 will become unreadable. This probably needs some handling.
