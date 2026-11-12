@@ -307,7 +307,7 @@ public class QueryLambdaClientTest {
 
         // Then
         assertThat(out.toString())
-                .contains("Please enter a whole number of at least 1");
+                .contains("Please enter an integer greater than or equal to 1");
     }
 
     @Test
