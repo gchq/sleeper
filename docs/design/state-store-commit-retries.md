@@ -82,12 +82,49 @@ If these transactions fail to validate in a way that indicates they've been supe
 compaction, we could report this to the job tracker. For partition splitting, it's not clear how we would report on
 this.
 
-#### Compaction creation conflicts
+### Compaction creation conflicts
 
 If we allow retries of AssignJobIdsTransaction, we can get further transactions created that assign the same input
-files. This creates conflicts between transactions that assign the same input files to different compaction jobs.
+files. This can create conflicts between transactions that assign the same input files to different compaction jobs.
 
 Unlike in partition splitting, compaction jobs are validated and sent in batches. The compaction dispatcher will only
 send jobs once the whole batch is validated as having its file assignments fully committed to the state store. We need
 to verify that there can be no partial commit of a batch of jobs, otherwise a batch could be stuck in the dispatcher
-with its input files stuck assigned to those jobs. TODO
+with its input files stuck assigned to those jobs.
+
+This is dealt with by committing file assignments to the state store for a whole batch of compaction jobs at once.
+The whole batch is committed atomically in a single transaction, so the input files can only be stuck assigned if the
+batch fails to send. In that case it will be retried in SQS. This can produce duplicate copies of a job, but the impact
+of that is duplication of work, and a failed commit the second time it runs. We'll deal with that failed commit in a
+separate section.
+
+### Impact when file assignment fails
+
+In the case where a batch of compaction jobs fails all retries to send, it will reach the dead letter queue. This needs
+manual intervention to unlock the files or proceed with the compaction jobs, but it's not necessarily related to state
+store commits, except where those changes impact this functionality or vice versa. We have a separate issue for that
+analysis: https://github.com/gchq/sleeper/issues/8655
+
+In the case where a batch of compaction jobs fails because the file assignments failed to commit to the state store,
+the commit will end up on the dead letter queue for the state store committer. It won't cause any problem for the
+system because compaction creation will run again and the files will still be compacted because they were never locked.
+It does cause a problem in that if there's a redrive of failed commits, it can never succeed if any of the files have
+since been locked for compaction.
+
+If we discard an invalid AssignJobIdsTransaction, this would result in a dead letter for the pending compaction
+creation batch queue, but a redrive could never succeed because the commit to assign the input files has been discarded.
+If we don't discard an invalid AssignJobIdsTransaction, it can still become permanently invalid and this still means a
+redrive of the compaction creation batch can never succeed.
+
+TODO investigate possible handling
+
+### Impact when compaction commit fails
+
+When a compaction job is duplicated, or processed twice, the second commit cannot be applied to the state store.
+Compaction commits are applied in batches, where many commits are included in a single transaction. Each transaction can
+include both passing and failing commits. We handle this by accepting every compaction commit transaction, whether it
+contains failed commits or not, and we validate them at read-time, applying only successful commits to the state. This
+also allows us to report on failed commits in the job tracker by processing these transactions in the follower.
+
+This means that every failed compaction commit is always retryable, because when it is added to the log the appropriate
+action will be taken to update the state and the job tracker based on the validity of the transaction.
