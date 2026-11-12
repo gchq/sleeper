@@ -36,6 +36,7 @@ import sleeper.query.core.model.Query;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -50,6 +51,17 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 public interface QueryResultsReader {
 
     /**
+     * Lists the results files that have been published for a query so far. Each subquery publishes its results as a
+     * separate file, so this may be called while the query is still running to find the results of subqueries that
+     * have already finished. Returns an empty list if no results have been published yet.
+     *
+     * @param  tableName the name of the table the query ran against
+     * @param  queryId   the query ID
+     * @return           the results files published so far
+     */
+    List<ResultsFile> listResultsFiles(String tableName, String queryId);
+
+    /**
      * Reads the results of a query that has finished. The returned iterator must be closed after use.
      *
      * @param  tableName                     the name of the table the query ran against
@@ -57,7 +69,15 @@ public interface QueryResultsReader {
      * @return                               an iterator over the rows in the results
      * @throws QueryResultsNotFoundException if no results were published for the query
      */
-    CloseableIterator<Row> getResults(String tableName, String queryId);
+    default CloseableIterator<Row> getResults(String tableName, String queryId) {
+        List<ResultsFile> files = listResultsFiles(tableName, queryId);
+        if (files.isEmpty()) {
+            throw new QueryResultsNotFoundException(queryId, null);
+        }
+        return new ConcatenatingIterator(files.stream()
+                .map(ResultsFile::contents)
+                .toList());
+    }
 
     /**
      * Reads the results of a query that has finished. The returned iterator must be closed after use.
@@ -89,15 +109,13 @@ public interface QueryResultsReader {
                     + instanceProperties.get(QUERY_RESULTS_BUCKET) + "/query-" + queryId);
             try {
                 FileSystem fileSystem = resultsPath.getFileSystem(conf);
-                List<Supplier<CloseableIterator<Row>>> openFiles = Stream.of(fileSystem.listStatus(resultsPath))
+                return Stream.of(fileSystem.listStatus(resultsPath))
                         .map(FileStatus::getPath)
-                        .map(file -> (Supplier<CloseableIterator<Row>>) () -> openResultsFile(file, schema, conf))
+                        .sorted(Comparator.comparing(Path::getName))
+                        .map(file -> new ResultsFile(file.getName(), () -> openResultsFile(file, schema, conf)))
                         .toList();
-                return new ConcatenatingIterator(openFiles);
             } catch (FileNotFoundException e) {
-                // This exception should only happen if the results have been deleted or if they were never written
-                // to S3 (which would happen if a different results output was specified).
-                throw new QueryResultsNotFoundException(queryId, e);
+                return List.of();
             } catch (IOException e) {
                 throw new UncheckedIOException("Failed listing results of query " + queryId, e);
             }
@@ -112,5 +130,14 @@ public interface QueryResultsReader {
         } catch (IOException e) {
             throw new UncheckedIOException("Failed opening results file " + file, e);
         }
+    }
+
+    /**
+     * A results file published for a query.
+     *
+     * @param name     the name of the file
+     * @param contents opens the file to read its rows, the iterator must be closed after use
+     */
+    record ResultsFile(String name, Supplier<CloseableIterator<Row>> contents) {
     }
 }
