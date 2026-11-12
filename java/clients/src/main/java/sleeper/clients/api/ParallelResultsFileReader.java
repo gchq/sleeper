@@ -76,7 +76,7 @@ class ParallelResultsFileReader implements AutoCloseable {
      * @param file the results file
      */
     void submit(ResultsFile file) {
-        LOGGER.info("Submitting results file {} to be read", file.name());
+        LOGGER.debug("Submitting results file {} to be read", file.name());
         futures.add(executorService.submit(() -> readFile(file)));
         activeFiles++;
     }

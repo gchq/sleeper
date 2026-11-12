@@ -590,14 +590,7 @@ public class SleeperClient implements AutoCloseable {
      * @throws QueryResultsNotFoundException if no results were published for the query
      */
     public CloseableIterator<Row> getQueryResults(String tableName, String queryId) {
-        if (resultsReadThreads == 1) {
-            return queryResultsReader.getResults(tableName, queryId);
-        }
-        List<QueryResultsReader.ResultsFile> files = queryResultsReader.listResultsFiles(tableName, queryId);
-        if (files.isEmpty()) {
-            throw new QueryResultsNotFoundException(queryId, null);
-        }
-        return new ParallelResultsFileIterator(files, resultsReadThreads);
+        return queryResultsReader.getResults(tableName, queryId, resultsReadThreads);
     }
 
     /**

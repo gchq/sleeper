@@ -75,6 +75,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     private Map<String, String> resultsPublisherConfig;
     private boolean printResultsToConsole;
     private boolean streamResultsToConsole;
+    private int resultsReadThreads = 1;
 
     public QueryLambdaClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
@@ -146,7 +147,8 @@ public class QueryLambdaClient extends QueryCommandLineClient {
 
     private void printResults(TableProperties tableProperties, Query query) {
         Schema schema = tableProperties.getSchema();
-        try (CloseableIterator<Row> rows = queryResultsReader.getResults(query)) {
+        try (CloseableIterator<Row> rows = queryResultsReader.getResults(
+                query.getTableName(), query.getQueryId(), resultsReadThreads)) {
             out.println("Returned Rows:");
             while (rows.hasNext()) {
                 out.println(rows.next().toString(schema));
@@ -173,7 +175,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         long count = 0;
         try (CloseableIterator<Row> rows = new StreamingQueryResultsIterator(
                 query.getTableName(), query.getQueryId(), queryResultsReader,
-                () -> getTrackedQueryOrNull(query.getQueryId()), STREAM_RESULTS_POLL)) {
+                () -> getTrackedQueryOrNull(query.getQueryId()), STREAM_RESULTS_POLL, resultsReadThreads)) {
             out.println("Returned Rows:");
             while (rows.hasNext()) {
                 out.println(rows.next().toString(schema));
@@ -203,6 +205,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         resultsPublisherConfig = new HashMap<>();
         printResultsToConsole = false;
         streamResultsToConsole = false;
+        resultsReadThreads = 1;
         boolean chosen = false;
 
         while (!chosen) {
@@ -232,6 +235,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
 
                     printResultsToConsole = true;
                     streamResultsToConsole = promptStreamResults();
+                    resultsReadThreads = promptResultsReadThreads();
 
                     yield true;
                 }
@@ -261,6 +265,28 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                     // Prompt again
                 }
             }
+        }
+    }
+
+    private int promptResultsReadThreads() {
+        while (true) {
+            String entry = in.promptLine("Number of threads to read results files in parallel? [1]");
+            if ("".equals(entry)) {
+                return 1;
+            }
+            try {
+                int threads = Integer.parseInt(entry);
+                if (threads >= 1) {
+                    if (threads > 1) {
+                        out.println("Results files will be read with " + threads + " threads, "
+                                + "so rows from different subqueries will be returned in no particular order");
+                    }
+                    return threads;
+                }
+            } catch (NumberFormatException e) {
+                // Prompt again
+            }
+            out.println("Please enter an integer greater than or equal to 1");
         }
     }
 

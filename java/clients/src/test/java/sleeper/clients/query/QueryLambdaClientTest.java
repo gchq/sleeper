@@ -67,6 +67,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.query.QueryClientTestConstants.DEFAULT_RESULTS_READ_THREADS_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.EXIT_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.NO_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.PRINT_AS_SUBQUERIES_FINISH_OPTION;
@@ -205,6 +206,7 @@ public class QueryLambdaClientTest {
         in.enterNextPrompts(
                 SEND_TO_CONSOLE_OPTION,
                 PRINT_WHEN_FINISHED_OPTION,
+                DEFAULT_RESULTS_READ_THREADS_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
                 "3", "6", "",
@@ -238,6 +240,7 @@ public class QueryLambdaClientTest {
         in.enterNextPrompts(
                 SEND_TO_CONSOLE_OPTION,
                 PRINT_AS_SUBQUERIES_FINISH_OPTION,
+                DEFAULT_RESULTS_READ_THREADS_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
                 "3", "6", "",
@@ -254,6 +257,57 @@ public class QueryLambdaClientTest {
                         "Row{key=5}\n" +
                         "Row{key=6}\n" +
                         "Query finished, returned 3 rows");
+    }
+
+    @Test
+    void shouldRunRangeQueryReturningResultsToConsoleReadingFilesInParallel() throws Exception {
+        // Given
+        Schema schema = createSchemaWithKey("key");
+        TableProperties tableProperties = createTable("test-table", schema);
+        List<Row> rows = LongStream.rangeClosed(0, 10)
+                .mapToObj(num -> new Row(Map.of("key", num)))
+                .collect(Collectors.toList());
+        ingestData(tableProperties, rows);
+
+        // When 2 threads are chosen to read results files
+        in.enterNextPrompts(
+                SEND_TO_CONSOLE_OPTION,
+                PRINT_WHEN_FINISHED_OPTION,
+                "2",
+                RANGE_QUERY_OPTION,
+                NO_OPTION, YES_OPTION,
+                "3", "6", "",
+                EXIT_OPTION);
+        runQueryClient();
+
+        // Then
+        assertThat(out.toString())
+                .contains("Results files will be read with 2 threads")
+                .contains("Finished query processing with final state of: COMPLETED\n" +
+                        "Query returned 3 rows\n" +
+                        "Returned Rows:\n")
+                .contains("Row{key=4}")
+                .contains("Row{key=5}")
+                .contains("Row{key=6}");
+    }
+
+    @Test
+    void shouldRePromptWhenResultsReadThreadsIsNotAPositiveNumber() throws Exception {
+        // Given
+        Schema schema = createSchemaWithKey("key");
+        createTable("test-table", schema);
+
+        // When invalid thread counts are entered before a valid one
+        in.enterNextPrompts(
+                SEND_TO_CONSOLE_OPTION,
+                PRINT_WHEN_FINISHED_OPTION,
+                "0", "abc", "1",
+                EXIT_OPTION);
+        runQueryClient();
+
+        // Then
+        assertThat(out.toString())
+                .contains("Please enter a whole number of at least 1");
     }
 
     @Test
@@ -289,6 +343,7 @@ public class QueryLambdaClientTest {
         in.enterNextPrompts(
                 SEND_TO_CONSOLE_OPTION,
                 PRINT_WHEN_FINISHED_OPTION,
+                DEFAULT_RESULTS_READ_THREADS_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
                 "100", "200", "",

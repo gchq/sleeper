@@ -91,6 +91,28 @@ public interface QueryResultsReader {
     }
 
     /**
+     * Reads the results of a query that has finished. With more than one thread, the results files are read in
+     * parallel and the rows are interleaved across files in no particular order. With one thread, the files are read
+     * one at a time in order. The returned iterator must be closed after use.
+     *
+     * @param  tableName                     the name of the table the query ran against
+     * @param  queryId                       the query ID
+     * @param  threads                       the number of threads to read results files in parallel
+     * @return                               an iterator over the rows in the results
+     * @throws QueryResultsNotFoundException if no results were published for the query
+     */
+    default CloseableIterator<Row> getResults(String tableName, String queryId, int threads) {
+        if (threads == 1) {
+            return getResults(tableName, queryId);
+        }
+        List<ResultsFile> files = listResultsFiles(tableName, queryId);
+        if (files.isEmpty()) {
+            throw new QueryResultsNotFoundException(queryId, null);
+        }
+        return new ParallelResultsFileIterator(files, threads);
+    }
+
+    /**
      * Creates a reader for results written to Parquet files in the query results bucket.
      *
      * @param  instanceProperties      the instance properties
