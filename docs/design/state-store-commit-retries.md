@@ -173,6 +173,9 @@ For AssignJobIds, DeleteFiles and SplitPartition, a second copy of the same tran
 is added to the log, and will fail. We could consider discarding these validation failures to avoid noisy messages on
 the dead letter queue. These will be permanently invalid, and a redrive could never succeed.
 
+It's also worth noting that DeleteFiles is always safe to discard, because if the deletion is not recorded, the garbage
+collector will repeat the deletion, which is idempotent, and create a fresh commit.
+
 ### Conflict between manual operations and asynchronous commits
 
 If a manual operation in a client clears the state of a table, there can still be asynchronous commits on the queue.
