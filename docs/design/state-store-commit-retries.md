@@ -171,3 +171,19 @@ been deleted, but those files would still be added to partitions that no longer 
 
 This is an additional operational concern if you want to delete a Sleeper table. We could consider what happens during
 deletion or reinitialisation in more depth.
+
+## Outcomes of this analysis
+
+We have plans to improve on this in issues
+[#8618 - State store commit failures in lambda are ignored](https://github.com/gchq/sleeper/issues/8618) and
+[#8364 - State store commits do not recover after a temporary failure, and redrive may produce unexpected behaviour](https://github.com/gchq/sleeper/issues/8364). Here are some outcomes of this analysis.
+
+From a standpoint of ordering of commits, it's safe to enable retries on the queue.
+
+For validation failures adding commits, we can introduce handling to avoid retries, track failures for reporting, and
+delete the invalid commits. This lets us focus retries on infrastructure problems.
+
+For commits validated at read time, failures are already handled and reported correctly. At time of writing this is just
+ingest and compaction commit.
+
+We need to review how batches of pending compaction jobs are handled when they fail.
