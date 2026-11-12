@@ -130,13 +130,18 @@ public class QueryLambdaClient extends QueryCommandLineClient {
             if (trackedQuery.getRowCount() != null) {
                 out.println("Query returned " + trackedQuery.getRowCount() + " rows");
             }
-            if (printResultsToConsole && state == QueryState.COMPLETED) {
+            if (printResultsToConsole && state == QueryState.COMPLETED && returnedRows(trackedQuery)) {
                 printResults(tableProperties, query);
             }
         } catch (QueryTrackerException | InterruptedException e) {
             out.println("Failed to get status");
             out.printStackTrace(e);
         }
+    }
+
+    private static boolean returnedRows(TrackedQuery trackedQuery) {
+        // An optimisation to avoid reading files if no results were returned.
+        return trackedQuery.getRowCount() == null || trackedQuery.getRowCount() > 0;
     }
 
     private void printResults(TableProperties tableProperties, Query query) {
