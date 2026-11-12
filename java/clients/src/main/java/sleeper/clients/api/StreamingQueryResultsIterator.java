@@ -139,7 +139,12 @@ public class StreamingQueryResultsIterator implements CloseableIterator<Row> {
                     LOGGER.info("Query {} finished with state {}, rows returned: {}",
                             queryId, state, status.getRowCount());
                     queryFinished = true;
-                    listNewFiles();
+                    if (status.getRowCount() != null && status.getRowCount() == 0) {
+                        // An optimisation to avoid reading empty files when no results have been returned
+                        unreadFiles.clear();
+                    } else {
+                        listNewFiles();
+                    }
                     return true;
                 }
                 if (newSubQueriesFinishedSinceLastListing(status)) {
