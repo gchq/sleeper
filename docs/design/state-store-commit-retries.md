@@ -153,8 +153,7 @@ are a few ways this could happen:
    SqsFifoStateStoreCommitRequestSender, which sets a random deduplication ID on the SQS message.
 
 In the first two cases the message returns to SQS and can be retried, either directly or as a redrive of a dead letter,
-despite having committed successfully. In the third case the same commit message is added to the queue twice at the
-producer side.
+despite having committed successfully.
 
 In the second case, it's also possible to add a duplicate transaction to the log without ever retrying the commit
 message. This will only happen for transactions validated at read time, where a DuplicateTransactionNumberException or
@@ -163,6 +162,10 @@ time the retry is rejected by validation and sent back to SQS.
 
 The impact of this duplication will be the same whether it gets back to SQS or not, except that a retry through SQS can
 result in dead letters.
+
+In the third case the same commit message is added to the queue twice at the producer side. Each attempt will also
+upload a new copy of the transaction body to S3 if it is too big. TODO is this done in practice, and is there any
+handling to delete the transaction body if it fails to send?
 
 #### Transactions validated at read time
 
