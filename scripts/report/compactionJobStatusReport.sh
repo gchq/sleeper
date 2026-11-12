@@ -23,4 +23,7 @@ JAR_DIR=${SCRIPTS_DIR}/jars
 
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.report.CompactionJobStatusReport "$@"
+source "${SCRIPTS_DIR}/functions/jvmUtils.sh"
+read_jvm_options "$@"
+
+java "${JVM_OPTIONS[@]}" -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.report.CompactionJobStatusReport "${APP_ARGS[@]}"

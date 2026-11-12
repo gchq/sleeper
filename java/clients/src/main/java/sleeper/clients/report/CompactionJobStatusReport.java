@@ -95,7 +95,14 @@ public class CompactionJobStatusReport {
                     "A report on compaction jobs within a Sleeper instance.\n" +
                     "\n" +
                     "The jobs to report on are chosen with one of the query type options. " +
-                    "Only one may be set at a time. If none is set, you will be prompted to choose one.")
+                    "Only one may be set at a time. If none is set, you will be prompted to choose one.\n" +
+                    "\n" +
+                    "When run with compactionJobStatusReport.sh, the following options are passed to the JVM " +
+                    "rather than the report:\n" +
+                    "--jvm-memory <size>: The maximum memory for the JVM, e.g. 512m or 8g. If this is more than " +
+                    "the memory currently available, you will be asked to confirm before the report runs. If it uses " +
+                    "more memory than is available, the report may run slowly or be killed by the operating system.\n" +
+                    "--force: Skips the confirmation prompt for --jvm-memory.")
             .build();
 
     /**
