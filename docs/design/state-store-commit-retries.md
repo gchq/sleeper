@@ -145,12 +145,16 @@ For the five transaction types on the queue, we can look at what will happen if 
 are a few ways this could happen:
 
 1. The state store committer applies a commit to the transaction log, but dies before the message is deleted from the
-   queue. The message is retried despite having successfully committed.
-2. The state store committer applies a commit to the transaction log, but dies before the message is deleted from the
-   queue. The message goes to the dead letter queue, and is then retried with a redrive, despite having successfully
-   committed.
+   queue.
+2. The state store committer calls the DynamoDB API to write a transaction log entry. This succeeds in DynamoDB, but the
+   response from the API is lost. The committer either fails immediately, or the AWS SDK retries the request, which
+   then fails because the record already exists, and is thrown as a DuplicateTransactionNumberException.
 3. The producer of the commit retries sending the commit at the application level. The producers send commits with
    SqsFifoStateStoreCommitRequestSender, which sets a random deduplication ID on the SQS message.
+
+In the first two cases the message returns to SQS and can be retried, either directly or as a redrive of a dead letter,
+despite having committed successfully. In the third case the same commit message is added to the queue twice at the
+producer side.
 
 #### Transactions validated at read time
 
