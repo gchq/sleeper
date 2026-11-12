@@ -140,7 +140,16 @@ way.
 
 ### Duplicate delivery problems
 
-For the five transaction types on the queue, we can look at what will happen if they are delivered more than once.
+For the five transaction types on the queue, we can look at what will happen if they are delivered more than once. There
+are a few ways this could happen:
+
+1. The state store committer applies a commit to the transaction log, but dies before the message is deleted from the
+   queue. The message is retried despite having successfully committed.
+2. The state store committer applies a commit to the transaction log, but dies before the message is deleted from the
+   queue. The message goes to the dead letter queue, and is then retried with a redrive, despite having successfully
+   committed.
+3. The producer of the commit retries sending the commit at the application level. The producers send commits with
+   SqsFifoStateStoreCommitRequestSender, which sets a random deduplication ID on the SQS message.
 
 #### Transactions validated at read time
 
