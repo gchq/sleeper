@@ -272,10 +272,10 @@ used a transaction body file, and that has already been deleted. Whether this ac
 before GC, the delay before transactions are deleted, and whether the transaction is big enough. Usually data is added
 in a small number of files, so those transactions may not be big enough to be held in a file.
 
-### Pending compaction job batch failures
+### Avoiding phantom files
 
 TODO
 
-### Phantom files
+### Pending compaction job batch failures
 
 TODO
