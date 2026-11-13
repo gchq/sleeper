@@ -40,4 +40,8 @@ public class QueryClientTestConstants {
             "Enter SQL statement (blank for none): \n";
     public static final String SEND_TO_S3_OPTION = "s";
     public static final String SEND_TO_SQS_OPTION = "q";
+    public static final String SEND_TO_CONSOLE_OPTION = "c";
+    public static final String PRINT_WHEN_FINISHED_OPTION = "f";
+    public static final String PRINT_AS_SUBQUERIES_FINISH_OPTION = "a";
+    public static final String DEFAULT_RESULTS_READ_THREADS_OPTION = "";
 }

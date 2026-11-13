@@ -21,6 +21,7 @@ import sleeper.clients.api.BulkExportQuerySender;
 import sleeper.clients.api.BulkImportJobSender;
 import sleeper.clients.api.IngestBatcherSender;
 import sleeper.clients.api.IngestJobSender;
+import sleeper.clients.api.QueryResultsReader;
 import sleeper.clients.api.QuerySender;
 import sleeper.clients.api.QueryWebSocketSender;
 import sleeper.clients.api.SleeperClient;
@@ -55,6 +56,7 @@ public class AwsSleeperClientBuilder {
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
     private SleeperClientQueryProvider queryProvider;
     private Integer queryThreadPoolSize;
+    private int resultsReadThreads = 1;
 
     /**
      * Creates a Sleeper client.
@@ -86,6 +88,8 @@ public class AwsSleeperClientBuilder {
                 .queryWebSocketSender(QueryWebSocketSender.query(instanceProperties, tablePropertiesProvider,
                         awsClients.awsCredentialsProvider()))
                 .querySender(QuerySender.toSqs(instanceProperties, tablePropertiesProvider, awsClients.sqs()))
+                .queryResultsReader(QueryResultsReader.fromS3(instanceProperties, tablePropertiesProvider, hadoop))
+                .resultsReadThreads(resultsReadThreads)
                 .queryTrackerStore(new DynamoDBQueryTracker(instanceProperties, awsClients.dynamo()))
                 .shutdown(new UncheckedAutoCloseables(List.of(awsClients, rowRetrieverProvider)))
                 .build();
@@ -142,6 +146,19 @@ public class AwsSleeperClientBuilder {
      */
     public AwsSleeperClientBuilder queryThreadPoolSize(int queryThreadPoolSize) {
         this.queryThreadPoolSize = queryThreadPoolSize;
+        return this;
+    }
+
+    /**
+     * Sets the number of threads used to read query results files. With more than one thread, the files are read in
+     * parallel and the rows are interleaved across files in no particular order. Defaults to 1, where the files are
+     * read one at a time.
+     *
+     * @param  resultsReadThreads the number of threads
+     * @return                    this builder
+     */
+    public AwsSleeperClientBuilder resultsReadThreads(int resultsReadThreads) {
+        this.resultsReadThreads = resultsReadThreads;
         return this;
     }
 
