@@ -19,7 +19,6 @@ import io.floci.testcontainers.FlociContainer;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
 import software.amazon.awssdk.services.sqs.model.Message;
@@ -260,22 +259,18 @@ public class ECSBulkExportTaskRunnerLocalAwsIT extends LocalAwsTestBase {
     }
 
     @Test
-    @Disabled("TODO")
-    // This fails because the message isn't returned immediately to the queue, instead it's left to time out with the
-    // standard queue visibility timeout. It seems like ideally we would prefer this to immediately go to the dead
-    // letter queue, since it's unreadable.
-    public void shouldReturnMessageToQueueAfterFailure() throws Exception {
+    public void shouldSendUnreadableMessageToDlq() throws Exception {
         // Given
         String messageString = "This will cause a failure!";
-        configureJobQueuesWithMaxReceiveCount(2);
+        configureJobQueuesWithMaxReceiveCount(1);
         send(messageString);
 
         // When
         runTask();
 
         // Then
-        assertThat(getMessagesFromDlq()).isEmpty();
-        assertThat(getMessagesFromQueue()).containsExactly(messageString);
+        assertThat(getMessagesFromQueue()).isEmpty();
+        assertThat(getMessagesFromDlq()).containsExactly(messageString);
     }
 
     @Test
@@ -297,27 +292,6 @@ public class ECSBulkExportTaskRunnerLocalAwsIT extends LocalAwsTestBase {
         // Then
         assertThat(getMessagesFromQueue()).isEmpty();
         assertThat(getJobsFromDlq()).containsExactly(query);
-    }
-
-    @Test
-    @Disabled("TODO")
-    // This fails because the message isn't returned to the queue immediately, instead it's left to time out
-    // with the standard queue visibility timeout.
-    // From the test name I'm not sure what's intended here. I can't see why you'd want to retry an unreadable message.
-    public void shouldMoveMessageToDlqAfterTwoFailures() throws Exception {
-        // Given
-        String messageString = "This will cause a failure!";
-        configureJobQueuesWithMaxReceiveCount(2);
-        send(messageString);
-
-        // When
-        // The task needs to be run twice for it to be moved to the DLQ
-        runTask();
-        runTask();
-
-        // Then
-        assertThat(getMessagesFromQueue()).isEmpty();
-        assertThat(getMessagesFromDlq()).containsExactly(messageString);
     }
 
     @Test
