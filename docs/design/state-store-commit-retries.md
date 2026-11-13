@@ -289,9 +289,17 @@ We have a few options for ways to avoid references reappearing to files that hav
    problem, but may decrease the throughput through the committer, which is important to the scalability of the system.
 5. Ensure redrives are done through a tool that checks whether each file exists.
 6. When a commit goes to the dead letter queue, have an automatic extra check for whether files have actually been
-   added.
+   added. This would require reading the state store state, and one reason a commit can appear here is because the
+   DynamoDB table for this is overloaded or otherwise unavailable.
+7. When a commit goes to the dead letter queue, filter out commits that add files into a separate queue, so that there's
+   more ability to recognise the risk when redriving, and they can be handled separately.
+8. Whenever we read data files, if we find a file does not exist, ignore the failure and carry on. Treat it the same as
+   an empty file. This would rely on our ability to detect that the file does not exist, and affect how this case is
+   handled. It would also rely on our ability to control everywhere the files are read. Any time we report on data files
+   in the system to a client, this would risk giving incorrect information.
 
-It looks like option 6 is the only one that both fully handles the problem and doesn't add extra load to the committer.
+All of these either do not fully handle the problem, or put additional load on the state store committer. We can think
+carefully about how we could proceed.
 
 ### Pending compaction job batch failures
 
