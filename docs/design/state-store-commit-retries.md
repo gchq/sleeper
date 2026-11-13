@@ -250,6 +250,10 @@ log entries.
 9. Instead of deleting transaction body files in the transaction deleter, use an S3 lifecycle rule instead. This would
    rely on a snapshot being created, so if snapshots are disabled for any reason this would cause problems.
 
+Option 5 seems appealing because of its simplicity. We'd need to be careful about documenting the invariant we rely on
+for this. It also may need specific handling for the case where we redrive a transaction to add files long after it last
+failed, in case the files were actually added and have since been deleted from the state store by GC.
+
 ### Pending compaction job batch failures
 
 TODO
