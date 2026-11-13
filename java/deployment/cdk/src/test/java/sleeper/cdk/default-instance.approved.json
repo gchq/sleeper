@@ -11969,6 +11969,13 @@
                 ]
               ]
             },
+            "FilterCriteria": {
+              "Filters": [
+                {
+                  "Pattern": "{\"eventName\":[\"INSERT\"]}"
+                }
+              ]
+            },
             "EventSourceArn": {
               "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701StreamArn"
             },

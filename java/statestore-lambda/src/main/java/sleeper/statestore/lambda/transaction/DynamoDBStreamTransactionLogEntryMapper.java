@@ -16,6 +16,7 @@
 package sleeper.statestore.lambda.transaction;
 
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.OperationType;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.Record;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,14 +57,16 @@ public class DynamoDBStreamTransactionLogEntryMapper {
      * @return         a stream of log entries
      */
     public Stream<TransactionLogEntryHandle> toTransactionLogEntries(List<? extends Record> records) {
-        return records.stream().flatMap(record -> {
-            try {
-                return Stream.of(toTransactionLogEntryOrThrow(record));
-            } catch (RuntimeException e) {
-                LOGGER.error("Unable to map to transaction log entry: {}", record, e);
-                return Stream.empty();
-            }
-        });
+        return records.stream()
+                .filter(this::isInsert)
+                .flatMap(record -> {
+                    try {
+                        return Stream.of(toTransactionLogEntryOrThrow(record));
+                    } catch (RuntimeException e) {
+                        LOGGER.error("Unable to map to transaction log entry: {}", record, e);
+                        return Stream.empty();
+                    }
+                });
     }
 
     /**
@@ -90,5 +93,13 @@ public class DynamoDBStreamTransactionLogEntryMapper {
             return new TransactionLogEntryHandle(tableId, sequenceNumber,
                     new TransactionLogEntry(transactionNumber, updateTime, transactionType, bodyKey));
         }
+    }
+
+    private boolean isInsert(Record record) {
+        if (OperationType.INSERT.toString().equals(record.getEventName())) {
+            return true;
+        }
+        LOGGER.debug("Skipping {} record, only INSERT records are processed: {}", record.getEventName(), record);
+        return false;
     }
 }
