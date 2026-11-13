@@ -297,7 +297,8 @@ We have a few options for ways to avoid references reappearing to files that hav
 7. Whenever we read data files, if we find a file does not exist, ignore the failure and carry on. Treat it the same as
    an empty file. This would rely on our ability to detect that the file does not exist, and affect how this case is
    handled. It would also rely on our ability to control everywhere the files are read. Any time we report on data files
-   in the system to a client, this would risk giving incorrect information.
+   in the system to a client, this would risk giving incorrect information. Row counts would be wrong, the reference
+   would be included in compaction, and if a file really goes missing it would be ignored.
 
 All of these either do not fully handle the problem, or put additional load on the state store committer. We can think
 carefully about how we could proceed.
