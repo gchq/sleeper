@@ -198,8 +198,8 @@ collector will repeat the deletion, which is idempotent, and create a fresh comm
 When an AddFilesTransaction is retried, particularly due to a redrive from the dead letter queue, it is possible that it
 may have already been successful in the past, but the files have already been compacted and garbage collected, so that
 they are no longer recorded in the state store. In this case, they will be added back to the state store again. This
-duplicates data that has already been compacted into other files, or brings back data that has previously been removed
-by a filter.
+creates references to files that have already been deleted by garbage collection, and puts the table in an invalid
+state.
 
 ### Conflict between manual operations and asynchronous commits
 
