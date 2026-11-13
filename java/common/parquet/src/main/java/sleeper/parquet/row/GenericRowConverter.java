@@ -61,7 +61,8 @@ import java.util.function.IntFunction;
 import java.util.function.LongFunction;
 
 /**
- * Converts rows of Parquet data into Sleeper rows, based on the Parquet schema of the data rather than a Sleeper
+ * Converts rows of Parquet data into Sleeper rows, based on the Parquet schema
+ * of the data rather than a Sleeper
  * schema. A new row object is created for each row read.
  * <p>
  * Values are read as the following Java types:
@@ -69,13 +70,16 @@ import java.util.function.LongFunction;
  * <li>Strings, enums and JSON are read as a string</li>
  * <li>Decimals are read as a {@link BigDecimal}</li>
  * <li>Dates are read as a {@link LocalDate}</li>
- * <li>Timestamps are read as an {@link Instant} if they are adjusted to UTC, or otherwise as a
- * {@link LocalDateTime}. Legacy int96 timestamps are read as an {@link Instant}</li>
+ * <li>Timestamps are read as an {@link Instant} if they are adjusted to UTC, or
+ * otherwise as a {@link LocalDateTime}. Legacy int96 timestamps are read as an
+ * {@link Instant}</li>
  * <li>Times of day are read as a {@link LocalTime}</li>
  * <li>UUIDs are read as a {@link UUID}</li>
- * <li>Unsigned 32 bit integers are read as a Long, and unsigned 64 bit integers as a {@link BigInteger}</li>
+ * <li>Unsigned 32 bit integers are read as a Long, and unsigned 64 bit integers
+ * as a {@link BigInteger}</li>
  * <li>Other binary and fixed length binary values are read as a byte array</li>
- * <li>Other primitive values are read as an Integer, Long, Float, Double or Boolean, as they are held in
+ * <li>Other primitive values are read as an Integer, Long, Float, Double or
+ * Boolean, as they are held in
  * Parquet</li>
  * <li>Lists and repeated fields are read as a list</li>
  * <li>Maps are read as a map, with any type of key</li>
@@ -126,7 +130,8 @@ class GenericRowConverter extends GroupConverter {
             return new ListConverter(group, setter);
         }
         if ((annotation instanceof MapLogicalTypeAnnotation || annotation instanceof MapKeyValueTypeAnnotation)
-                && isRepeatedOnly(group) && !group.getType(0).isPrimitive() && group.getType(0).asGroupType().getFieldCount() == 2) {
+                && isRepeatedOnly(group) && !group.getType(0).isPrimitive()
+                && group.getType(0).asGroupType().getFieldCount() == 2) {
             return new MapConverter(group, setter);
         }
         return new StructConverter(group, setter);
@@ -156,7 +161,8 @@ class GenericRowConverter extends GroupConverter {
             if (timestamp.isAdjustedToUTC()) {
                 return new LongConverter(setter, value -> toInstant(value, unit));
             } else {
-                return new LongConverter(setter, value -> LocalDateTime.ofInstant(toInstant(value, unit), ZoneOffset.UTC));
+                return new LongConverter(setter,
+                        value -> LocalDateTime.ofInstant(toInstant(value, unit), ZoneOffset.UTC));
             }
         } else if (annotation instanceof TimeLogicalTypeAnnotation time) {
             long nanosPerUnit = nanosPerUnit(time.getUnit());
@@ -202,7 +208,8 @@ class GenericRowConverter extends GroupConverter {
         }
     }
 
-    // An int96 timestamp holds the nanoseconds within the day, followed by the Julian day number
+    // An int96 timestamp holds the nanoseconds within the day, followed by the
+    // Julian day number.
     private static Instant int96ToInstant(Binary value) {
         ByteBuffer buffer = ByteBuffer.wrap(value.getBytes()).order(ByteOrder.LITTLE_ENDIAN);
         long nanosOfDay = buffer.getLong();
@@ -222,7 +229,8 @@ class GenericRowConverter extends GroupConverter {
     }
 
     /**
-     * Converts the fields of a group, which may be the whole row or a group nested in it
+     * Converts the fields of a group, which may be the whole row or a group nested
+     * in it.
      */
     private static class Fields {
         private final FieldSetter setter;
@@ -392,12 +400,14 @@ class GenericRowConverter extends GroupConverter {
             if (isElement(repeated, listType.getName())) {
                 repeatedConverter = converterFor(repeated, element -> list.add(element));
             } else {
-                repeatedConverter = new WrappedElementConverter(repeated.asGroupType().getType(0), element -> list.add(element));
+                repeatedConverter = new WrappedElementConverter(repeated.asGroupType().getType(0),
+                        element -> list.add(element));
             }
         }
 
-        // Follows the backward compatibility rules for lists in the Parquet format specification. Normally a list
-        // holds a repeated group that wraps each element, but older writers put the elements directly in the list.
+        // Follows the backward compatibility rules for lists in the Parquet format
+        // specification. Normally a list holds a repeated group that wraps each element,
+        // but older writers put the elements directly in the list.
         private static boolean isElement(Type repeated, String listName) {
             return repeated.isPrimitive()
                     || repeated.asGroupType().getFieldCount() != 1
@@ -421,7 +431,8 @@ class GenericRowConverter extends GroupConverter {
         }
     }
 
-    // Converts the repeated group in a list that wraps each element. The element is null if it has no value.
+    // Converts the repeated group in a list that wraps each element. The element is
+    // null if it has no value.
     private static class WrappedElementConverter extends GroupConverter {
         private final Consumer<Object> setter;
         private final Converter elementConverter;
