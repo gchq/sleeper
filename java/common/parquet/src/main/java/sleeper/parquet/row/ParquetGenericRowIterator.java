@@ -15,11 +15,8 @@
  */
 package sleeper.parquet.row;
 
-import org.apache.avro.generic.GenericRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.avro.AvroReadSupport;
-import org.apache.parquet.avro.AvroSchemaConverter;
 import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
@@ -35,16 +32,11 @@ import java.util.NoSuchElementException;
  * Sleeper table, e.g. query results that contain a subset of the fields, or fields computed by the query.
  */
 public class ParquetGenericRowIterator implements CloseableIterator<Row> {
-    private final ParquetReader<GenericRecord> reader;
-    private final GenericRowReadSupport readSupport = new GenericRowReadSupport();
-    private GenericRecord next;
+    private final ParquetReader<Row> reader;
+    private Row next;
 
     public ParquetGenericRowIterator(Path path, Configuration conf) throws IOException {
-        Configuration readConf = new Configuration(conf);
-        // Read lists as lists of their elements, rather than lists of records that each wrap an element
-        readConf.setBoolean(AvroSchemaConverter.ADD_LIST_ELEMENT_RECORDS, false);
-        readConf.setBoolean(AvroReadSupport.READ_INT96_AS_FIXED, true);
-        reader = ParquetReader.builder(readSupport, path).withConf(readConf).build();
+        reader = ParquetReader.builder(new GenericRowReadSupport(), path).withConf(conf).build();
         try {
             next = reader.read();
         } catch (IOException | RuntimeException e) {
@@ -63,7 +55,7 @@ public class ParquetGenericRowIterator implements CloseableIterator<Row> {
         if (next == null) {
             throw new NoSuchElementException();
         }
-        Row row = AvroRowConverter.toRow(next, readSupport.getFileSchema());
+        Row row = next;
         try {
             next = reader.read();
         } catch (IOException e) {

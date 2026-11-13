@@ -15,121 +15,52 @@
  */
 package sleeper.parquet.row;
 
-import org.apache.avro.NameValidator;
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.parquet.avro.AvroReadSupport;
-import org.apache.parquet.conf.ParquetConfiguration;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.api.InitContext;
+import org.apache.parquet.hadoop.api.ReadSupport;
+import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.io.api.RecordMaterializer;
-import org.apache.parquet.schema.GroupType;
-import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
-import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
-import org.apache.parquet.schema.Type;
-import org.apache.parquet.schema.Types;
 
-import java.util.List;
+import sleeper.core.row.Row;
+
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
- * Reads Avro generic records from a Parquet file, using the schema held in the file. Avro can only represent a map
- * if its keys are strings, but a Sleeper table can hold maps with other types of key. Those maps are read as a list
- * of records that each hold a key and a value. See {@link AvroRowConverter} for how they are converted back to a map.
+ * Reads Sleeper rows from a Parquet file without knowing its schema in advance. Reads every field in the schema held
+ * in the file. See {@link GenericRowConverter} for how each Parquet type is read.
  */
-class GenericRowReadSupport extends AvroReadSupport<GenericRecord> {
-    private MessageType fileSchema;
-
-    GenericRowReadSupport() {
-        super(GenericData.get());
-    }
+class GenericRowReadSupport extends ReadSupport<Row> {
 
     @Override
     public ReadContext init(InitContext context) {
-        fileSchema = context.getFileSchema();
-        ReadContext avroContext = withoutAvroNameValidation(() -> super.init(context));
-        MessageType requested = avroContext.getRequestedSchema();
-        MessageType readSchema = new MessageType(requested.getName(),
-                requested.getFields().stream().map(GenericRowReadSupport::readMapsWithNonStringKeysAsLists).toList());
-        return new ReadContext(readSchema, avroContext.getReadSupportMetadata());
+        return new ReadContext(context.getFileSchema());
     }
 
     @Override
-    public RecordMaterializer<GenericRecord> prepareForRead(
-            ParquetConfiguration configuration, Map<String, String> keyValueMetaData, MessageType fileSchema, ReadContext readContext) {
-        return withoutAvroNameValidation(() -> super.prepareForRead(configuration, keyValueMetaData, fileSchema, readContext));
+    public RecordMaterializer<Row> prepareForRead(
+            Configuration configuration,
+            Map<String, String> keyValueMetaData,
+            MessageType fileSchema,
+            ReadContext readContext) {
+        return new GenericRowMaterializer(new GenericRowConverter(readContext.getRequestedSchema()));
     }
 
-    // Runs an operation that builds an Avro schema, without validating field names. Avro only allows letters, numbers
-    // and underscores in a field name, but a Parquet file can hold any field name, e.g. "count(*)" for a field
-    // computed by an SQL query. The setting is held per thread in Avro, and is restored afterwards.
-    private static <T> T withoutAvroNameValidation(Supplier<T> operation) {
-        NameValidator validatorBefore = Schema.getNameValidator();
-        Schema.setNameValidator(NameValidator.NO_VALIDATION);
-        try {
-            return operation.get();
-        } finally {
-            Schema.setNameValidator(validatorBefore);
-        }
-    }
+    private static class GenericRowMaterializer extends RecordMaterializer<Row> {
+        private final GenericRowConverter converter;
 
-    /**
-     * Retrieves the schema of the file being read. This is only available once the first record has been read.
-     *
-     * @return the Parquet schema held in the file
-     */
-    MessageType getFileSchema() {
-        return fileSchema;
-    }
+        GenericRowMaterializer(GenericRowConverter converter) {
+            this.converter = converter;
+        }
 
-    private static Type readMapsWithNonStringKeysAsLists(Type type) {
-        if (type.isPrimitive()) {
-            return type;
+        @Override
+        public Row getCurrentRecord() {
+            return converter.getRow();
         }
-        GroupType group = type.asGroupType();
-        List<Type> fields = group.getFields().stream().map(GenericRowReadSupport::readMapsWithNonStringKeysAsLists).toList();
-        if (!isMapWithNonStringKey(group)) {
-            return group.withNewFields(fields);
-        }
-        GroupType keyValue = fields.get(0).asGroupType();
-        return Types.buildGroup(group.getRepetition())
-                .as(LogicalTypeAnnotation.listType())
-                .addField(Types.repeatedGroup().addFields(keyValue.getFields().toArray(Type[]::new)).named(keyValue.getName()))
-                .named(group.getName());
-    }
 
-    /**
-     * Checks whether a Parquet type is a map that cannot be represented in Avro because its keys are not strings.
-     *
-     * @param  type the Parquet type
-     * @return      true if the type is a map with keys that are not strings
-     */
-    static boolean isMapWithNonStringKey(Type type) {
-        if (!isMap(type)) {
-            return false;
+        @Override
+        public GroupConverter getRootConverter() {
+            return converter;
         }
-        Type key = type.asGroupType().getType(0).asGroupType().getType(0);
-        return !(key.isPrimitive()
-                && key.asPrimitiveType().getPrimitiveTypeName() == PrimitiveTypeName.BINARY
-                && LogicalTypeAnnotation.stringType().equals(key.getLogicalTypeAnnotation()));
-    }
-
-    /**
-     * Checks whether a Parquet type is a map, holding a repeated group with a key and a value.
-     *
-     * @param  type the Parquet type
-     * @return      true if the type is a map
-     */
-    static boolean isMap(Type type) {
-        if (type.isPrimitive() || !(type.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.MapLogicalTypeAnnotation)) {
-            return false;
-        }
-        GroupType group = type.asGroupType();
-        if (group.getFieldCount() != 1 || group.getType(0).isPrimitive() || !group.getType(0).isRepetition(Type.Repetition.REPEATED)) {
-            return false;
-        }
-        return group.getType(0).asGroupType().getFieldCount() == 2;
     }
 }
