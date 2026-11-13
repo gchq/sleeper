@@ -164,8 +164,8 @@ The impact of this duplication will be the same whether it gets back to SQS or n
 result in dead letters.
 
 In the third case the same commit message is added to the queue twice at the producer side. Each attempt will also
-upload a new copy of the transaction body to S3 if it is too big. TODO is this done in practice, and is there any
-handling to delete the transaction body if it fails to send?
+upload a new copy of the transaction body to S3 if it is too big. If sending fails the producer will re-run and build a
+new transaction. There's no handling to delete the transaction body file if it does fail, so that needs adding.
 
 #### Transactions validated at read time
 
@@ -228,6 +228,8 @@ delete the invalid commits. This lets us focus retries on infrastructure problem
 For commits validated at read time, failures are already handled and reported correctly, but there's a case where the
 same transaction body file can be included in multiple log entries, and that needs extra handling. At time of writing
 this is just ingest and compaction commit.
+
+When sending commits, we need to add some handling to ensure the transaction log body file is deleted if it fails.
 
 We need to review how batches of pending compaction jobs are handled when they fail.
 
