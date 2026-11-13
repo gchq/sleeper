@@ -274,7 +274,24 @@ in a small number of files, so those transactions may not be big enough to be he
 
 ### Avoiding phantom files
 
-TODO
+We have a few options for ways to avoid references reappearing to files that have been deleted:
+
+1. Check whether each file exists in S3 before committing it. This would add latency in the state store committer, but
+   if we can tell how old the commit is we could just do that check for old commits. This means that old redrives would
+   become slower to process. In practice not much of the load on the committer is for adding files, but there may be
+   cases where a large number of files are added at once.
+2. Reject old commits by age. If we can tell how old a commit is we could ignore them, but this would prevent all
+   redrives beyond that age.
+3. Retain a record of deleted files in the state store state. We can then validate that the file hasn't existed before.
+   This would grow the state held for a Sleeper table, so it would need to be limited based on age. It might still not
+   retain the record for long enough depending on the age of the redrive.
+4. Give each commit a unique ID, use it as an idempotency token in the state store committer. This could solve the
+   problem, but may decrease the throughput through the committer, which is important to the scalability of the system.
+5. Ensure redrives are done through a tool that checks whether each file exists.
+6. When a commit goes to the dead letter queue, have an automatic extra check for whether files have actually been
+   added.
+
+It looks like option 6 is the only one that both fully handles the problem and doesn't add extra load to the committer.
 
 ### Pending compaction job batch failures
 
