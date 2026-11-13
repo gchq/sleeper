@@ -287,10 +287,10 @@ We have a few options for ways to avoid references reappearing to files that hav
    retain the record for long enough depending on the age of the redrive.
 4. Give each commit a unique ID, use it as an idempotency token in the state store committer. This could solve the
    problem, but may decrease the throughput through the committer, which is important to the scalability of the system.
-5. Add further control over redrives, ensure they are done through a tool that checks whether each file exists. One way
-   to do this would be to stop leaving the messages on the dead letter queue, and write them somewhere else instead.
-   There's also an option to filter out commits that add files, either on a different queue or by organising some target
-   store. That may give more ability to recognise the risk when redriving.
+5. Add further control over redrives. A redrive tool could check whether each file exists. One way to do this would be
+   to stop leaving the messages on the dead letter queue, and write them somewhere else instead. There's also an option
+   to filter out commits that add files, either on a different queue or by organising some target store. That may give
+   more ability to recognise the risk when redriving.
 6. When a commit goes to the dead letter queue, have an automatic extra check for whether files have actually been
    added. This would require reading the state store state, and one reason a commit can appear here is because the
    DynamoDB table for this is overloaded or otherwise unavailable.
