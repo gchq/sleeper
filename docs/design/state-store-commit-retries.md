@@ -265,3 +265,7 @@ failed, in case the files were actually added and have since been deleted from t
 ### Pending compaction job batch failures
 
 TODO
+
+### Phantom files
+
+TODO
