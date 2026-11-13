@@ -106,7 +106,7 @@ public class SqsBulkExportQueueHandler {
      * The message is deleted from the queue when the job is complete.
      * The message is returned to the queue if the job fails.
      */
-    public class SqsMessageHandle {
+    public class SqsMessageHandle implements AutoCloseable {
         private final BulkExportLeafPartitionQuery job;
         private final MessageReference message;
         private final PeriodicActionRunnable keepAliveRunnable;
@@ -152,6 +152,7 @@ public class SqsBulkExportQueueHandler {
         /**
          * Stop the background thread to keep the message alive.
          */
+        @Override
         public void close() {
             LOGGER.info("Bulk Export job {}: Stopping background thread to keep SQS messages alive", job.getSubExportId());
             if (keepAliveRunnable != null) {

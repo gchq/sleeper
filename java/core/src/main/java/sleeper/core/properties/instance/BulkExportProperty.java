@@ -122,6 +122,55 @@ public interface BulkExportProperty {
                     "This should be less than the value of sleeper.bulk.export.queue.visibility.timeout.seconds.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
+    UserDefinedInstanceProperty BULK_EXPORT_TASK_DELAY_BEFORE_RETRY_IN_SECONDS = Index
+            .propertyBuilder("sleeper.bulk.export.task.delay.before.retry.seconds")
+            .description("The time in seconds for a bulk export task to wait after receiving no bulk export jobs " +
+                    "before attempting to receive a message again.\n" +
+                    "When a bulk export task waits for bulk export jobs to appear on the SQS queue, if the task " +
+                    "receives no messages in the time defined by the property " +
+                    "\"sleeper.bulk.export.task.wait.time.seconds\", it will wait for a number of seconds defined by " +
+                    "this property, then try to receive a message again.")
+            .defaultValue("10")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
+    UserDefinedInstanceProperty BULK_EXPORT_TASK_MAX_IDLE_TIME_IN_SECONDS = Index
+            .propertyBuilder("sleeper.bulk.export.task.max.idle.time.seconds")
+            .description("The total time in seconds that a bulk export task can be idle before it is terminated.\n" +
+                    "When there are no bulk export jobs available on the SQS queue, and SQS returns no jobs, the task " +
+                    "will check whether this idle time has elapsed since the last time it finished a job. If so, the " +
+                    "task will terminate.")
+            .defaultValue("60")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
+    UserDefinedInstanceProperty BULK_EXPORT_TASK_MAX_CONSECUTIVE_FAILURES = Index
+            .propertyBuilder("sleeper.bulk.export.task.max.consecutive.failures")
+            .description("The maximum number of times that a bulk export task can fail to process consecutive " +
+                    "bulk export jobs before it terminates.\n" +
+                    "When the task completes any job successfully, the count of consecutive failures is " +
+                    "set to zero. Any time it fails to process a job, this count is incremented. If this maximum is " +
+                    "reached, the task will terminate.")
+            .defaultValue("3")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
+    UserDefinedInstanceProperty BULK_EXPORT_TASK_MAX_ALIVE_TIME_IN_MINUTES = Index
+            .propertyBuilder("sleeper.bulk.export.task.max.alive.time.minutes")
+            .description("The total time in minutes that a bulk export task can be alive for before it is terminated.\n" +
+                    "When the task has finished its current job, it will calculate how long it's been running and " +
+                    "if it's been running longer than the max alive time it will terminate.\n" +
+                    "A new task will then begin running to process remaining bulk export jobs.\n" +
+                    "This allows the user to gracefully upgrade Sleeper to a newer version.")
+            .defaultValue("1440") //24 hours
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
+    UserDefinedInstanceProperty BULK_EXPORT_TASK_MAX_ALIVE_JITTER_IN_MINUTES = Index
+            .propertyBuilder("sleeper.bulk.export.task.max.alive.jitter.minutes")
+            .description("The max amount of jitter to subtract from a new bulk export task's max alive time.\n" +
+                    "A random number of minutes between 0 and this value will be subtracted from the max alive time property above " +
+                    "for each new bulk export task.\n" +
+                    "This lowers the chance that all the bulk export tasks stop at the same time.")
+            .defaultValue("120") //2 hours
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

@@ -58,16 +58,22 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_MAX_ALIVE_JITTER_IN_MINUTES;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_MAX_ALIVE_TIME_IN_MINUTES;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_MAX_CONSECUTIVE_FAILURES;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_WAIT_TIME_IN_SECONDS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -100,7 +106,9 @@ public class ECSBulkExportTaskRunnerLocalAwsIT extends LocalAwsTestBase {
         tableProperties.setEnum(DATA_ENGINE, DataEngine.JAVA);
         instanceProperties.setNumber(BULK_EXPORT_TASK_WAIT_TIME_IN_SECONDS, 0);
         instanceProperties.setNumber(BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 1);
-        instanceProperties.setNumber(BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS, 1);
+        instanceProperties.setNumber(BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS, 0);
+        instanceProperties.setNumber(BULK_EXPORT_TASK_MAX_IDLE_TIME_IN_SECONDS, 0);
+        instanceProperties.setNumber(BULK_EXPORT_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, 0);
         instanceProperties.set(BULK_EXPORT_S3_BUCKET, UUID.randomUUID().toString());
         createBucket(instanceProperties.get(BULK_EXPORT_S3_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
@@ -108,7 +116,7 @@ public class ECSBulkExportTaskRunnerLocalAwsIT extends LocalAwsTestBase {
     }
 
     @Test
-    public void shouldRunOneBulkExportSubQuery() throws Exception {
+    public void shouldRunAllBulkExportSubQueriesOnQueue() throws Exception {
         // Given
         configureJobQueuesWithMaxReceiveCount(1);
         Row row1 = new Row(Map.of("key", 5, "value1", "5", "value2", "some value"));
@@ -124,12 +132,13 @@ public class ECSBulkExportTaskRunnerLocalAwsIT extends LocalAwsTestBase {
 
         // Then
         assertThat(readOutputFile(query1)).containsExactly(row1, row2);
+        assertThat(readOutputFile(query2)).containsExactly(row1, row2);
         assertThat(getMessagesFromDlq()).isEmpty();
-        assertThat(getJobsFromQueue()).containsExactly(query2);
+        assertThat(getJobsFromQueue()).isEmpty();
     }
 
     @Test
-    public void shouldThrowExceptionWhenSqlQueryGivenToJavaExporter() throws Exception {
+    public void shouldSendJobToDlqWhenSqlQueryGivenToJavaExporter() throws Exception {
         // Given
         configureJobQueuesWithMaxReceiveCount(1);
         Row row1 = new Row(Map.of("key", 5, "value1", "5", "value2", "some value"));
@@ -140,12 +149,84 @@ public class ECSBulkExportTaskRunnerLocalAwsIT extends LocalAwsTestBase {
                 .build();
         send(query1);
 
-        // When / Then
-        assertThatThrownBy(() -> {
-            runTask();
-        })
-                .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessage("Java bulk exporter doesn't support SQL query filtering, but a SQL query filter was provided.");
+        // When
+        runTask();
+
+        // Then
+        assertThat(getMessagesFromQueue()).isEmpty();
+        assertThat(getJobsFromDlq()).containsExactly(query1);
+    }
+
+    @Test
+    public void shouldContinueProcessingAfterFailedJob() throws Exception {
+        // Given
+        configureJobQueuesWithMaxReceiveCount(1);
+        Row row1 = new Row(Map.of("key", 5, "value1", "5", "value2", "some value"));
+        Row row2 = new Row(Map.of("key", 15, "value1", "15", "value2", "other value"));
+        FileReference file = addPartitionFile("L", "file", List.of(row1, row2));
+        BulkExportLeafPartitionQuery failingQuery = createQueryWithIdsAndFiles("e-1", "se-1", file)
+                .sqlQuery("SELECT * FROM query_results;")
+                .build();
+        BulkExportLeafPartitionQuery goodQuery = createQueryWithIdsAndFiles("e-2", "se-2", file).build();
+        send(failingQuery);
+        send(goodQuery);
+
+        // When
+        runTask();
+
+        // Then
+        assertThat(readOutputFile(goodQuery)).containsExactly(row1, row2);
+        assertThat(getMessagesFromQueue()).isEmpty();
+        assertThat(getJobsFromDlq()).containsExactly(failingQuery);
+    }
+
+    @Test
+    public void shouldTerminateAfterMaxConsecutiveFailures() throws Exception {
+        // Given the failing job can be received many times before it is moved to the DLQ,
+        // and the task is set to terminate after 2 consecutive failures
+        configureJobQueuesWithMaxReceiveCount(10);
+        instanceProperties.setNumber(BULK_EXPORT_TASK_MAX_CONSECUTIVE_FAILURES, 2);
+        Row row1 = new Row(Map.of("key", 5, "value1", "5", "value2", "some value"));
+        FileReference file = addPartitionFile("L", "file", List.of(row1));
+        BulkExportLeafPartitionQuery failingQuery = createQueryWithIdsAndFiles("e-1", "se-1", file)
+                .sqlQuery("SELECT * FROM query_results;")
+                .build();
+        send(failingQuery);
+
+        // When
+        runTask();
+
+        // Then the job is still on the queue, having failed twice
+        assertThat(getMessagesFromDlq()).isEmpty();
+        assertThat(getJobsFromQueue()).containsExactly(failingQuery);
+    }
+
+    @Test
+    public void shouldTerminateWhenMaxAliveTimeReached() throws Exception {
+        // Given the task has been alive longer than the max alive time at the first check
+        instanceProperties.setNumber(BULK_EXPORT_TASK_MAX_ALIVE_TIME_IN_MINUTES, 10);
+        instanceProperties.setNumber(BULK_EXPORT_TASK_MAX_ALIVE_JITTER_IN_MINUTES, 0);
+        configureJobQueuesWithMaxReceiveCount(1);
+        Row row1 = new Row(Map.of("key", 5, "value1", "5", "value2", "some value"));
+        FileReference file = addPartitionFile("L", "file", List.of(row1));
+        BulkExportLeafPartitionQuery query = createQueryWithIdsAndFiles("e-1", "se-1", file).build();
+        send(query);
+        Iterator<Instant> times = List.of(
+                Instant.parse("2026-01-01T00:00:00Z"), // start time
+                Instant.parse("2026-01-01T00:11:00Z")) // max alive time check
+                .iterator();
+
+        // When
+        DataFusionAwsConfig awsConfig = createAwsConfig();
+        new ECSBulkExportTaskRunner(
+                new JavaCompactionExporter(instanceProperties, s3Client, hadoopConf, awsConfig),
+                new DataFusionQueryExporter(awsConfig),
+                times::next, Thread::sleep, () -> 0.0)
+                .runECSBulkExportTaskRunner(instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClient);
+
+        // Then no message was processed as the task terminated immediately
+        assertThat(getJobsFromQueue()).containsExactly(query);
+        assertThat(getMessagesFromDlq()).isEmpty();
     }
 
     @Test
@@ -173,8 +254,9 @@ public class ECSBulkExportTaskRunnerLocalAwsIT extends LocalAwsTestBase {
 
         // Then
         assertThat(readOutputFile(query1)).containsExactly(row1, row2);
+        assertThat(readOutputFile(query2)).containsExactly(row1, row2);
         assertThat(getMessagesFromDlq()).isEmpty();
-        assertThat(getJobsFromQueue()).containsExactly(query2);
+        assertThat(getJobsFromQueue()).isEmpty();
     }
 
     @Test
@@ -189,8 +271,7 @@ public class ECSBulkExportTaskRunnerLocalAwsIT extends LocalAwsTestBase {
         send(messageString);
 
         // When
-        assertThatThrownBy(() -> runTask())
-                .hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
+        runTask();
 
         // Then
         assertThat(getMessagesFromDlq()).isEmpty();
@@ -198,30 +279,20 @@ public class ECSBulkExportTaskRunnerLocalAwsIT extends LocalAwsTestBase {
     }
 
     @Test
-    @Disabled("TODO")
-    // This fails because the message isn't sent immediately to the dead letter queue, instead it's left to time out
-    // with the standard queue visibility timeout.
-    // With this specific failure we'd probably want it to go to the dead letter queue, since the partition does not
-    // exist.
-    // At the same time it shouldn't really be necessary to check the actual partition here, since the region is
-    // included in the message. It looks like it is loading the partition because of how the compaction code is set up.
-    // Maybe that should be changed?
-    // It would be good if we could simulate an exception where we would actually want it to be retried after a delay,
-    // e.g. some sort of networking failure. Maybe we should take more control in tests over how that would be handled.
     public void shouldHandleExceptionInProcessingAndSendToDlq() throws Exception {
         // Given
         configureJobQueuesWithMaxReceiveCount(1);
         Row row1 = new Row(Map.of("key", 5, "value1", "5", "value2", "some value"));
         Row row2 = new Row(Map.of("key", 15, "value1", "15", "value2", "other value"));
         FileReference file = addPartitionFile("L", "file", List.of(row1, row2));
-        BulkExportLeafPartitionQuery query = createQueryWithIdsAndFiles("e-id", "se-id", file)
-                .leafPartitionId("00000").build();
-
+        BulkExportLeafPartitionQuery query = createQueryWithIdsAndFiles("e-id", "se-id", file).build();
         send(query);
+        ECSBulkExportTaskRunner.BulkExporter failingExporter = (job, outputFile, tableProps) -> {
+            throw new RuntimeException("Export failed");
+        };
 
         // When
-        assertThatThrownBy(() -> runTask())
-                .hasMessageContaining("Partition not found: NO-ID");
+        runTask(failingExporter, failingExporter);
 
         // Then
         assertThat(getMessagesFromQueue()).isEmpty();
@@ -241,10 +312,8 @@ public class ECSBulkExportTaskRunnerLocalAwsIT extends LocalAwsTestBase {
 
         // When
         // The task needs to be run twice for it to be moved to the DLQ
-        assertThatThrownBy(() -> runTask())
-                .hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
-        assertThatThrownBy(() -> runTask())
-                .hasMessageContaining("Expected BEGIN_OBJECT but was STRING");
+        runTask();
+        runTask();
 
         // Then
         assertThat(getMessagesFromQueue()).isEmpty();
