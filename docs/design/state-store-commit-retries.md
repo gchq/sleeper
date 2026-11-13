@@ -201,6 +201,10 @@ they are no longer recorded in the state store. In this case, they will be added
 creates references to files that have already been deleted by garbage collection, and puts the table in an invalid
 state.
 
+In order to recover from this, you would need to create an empty file, add transactions that fake running a compaction
+of the phantom file into the empty file, and re-GC the phantom file. That empty file could then be removed by real
+compactions.
+
 ### Conflict between manual operations and asynchronous commits
 
 If a manual operation in a client clears the state of a table, there can still be asynchronous commits on the queue.
