@@ -263,8 +263,12 @@ log entries.
    rely on a snapshot being created, so if snapshots are disabled for any reason this would cause problems.
 
 Option 5 seems appealing because of its simplicity. We'd need to be careful about documenting the invariant we rely on
-for this. It also may need specific handling for the case where we redrive a transaction to add files long after it last
-failed, in case the files were actually added and have since been deleted from the state store by GC.
+for this.
+
+In the case where phantom files are added back to the state store, option 5 would also mean that those are ignored if it
+used a transaction body file, and that has already been deleted. Whether this actually happens will depend on the delay
+before GC, the delay before transactions are deleted, and whether the transaction is big enough. Usually data is added
+in a small number of files, so those transactions may not be big enough to be held in a file.
 
 ### Pending compaction job batch failures
 
