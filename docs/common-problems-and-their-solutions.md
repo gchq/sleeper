@@ -71,7 +71,7 @@ You can give the report more memory with the `--jvm-memory` option of the report
 ```
 
 The value is a whole number followed by `m` or `g`. If this is more than the memory currently available, you will be
-asked to confirm before the report runs. You can skip this with `--force`.
+asked to confirm before the report runs. You can skip this with `--force-memory`.
 
 This option is only available when running the report script directly, not through the administration client.
 

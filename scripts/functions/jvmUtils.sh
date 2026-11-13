@@ -19,24 +19,26 @@ unset CDPATH
 #
 # Supported options:
 #   --jvm-memory <size>  Maximum heap size for the JVM, e.g. 512m or 8g.
-#   --force              Skips the confirmation prompt if the requested memory is more than is available.
+#   --force-memory       Skips the confirmation prompt if the requested memory is more than is available.
+#
+# Messages are written to stderr, so that they don't mix with the output of the Java application.
 read_jvm_options() {
   local JVM_MEMORY=""
   local JVM_MEMORY_SET=false
-  local FORCE=false
+  local FORCE_MEMORY=false
   # Exit as soon as the JVM runs out of memory, rather than continuing with errors that hide the cause
   JVM_OPTIONS=("-XX:+ExitOnOutOfMemoryError")
   APP_ARGS=()
   while [[ "$#" -gt 0 ]]; do
     case $1 in
       --jvm-memory) JVM_MEMORY="${2:-}"; JVM_MEMORY_SET=true; shift; [[ "$#" -gt 0 ]] && shift ;;
-      --force) FORCE=true; shift 1 ;;
+      --force-memory) FORCE_MEMORY=true; shift 1 ;;
       *) APP_ARGS+=("$1"); shift 1 ;;
     esac
   done
 
   if [[ "$JVM_MEMORY_SET" == "true" ]]; then
-    check_jvm_memory "$JVM_MEMORY" "$FORCE"
+    check_jvm_memory "$JVM_MEMORY" "$FORCE_MEMORY"
     JVM_OPTIONS+=("-Xmx${JVM_MEMORY}")
   fi
 }
@@ -46,19 +48,19 @@ read_jvm_options() {
 # killed by the operating system without a Java error.
 check_jvm_memory() {
   local JVM_MEMORY=$1
-  local FORCE=$2
+  local FORCE_MEMORY=$2
   if [[ -z "$JVM_MEMORY" ]]; then
-    echo "Missing value for --jvm-memory"
+    echo "Missing value for --jvm-memory" >&2
     exit 1
   fi
   # Match a number then m or g, e.g. 8g, capturing the number in BASH_REMATCH[1] and the unit in BASH_REMATCH[2]
   if [[ ! "$JVM_MEMORY" =~ ^([0-9]+)([mMgG])$ ]]; then
-    echo "Invalid value for --jvm-memory: $JVM_MEMORY"
-    echo "Expected a whole number followed by m or g, e.g. 512m or 8g"
+    echo "Invalid value for --jvm-memory: $JVM_MEMORY" >&2
+    echo "Expected a whole number followed by m or g, e.g. 512m or 8g" >&2
     exit 1
   fi
-  # If force is set or memory info can't be read, return
-  if [[ "$FORCE" == "true" || ! -r /proc/meminfo ]]; then
+  # If force memory is set or memory info can't be read, return
+  if [[ "$FORCE_MEMORY" == "true" || ! -r /proc/meminfo ]]; then
     return 0
   fi
 
@@ -77,14 +79,14 @@ check_jvm_memory() {
   fi
 
   echo "Requested JVM memory of $JVM_MEMORY is more than the memory currently available" \
-    "(${AVAILABLE_MB}m available of ${TOTAL_MB}m total)."
-  echo "The process may run slowly, or be killed by the operating system if it uses that much memory."
+    "(${AVAILABLE_MB}m available of ${TOTAL_MB}m total)." >&2
+  echo "The process may run slowly, or be killed by the operating system if it uses that much memory." >&2
   if [[ -t 0 ]]; then
     local CONFIRM
     read -r -p "Are you sure you want to continue? [y/N] " CONFIRM
     case $CONFIRM in
       y | Y) ;;
-      *) echo "Aborted."; exit 1 ;;
+      *) echo "Aborted." >&2; exit 1 ;;
     esac
   fi
 }
@@ -96,7 +98,7 @@ run_java() {
   local EXIT_CODE=0
   java "${JVM_OPTIONS[@]}" "$@" || EXIT_CODE=$?
   if [[ "$EXIT_CODE" -eq 3 ]]; then
-    echo "Ran out of memory. You can give it more memory with --jvm-memory, e.g. --jvm-memory 8g"
+    echo "Ran out of memory. You can give it more memory with --jvm-memory, e.g. --jvm-memory 8g" >&2
   fi
   return "$EXIT_CODE"
 }

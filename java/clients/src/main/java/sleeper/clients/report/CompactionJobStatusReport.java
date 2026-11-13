@@ -103,7 +103,7 @@ public class CompactionJobStatusReport {
                     "the memory currently available, you will be asked to confirm before the report runs. If it uses " +
                     "more memory than is available, the report may run slowly or be killed by the operating system. " +
                     "If the report needs more memory than this, it will stop with an OutOfMemoryError.\n" +
-                    "--force: Skips the confirmation prompt for --jvm-memory.")
+                    "--force-memory: Skips the confirmation prompt for --jvm-memory.")
             .build();
 
     /**
