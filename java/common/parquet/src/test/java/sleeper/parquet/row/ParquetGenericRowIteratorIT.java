@@ -18,9 +18,11 @@ package sleeper.parquet.row;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.example.data.Group;
+import org.apache.parquet.example.data.simple.NanoTime;
 import org.apache.parquet.example.data.simple.SimpleGroupFactory;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.example.ExampleParquetWriter;
+import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.MessageTypeParser;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
@@ -40,10 +42,19 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -270,7 +281,117 @@ class ParquetGenericRowIteratorIT {
     }
 
     @Test
-    void shouldReadFieldNamesThatAreNotValidInAvro() throws IOException {
+    void shouldReadLogicalTypes() throws IOException {
+        // Given
+        MessageType parquetSchema = MessageTypeParser.parseMessageType("""
+                message results {
+                  required int32 decimalInt (DECIMAL(9,2));
+                  required int64 decimalLong (DECIMAL(18,3));
+                  required binary decimalBinary (DECIMAL(30,4));
+                  required int32 date (DATE);
+                  required int64 timestampMillis (TIMESTAMP(MILLIS,true));
+                  required int64 timestampMicros (TIMESTAMP(MICROS,true));
+                  required int64 timestampNanos (TIMESTAMP(NANOS,true));
+                  required int64 timestampBeforeEpoch (TIMESTAMP(MICROS,true));
+                  required int64 timestampLocal (TIMESTAMP(MILLIS,false));
+                  required int96 timestampInt96;
+                  required int32 timeMillis (TIME(MILLIS,true));
+                  required int64 timeMicros (TIME(MICROS,true));
+                  required fixed_len_byte_array(16) uuid (UUID);
+                  required int32 unsignedInt (INTEGER(32,false));
+                  required int64 unsignedLong (INTEGER(64,false));
+                  required int32 signedShort (INTEGER(16,true));
+                }
+                """);
+        UUID uuid = UUID.fromString("01234567-89ab-cdef-0123-456789abcdef");
+        Instant time = Instant.parse("2026-11-13T09:30:15.123Z");
+        Path path = newPath();
+        try (ParquetWriter<Group> writer = ExampleParquetWriter.builder(path).withType(parquetSchema).build()) {
+            Group group = new SimpleGroupFactory(parquetSchema).newGroup()
+                    .append("decimalInt", 12345)
+                    .append("decimalLong", -1234567L)
+                    .append("decimalBinary", Binary.fromConstantByteArray(new BigInteger("123456789012345678901234567890").toByteArray()))
+                    .append("date", (int) LocalDate.parse("2026-11-13").toEpochDay())
+                    .append("timestampMillis", time.toEpochMilli())
+                    .append("timestampMicros", time.toEpochMilli() * 1000 + 456)
+                    .append("timestampNanos", time.toEpochMilli() * 1_000_000 + 456_789)
+                    .append("timestampBeforeEpoch", -1L)
+                    .append("timestampLocal", time.toEpochMilli())
+                    .append("timestampInt96", new NanoTime(2_461_358, LocalTime.parse("09:30:15.123456789").toNanoOfDay()))
+                    .append("timeMillis", (int) (LocalTime.parse("09:30:15.123").toNanoOfDay() / 1_000_000))
+                    .append("timeMicros", LocalTime.parse("09:30:15.123456").toNanoOfDay() / 1000)
+                    .append("uuid", Binary.fromConstantByteArray(ByteBuffer.allocate(16)
+                            .putLong(uuid.getMostSignificantBits()).putLong(uuid.getLeastSignificantBits()).array()))
+                    .append("unsignedInt", -1)
+                    .append("unsignedLong", -1L)
+                    .append("signedShort", -5);
+            writer.write(group);
+        }
+
+        // When
+        List<Row> rows = readRows(path);
+
+        // Then
+        Row expected = new Row();
+        expected.put("decimalInt", new BigDecimal("123.45"));
+        expected.put("decimalLong", new BigDecimal("-1234.567"));
+        expected.put("decimalBinary", new BigDecimal("12345678901234567890123456.7890"));
+        expected.put("date", LocalDate.parse("2026-11-13"));
+        expected.put("timestampMillis", Instant.parse("2026-11-13T09:30:15.123Z"));
+        expected.put("timestampMicros", Instant.parse("2026-11-13T09:30:15.123456Z"));
+        expected.put("timestampNanos", Instant.parse("2026-11-13T09:30:15.123456789Z"));
+        expected.put("timestampBeforeEpoch", Instant.parse("1969-12-31T23:59:59.999999Z"));
+        expected.put("timestampLocal", LocalDateTime.parse("2026-11-13T09:30:15.123"));
+        expected.put("timestampInt96", Instant.parse("2026-11-13T09:30:15.123456789Z"));
+        expected.put("timeMillis", LocalTime.parse("09:30:15.123"));
+        expected.put("timeMicros", LocalTime.parse("09:30:15.123456"));
+        expected.put("uuid", uuid);
+        expected.put("unsignedInt", 4294967295L);
+        expected.put("unsignedLong", new BigInteger("18446744073709551615"));
+        expected.put("signedShort", -5);
+        assertThat(rows).containsExactly(expected);
+    }
+
+    @Test
+    void shouldReadListsNotWrittenBySleeper() throws IOException {
+        // Given
+        MessageType parquetSchema = MessageTypeParser.parseMessageType("""
+                message results {
+                  required group nullableElements (LIST) {
+                    repeated group list {
+                      optional binary element (STRING);
+                    }
+                  }
+                  required group legacyList (LIST) {
+                    repeated int32 array;
+                  }
+                  repeated int64 repeatedField;
+                }
+                """);
+        Path path = newPath();
+        try (ParquetWriter<Group> writer = ExampleParquetWriter.builder(path).withType(parquetSchema).build()) {
+            Group group = new SimpleGroupFactory(parquetSchema).newGroup();
+            Group nullableElements = group.addGroup("nullableElements");
+            nullableElements.addGroup("list").append("element", "a");
+            nullableElements.addGroup("list");
+            group.addGroup("legacyList").append("array", 1).append("array", 2);
+            group.append("repeatedField", 5L).append("repeatedField", 6L);
+            writer.write(group);
+        }
+
+        // When
+        List<Row> rows = readRows(path);
+
+        // Then
+        Row expected = new Row();
+        expected.put("nullableElements", Arrays.asList("a", null));
+        expected.put("legacyList", List.of(1, 2));
+        expected.put("repeatedField", List.of(5L, 6L));
+        assertThat(rows).containsExactly(expected);
+    }
+
+    @Test
+    void shouldReadFieldNamesComputedBySql() throws IOException {
         // Given
         // - These field names might be returned when SQL is applied to a query
         MessageType parquetSchema = Types.buildMessage()
