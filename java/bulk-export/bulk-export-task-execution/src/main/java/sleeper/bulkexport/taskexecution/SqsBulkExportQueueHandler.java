@@ -82,7 +82,14 @@ public class SqsBulkExportQueueHandler {
             Message message = receiveMessageResult.messages().get(0);
             LOGGER.info("Received message: {}", message);
             BulkExportLeafPartitionQuerySerDe serDe = new BulkExportLeafPartitionQuerySerDe(tablePropertiesProvider);
-            BulkExportLeafPartitionQuery bulkExportQuery = serDe.fromJson(message.body());
+            BulkExportLeafPartitionQuery bulkExportQuery;
+            try {
+                bulkExportQuery = serDe.fromJson(message.body());
+            } catch (RuntimeException e) {
+                LOGGER.error("Failed to read bulk export job from message, returning message to queue", e);
+                returnToQueue(message.receiptHandle());
+                throw e;
+            }
             LOGGER.info("Bulk Export bulkExportQuery {}: Deserialised message: {}", bulkExportQuery.getSubExportId(), bulkExportQuery);
             MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
                     "Bulk Export job " + bulkExportQuery.getExportId(), message.receiptHandle());
@@ -100,13 +107,23 @@ public class SqsBulkExportQueueHandler {
         }
     }
 
+    private void returnToQueue(String receiptHandle) {
+        int visibilityTimeout = instanceProperties.getInt(BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
+        String sqsJobQueueUrl = instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL);
+        sqsClient.changeMessageVisibility(ChangeMessageVisibilityRequest.builder()
+                .queueUrl(sqsJobQueueUrl)
+                .receiptHandle(receiptHandle)
+                .visibilityTimeout(visibilityTimeout)
+                .build());
+    }
+
     /**
      * This class is used to handle the SQS message for a bulk export job.
      * It contains the job, the message reference, and a background thread to keep the message alive.
      * The message is deleted from the queue when the job is complete.
      * The message is returned to the queue if the job fails.
      */
-    public class SqsMessageHandle {
+    public class SqsMessageHandle implements AutoCloseable {
         private final BulkExportLeafPartitionQuery job;
         private final MessageReference message;
         private final PeriodicActionRunnable keepAliveRunnable;
@@ -140,18 +157,13 @@ public class SqsBulkExportQueueHandler {
          */
         public void returnToQueue() {
             LOGGER.info("Bulk Export job {}: Returning message to queue", job.getSubExportId());
-            int visibilityTimeout = instanceProperties.getInt(BULK_EXPORT_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS);
-            String sqsJobQueueUrl = instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL);
-            sqsClient.changeMessageVisibility(ChangeMessageVisibilityRequest.builder()
-                    .queueUrl(sqsJobQueueUrl)
-                    .receiptHandle(message.getReceiptHandle())
-                    .visibilityTimeout(visibilityTimeout)
-                    .build());
+            SqsBulkExportQueueHandler.this.returnToQueue(message.getReceiptHandle());
         }
 
         /**
          * Stop the background thread to keep the message alive.
          */
+        @Override
         public void close() {
             LOGGER.info("Bulk Export job {}: Stopping background thread to keep SQS messages alive", job.getSubExportId());
             if (keepAliveRunnable != null) {
