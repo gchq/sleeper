@@ -26,7 +26,15 @@ Before performing a bulk export, ensure that the `BulkExportStack` has been depl
 
 ### Step 1: Submit a bulk export query
 
-To initiate a bulk export, submit a **bulk export query** to the SQS queue specified in the `sleeper.bulk.export.queue.url` property. The query should specify the Sleeper table name or table id to be exported. If wanted an `exportId` can also be provided, if one isn't then one is generated.
+The simplest way to initiate a bulk export is with the bulk export client:
+
+```bash
+./scripts/utility/bulkExport.sh ${INSTANCE_ID}
+```
+
+This asks which table to export if the instance has more than one, and prompts for an optional SQL statement (see below) if the table uses the DataFusion data engine. It then submits the export, and prints the export ID and the location in S3 the results will be written to. It does not wait for the export to finish. You can submit further exports of the same table before exiting.
+
+Alternatively, you can submit a **bulk export query** yourself to the SQS queue specified in the `sleeper.bulk.export.queue.url` property. The query should specify the Sleeper table name or table id to be exported. An `exportId` can be provided, if one isn't then one is generated for you.
 
 The system will automatically split the query into smaller export tasks (leaf partition bulk export queries) and process them.
 
@@ -42,7 +50,7 @@ The system will automatically split the query into smaller export tasks (leaf pa
 
 Bulk export supports optional SQL query filtering to apply transformations or filtering to the exported data. This capability is **experimental** and currently only supported with the **DataFusion query engine**.
 
-To use SQL query filtering in a bulk export, add the `sqlQuery` field to your bulk export query message:
+To use SQL query filtering in a bulk export, enter the SQL statement when prompted by the bulk export client, or add the `sqlQuery` field to your bulk export query message:
 
 ```json
 {
@@ -59,9 +67,9 @@ The SQL query is executed on the results of the bulk export, allowing you to:
 
 ##### Prerequisites for SQL Query Filtering
 
-1. **DataFusion Query Engine**: The table must be configured to use DataFusion. Set the table property:
+1. **DataFusion Data Engine**: The table must be configured to use DataFusion. Bulk export tasks use the table's data engine, not its query data engine. Set the table property:
    ```properties
-   sleeper.table.query.data.engine=datafusion
+   sleeper.table.data.engine=datafusion
    ```
 
 2. **Source Table Name**: Regardless of the actual Sleeper table name, the SQL source table is always named `query_results`.
@@ -106,8 +114,9 @@ s3://<BUCKET>/<tableId>/<exportId>/<subExportId>.parquet
 ### Example output path:
 For the example query above, if `sleeper.bulk.export.s3.bucket` is set to `my-export-bucket`, the output files will be saved at:
 ```
-s3://my-export-bucket/example-table/export-456/<subExportId>.parquet
+s3://my-export-bucket/<tableId>/export-456/<subExportId>.parquet
 ```
+Note that the path contains the table's ID, not its name.
 
 ## Additional notes
 
