@@ -70,7 +70,11 @@ public class ParquetRowWriterFactory {
     }
 
     public static Builder parquetRowWriterBuilder(Path path, TableProperties tableProperties) {
-        return new Builder(path, tableProperties.getSchema())
+        return parquetRowWriterBuilder(path, tableProperties.getSchema(), tableProperties);
+    }
+
+    public static Builder parquetRowWriterBuilder(Path path, Schema schema, TableProperties tableProperties) {
+        return new Builder(path, schema)
                 .withCompressionCodec(tableProperties.get(COMPRESSION_CODEC))
                 .withRowGroupSize(tableProperties.getLong(ROW_GROUP_SIZE))
                 .withRowGroupRowCountLimit(tableProperties.getInt(PARQUET_ROW_GROUP_SIZE_ROWS))

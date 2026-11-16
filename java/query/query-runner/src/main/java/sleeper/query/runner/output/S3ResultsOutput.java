@@ -111,28 +111,25 @@ public class S3ResultsOutput implements ResultsOutput {
     private ParquetWriter<Row> buildParquetWriter(Path path, QueryOrLeafPartitionQuery query) throws IOException {
         String defaultRowGroupSize = instanceProperties.get(DEFAULT_RESULTS_ROW_GROUP_SIZE);
         String defaultPageSize = instanceProperties.get(DEFAULT_RESULTS_PAGE_SIZE);
-        ParquetRowWriterFactory.Builder builder = parquetRowWriterBuilder(path, writerTableProperties(query)).withConf(hadoopConf)
+        ParquetRowWriterFactory.Builder builder = parquetRowWriterBuilder(path, writerSchema(query), tableProperties).withConf(hadoopConf)
                 .withRowGroupSize(Long.parseLong(config.getOrDefault(ROW_GROUP_SIZE, defaultRowGroupSize)))
                 .withPageSize(Integer.parseInt(config.getOrDefault(PAGE_SIZE, defaultPageSize)));
         Optional.ofNullable(config.get(COMPRESSION_CODEC)).ifPresent(builder::withCompressionCodec);
         return builder.build();
     }
 
-    private TableProperties writerTableProperties(QueryOrLeafPartitionQuery query) {
+    private Schema writerSchema(QueryOrLeafPartitionQuery query) {
+        Schema schema = tableProperties.getSchema();
         List<String> requestedValueFields = query.getProcessingConfig().getRequestedValueFields();
         if (requestedValueFields == null) {
-            return tableProperties;
+            return schema;
         }
-        Schema schema = tableProperties.getSchema();
-        Schema narrowedSchema = Schema.builder()
+        return Schema.builder()
                 .rowKeyFields(schema.getRowKeyFields())
                 .sortKeyFields(schema.getSortKeyFields())
                 .valueFields(schema.getValueFields().stream()
                         .filter(field -> requestedValueFields.contains(field.getName()))
                         .collect(Collectors.toList()))
                 .build();
-        TableProperties narrowedTableProperties = TableProperties.copyOf(tableProperties);
-        narrowedTableProperties.setSchema(narrowedSchema);
-        return narrowedTableProperties;
     }
 }
