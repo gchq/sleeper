@@ -388,7 +388,7 @@ There are a few reasons a batch of pending compaction jobs can reach the dead le
 | Cause                                                             | Files locked to this batch? | Can a redrive succeed?      |
 |-------------------------------------------------------------------|-----------------------------|-----------------------------|
 | An input file is in another compaction, or has been deleted by GC | No                          | Never                       |
-| File assignment wasn't applied to the state store in time         | Not yet                     | If assignment happens       |
+| File assignment wasn't applied to the state store in time         | If assignment happens       | If assignment happens       |
 | Something failed when sending jobs                                | Yes                         | Yes, with caveats           |
 
 In the first row, since the input file assignments of the whole batch are committed atomically, the dispatcher can see
@@ -397,8 +397,8 @@ some of them have been otherwise processed, that means either it's actually alre
 been committed, or the file assignments did not succeed, and can now never succeed.
 
 In the second row, it's possible the file assignment will fail, but at some point the files will be included in new
-compactions, and this will turn into the first row. It's also possible assignment will happen and it will continue,
-either succeeding or potentially failing in the third row.
+compactions, and this will turn into the first row. It's also possible assignment will happen, in which case when a
+redrive happens it it will continue, either succeeding or potentially failing in the third row.
 
 In the third row, there is a case where some of the jobs failed to send, and others have already finished and committed
 to the state store. In this case, the dispatcher will see that some of the files in the batch are assigned to its jobs,
@@ -415,4 +415,5 @@ detect that a pending compaction job batch has been superseded by the fact that 
 batch. We will want to make sure this detection occurs, and the batch is deleted.
 
 The handling of a partially processed batch seems separate from the retries of state store commits, so we don't need to
-cover that here.
+cover that here. The same is true for the case where a batch is successfully assigned to its input files after it has
+gone to the dead letter queue.
