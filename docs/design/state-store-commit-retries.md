@@ -335,9 +335,11 @@ Option 5 seems appealing because of its simplicity. We'd need to be careful abou
 for this.
 
 In the case where phantom files are added back to the state store, option 5 would also mean that those are ignored if it
-used a transaction body file, and that has already been deleted. Whether this actually happens will depend on the delay
-before GC, the delay before transactions are deleted, and whether the transaction is big enough. Usually data is added
-in a small number of files, so those transactions may not be big enough to be held in a file.
+used a transaction body file, and that has already been deleted. This could also mean that different processes would
+disagree on the state if the transaction body file is deleted for a transaction that has already been seen to add a
+phantom file back to the table. Whether this actually happens will depend on the delay before GC, the delay before
+transactions are deleted, and whether the transaction is big enough. Usually data is added in a small number of files,
+so those transactions may not be big enough to be held in a file.
 
 ### Avoiding phantom files
 
