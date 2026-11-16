@@ -68,7 +68,7 @@ store. Operations on files and partitions always happen independently, so their 
 Partition splitting only happens on state that has been committed to the state store. A new child partition can only be
 split once the transaction that created it has been successfully committed.
 
-## Potential problems
+## Potential failure modes
 
 While the FIFO ordering doesn't matter for correctness of the state store, there are some related failure modes.
 
