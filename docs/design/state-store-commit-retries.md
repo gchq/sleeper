@@ -357,15 +357,15 @@ We have a few options for ways to avoid references reappearing to files that hav
 All of these either do not fully handle the problem, or put additional load on the state store committer. We can think
 carefully about how we could proceed.
 
-The most actionable of these seems option 5. In principle, we would like to provide guarantees about how failures are
-handled and avoid ever having a permanent failure in the system. Automatic handling of these failure cases seems
-generally preferable. Taking more control over redrives would be a move towards this, and could give us a place to add
-automatic handling that we don't have right now.
+The most actionable of these seems option 5, further control over redrives. In principle, we would like to provide
+guarantees about how failures are handled and avoid ever having a permanent failure in the system. Automatic handling of
+these failure cases seems generally preferable. Taking more control over redrives would be a move towards this, and
+could give us a place to add automatic handling that we don't have right now.
 
 Option 1 only puts additional load on the state store committer during a redrive of old commits. It may be difficult to
-predict the impact of this, but it does seem lower than some of the other options. If we rely on option 5 without option
-1, and only do the checks in the redrive tool, the risk would be that someone might bypass the tool, instead of that the
-committer may be impacted. We could avoid bypass of the tool by holding the commits for redrive somewhere other than
+predict the impact of this, but it does seem lower than some of the other options. If we rely on a redrive tool from
+option 5 without adding checks in the committer, the risk would be that someone might bypass the tool, instead of that
+the committer may be impacted. We could avoid bypass of the tool by holding the commits for redrive somewhere other than
 directly on the dead letter queue, e.g. in S3.
 
 ### Pending compaction job batch failures
