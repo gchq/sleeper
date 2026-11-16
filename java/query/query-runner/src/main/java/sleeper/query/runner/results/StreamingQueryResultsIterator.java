@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.api;
+package sleeper.query.runner.results;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.api.QueryResultsReader.ResultsFile;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.util.PollWithRetries;
 import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.TrackedQuery;
+import sleeper.query.runner.results.QueryResultsReader.ResultsFile;
 
 import java.io.IOException;
 import java.util.ArrayDeque;

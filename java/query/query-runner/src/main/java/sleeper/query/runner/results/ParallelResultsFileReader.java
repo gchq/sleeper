@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.api;
+package sleeper.query.runner.results;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.api.QueryResultsReader.ResultsFile;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
+import sleeper.query.runner.results.QueryResultsReader.ResultsFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,8 +35,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Reads query results files in parallel in a thread pool. Each file is read by a task that places its rows into a
  * shared bounded queue. Files can be submitted at any time, which allows this class to be used to read results files
- * that are being created as subqueries complete. vered. The rows are returned in no particular order, as results may
- * be interleaved from different results files. The queue provides backpressure: readers block when it is full until
+ * that are being created as subqueries complete. The rows are returned in no particular order, as results may be
+ * interleaved from different results files. The queue provides backpressure: readers block when it is full until
  * the consumer catches up.
  * <p>
  * This mirrors the pattern in ParallelQueryIterator and QueryExecutor.executeInParallel in the query-core module,
@@ -110,7 +110,7 @@ class ParallelResultsFileReader implements AutoCloseable {
                 activeFiles--;
             } else if (item.isError()) {
                 activeFiles--;
-                throw item.error;
+                throw item.rethrowError();
             } else {
                 return item.row;
             }
@@ -132,7 +132,7 @@ class ParallelResultsFileReader implements AutoCloseable {
             while (rows.hasNext() && !closed.get()) {
                 queue.put(QueueItem.row(rows.next()));
             }
-        } catch (RuntimeException e) {
+        } catch (RuntimeException | Error e) {
             putIfOpen(QueueItem.error(e));
             sentTerminal = true;
         } catch (InterruptedException e) {
@@ -168,9 +168,9 @@ class ParallelResultsFileReader implements AutoCloseable {
         static final QueueItem FILE_DONE = new QueueItem(null, null);
 
         private final Row row;
-        private final RuntimeException error;
+        private final Throwable error;
 
-        private QueueItem(Row row, RuntimeException error) {
+        private QueueItem(Row row, Throwable error) {
             this.row = row;
             this.error = error;
         }
@@ -179,7 +179,7 @@ class ParallelResultsFileReader implements AutoCloseable {
             return new QueueItem(row, null);
         }
 
-        static QueueItem error(RuntimeException error) {
+        static QueueItem error(Throwable error) {
             return new QueueItem(null, error);
         }
 
@@ -189,6 +189,13 @@ class ParallelResultsFileReader implements AutoCloseable {
 
         boolean isError() {
             return error != null;
+        }
+
+        RuntimeException rethrowError() {
+            if (error instanceof Error e) {
+                throw e;
+            }
+            throw (RuntimeException) error;
         }
     }
 }

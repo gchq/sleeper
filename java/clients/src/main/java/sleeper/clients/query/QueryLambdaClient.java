@@ -20,9 +20,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.api.QueryResultsReader;
 import sleeper.clients.api.QuerySender;
-import sleeper.clients.api.StreamingQueryResultsIterator;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -44,6 +42,8 @@ import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.output.SQSResultsOutput;
+import sleeper.query.runner.results.QueryResultsReader;
+import sleeper.query.runner.results.StreamingQueryResultsIterator;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.io.IOException;

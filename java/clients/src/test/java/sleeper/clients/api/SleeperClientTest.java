@@ -49,6 +49,8 @@ import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
+import sleeper.query.runner.results.QueryFailedException;
+import sleeper.query.runner.results.QueryResultsNotFoundException;
 import sleeper.query.runner.websocket.QueryWebSocketMessage;
 import sleeper.query.runner.websocket.QueryWebSocketMessageSerDe;
 
@@ -403,7 +405,7 @@ class SleeperClientTest {
     }
 
     @Test
-    void shouldThrowExceptionWithFewerThanOneResultsReadThreadsS() {
+    void shouldThrowExceptionWithFewerThanOneResultsReadThreads() {
         assertThatThrownBy(() -> instance.sleeperClientBuilder().resultsReadThreads(0).build())
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("resultsReadThreads");

@@ -17,7 +17,6 @@ package sleeper.clients.query;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.api.QueryResultsReader;
 import sleeper.clients.api.QuerySender;
 import sleeper.clients.testutil.ExceptionWithOutput;
 import sleeper.clients.testutil.TestConsoleInput;
@@ -53,6 +52,7 @@ import sleeper.query.core.tracker.InMemoryQueryTracker;
 import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
+import sleeper.query.runner.results.QueryResultsReader;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
