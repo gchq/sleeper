@@ -67,6 +67,6 @@ public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
     }
 
     private EmrServerlessPlatformExecutor executor() {
-        return new EmrServerlessPlatformExecutor(emrClient, instance.getInstanceProperties());
+        return new EmrServerlessPlatformExecutor(emrClient, instance.getInstanceProperties(), instance.getTablePropertiesProvider());
     }
 }

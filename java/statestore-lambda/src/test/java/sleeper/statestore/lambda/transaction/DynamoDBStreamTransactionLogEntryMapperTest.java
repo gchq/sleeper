@@ -120,7 +120,7 @@ public class DynamoDBStreamTransactionLogEntryMapperTest {
     @Test
     void shouldFailToProcessEntry() {
         // Given
-        List<Record> records = List.of(new DynamodbStreamRecord());
+        List<Record> records = List.of(new DynamodbStreamRecord().withEventName("INSERT"));
 
         // When
         Stream<TransactionLogEntryHandle> entries = mapper().toTransactionLogEntries(records);
@@ -133,6 +133,7 @@ public class DynamoDBStreamTransactionLogEntryMapperTest {
     void shouldProcessOnlyValidRecords() {
         // Given
         tableProperties.set(TABLE_ID, "3b31edf9");
+        Record invalidRecord = new DynamodbStreamRecord().withEventName("INSERT"); // Will throw a NPE
         Record record = new DynamodbStreamRecord()
                 .withEventName("INSERT")
                 .withEventVersion("1.1")
@@ -149,7 +150,8 @@ public class DynamoDBStreamTransactionLogEntryMapperTest {
                         .withSequenceNumber("12000000000006169888197")
                         .withSizeBytes(148709L)
                         .withStreamViewType(StreamViewType.NEW_IMAGE));
-        List<Record> records = List.of(new DynamodbStreamRecord(), record);
+
+        List<Record> records = List.of(invalidRecord, record);
 
         // When
         Stream<TransactionLogEntryHandle> entries = mapper().toTransactionLogEntries(records);
@@ -158,6 +160,44 @@ public class DynamoDBStreamTransactionLogEntryMapperTest {
         assertThat(entries).containsExactly(
                 new TransactionLogEntryHandle("3b31edf9", "12000000000006169888197",
                         new TransactionLogEntry(120, Instant.parse("2025-02-26T16:30:29.688Z"), TransactionType.REPLACE_FILE_REFERENCES, "transaction/test")));
+    }
+
+    @Test
+    void shouldProcessOnlyInsertRecords() {
+        // Given
+        tableProperties.set(TABLE_ID, "3b31edf9");
+        Record remove = new DynamodbStreamRecord()
+                .withEventName("REMOVE")
+                .withDynamodb(new StreamRecord()
+                        .withKeys(Map.of(DynamoDBTransactionLogStore.TABLE_ID, new AttributeValue("3b31edf9"),
+                                DynamoDBTransactionLogStore.TRANSACTION_NUMBER, new AttributeValue().withN("120")))
+                        .withSequenceNumber("12000000000006169888197")
+                        .withStreamViewType(StreamViewType.NEW_IMAGE));
+        Record insert = new DynamodbStreamRecord()
+                .withEventName("INSERT")
+                .withEventVersion("1.1")
+                .withAwsRegion("eu-west-2")
+                .withDynamodb(new StreamRecord()
+                        .withKeys(Map.of(DynamoDBTransactionLogStore.TABLE_ID, new AttributeValue("3b31edf9"),
+                                DynamoDBTransactionLogStore.TRANSACTION_NUMBER, new AttributeValue().withN("121")))
+                        .withNewImage(Map.of(
+                                DynamoDBTransactionLogStore.TABLE_ID, new AttributeValue("3b31edf9"),
+                                DynamoDBTransactionLogStore.UPDATE_TIME, new AttributeValue().withN("1740587429688"),
+                                DynamoDBTransactionLogStore.BODY_S3_KEY, new AttributeValue("transaction/test"),
+                                DynamoDBTransactionLogStore.TRANSACTION_NUMBER, new AttributeValue().withN("121"),
+                                DynamoDBTransactionLogStore.TYPE, new AttributeValue("REPLACE_FILE_REFERENCES")))
+                        .withSequenceNumber("12000000000006169888198")
+                        .withSizeBytes(148709L)
+                        .withStreamViewType(StreamViewType.NEW_IMAGE));
+        List<Record> records = List.of(remove, insert);
+
+        // When
+        Stream<TransactionLogEntryHandle> entries = mapper().toTransactionLogEntries(records);
+
+        // Then
+        assertThat(entries).containsExactly(
+                new TransactionLogEntryHandle("3b31edf9", "12000000000006169888198",
+                        new TransactionLogEntry(121, Instant.parse("2025-02-26T16:30:29.688Z"), TransactionType.REPLACE_FILE_REFERENCES, "transaction/test")));
     }
 
     private DynamoDBStreamTransactionLogEntryMapper mapper() {
