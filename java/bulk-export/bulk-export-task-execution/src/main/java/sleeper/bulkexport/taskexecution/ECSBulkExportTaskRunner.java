@@ -44,6 +44,7 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.core.util.ThreadSleep;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -56,10 +57,18 @@ import sleeper.sketches.store.NoSketchesStore;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_MAX_ALIVE_JITTER_IN_MINUTES;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_MAX_ALIVE_TIME_IN_MINUTES;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_MAX_CONSECUTIVE_FAILURES;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 
 /**
@@ -71,6 +80,9 @@ public class ECSBulkExportTaskRunner {
 
     private final BulkExporter javaExporter;
     private final BulkExporter dataFusionExporter;
+    private final Supplier<Instant> timeSupplier;
+    private final ThreadSleep threadSleep;
+    private final DoubleSupplier randomJitterFunction;
 
     /**
      * Creates an instance of ECSBulkExportTaskRunner.
@@ -79,8 +91,26 @@ public class ECSBulkExportTaskRunner {
      * @param dataFusionExporter the exporter to use for the DataFusion data engine
      */
     public ECSBulkExportTaskRunner(BulkExporter javaExporter, BulkExporter dataFusionExporter) {
+        this(javaExporter, dataFusionExporter, Instant::now, Thread::sleep, Math::random);
+    }
+
+    /**
+     * Creates an instance of ECSBulkExportTaskRunner with control over time, waiting and jitter, for tests.
+     *
+     * @param javaExporter         the exporter to use for the Java data engine
+     * @param dataFusionExporter   the exporter to use for the DataFusion data engine
+     * @param timeSupplier         supplier of the current time
+     * @param threadSleep          waits between attempts to receive a message when the queue is empty
+     * @param randomJitterFunction random number between 0 and 1 used to apply jitter to the max alive time
+     */
+    public ECSBulkExportTaskRunner(
+            BulkExporter javaExporter, BulkExporter dataFusionExporter,
+            Supplier<Instant> timeSupplier, ThreadSleep threadSleep, DoubleSupplier randomJitterFunction) {
         this.javaExporter = javaExporter;
         this.dataFusionExporter = dataFusionExporter;
+        this.timeSupplier = timeSupplier;
+        this.threadSleep = threadSleep;
+        this.randomJitterFunction = randomJitterFunction;
     }
 
     /**
@@ -90,16 +120,11 @@ public class ECSBulkExportTaskRunner {
      * and table properties, and processes messages from the SQS queue for bulk
      * export tasks.
      *
-     * @param  args                      Command line arguments
-     * @throws IOException               If there is an error interacting with S3 or
-     *                                   other I/O operations.
-     * @throws RowRetrievalException     if there is an error retrieving the query results
-     * @throws ObjectFactoryException    If there is an error creating objects
-     *                                   dynamically.
-     * @throws IteratorCreationException If there is an error creating iterators for
-     *                                   processing.
+     * @param  args        Command line arguments
+     * @throws IOException If there is an error interacting with S3 or
+     *                     other I/O operations.
      */
-    public static void main(String[] args) throws IOException, RowRetrievalException, ObjectFactoryException, IteratorCreationException {
+    public static void main(String[] args) throws IOException {
 
         if (1 != args.length) {
             System.err.println("Error: must have 1 argument (config bucket), got " + args.length + " arguments ("
@@ -128,43 +153,150 @@ public class ECSBulkExportTaskRunner {
     /**
      * Run the ECS bulk export task runner.
      * This method initialises the SQS bulk export queue handler and processes
-     * messages from the SQS queue for bulk export tasks.
+     * messages from the SQS queue for bulk export tasks, until the task has been
+     * idle for too long, has failed too many consecutive jobs, or has been alive
+     * for longer than the maximum alive time.
      *
-     * @param  instanceProperties        the instance properties
-     * @param  tablePropertiesProvider   a table properties provider
-     * @param  sqsClient                 an SQS client
-     * @throws IOException               if there is an error interacting with S3
-     * @throws RowRetrievalException     if there is an error retrieving the query results
-     * @throws ObjectFactoryException    if there is an error creating objects
-     * @throws IteratorCreationException if there is an error creating iterators
+     * @param instanceProperties      the instance properties
+     * @param tablePropertiesProvider a table properties provider
+     * @param sqsClient               an SQS client
      */
     public void runECSBulkExportTaskRunner(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            SqsClient sqsClient) throws RuntimeException, IOException, RowRetrievalException, ObjectFactoryException, IteratorCreationException {
+            SqsClient sqsClient) {
         SqsBulkExportQueueHandler exportQueueHandler = new SqsBulkExportQueueHandler(sqsClient,
                 tablePropertiesProvider, instanceProperties);
-        LOGGER.info("Waiting for leaf partition bulk export job from queue {}",
+        Instant startTime = timeSupplier.get();
+        IdleTimeTracker idleTimeTracker = new IdleTimeTracker(instanceProperties, startTime);
+        ConsecutiveFailuresTracker failuresTracker = new ConsecutiveFailuresTracker(instanceProperties);
+        Duration maxAliveTime = generateMaxAliveTimeWithJitter(instanceProperties);
+        long totalProcessed = 0;
+        LOGGER.info("Waiting for leaf partition bulk export jobs from queue {}",
                 instanceProperties.get(CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
-        Optional<SqsMessageHandle> messageHandleOpt;
-
-        messageHandleOpt = exportQueueHandler.receiveMessage();
-
-        if (messageHandleOpt.isPresent()) {
-            SqsMessageHandle messageHandle = messageHandleOpt.get();
+        while (failuresTracker.hasNotMetMaximumFailures() && hasNotReachedMaxAliveTime(startTime, maxAliveTime)) {
+            Optional<SqsMessageHandle> messageHandleOpt;
             try {
+                messageHandleOpt = exportQueueHandler.receiveMessage();
+            } catch (RuntimeException | IOException e) {
+                LOGGER.error("Failed receiving bulk export job from queue", e);
+                failuresTracker.incrementConsecutiveFailures();
+                continue;
+            }
+            if (!messageHandleOpt.isPresent()) {
+                if (idleTimeTracker.isLookForNextMessage(timeSupplier.get())) {
+                    continue;
+                } else {
+                    break;
+                }
+            }
+            try (SqsMessageHandle messageHandle = messageHandleOpt.get()) {
                 BulkExportLeafPartitionQuery exportTask = messageHandle.getJob();
-
                 LOGGER.info("Received bulk export job for table ID: {}, partition ID: {}", exportTask.getTableId(), exportTask.getLeafPartitionId());
                 LOGGER.debug("Bulk Export job details: {}", exportTask);
+                try {
+                    runExport(exportTask, instanceProperties, tablePropertiesProvider);
+                    messageHandle.deleteFromQueue();
+                    LOGGER.info("Successfully processed and deleted message from queue");
+                    totalProcessed++;
+                    failuresTracker.resetConsecutiveFailures();
+                    idleTimeTracker.setLastActiveTime(timeSupplier.get());
+                } catch (RuntimeException | RowRetrievalException | IOException | ObjectFactoryException | IteratorCreationException e) {
+                    LOGGER.error("Unexpected error processing bulk export job, returning message to queue", e);
+                    failuresTracker.incrementConsecutiveFailures();
+                    messageHandle.returnToQueue();
+                }
+            }
+            if (Thread.currentThread().isInterrupted()) {
+                LOGGER.warn("Bulk export task interrupted, terminating");
+                break;
+            }
+        }
+        LOGGER.info("Total number of bulk export jobs processed = {}", totalProcessed);
+    }
 
-                runExport(exportTask, instanceProperties, tablePropertiesProvider);
-                messageHandle.deleteFromQueue();
-                LOGGER.info("Successfully processed and deleted message from queue");
-            } catch (RuntimeException | RowRetrievalException | IOException | ObjectFactoryException | IteratorCreationException e) {
-                LOGGER.error("Unexpected error processing bulk export job", e);
-                messageHandle.returnToQueue();
-                LOGGER.info("Returned message to queue due to unexpected error");
-                throw e;
+    private boolean hasNotReachedMaxAliveTime(Instant startTime, Duration maxAliveTime) {
+        Duration aliveTime = Duration.between(startTime, timeSupplier.get());
+        if (aliveTime.compareTo(maxAliveTime) < 0) {
+            return true;
+        } else {
+            LOGGER.info("Terminating bulk export task as it has been alive for {}, exceeding maximum of {}",
+                    LoggedDuration.withFullOutput(aliveTime),
+                    LoggedDuration.withFullOutput(maxAliveTime));
+            return false;
+        }
+    }
+
+    private Duration generateMaxAliveTimeWithJitter(InstanceProperties instanceProperties) {
+        Duration maxAlive = Duration.ofMinutes(instanceProperties.getLong(BULK_EXPORT_TASK_MAX_ALIVE_TIME_IN_MINUTES));
+        Duration maxJitter = Duration.ofMinutes(instanceProperties.getLong(BULK_EXPORT_TASK_MAX_ALIVE_JITTER_IN_MINUTES));
+        Duration jitter = Duration.ofMillis((long) (randomJitterFunction.getAsDouble() * maxJitter.toMillis()));
+        return maxAlive.minus(jitter);
+    }
+
+    /**
+     * Tracks how long the task has been idle, and waits between attempts to receive a message.
+     */
+    private class IdleTimeTracker {
+
+        private final Duration maxIdleTime;
+        private final Duration delayBeforeRetry;
+        private Instant lastActiveTime;
+
+        private IdleTimeTracker(InstanceProperties instanceProperties, Instant startTime) {
+            this.maxIdleTime = Duration.ofSeconds(instanceProperties.getInt(BULK_EXPORT_TASK_MAX_IDLE_TIME_IN_SECONDS));
+            this.delayBeforeRetry = Duration.ofSeconds(instanceProperties.getInt(BULK_EXPORT_TASK_DELAY_BEFORE_RETRY_IN_SECONDS));
+            this.lastActiveTime = startTime;
+        }
+
+        private boolean isLookForNextMessage(Instant currentTime) {
+            Duration idleTime = Duration.between(lastActiveTime, currentTime);
+            if (idleTime.compareTo(maxIdleTime) >= 0) {
+                LOGGER.info("Terminating bulk export task as it was idle for {}, exceeding maximum of {}",
+                        LoggedDuration.withFullOutput(idleTime),
+                        LoggedDuration.withFullOutput(maxIdleTime));
+                return false;
+            } else {
+                if (!delayBeforeRetry.isZero()) {
+                    LOGGER.info("Received no messages, waiting {} before trying again",
+                            LoggedDuration.withFullOutput(delayBeforeRetry));
+                    threadSleep.waitForDurationWrappingInterrupt(delayBeforeRetry);
+                }
+                return true;
+            }
+        }
+
+        private void setLastActiveTime(Instant currentTime) {
+            lastActiveTime = currentTime;
+        }
+    }
+
+    /**
+     * Tracks the number of consecutive failures to process a bulk export job.
+     */
+    private static class ConsecutiveFailuresTracker {
+
+        private final int maxConsecutiveFailures;
+        private int numConsecutiveFailures;
+
+        private ConsecutiveFailuresTracker(InstanceProperties instanceProperties) {
+            this.maxConsecutiveFailures = instanceProperties.getInt(BULK_EXPORT_TASK_MAX_CONSECUTIVE_FAILURES);
+        }
+
+        private void incrementConsecutiveFailures() {
+            numConsecutiveFailures++;
+        }
+
+        private void resetConsecutiveFailures() {
+            numConsecutiveFailures = 0;
+        }
+
+        private boolean hasNotMetMaximumFailures() {
+            if (numConsecutiveFailures < maxConsecutiveFailures) {
+                return true;
+            } else {
+                LOGGER.info("Terminating bulk export task as {} consecutive failures exceeds maximum of {}",
+                        numConsecutiveFailures, maxConsecutiveFailures);
+                return false;
             }
         }
     }

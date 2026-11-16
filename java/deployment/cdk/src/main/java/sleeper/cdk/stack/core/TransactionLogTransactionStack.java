@@ -21,6 +21,8 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.lambda.FilterCriteria;
+import software.amazon.awscdk.services.lambda.FilterRule;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.MetricType;
 import software.amazon.awscdk.services.lambda.MetricsConfig;
@@ -29,6 +31,7 @@ import software.amazon.awscdk.services.lambda.eventsources.DynamoEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
+import software.amazon.awssdk.services.dynamodb.model.OperationType;
 import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
@@ -43,6 +46,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
+import java.util.Map;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_URL;
@@ -158,7 +162,8 @@ public class TransactionLogTransactionStack extends NestedStack {
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_TRANSACTION_FOLLOWER)));
 
         DynamoEventSource.Builder eventSourceBuilder = DynamoEventSource.Builder.create(transactionLogStateStoreStack.getFilesLogTable())
-                .startingPosition(StartingPosition.LATEST);
+                .startingPosition(StartingPosition.LATEST)
+                .filters(List.of(FilterCriteria.filter(Map.of("eventName", FilterRule.isEqual(OperationType.INSERT.toString())))));
 
         if (instanceProperties.getBoolean(TRANSACTION_LOG_EVENT_COUNT_METRICS_ENABLE)) {
             eventSourceBuilder.metricsConfig(MetricsConfig.builder()
