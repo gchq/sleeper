@@ -6,8 +6,11 @@ commit adds a single transaction to the log. Not all commits go through this que
 
 SQS FIFO is designed to provide guarantees on the delivery order of the messages, but we don't think we rely on this in
 Sleeper. We think that if a commit fails, we can safely send it to the back of the queue to be retried later, and
-continue processing commits in order of the queue. We'll look at potential impacts if we enable this. We'll look at the
-potential approaches we can consider to retry commits.
+continue processing commits in order of the queue. In practice, if we mark a single message as failed, with a FIFO queue
+SQS will keep that message at the head of the queue for retries rather than sending it to the back. We can consider
+retrying the message in place or re-sending it as a new message.
+
+We'll look at potential impacts of this. We'll look at the potential approaches we can consider to retry commits.
 
 ## Commit types
 
