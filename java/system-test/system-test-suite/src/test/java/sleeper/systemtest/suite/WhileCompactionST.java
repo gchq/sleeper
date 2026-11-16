@@ -26,15 +26,12 @@ import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrateg
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.compaction.CompactionDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.query.QueryDsl.BackgroundQueries;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,25 +74,6 @@ public class WhileCompactionST {
 
         LOGGER.info("Created 20 ingest files containing 100 rows each");
 
-        AtomicBoolean stopQueries = new AtomicBoolean(false);
-        AtomicInteger queriesCompleted = new AtomicInteger();
-        List<Throwable> queryFailures = new CopyOnWriteArrayList<>();
-
-        Thread queryThread = new Thread(() -> {
-            try {
-                while (!stopQueries.get()) {
-                    sleeper.directQuery().allRowsInTable();
-
-                    queriesCompleted.incrementAndGet();
-
-                    Thread.sleep(100);
-                }
-            } catch (Throwable t) {
-                LOGGER.error("Query thread failed", t);
-                queryFailures.add(t);
-            }
-        });
-
         CompactionDsl compaction = sleeper.compaction();
 
         // When compactions are running and queries are executed concurrently
@@ -104,24 +82,24 @@ public class WhileCompactionST {
 
         compaction.waitForTasks(1);
 
-        queryThread.start();
+        BackgroundQueries queries = sleeper.directQuery()
+                .startContinuousQueries();
 
         compaction.waitForJobs();
         LOGGER.info("Compaction jobs completed");
 
-        stopQueries.set(true);
-        queryThread.join();
+        queries.stopAndWait();
 
         // Then queries succeed
         LOGGER.info("Query failures recorded={}",
-                queryFailures.size());
+                queries.getFailures().size());
 
-        assertThat(queryFailures).isEmpty();
+        queries.assertNoFailures();
 
         LOGGER.info("Queries completed during compaction={}",
-                queriesCompleted.get());
+                queries.getQueriesCompleted());
 
-        assertThat(queriesCompleted.get()).isGreaterThan(0);
+        assertThat(queries.getQueriesCompleted()).isGreaterThan(0);
 
         // And all data is preserved after compaction
         var rows = sleeper.directQuery().allRowsInTable();
@@ -135,8 +113,8 @@ public class WhileCompactionST {
 
         LOGGER.info(
                 "Compaction test completed successfully. Queries executed={}, query failures={}, final row count={}",
-                queriesCompleted.get(),
-                queryFailures.size(),
+                queries.getQueriesCompleted(),
+                queries.getFailures().size(),
                 rows.size());
     }
 }

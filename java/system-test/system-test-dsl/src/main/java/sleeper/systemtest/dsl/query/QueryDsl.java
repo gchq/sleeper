@@ -16,6 +16,9 @@
 
 package sleeper.systemtest.dsl.query;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.row.Row;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -24,6 +27,9 @@ import sleeper.systemtest.dsl.SystemTestDrivers;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public class QueryDsl {
@@ -60,6 +66,12 @@ public class QueryDsl {
         return driver.run(queryCreator().allRowsQuery());
     }
 
+    public BackgroundQueries startContinuousQueries() {
+        BackgroundQueries queries = new BackgroundQueries(this);
+        queries.start();
+        return queries;
+    }
+
     public Map<String, List<Row>> allRowsByTable() {
         return driver.runForAllTables(QueryCreator::allRowsQuery);
     }
@@ -75,7 +87,8 @@ public class QueryDsl {
         return new TimedQueryResultsDsl(startTime, endTime, rows);
     }
 
-    public List<Row> allRowsWithProcessingConfig(Consumer<QueryProcessingConfig.Builder> config) {
+    public List<Row> allRowsWithProcessingConfig(
+            Consumer<QueryProcessingConfig.Builder> config) {
         QueryProcessingConfig.Builder builder = QueryProcessingConfig.builder();
         config.accept(builder);
         return driver.run(queryCreator().allRowsQuery(builder.build()));
@@ -83,6 +96,64 @@ public class QueryDsl {
 
     public void emptyResultsBucket() {
         adminDrivers.clearQueryResults(context).deleteAllQueryResults();
+    }
+
+    public static class BackgroundQueries {
+
+        private static final Logger LOGGER = LoggerFactory.getLogger(BackgroundQueries.class);
+
+        private final AtomicBoolean stopQueries = new AtomicBoolean(false);
+        private final AtomicInteger queriesCompleted = new AtomicInteger();
+        private final List<Throwable> queryFailures = new CopyOnWriteArrayList<>();
+
+        private final Thread queryThread;
+
+        private BackgroundQueries(QueryDsl queryDsl) {
+
+            queryThread = new Thread(() -> {
+                try {
+                    while (!stopQueries.get()) {
+                        queryDsl.allRowsInTable();
+
+                        queriesCompleted.incrementAndGet();
+
+                        Thread.sleep(100);
+                    }
+                } catch (Throwable t) {
+                    LOGGER.error("Query thread failed", t);
+                    queryFailures.add(t);
+                }
+            }, "background-query-thread");
+        }
+
+        private void start() {
+            queryThread.start();
+        }
+
+        public void stop() {
+            stopQueries.set(true);
+        }
+
+        public void stopAndWait() throws InterruptedException {
+            stopQueries.set(true);
+            queryThread.join();
+        }
+
+        public int getQueriesCompleted() {
+            return queriesCompleted.get();
+        }
+
+        public List<Throwable> getFailures() {
+            return queryFailures;
+        }
+
+        public void assertNoFailures() {
+            if (!queryFailures.isEmpty()) {
+                throw new RuntimeException(
+                        "Background query thread failed",
+                        queryFailures.get(0));
+            }
+        }
     }
 
     private QueryCreator queryCreator() {
