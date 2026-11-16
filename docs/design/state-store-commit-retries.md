@@ -6,7 +6,8 @@ commit adds a single transaction to the log. Not all commits go through this que
 
 SQS FIFO is designed to provide guarantees on the delivery order of the messages, but we don't think we rely on this in
 Sleeper. We think that if a commit fails, we can safely send it to the back of the queue to be retried later, and
-continue processing commits in order of the queue. We'll look at potential impacts if we enable this.
+continue processing commits in order of the queue. We'll look at potential impacts if we enable this. We'll look at the
+potential approaches we can consider to retry commits.
 
 ## Commit types
 
@@ -248,6 +249,12 @@ this is just ingest and compaction commit.
 When sending commits, we need to add some handling to ensure the transaction log body file is deleted if it fails.
 
 We need to review how batches of pending compaction jobs are handled when they fail.
+
+We won't consider here what we should do if a commit fails all retries. We would like to guarantee that the system will
+automatically recover from all failures. Nevertheless, there's a point at which the scale of operations may go beyond
+what we can possibly handle. For example, DynamoDB may be unable to handle the load on the transaction log for a certain
+Sleeper table. In these cases we can ensure that failures are reported appropriately, and if load decreases then the
+system can recover. This recovery may or may not require redrive of dead letters, and we won't address this here.
 
 ### Transaction body file references
 
