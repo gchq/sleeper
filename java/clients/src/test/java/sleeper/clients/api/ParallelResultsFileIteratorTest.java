@@ -23,6 +23,7 @@ import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.row.Row;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -121,6 +122,52 @@ public class ParallelResultsFileIteratorTest {
 
         // When / Then
         try (CloseableIterator<Row> iterator = new ParallelResultsFileIterator(files, 2)) {
+            assertThatThrownBy(iterator::hasNext).isSameAs(failure);
+        }
+    }
+
+    @Test
+    void shouldFailWhenReadingAFileThrowsAnError() throws Exception {
+        // Given
+        Error failure = new OutOfMemoryError("Test error");
+        List<ResultsFile> files = List.of(
+                new ResultsFile("bad.parquet", () -> {
+                    throw failure;
+                }));
+
+        // When / Then
+        try (CloseableIterator<Row> iterator = new ParallelResultsFileIterator(files, 2)) {
+            assertThatThrownBy(iterator::hasNext).isSameAs(failure);
+        }
+    }
+
+    @Test
+    void shouldFailWhenAnErrorIsThrownPartWayThroughReadingAFile() throws Exception {
+        // Given
+        Error failure = new NoClassDefFoundError("Test error");
+        Iterator<Row> rowsThenError = new Iterator<>() {
+            private boolean returnedRow = false;
+
+            @Override
+            public boolean hasNext() {
+                if (returnedRow) {
+                    throw failure;
+                }
+                return true;
+            }
+
+            @Override
+            public Row next() {
+                returnedRow = true;
+                return new Row(Map.of("key", "A"));
+            }
+        };
+        List<ResultsFile> files = List.of(
+                new ResultsFile("bad.parquet", () -> new WrappedIterator<>(rowsThenError)));
+
+        // When / Then
+        try (CloseableIterator<Row> iterator = new ParallelResultsFileIterator(files, 2)) {
+            assertThat(iterator.next()).isEqualTo(new Row(Map.of("key", "A")));
             assertThatThrownBy(iterator::hasNext).isSameAs(failure);
         }
     }

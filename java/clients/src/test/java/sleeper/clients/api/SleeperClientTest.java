@@ -403,7 +403,7 @@ class SleeperClientTest {
     }
 
     @Test
-    void shouldThrowExceptionWithFewerThanOneResultsReadThreadsS() {
+    void shouldThrowExceptionWithFewerThanOneResultsReadThreads() {
         assertThatThrownBy(() -> instance.sleeperClientBuilder().resultsReadThreads(0).build())
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("resultsReadThreads");

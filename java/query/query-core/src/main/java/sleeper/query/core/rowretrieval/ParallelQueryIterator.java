@@ -72,7 +72,7 @@ class ParallelQueryIterator implements CloseableIterator<Row> {
                 remainingProducers--;
             } else if (item.isError()) {
                 remainingProducers--;
-                throw item.error;
+                throw item.rethrowError();
             } else {
                 nextRow = item.row;
             }
@@ -104,9 +104,9 @@ class ParallelQueryIterator implements CloseableIterator<Row> {
         static final QueueItem DONE = new QueueItem(null, null);
 
         final Row row;
-        final RuntimeException error;
+        final Throwable error;
 
-        private QueueItem(Row row, RuntimeException error) {
+        private QueueItem(Row row, Throwable error) {
             this.row = row;
             this.error = error;
         }
@@ -115,7 +115,7 @@ class ParallelQueryIterator implements CloseableIterator<Row> {
             return new QueueItem(r, null);
         }
 
-        static QueueItem error(RuntimeException e) {
+        static QueueItem error(Throwable e) {
             return new QueueItem(null, e);
         }
 
@@ -125,6 +125,13 @@ class ParallelQueryIterator implements CloseableIterator<Row> {
 
         public boolean isError() {
             return error != null;
+        }
+
+        RuntimeException rethrowError() {
+            if (error instanceof Error e) {
+                throw e;
+            }
+            throw (RuntimeException) error;
         }
     }
 }

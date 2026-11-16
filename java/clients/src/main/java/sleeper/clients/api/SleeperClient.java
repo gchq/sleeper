@@ -509,7 +509,7 @@ public class SleeperClient implements AutoCloseable {
 
     /**
      * Submits a query to be processed by AWS lambda. It streams through the results as they are published,
-     * polling the query tracker to know when new subquery results are avaialble. This behaves like
+     * polling the query tracker to know when new subquery results are available. This behaves like
      * {@link #submitQueryAndGetResults}, except that results are returned as soon as each subquery finishes and
      * publishes its results (i.e it does not wait until the whole query has finished). The iterator that is returned
      * should be closed after it has been used.
@@ -532,7 +532,7 @@ public class SleeperClient implements AutoCloseable {
 
     /**
      * Submits a query to be processed by AWS lambda. It streams through the results as they are published,
-     * polling the query tracker to know when new subquery results are avaialble. This behaves like
+     * polling the query tracker to know when new subquery results are available. This behaves like
      * {@link #submitQueryAndGetResults}, except that results are returned as soon as each subquery finishes and
      * publishes its results (i.e it does not wait until the whole query has finished). The iterator that is returned
      * should be closed after it has been used.

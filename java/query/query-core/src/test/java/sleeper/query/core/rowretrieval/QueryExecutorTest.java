@@ -21,6 +21,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
@@ -37,6 +38,7 @@ import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryProcessingConfig;
 
 import java.time.Instant;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -588,6 +590,36 @@ public class QueryExecutorTest extends QueryExecutorTestBase {
             assertThat(rows).containsExactlyInAnyOrder(
                     new Row(Map.of("key", -10L)),
                     new Row(Map.of("key", 9L)));
+        }
+
+        @Test
+        void shouldFailWhenAnErrorIsThrownPartWayThroughReadingAPartition() throws Exception {
+            // Given
+            Error failure = new OutOfMemoryError("Test error");
+            rowIteratorFactory = rows -> new WrappedIterator<>(new Iterator<>() {
+                private boolean returnedRow = false;
+
+                @Override
+                public boolean hasNext() {
+                    if (returnedRow) {
+                        throw failure;
+                    }
+                    return rows.hasNext();
+                }
+
+                @Override
+                public Row next() {
+                    returnedRow = true;
+                    return rows.next();
+                }
+            });
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of("key", 1L)),
+                    new Row(Map.of("key", 2L))));
+
+            // When / Then
+            assertThatThrownBy(() -> getRows(parallelExecutor(threadPool), queryAllRows()))
+                    .isSameAs(failure);
         }
     }
 

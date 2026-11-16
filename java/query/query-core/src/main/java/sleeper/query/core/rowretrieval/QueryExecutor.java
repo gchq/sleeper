@@ -150,10 +150,12 @@ public class QueryExecutor {
                         while (rows.hasNext() && !closed.get()) {
                             queue.put(ParallelQueryIterator.QueueItem.row(rows.next()));
                         }
-                    } catch (QueryException | RuntimeException e) {
+                    } catch (QueryException e) {
                         putIfOpen(queue, closed, ParallelQueryIterator.QueueItem.error(
-                                e instanceof RuntimeException re ? re
-                                        : new RuntimeException("Exception returning rows for leaf partition " + leafPartitionQuery, e)));
+                                new RuntimeException("Exception returning rows for leaf partition " + leafPartitionQuery, e)));
+                        sentTerminal = true;
+                    } catch (RuntimeException | Error e) {
+                        putIfOpen(queue, closed, ParallelQueryIterator.QueueItem.error(e));
                         sentTerminal = true;
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
