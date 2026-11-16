@@ -398,22 +398,23 @@ been committed, or the file assignments did not succeed, and can now never succe
 
 In the second row, it's possible the file assignment will fail, but at some point the files will be included in new
 compactions, and this will turn into the first row. It's also possible assignment will happen, in which case when a
-redrive happens it it will continue, either succeeding or potentially failing in the third row.
+redrive happens it will continue, either succeeding or potentially failing in the third row.
 
 In the third row, there is a case where some of the jobs failed to send, and others have already finished and committed
 to the state store. In this case, the dispatcher will see that some of the files in the batch are assigned to its jobs,
 but some of them have already been processed and may no longer be visible in the table state. We need to ensure that
 this batch will still eventually be sent and processed.
 
-This leaves us with two cases needing handling, which we can call a superseded batch, and a partially processed batch.
+We can call these three cases a superseded batch, a slow batch, and a partially processed batch.
+
 For a superseded batch, we can safely discard it and allow the files to be picked up by further compaction creation.
-We'll want to ensure the file holding the batch in S3 is deleted. For a partially processed batch, we want to ensure
-that retries or redrives will continue sending the jobs that have not already run.
+We'll want to ensure the file holding the batch in S3 is deleted. For a slow batch, we want to ensure that the batch is
+eventually sent, or the files are made available for further compaction. For a partially processed batch, we want to
+ensure that retries or redrive will continue sending the jobs that have not already run.
+
+The handling of a slow or partially processed batch seems separate from the retries of state store commits, so we don't
+need to cover that here.
 
 This seems like enough to show that if a file assignment fails, and is discarded in the state store committer, we can
 detect that a pending compaction job batch has been superseded by the fact that the files have been assigned to a new
 batch. We will want to make sure this detection occurs, and the batch is deleted.
-
-The handling of a partially processed batch seems separate from the retries of state store commits, so we don't need to
-cover that here. The same is true for the case where a batch is successfully assigned to its input files after it has
-gone to the dead letter queue.
