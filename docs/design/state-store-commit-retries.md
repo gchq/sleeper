@@ -68,6 +68,22 @@ split once the transaction that created it has been successfully committed.
 
 While the FIFO ordering doesn't matter for correctness of the state store, there are some related failure modes.
 
+### Impacts of not retrying commits
+
+For AssignJobIdsTransaction, SplitPartitionTransaction and DeleteFilesTransaction, if these fail to commit the process
+will run again automatically and repeat the work they would have done, so they don't really need to be retried.
+
+For AddFilesTransaction, if it is not committed we lose data from an ingest or bulk import, the files that were being
+added are left in S3 with no references, and they are never cleaned up. To detect this you could compare the files in
+the state store with the files in the data bucket's data file prefix, and look for files that aren't tracked in the
+state store.
+
+For ReplaceFileReferencesTransaction, if it is not committed then a compaction's input files are left locked for
+compaction. They will never be compacted again until this is resolved. It would be possible to detect this by looking at
+the file references in the state store. You could potentially reconstruct a compaction job from this. For the output
+filename, you could re-derive it from the partition ID and job ID, and check if the output file exists in S3. You could
+potentially recreate a ReplaceFileReferencesTransaction from the available data even if the commit has been deleted.
+
 ### Delayed transactions can become permanently invalid
 
 If a compaction is created, and its AssignJobIdsTransaction fails or is delayed, another compaction can be created for
@@ -214,7 +230,7 @@ been deleted, but those files would still be added to partitions that no longer 
 This is an additional operational concern if you want to delete a Sleeper table. We could consider what happens during
 deletion or reinitialisation in more depth.
 
-## Outcomes of this analysis
+## Potential approaches
 
 We have plans to improve on this in issues
 [#8618 - State store commit failures in lambda are ignored](https://github.com/gchq/sleeper/issues/8618) and
