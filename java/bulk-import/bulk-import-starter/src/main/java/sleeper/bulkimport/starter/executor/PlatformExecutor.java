@@ -51,7 +51,7 @@ public interface PlatformExecutor {
             case EMRServerless:
                 return new EmrServerlessPlatformExecutor(
                         BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrServerlessClient.builder()),
-                        instanceProperties);
+                        instanceProperties, tablePropertiesProvider);
             default:
                 throw new IllegalArgumentException("Invalid platform: " + platform);
         }
