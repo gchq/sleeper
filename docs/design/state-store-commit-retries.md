@@ -252,11 +252,7 @@ We have plans to improve on this in issues
 From a standpoint of ordering of commits, it's safe to enable retries on the queue. We need to consider whether retries
 need to be sent to the back of the queue or not.
 
-For validation failures adding commits, we can introduce handling to detect and delete the invalid commits immediately.
-This lets us focus retries on infrastructure problems. We could consider reporting on the failures, but we may want to
-avoid updating a job tracker inside the state store committer as that would add latency. For now we'll assume we don't
-need to report on this, since the write-time validated commits all have clean handling if they are discarded. We can log
-it in the committer and move on.
+We think we can discard validation failures when adding commits. We'll look at the details of this.
 
 For commits validated at read time, failures are already handled and reported correctly, but there's a case where the
 same transaction body file can be included in multiple log entries, and that needs extra handling. At time of writing
@@ -277,6 +273,18 @@ system can recover. This recovery may or may not require redrive of dead letters
 If we use SQS FIFO's built-in retries, any messages needing a retry will stay at the front of the queue. This may be
 acceptable if we can avoid retries for non-retryable problems. If we consider re-sending the message to the back of the
 queue, we wouldn't be able to use SQS' retry handling, so we probably want to avoid this.
+
+### Validation failures
+
+For validation failures adding commits, we can introduce handling to detect and delete the invalid commits immediately.
+This lets us focus retries on infrastructure problems.
+
+We could consider reporting on the failures, but we may want to avoid updating a job tracker inside the state store
+committer as that would add latency. For now we'll assume we don't need to report on this, since the write-time
+validated commits all have clean handling if they are discarded.
+
+There is an exception to this in pending compaction job batch failures, but we'll look at that separately. We assume we
+can log validation failure in the committer and move on.
 
 ### Transaction body file references
 
