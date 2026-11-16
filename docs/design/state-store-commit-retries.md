@@ -319,6 +319,10 @@ We have a few options for ways to avoid references reappearing to files that hav
 All of these either do not fully handle the problem, or put additional load on the state store committer. We can think
 carefully about how we could proceed.
 
+The most actionable of these seems option 5. In principle, we would like to provide guarantees about how failures are
+handled and avoid ever having a permanent failure in the system. Automatic handling of these failure cases seems
+generally preferable.
+
 ### Pending compaction job batch failures
 
 TODO
