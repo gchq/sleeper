@@ -42,28 +42,28 @@ unexpected behaviour that results from the two separate paths.
 Every producer reads the current state of the state store, and commits are created based on that state. The producers
 never take into account any state that is still in the commit queue. We'll go through each of the dependencies.
 
-#### AddFiles vs AssignJobIds
+### AddFiles vs AssignJobIds
 
 The compaction job creator only looks at state committed to the state store, so a job ID assignment can only be created
 after the files have been successfully committed.
 
-#### AddFiles vs SplitPartition
+### AddFiles vs SplitPartition
 
 Splitting partitions doesn't operate on files at all. When a partition is split, the files on that partition become
 references on a non-leaf partition, and are pushed down the tree later as a separate operation.
 
-#### ReplaceFileReferences vs DeleteFiles
+### ReplaceFileReferences vs DeleteFiles
 
 The garbage collector only looks at files that have no remaining references, which can only be the case after the file
 reference replacement has been successfully committed.
 
-#### Partition vs file transactions
+### Partition vs file transactions
 
 File and partition transactions are actually two separate transaction logs. The causality between the two logs is
 implicit, in the fact that a file reference can only contain the ID for a partition that we've read from the state
 store. Operations on files and partitions always happen independently, so their relative ordering doesn't matter.
 
-#### Two SplitPartitions where one splits the other's child
+### Two SplitPartitions where one splits the other's child
 
 Partition splitting only happens on state that has been committed to the state store. A new child partition can only be
 split once the transaction that created it has been successfully committed.
@@ -142,8 +142,8 @@ analysis: https://github.com/gchq/sleeper/issues/8655
 In the case where a batch of compaction jobs fails because the file assignments failed to commit to the state store,
 the commit will end up on the dead letter queue for the state store committer. It won't cause any problem for the
 system because compaction creation will run again and the files will still be compacted because they were never locked.
-It does cause a problem in that if there's a redrive of failed commits, it can never succeed if any of the files have
-since been locked for compaction.
+It does cause a problem for the user in that if there's a redrive of failed commits, it can never succeed if any of the
+files have since been locked for compaction.
 
 If we discard an invalid AssignJobIdsTransaction, this would result in a dead letter for the pending compaction
 batch queue, but a redrive could never succeed because the commit to assign the input files has been discarded. If we
@@ -249,7 +249,8 @@ deletion or reinitialisation in more depth.
 
 We have plans to improve on this in issues
 [#8618 - State store commit failures in lambda are ignored](https://github.com/gchq/sleeper/issues/8618) and
-[#8364 - State store commits do not recover after a temporary failure, and redrive may produce unexpected behaviour](https://github.com/gchq/sleeper/issues/8364). Here are some outcomes of this analysis.
+[#8364 - State store commits do not recover after a temporary failure, and redrive may produce unexpected behaviour](https://github.com/gchq/sleeper/issues/8364).
+Here are some outcomes of this analysis.
 
 From a standpoint of ordering of commits, it's safe to enable retries on the queue. We need to consider whether retries
 need to be sent to the back of the queue or not.
@@ -276,7 +277,7 @@ If we use SQS FIFO's built-in retries, any messages needing a retry will stay at
 acceptable if we can avoid retries for non-retryable problems. If we consider re-sending the message to the back of the
 queue, we wouldn't be able to use SQS' retry handling, so we probably want to avoid this.
 
-This causes a problem in that any retries in SQS mean that all processing of that Sleeper table will stall until the
+This leaves a problem in that any retries in SQS mean that all processing of that Sleeper table will stall until the
 message is processed. The failed message will not be redelivered until its visibility timeout, and no further messages
 will be delivered for the Sleeper table until this timeout expires. For the AWS Lambda SQS integration, they recommend
 not processing any messages after a failed message in a batch, and returning them all as batch item failures
@@ -311,7 +312,7 @@ log entries.
    add to the log. This would only catch the case where the retry happens in the same invocation, so it might not be
    worth the complication.
 2. Detect when a message is redelivered, and copy the transaction body file to a fresh key before committing. This could
-   orphan the original copy of the file, and we can't reliably detect when a message is delivered, although SQS gives
+   orphan the original copy of the file, and we can't reliably detect when a message is redelivered, although SQS gives
    an ApproximateReceiveCount.
 3. Before deleting transactions, read the rest of the transaction log from the deletion point to the head, and don't
    delete any body files that we find references for. This can still result in unreadable commits if a committer writes
@@ -322,7 +323,7 @@ log entries.
 5. Ignore transaction log entries where the transaction body file has been deleted. We may be able to rely on the fact
    that in all cases where the same file is in multiple entries, the second entry will not validate at read time, and
    will result in no changes to the state.
-6. Ensure that transaction body files are only deleted after it has remained unreferenced for some longer period of
+6. Ensure that transaction body files are only deleted after they have remained unreferenced for some longer period of
    time. This can involve extra tracking that can happen at transaction deletion.
 7. Give each commit a unique ID, save it in the log entry, but don't track it anywhere else. Don't use it as an
    idempotency token in the committer, but consider where else we could use it. This is option 4 without making the
@@ -330,8 +331,8 @@ log entries.
 8. Have the state store committer always make a copy of a transaction body file before adding to the log. An S3 copy is
    cheap, but it does add latency to the committer. We'd need some cleanup for these files. This is option 2 without the
    check for a redelivery.
-9. Instead of deleting transaction body files in the transaction deleter, use an S3 lifecycle rule instead. This would
-   rely on a snapshot being created, so if snapshots are disabled for any reason this would cause problems.
+9. Instead of deleting transaction body files in the transaction deleter, use an S3 lifecycle rule. This would rely on a
+   snapshot being created, so if snapshots are disabled for any reason this would cause problems.
 
 Option 5 seems appealing because of its simplicity. We'd need to be careful about documenting the invariant we rely on
 for this.
