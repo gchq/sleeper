@@ -78,15 +78,20 @@ For AssignJobIdsTransaction, SplitPartitionTransaction and DeleteFilesTransactio
 will run again automatically and repeat the work they would have done, so they don't really need to be retried.
 
 For AddFilesTransaction, if it is not committed we lose data from an ingest or bulk import, the files that were being
-added are left in S3 with no references, and they are never cleaned up. To detect this you could compare the files in
-the state store with the files in the data bucket's data file prefix, and look for files that aren't tracked in the
-state store.
+added are left in S3 with no references, and they are never cleaned up. To detect this you could try to compare the
+files in the state store with the files in the data bucket's data file prefix, but this would include files from jobs
+that are still in progress. You could look at the files' age, but it would be difficult to differentiate files that were
+never added from files that were incorrectly removed from the state store during a failed GC. You could see the jobs
+that have failed to commit based on the job tracker, but that wouldn't tell you the paths of the files it was trying to
+add. You could check the logs from the processes that wrote these files. In practice it could be very difficult to find
+files dropped this way definitively.
 
 For ReplaceFileReferencesTransaction, if it is not committed then all the compactions' input files are left locked for
 compaction. They will never be compacted again until this is resolved. It would be possible to detect this by looking at
 the file references in the state store. You could potentially reconstruct a compaction job from this. For the output
 filename, you could re-derive it from the partition ID and job ID, and check if the output file exists in S3. You could
-potentially recreate a ReplaceFileReferencesTransaction from the available data even if the commit has been deleted.
+potentially recreate a ReplaceFileReferencesTransaction from the available data even if the commit has been deleted. You
+would also need to find the count of rows in the output file, either from the file or from the job tracker.
 
 ### Delayed transactions can become permanently invalid
 
@@ -100,8 +105,8 @@ re-processed after the re-split is committed, then the old commit will always fa
 In both of these cases retries are pointless, but only once the new commit is successful. We'll want to avoid this ever
 showing up on the dead letter queue, because it doesn't represent a real failure and would result in misleading alarms.
 If these transactions fail to validate in a way that indicates they've been superseded, we can discard them. For
-compaction, we could report this to the job tracker. For partition splitting, it's not clear how we would report on
-this.
+compaction, we could consider reporting this to the job tracker. For partition splitting, it's not clear how we would
+report on this.
 
 #### Compaction creation conflicts
 
@@ -156,8 +161,9 @@ also allows us to report on failed commits in the job tracker by processing thes
 This means that every failed compaction commit is always retryable, because when it is added to the log the appropriate
 action will be taken to update the state and the job tracker based on the validity of the transaction.
 
-The same thing applies to ingest, since they are also validated at read-time and reported to the job tracker in the same
-way.
+The same thing mostly applies to ingest, since they are also validated at read-time and reported to the job tracker in
+the same way. The exception is that for ingest there's a duplicate delivery problem that can result in phantom file
+references. This is discussed below.
 
 ### Duplicate delivery problems
 
@@ -183,9 +189,10 @@ time the retry is rejected by validation and sent back to SQS.
 The impact of this duplication will be the same whether it gets back to SQS or not, except that a retry through SQS can
 result in dead letters.
 
-In the third case the same commit message is added to the queue twice at the producer side. Each attempt will also
-upload a new copy of the transaction body to S3 if it is too big. If sending fails the producer will re-run and build a
-new transaction. There's no handling to delete the transaction body file if it does fail, so that needs adding.
+In the third case the same commit message would be added to the queue twice at the producer side. Each attempt will also
+upload a new copy of the transaction body to S3 if it is too big. In practice, if sending fails the producer will re-run
+and build a new transaction, so this case should not occur as complete duplicates. We do need handling to delete the
+transaction body file if it does fail, although it may not be possible to avoid all orphan files here.
 
 #### Transactions validated at read time
 
@@ -229,7 +236,9 @@ compactions.
 
 If a manual operation in a client clears the state of a table, there can still be asynchronous commits on the queue.
 For example, if you clear partitions there may be a transaction on the queue to add files to a partition that has now
-been deleted, but those files would still be added to partitions that no longer exist.
+been deleted, but those files would still be added to partitions that no longer exist. If you clear files and actually
+delete the files from S3, there may be a transaction on the queue that adds phantom references for the files you just
+deleted.
 
 This is an additional operational concern if you want to delete a Sleeper table. We could consider what happens during
 deletion or reinitialisation in more depth.
@@ -240,10 +249,12 @@ We have plans to improve on this in issues
 [#8618 - State store commit failures in lambda are ignored](https://github.com/gchq/sleeper/issues/8618) and
 [#8364 - State store commits do not recover after a temporary failure, and redrive may produce unexpected behaviour](https://github.com/gchq/sleeper/issues/8364). Here are some outcomes of this analysis.
 
-From a standpoint of ordering of commits, it's safe to enable retries on the queue.
+From a standpoint of ordering of commits, it's safe to enable retries on the queue. We need to consider whether retries
+need to be sent to the back of the queue or not.
 
-For validation failures adding commits, we can introduce handling to avoid retries, track failures for reporting, and
-delete the invalid commits. This lets us focus retries on infrastructure problems.
+For validation failures adding commits, we can introduce handling to detect and delete the invalid commits immediately.
+This lets us focus retries on infrastructure problems. We could look at options for reporting on the failures, but we
+may want to avoid updating a job tracker inside the state store committer as that would add latency.
 
 For commits validated at read time, failures are already handled and reported correctly, but there's a case where the
 same transaction body file can be included in multiple log entries, and that needs extra handling. At time of writing
@@ -258,6 +269,12 @@ automatically recover from all failures. Nevertheless, there's a point at which 
 what we can possibly handle. For example, DynamoDB may be unable to handle the load on the transaction log for a certain
 Sleeper table. In these cases we can ensure that failures are reported appropriately, and if load decreases then the
 system can recover. This recovery may or may not require redrive of dead letters, and we won't address this here.
+
+### Retry mechanism
+
+If we use SQS FIFO's built-in retries, any messages needing a retry will stay at the front of the queue. This may be
+acceptable if we can avoid retries for non-retryable problems. If we consider re-sending the message to the back of the
+queue, we wouldn't be able to use SQS' retry handling, so we probably want to avoid this.
 
 ### Transaction body file references
 
@@ -331,7 +348,14 @@ carefully about how we could proceed.
 
 The most actionable of these seems option 5. In principle, we would like to provide guarantees about how failures are
 handled and avoid ever having a permanent failure in the system. Automatic handling of these failure cases seems
-generally preferable.
+generally preferable. Taking more control over redrives would be a move towards this, and could give us a place to add
+automatic handling that we don't have right now.
+
+Option 1 only puts additional load on the state store committer during a redrive of old commits. It may be difficult to
+predict the impact of this, but it does seem lower than some of the other options. If we rely on option 5 without option
+1, and only do the checks in the redrive tool, the risk would be that someone might bypass the tool, instead of that the
+committer may be impacted. We could avoid bypass of the tool by holding the commits for redrive somewhere other than
+directly on the dead letter queue, e.g. in S3.
 
 ### Pending compaction job batch failures
 
