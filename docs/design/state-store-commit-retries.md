@@ -276,6 +276,18 @@ If we use SQS FIFO's built-in retries, any messages needing a retry will stay at
 acceptable if we can avoid retries for non-retryable problems. If we consider re-sending the message to the back of the
 queue, we wouldn't be able to use SQS' retry handling, so we probably want to avoid this.
 
+This causes a problem in that any retries in SQS mean that all processing of that Sleeper table will stall until the
+message is processed. The failed message will not be redelivered until its visibility timeout, and no further messages
+will be delivered for the Sleeper table until this timeout expires. SQS recommends not processing any messages after a
+failed message at all until all retries are exhausted, and that is enforced to this degree.
+
+We can set the retry delay explicitly if we call `ChangeMessageVisibility` on each failed message with a shortened
+timeout. This will reduce the stall, but not eliminate it unless we set it to 0. If the committer fails before it makes
+this call, it will stall for the full visibility timeout. We may need to reduce the default timeout as well.
+
+We will want to ensure that any non-retryable failure is consumed and does not return back to SQS. This includes
+deserialisation failures, validation of transactions, and transactions whose body file has been deleted.
+
 ### Validation failures
 
 For validation failures adding commits, we can introduce handling to detect and delete the invalid commits immediately.
