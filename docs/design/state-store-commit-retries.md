@@ -371,4 +371,28 @@ directly on the dead letter queue, e.g. in S3.
 
 ### Pending compaction job batch failures
 
-TODO
+There are a few reasons a batch of pending compaction jobs can reach the dead letter queue:
+
+| Cause                                                             | Files locked to this batch? | Can a redrive succeed?      |
+|-------------------------------------------------------------------|-----------------------------|-----------------------------|
+| An input file is in another compaction, or has been deleted by GC | No                          | Never                       |
+| File assignment wasn't applied to the state store in time         | Not yet                     | If assignment happens       |
+| Something failed when sending jobs                                | Yes                         | Yes, with caveats           |
+
+In the first row, since the input file assignments of the whole batch are committed atomically, the dispatcher can see
+that none of its file assignments can ever succeed. From the fact that none of the files are locked to the batch, but
+some of them have been otherwise processed, that means either it's actually already sent all the jobs and they've all
+been committed, or the file assignments did not succeed, and can now never succeed.
+
+In the second row, it's possible the file assignment will fail, but at some point the files will be included in new
+compactions, and this will turn into the first row.
+
+In the third row, there is a case where some of the jobs failed to send, and others have already finished and committed
+to the state store. In this case, the dispatcher will see that some of the files in the batch are assigned to its jobs,
+but some of them have already been processed and may no longer be visible in the table state. We need to ensure that
+this batch will still eventually be sent and processed.
+
+This leaves us with two cases needing handling, which we can call a superseded batch, and a partially processed batch.
+For a superseded batch, we can safely discard it and allow the files to be picked up by further compaction creation.
+We'll want to ensure the file holding the batch in S3 is deleted. For a partially processed batch, we want to ensure
+that retries or redrives will continue sending the jobs that have not already run.
