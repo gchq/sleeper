@@ -397,3 +397,10 @@ This leaves us with two cases needing handling, which we can call a superseded b
 For a superseded batch, we can safely discard it and allow the files to be picked up by further compaction creation.
 We'll want to ensure the file holding the batch in S3 is deleted. For a partially processed batch, we want to ensure
 that retries or redrives will continue sending the jobs that have not already run.
+
+This seems like enough to show that if a file assignment fails, and is discarded in the state store committer, we can
+detect that a pending compaction job batch has been superseded by the fact that the files have been assigned to a new
+batch. We will want to make sure this detection occurs.
+
+The handling of a partially processed batch seems separate from the retries of state store commits, so we don't need to
+cover that here.
