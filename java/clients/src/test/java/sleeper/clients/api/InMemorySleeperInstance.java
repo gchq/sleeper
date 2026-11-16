@@ -39,6 +39,7 @@ import sleeper.ingest.runner.testutils.InMemoryIngest;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
 import sleeper.query.core.tracker.InMemoryQueryTracker;
+import sleeper.query.runner.results.QueryResultsReader;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 
 import java.util.HashMap;

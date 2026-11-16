@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.api;
+package sleeper.query.runner.results;
 
 /**
  * Thrown when the results of a query are not found in the S3 query results bucket. This can happen if the query was

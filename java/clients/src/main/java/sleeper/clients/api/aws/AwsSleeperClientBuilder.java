@@ -21,7 +21,6 @@ import sleeper.clients.api.BulkExportQuerySender;
 import sleeper.clients.api.BulkImportJobSender;
 import sleeper.clients.api.IngestBatcherSender;
 import sleeper.clients.api.IngestJobSender;
-import sleeper.clients.api.QueryResultsReader;
 import sleeper.clients.api.QuerySender;
 import sleeper.clients.api.QueryWebSocketSender;
 import sleeper.clients.api.SleeperClient;
@@ -38,6 +37,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.runner.results.QueryResultsReader;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.statestore.StateStoreFactory;
 

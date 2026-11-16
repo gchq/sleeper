@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * produces rows fastest is consumed first — a slow partition does not block rows from faster ones. The queue provides
  * backpressure: producers block when it is full until the consumer catches up.
  *
- * This pattern is mirrored in ParallelResultsFileReader in the clients module, which reads query results files in
+ * This pattern is mirrored in ParallelResultsFileReader in the query-runner module, which reads query results files in
  * parallel. If this is changed, consider whether the same change applies there.
  *
  * This class is not thread-safe; do not use without external synchronisation.

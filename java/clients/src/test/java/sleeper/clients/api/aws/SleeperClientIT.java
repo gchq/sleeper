@@ -21,7 +21,6 @@ import org.junit.jupiter.api.AutoClose;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.api.QueryResultsNotFoundException;
 import sleeper.clients.api.SleeperClient;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -39,6 +38,7 @@ import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.runner.results.QueryResultsNotFoundException;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;

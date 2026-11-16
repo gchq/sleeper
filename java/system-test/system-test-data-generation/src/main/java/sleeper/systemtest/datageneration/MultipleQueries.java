@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.api.QueryResultsReader;
 import sleeper.clients.api.QuerySender;
 import sleeper.clients.query.QueryLambdaClient;
 import sleeper.clients.util.console.ConsoleInput;
@@ -44,6 +43,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
+import sleeper.query.runner.results.QueryResultsReader;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestRandomDataSettings;

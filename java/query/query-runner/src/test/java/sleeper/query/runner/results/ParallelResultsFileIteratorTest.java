@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.api;
+package sleeper.query.runner.results;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.api.QueryResultsReader.ResultsFile;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.row.Row;
+import sleeper.query.runner.results.QueryResultsReader.ResultsFile;
 
 import java.util.ArrayList;
 import java.util.Iterator;
