@@ -385,7 +385,8 @@ some of them have been otherwise processed, that means either it's actually alre
 been committed, or the file assignments did not succeed, and can now never succeed.
 
 In the second row, it's possible the file assignment will fail, but at some point the files will be included in new
-compactions, and this will turn into the first row.
+compactions, and this will turn into the first row. It's also possible assignment will happen and it will continue,
+either succeeding or potentially failing in the third row.
 
 In the third row, there is a case where some of the jobs failed to send, and others have already finished and committed
 to the state store. In this case, the dispatcher will see that some of the files in the batch are assigned to its jobs,
