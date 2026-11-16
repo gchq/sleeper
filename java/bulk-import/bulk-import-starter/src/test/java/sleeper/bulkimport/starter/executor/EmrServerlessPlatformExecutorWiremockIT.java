@@ -19,6 +19,7 @@ package sleeper.bulkimport.starter.executor;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
+import org.assertj.core.api.AbstractStringAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
@@ -26,8 +27,11 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.EmrInstanceArchitecture;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
@@ -51,13 +55,19 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.local.aws.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
 public class EmrServerlessPlatformExecutorWiremockIT {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
 
     @BeforeEach
     void setUp() {
@@ -69,6 +79,7 @@ public class EmrServerlessPlatformExecutorWiremockIT {
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID, "application-id");
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, "cluster-role");
         instanceProperties.set(BULK_IMPORT_CLASS_NAME, "BulkImportClass");
+        tableProperties.set(TABLE_NAME, "table-name");
     }
 
     @Test
@@ -98,13 +109,13 @@ public class EmrServerlessPlatformExecutorWiremockIT {
                     assertThatJson(body)
                             .inPath("$.jobDriver.sparkSubmit.sparkSubmitParameters").asString()
                             .startsWith("--class BulkImportClass ")
-                            .contains(" --conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64 ");
+                            .contains(" --conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.aarch64 ");
                 });
     }
 
     @Test
-    void shouldRunAServerlessJobOnArm64(WireMockRuntimeInfo runtimeInfo) {
-        instanceProperties.setEnum(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE, EmrInstanceArchitecture.ARM64);
+    void shouldRunAServerlessJobOnX86(WireMockRuntimeInfo runtimeInfo) {
+        instanceProperties.setEnum(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE, EmrInstanceArchitecture.X86_64);
         BulkImportJob job = BulkImportJob.builder()
                 .id("my-job")
                 .files(List.of("file.parquet"))
@@ -123,9 +134,9 @@ public class EmrServerlessPlatformExecutorWiremockIT {
                 .singleElement().extracting(LoggedRequest::getBodyAsString)
                 .satisfies(body -> assertThatJson(body)
                         .inPath("$.jobDriver.sparkSubmit.sparkSubmitParameters").asString()
-                        .contains(" --conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.aarch64 ")
-                        .contains(" --conf spark.emr-serverless.driverEnv.JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.aarch64 ")
-                        .doesNotContain("x86_64"));
+                        .contains(" --conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64 ")
+                        .contains(" --conf spark.emr-serverless.driverEnv.JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64 ")
+                        .doesNotContain("aarch64"));
     }
 
     @Test
@@ -152,7 +163,73 @@ public class EmrServerlessPlatformExecutorWiremockIT {
                         containing(" --conf spark.emr-serverless.executor.disk=100G "))));
     }
 
+    @Test
+    void shouldSetSparkConfFromTableProperty(WireMockRuntimeInfo runtimeInfo) {
+        tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK, "150G");
+        BulkImportJob job = BulkImportJob.builder()
+                .id("my-job")
+                .files(List.of("file.parquet"))
+                .tableName("table-name")
+                .build();
+        stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
+
+        executor(runtimeInfo).runJobOnPlatform(arguments(job));
+
+        assertThatSparkSubmitParameters()
+                .contains(" --conf spark.emr-serverless.executor.disk=150G ");
+    }
+
+    @Test
+    void shouldSetSparkConfFromInstanceDefaultWhenTablePropertyUnset(WireMockRuntimeInfo runtimeInfo) {
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES, "12");
+        BulkImportJob job = BulkImportJob.builder()
+                .id("my-job")
+                .files(List.of("file.parquet"))
+                .tableName("table-name")
+                .build();
+        stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
+
+        executor(runtimeInfo).runJobOnPlatform(arguments(job));
+
+        assertThatSparkSubmitParameters()
+                .contains(" --conf spark.executor.instances=12 ");
+    }
+
+    @Test
+    void shouldOverrideTablePropertyWithJobPlatformSpec(WireMockRuntimeInfo runtimeInfo) {
+        tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK, "150G");
+        BulkImportJob job = BulkImportJob.builder()
+                .id("my-job")
+                .files(List.of("file.parquet"))
+                .tableName("table-name")
+                .platformSpec(Map.of(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK.getPropertyName(), "50G"))
+                .build();
+        stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
+
+        executor(runtimeInfo).runJobOnPlatform(arguments(job));
+
+        assertThatSparkSubmitParameters()
+                .contains(" --conf spark.emr-serverless.executor.disk=50G ")
+                .doesNotContain("150G");
+    }
+
+    private BulkImportArguments arguments(BulkImportJob job) {
+        return BulkImportArguments.builder()
+                .instanceProperties(instanceProperties)
+                .bulkImportJob(job).jobRunId("run-id")
+                .jobFileObjectKey("folder/job.json")
+                .build();
+    }
+
+    private AbstractStringAssert<?> assertThatSparkSubmitParameters() {
+        List<LoggedRequest> requests = findAll(postRequestedFor(urlEqualTo("/applications/application-id/jobruns")));
+        assertThat(requests).hasSize(1);
+        return assertThatJson(requests.get(0).getBodyAsString())
+                .inPath("$.jobDriver.sparkSubmit.sparkSubmitParameters").asString();
+    }
+
     private EmrServerlessPlatformExecutor executor(WireMockRuntimeInfo runtimeInfo) {
-        return new EmrServerlessPlatformExecutor(wiremockAwsV2Client(runtimeInfo, EmrServerlessClient.builder()), instanceProperties);
+        return new EmrServerlessPlatformExecutor(wiremockAwsV2Client(runtimeInfo, EmrServerlessClient.builder()),
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
     }
 }

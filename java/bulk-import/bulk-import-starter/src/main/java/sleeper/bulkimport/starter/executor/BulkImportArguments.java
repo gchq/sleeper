@@ -16,6 +16,7 @@
 
 package sleeper.bulkimport.starter.executor;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.core.configuration.SparkConfigurationUtils;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -82,10 +83,10 @@ public class BulkImportArguments {
         return new String[]{instanceProperties.get(CONFIG_BUCKET), bulkImportJob.getId(), taskId, jobRunId, jobFileObjectKey, bulkImportMode};
     }
 
-    public String sparkSubmitParametersForServerless() {
+    public String sparkSubmitParametersForServerless(BulkImportPlatformSpec platformSpec) {
         return sparkSubmitParameters(
-                SparkConfigurationUtils.getSparkServerlessConfigurationFromInstanceProperties(
-                        instanceProperties, instanceProperties.getEnumValue(
+                SparkConfigurationUtils.getSparkServerlessConfiguration(
+                        instanceProperties, platformSpec, instanceProperties.getEnumValue(
                                 BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE, EmrInstanceArchitecture.class)))
                 .collect(Collectors.joining(" "));
     }
