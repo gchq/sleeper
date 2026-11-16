@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.57.12</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.59.0</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         It's not compatible with the latest version, so we match the version that it provides.
@@ -198,7 +198,7 @@
         <google.http-client.version>2.2.0</google.http-client.version>
         <google.grpc.version>1.85.1</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.275.0</cdk.version>
+        <cdk.version>2.276.0</cdk.version>
         <constructs.version>10.8.1</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
         <jsii.version>1.142.0</jsii.version>
