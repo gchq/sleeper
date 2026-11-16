@@ -185,7 +185,8 @@ despite having committed successfully.
 In the second case, it's also possible to add a duplicate transaction to the log without ever retrying the commit
 message. This will only happen for transactions validated at read time, where a DuplicateTransactionNumberException or
 a throttling exception both result in a retry that is not rejected by validation. For transactions validated at write
-time the retry is rejected by validation and sent back to SQS.
+time the retry is rejected by validation and sent back to SQS. Note that both committers have specific handling to retry
+on DynamoDB throttling exceptions.
 
 The impact of this duplication will be the same whether it gets back to SQS or not, except that a retry through SQS can
 result in dead letters.
