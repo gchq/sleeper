@@ -346,7 +346,8 @@ We have a few options for ways to avoid references reappearing to files that hav
 1. Check whether each file exists in S3 before committing it. This would add latency in the state store committer, but
    if we can tell how old the commit is we could just do that check for old commits. This means that old redrives would
    become slower to process. In practice not much of the load on the committer is for adding files, but there may be
-   cases where a large number of files are added at once.
+   cases where a large number of files are added at once. One way to detect a commit's age would be to add a timestamp
+   to the commit when we send it in the producer.
 2. Reject old commits by age. If we can tell how old a commit is we could ignore them, but this would prevent all
    redrives beyond that age.
 3. Retain a record of deleted files in the state store state. We can then validate that the file hasn't existed before.
