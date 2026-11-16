@@ -78,7 +78,7 @@ added are left in S3 with no references, and they are never cleaned up. To detec
 the state store with the files in the data bucket's data file prefix, and look for files that aren't tracked in the
 state store.
 
-For ReplaceFileReferencesTransaction, if it is not committed then a compaction's input files are left locked for
+For ReplaceFileReferencesTransaction, if it is not committed then all the compactions' input files are left locked for
 compaction. They will never be compacted again until this is resolved. It would be possible to detect this by looking at
 the file references in the state store. You could potentially reconstruct a compaction job from this. For the output
 filename, you could re-derive it from the partition ID and job ID, and check if the output file exists in S3. You could
