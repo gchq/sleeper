@@ -76,6 +76,10 @@ the Spark executors and driver. You can also access previous job Spark UIs from 
 It is possible to get Sleeper to deploy EMR Studio by enabling the optional stack `EmrStudioStack`.
 Note if EMR Serverless is not enabled then EMR Studio won't be deployed even if added to the optional stacks.
 
+The EMR Serverless application can run on x86_64 or ARM64 processors. This is set with the instance
+property `sleeper.bulk.import.emr.serverless.architecture`, which must be `x86_64` or `arm64`. It
+applies to all jobs in the application. Changing this property requires a CDK deployment.
+
 After your job finishes the application will auto shutdown after 15 minutes. When in the stopped state it takes seconds for the application to start when a new job is received.
 
 The following can be edited in the Sleeper Admin console. It it also possible to set these on a per job basis by setting `sparkConf`
@@ -99,9 +103,8 @@ An example for overriding at the job level is:
 ##### All Available Properties
 
 ```properties
-# The following properties are used to define the custom Spark image used that has Java 11 installed
-sleeper.bulk.import.emr.serverless.repo=<insert-unique-sleeper-id>/bulk-import-runner-emr-serverless
-sleeper.bulk.import.emr.serverless.java.home=/usr/lib/jvm/jre-11
+# The CPU architecture of the EMR Serverless application, either x86_64 or arm64 (AWS Graviton)
+sleeper.bulk.import.emr.serverless.architecture=x86_64
 
 # The following properties define the executor and driver configuration
 sleeper.bulk.import.emr.serverless.executor.cores=4

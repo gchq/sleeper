@@ -21,7 +21,6 @@ import sleeper.core.properties.model.EmrInstanceArchitecture;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
-import java.util.function.Predicate;
 
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 
@@ -33,9 +32,9 @@ public interface EMRServerlessProperty {
 
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.architecture")
-            .description("The architecture for EMR Serverless to use. X86_64 or ARM64 (Coming soon)")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).defaultValue(EmrInstanceArchitecture.X86_64.toString())
-            .validationPredicate(Predicate.isEqual(EmrInstanceArchitecture.X86_64.toString()))
+            .description("Which architecture to be used for EMR Serverless. Must be either x86_64 or arm64.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).defaultValue(EmrInstanceArchitecture.ARM64.toString())
+            .validationPredicate(EmrInstanceArchitecture::isValidSingleArchitecture)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_RELEASE = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.release")
@@ -102,11 +101,6 @@ public interface EMRServerlessProperty {
             .description("The amount of memory allocated to the Serverless Spark driver. Used to set spark.driver.memory.\n"
                     + "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY.getDefaultValue())
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME = Index
-            .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.executorEnv.JAVA_HOME")
-            .description("The path to JAVA_HOME to be used by the custom image for bulk import.")
-            .defaultValue("/usr/lib/jvm/jre-11")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.dynamic.allocation.enabled")

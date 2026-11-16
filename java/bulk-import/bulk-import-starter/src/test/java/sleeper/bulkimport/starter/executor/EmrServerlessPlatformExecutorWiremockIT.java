@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.EmrInstanceArchitecture;
 
 import java.util.List;
 
@@ -49,6 +50,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.local.aws.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
@@ -98,6 +100,32 @@ public class EmrServerlessPlatformExecutorWiremockIT {
                             .startsWith("--class BulkImportClass ")
                             .contains(" --conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64 ");
                 });
+    }
+
+    @Test
+    void shouldRunAServerlessJobOnArm64(WireMockRuntimeInfo runtimeInfo) {
+        instanceProperties.setEnum(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE, EmrInstanceArchitecture.ARM64);
+        BulkImportJob job = BulkImportJob.builder()
+                .id("my-job")
+                .files(List.of("file.parquet"))
+                .tableName("table-name")
+                .build();
+        BulkImportArguments arguments = BulkImportArguments.builder()
+                .instanceProperties(instanceProperties)
+                .bulkImportJob(job).jobRunId("run-id")
+                .jobFileObjectKey("folder/job.json")
+                .build();
+        stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
+
+        executor(runtimeInfo).runJobOnPlatform(arguments);
+
+        assertThat(findAll(postRequestedFor(urlEqualTo("/applications/application-id/jobruns"))))
+                .singleElement().extracting(LoggedRequest::getBodyAsString)
+                .satisfies(body -> assertThatJson(body)
+                        .inPath("$.jobDriver.sparkSubmit.sparkSubmitParameters").asString()
+                        .contains(" --conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.aarch64 ")
+                        .contains(" --conf spark.emr-serverless.driverEnv.JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.aarch64 ")
+                        .doesNotContain("x86_64"));
     }
 
     @Test
