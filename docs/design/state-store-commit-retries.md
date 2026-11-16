@@ -253,8 +253,10 @@ From a standpoint of ordering of commits, it's safe to enable retries on the que
 need to be sent to the back of the queue or not.
 
 For validation failures adding commits, we can introduce handling to detect and delete the invalid commits immediately.
-This lets us focus retries on infrastructure problems. We could look at options for reporting on the failures, but we
-may want to avoid updating a job tracker inside the state store committer as that would add latency.
+This lets us focus retries on infrastructure problems. We could consider reporting on the failures, but we may want to
+avoid updating a job tracker inside the state store committer as that would add latency. For now we'll assume we don't
+need to report on this, since the write-time validated commits all have clean handling if they are discarded. We can log
+it in the committer and move on.
 
 For commits validated at read time, failures are already handled and reported correctly, but there's a case where the
 same transaction body file can be included in multiple log entries, and that needs extra handling. At time of writing
