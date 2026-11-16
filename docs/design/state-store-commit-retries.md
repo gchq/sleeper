@@ -146,9 +146,10 @@ It does cause a problem in that if there's a redrive of failed commits, it can n
 since been locked for compaction.
 
 If we discard an invalid AssignJobIdsTransaction, this would result in a dead letter for the pending compaction
-creation batch queue, but a redrive could never succeed because the commit to assign the input files has been discarded.
-If we don't discard an invalid AssignJobIdsTransaction, it can still become permanently invalid and this still means a
-redrive of the compaction creation batch can never succeed. We could consider handling for this.
+batch queue, but a redrive could never succeed because the commit to assign the input files has been discarded. If we
+don't discard an invalid AssignJobIdsTransaction, it can still become permanently invalid if the input files are
+reassigned, and if that happens a redrive of the compaction creation batch still can never succeed. We could consider
+handling for this.
 
 #### Impact when compaction or ingest commit fails
 
