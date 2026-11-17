@@ -128,8 +128,11 @@ commit the second time it runs. We'll deal with that failed commit in a separate
 AddFilesTransaction, AssignJobIdsTransaction and ReplaceFileReferencesTransaction all apply a batch of multiple
 operations in a single transaction. For AddFilesTransaction and ReplaceFileReferencesTransaction, or ingest and
 compaction commit, if any of the individual operations are invalid, the transaction is still applied to the log, but is
-validated at read time to decide how the state should be updated. For AssignJobIdsTransaction, or file assignment, the
-whole transaction is rejected if any of the files cannot be assigned, in order to refuse the batch as a whole.
+validated at read time to decide how the state should be updated.
+
+For both, if any part fails to validate the whole transaction is not applied. For AddFilesTransaction, or ingest, if any
+file is in the state store the transaction is ignored. For AssignJobIdsTransaction, or file assignment, the whole
+transaction is rejected if any of the files cannot be assigned, in order to refuse the batch as a whole.
 
 #### Impact when file assignment fails
 
