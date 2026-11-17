@@ -454,6 +454,8 @@ this batch will still eventually be sent and processed.
 
 We can call these three cases a superseded batch, a slow batch, and a partially processed batch.
 
+#### Handling each type of batch failure
+
 For a superseded batch, we can safely discard it and allow the files to be picked up by further compaction creation.
 We'll want to ensure the file holding the batch in S3 is deleted. For a slow batch, we want to ensure that the batch is
 eventually sent, or the files are made available for further compaction. For a partially processed batch, we want to
@@ -468,7 +470,8 @@ detect that a pending compaction job batch has been superseded. We will want to 
 batch is deleted. A check would need to cover every case where a batch can become unable to ever be assigned. This would
 include if any of the file references have been assigned to a new job, or if none of the file references exist, or if
 any file references have been split such that the file is now referenced on child partitions of the original partition
-for the compaction.
+for the compaction. We could cover all of those with a rule for if any reference is missing or assigned to another job,
+and no references are assigned to this batch.
 
 We also need to make sure that the compaction dispatcher will fully distinguish between the superseded case and the
 partially processed case. If a file reference is missing, it could be because it has been superseded, or it could be
