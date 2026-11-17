@@ -232,6 +232,9 @@ they are no longer recorded in the state store. In this case, they will be added
 creates references to files that have already been deleted by garbage collection, and puts the table in an invalid
 state.
 
+Because the transaction is validated as a whole, this will only happen if all of the files in the transaction have been
+compacted and garbage collected.
+
 In order to recover from this, you would need to create an empty file, add transactions that fake running a compaction
 of the phantom file into the empty file, and re-GC the phantom file. That empty file could then be removed by real
 compactions.
