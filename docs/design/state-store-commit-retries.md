@@ -215,12 +215,12 @@ despite having committed successfully.
 
 In the second case, it's also possible to add a duplicate transaction to the log without ever retrying the commit
 message. This will only happen for transactions validated at read time, where a DuplicateTransactionNumberException or
-a throttling exception both result in a retry that is not rejected by validation. For transactions validated at write
-time the retry is rejected by validation and sent back to SQS. Note that both committers have specific handling to retry
-on DynamoDB throttling exceptions.
+a throttling exception both result in a retry that is not rejected by validation. Note that both committers have
+specific handling to retry on DynamoDB throttling exceptions.
 
 The impact of this duplication will be the same whether it gets back to SQS or not, except that a retry through SQS can
-result in dead letters.
+result in dead letters. We'll look at how this applies to the different transaction types below. This differs by whether
+the transaction is validated at read time or write time.
 
 In the third case the same commit message would be added to the queue twice at the producer side. Each attempt will also
 upload a new copy of the transaction body to S3 if it is too big. In practice, if sending fails the producer will re-run
