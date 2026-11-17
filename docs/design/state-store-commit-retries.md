@@ -167,11 +167,11 @@ system because compaction creation will run again and the files will still be co
 It does cause a problem for the user in that if there's a redrive of failed commits, it can never succeed if any of the
 files have since been locked for compaction.
 
-If we discard an invalid AssignJobIdsTransaction, this would result in a dead letter for the pending compaction
-batch queue, but a redrive could never succeed because the commit to assign the input files has been discarded. If we
-don't discard an invalid AssignJobIdsTransaction, it can still become permanently invalid if the input files are
-reassigned, and if that happens a redrive of the compaction creation batch still can never succeed. We could consider
-handling for this.
+If we discard an invalid AssignJobIdsTransaction, this could result in a dead letter for the pending compaction
+batch queue, because the dispatcher uses retries to wait for the file assignment. A redrive would never succeed because
+the commit to assign the input files has been discarded. If we don't discard an invalid AssignJobIdsTransaction, it can
+still become permanently invalid if the input files are reassigned, and if that happens a redrive of the compaction
+creation batch still can never succeed. We could consider handling for this.
 
 There's also a case where a batch of compaction jobs is successfully assigned, and the dispatcher attempts to send the
 jobs to the compaction job queue, but it fails all retries for this. This is not related to state store commits, but the
