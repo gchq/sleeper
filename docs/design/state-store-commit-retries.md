@@ -314,7 +314,7 @@ timeout. This will reduce the stall, but not eliminate it unless we set it to 0.
 this call, it will stall for the full visibility timeout. We may need to reduce the default timeout as well.
 
 We will want to ensure that any non-retryable failure is consumed and does not return back to SQS. This includes
-deserialisation failures, validation of transactions, and transactions whose body file has been deleted.
+deserialisation failures, transaction validation failures, and transactions whose body file has been deleted.
 
 ### Validation failures
 
