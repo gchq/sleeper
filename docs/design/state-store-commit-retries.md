@@ -450,7 +450,8 @@ eventually sent, or the files are made available for further compaction. For a p
 ensure that retries or redrive will continue sending the jobs that have not already run.
 
 The handling of a slow or partially processed batch seems separate from the retries of state store commits, so we don't
-need to cover that here.
+need to cover that here. We can assume retries of state store commits will be fast relative to the timeout of slow
+batches.
 
 This seems like enough to show that if a file assignment fails, and is discarded in the state store committer, we can
 detect that a pending compaction job batch has been superseded if any of the file references have been assigned to a new
