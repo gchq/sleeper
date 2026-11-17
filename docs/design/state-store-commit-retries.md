@@ -133,9 +133,9 @@ All of the asynchronous transactions except SplitPartitionTransaction apply a ba
 transaction. In all cases we need to be careful about what happens when only a part of the transaction is not valid, and
 whether this has impacts on the system.
 
-If we change any of this behaviour for existing transactions, then during upgrade you could get a state where different
-processes disagree on the state of the Sleeper table. We would need some handling to avoid an upgrade changing the
-behaviour of a transaction that has already been written.
+If we change any validation behaviour for existing transactions, then during upgrade you could get a state where
+different processes disagree on the state of the Sleeper table. We would need some handling to avoid an upgrade changing
+the behaviour of a transaction that has already been written.
 
 For AddFilesTransaction and ReplaceFileReferencesTransaction, or ingest and compaction commit, if any of the individual
 operations are invalid, the transaction is still applied to the log, but is validated at read time to decide how the
@@ -304,7 +304,7 @@ queue, we wouldn't be able to use SQS' retry handling, so we probably want to av
 
 This leaves a problem in that any retries in SQS mean that all processing of that Sleeper table will stall until the
 message is processed. The failed message will not be redelivered until its visibility timeout, and no further messages
-will be delivered for the Sleeper table until this timeout expires. For the AWS Lambda SQS integration, they recommend
+will be delivered for the Sleeper table until this timeout expires. For the Lambda SQS integration, AWS recommend
 not processing any messages after a failed message in a batch, and returning them all as batch item failures
 (see the AWS documentation, [Handling errors for an SQS event source in Lambda](https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html)).
 This is specifically to preserve ordering, so it seems like this does not apply to us.
@@ -454,4 +454,4 @@ job, or if none of the file references exist. We will want to make sure this det
 We also need to make sure that the compaction dispatcher will fully distinguish between the superseded case and the
 partially processed case. If a file reference is missing, it could be because it has been superseded, or it could be
 because the compaction it was originally assigned to has been committed. Because a batch's files are assigned
-atomatically, we know that if any of the file assignments have been applied, the batch cannot have been superseded.
+atomically, we know that if any of the file assignments have been applied, the batch cannot have been superseded.
