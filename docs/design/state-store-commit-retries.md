@@ -232,7 +232,8 @@ transaction body file if it does fail, although it may not be possible to avoid 
 For AddFiles and ReplaceFileReferences, two copies can potentially both be added to the log. If parts do not validate,
 the transaction will still be added. The state will not be updated because it will detect that it has already been
 applied and skip it. There is an exception to this where the files being added have been fully deleted from the state
-since the transaction was originally applied, but we'll address that separately. This still has a couple of impacts:
+since the transaction was originally applied, but we'll address that separately under [phantom files](#phantom-files).
+This still has a couple of impacts:
 
 1. The jobs are reported to the job tracker as failed on the second commit.
 2. If the transaction is big enough that its body is held in S3, both log entries will point to the same file.
