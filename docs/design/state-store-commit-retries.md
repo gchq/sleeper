@@ -151,8 +151,8 @@ are ignored but others in the batch are still applied.
 For AssignJobIdsTransaction, or compaction file assignment, the whole transaction is rejected if any of the files cannot
 be assigned, in order to refuse the batch as a whole.
 
-For DeleteFilesTransaction, if any file is not in the state store the whole transaction is rejected at write time. GC
-should handle this in the next run.
+For DeleteFilesTransaction, if any file is not in the state store, or still has references, the whole transaction is
+rejected at write time. GC should handle this in the next run.
 
 #### Impact when file assignment fails
 
