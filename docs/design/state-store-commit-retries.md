@@ -86,10 +86,10 @@ For AddFilesTransaction, if it is not committed we lose data from an ingest or b
 added are left in S3 with no references, and they are never cleaned up. To detect this you could try to compare the
 files in the state store with the files in the data bucket's data file prefix, but this would include files from jobs
 that are still in progress. You could look at the files' age, but it would be difficult to differentiate data that was
-never added from files that were incorrectly removed, or from compaction output that was not committed. You could see
-the jobs that have failed to commit based on the job tracker, but that wouldn't tell you the paths of the files it was
-trying to add. You could check the logs from the processes that wrote these files. In practice it could be very
-difficult to find files dropped this way definitively.
+never added from e.g. compaction output that was not committed. You could see the jobs that have failed to commit based
+on the job tracker, but that wouldn't tell you the paths of the files it was trying to add. You could check the logs
+from the processes that wrote these files. In practice it could be very difficult to find files dropped this way
+definitively.
 
 For ReplaceFileReferencesTransaction, if it is not committed then all the compactions' input files are left locked for
 compaction. They will never be compacted again until this is resolved. It would be possible to detect this by looking at
