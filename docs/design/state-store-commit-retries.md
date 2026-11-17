@@ -36,7 +36,7 @@ The rest are always committed synchronously:
 | ClearFilesTransaction            | Client                    |
 
 The synchronous commits are always in the log before any dependent queued commit is created. There could still be
-unexpected behaviour that results from the two separate paths, and we'll look at that in its own section.
+unexpected behaviour that results from the two separate paths, and we'll look at that in [its own section](#conflict-between-synchronous-operations-and-asynchronous-commits).
 
 ## Dependent commits
 
@@ -263,7 +263,7 @@ In order to recover from this, you would need to create an empty file, add trans
 of the phantom file into the empty file, and re-GC the phantom file. That empty file could then be removed by real
 compactions.
 
-### Conflict between manual operations and asynchronous commits
+### Conflict between synchronous operations and asynchronous commits
 
 If a manual operation in a client clears the state of a table, there can still be asynchronous commits on the queue.
 For example, if you clear partitions there may be a transaction on the queue to add files to a partition that has now
