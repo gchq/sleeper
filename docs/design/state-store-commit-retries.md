@@ -445,3 +445,8 @@ need to cover that here.
 This seems like enough to show that if a file assignment fails, and is discarded in the state store committer, we can
 detect that a pending compaction job batch has been superseded by the fact that the files have been assigned to a new
 batch. We will want to make sure this detection occurs, and the batch is deleted.
+
+We also need to make sure that the compaction dispatcher will fully distinguish between the superseded case and the
+partially processed case. If a file reference is missing, it could be because it has been superseded, or it could be
+because the compaction it was originally assigned to has been committed. Because a batch's files are assigned
+atomatically, we know that if any of the file assignments have been applied, the batch cannot have been superseded.
