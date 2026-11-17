@@ -10,7 +10,9 @@ continue processing commits in order of the queue. In practice, if we mark a sin
 SQS will keep that message at the head of the queue for retries rather than sending it to the back. We can consider
 retrying the message in place or re-sending it as a new message.
 
-We'll look at potential impacts of this. We'll look at the potential approaches we can consider to retry commits.
+We'll look at potential impacts of this. We'll look at the potential approaches we can consider to retry commits. We'll
+try to keep the scope of this to asynchronous commit retries. We'll try to avoid tieing too directly to aspects of the
+system that may change, as we intend to use this document as a reference without keeping it up to date.
 
 ## Commit types
 
