@@ -101,7 +101,7 @@ would also need to find the count of rows in the output file, either from the fi
 If ReplaceFileReferencesTransaction is not committed, the output file of compactions will be in S3, but
 not recorded in the state store.
 
-### Delayed transactions can become permanently invalid
+### Some transaction failures are expected and non-retryable
 
 If a compaction is created, and its AssignJobIdsTransaction fails or is delayed, another compaction can be created for
 the same files. If the AssignJobIdsTransaction is re-processed after the new compaction is created and its file
