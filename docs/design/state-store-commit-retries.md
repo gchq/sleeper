@@ -125,14 +125,30 @@ commit the second time it runs. We'll deal with that failed commit in a separate
 
 ### Failures in batched transactions
 
-AddFilesTransaction, AssignJobIdsTransaction and ReplaceFileReferencesTransaction all apply a batch of multiple
-operations in a single transaction. For AddFilesTransaction and ReplaceFileReferencesTransaction, or ingest and
-compaction commit, if any of the individual operations are invalid, the transaction is still applied to the log, but is
-validated at read time to decide how the state should be updated.
+All of the asynchronous transactions except SplitPartitionTransaction apply a batch of multiple operations in a single
+transaction. In all cases we need to be careful about what happens when only a part of the transaction is not valid, and
+whether this has impacts on the system.
 
-For both, if any part fails to validate the whole transaction is not applied. For AddFilesTransaction, or ingest, if any
-file is in the state store the transaction is ignored. For AssignJobIdsTransaction, or file assignment, the whole
-transaction is rejected if any of the files cannot be assigned, in order to refuse the batch as a whole.
+If we change any of this behaviour for existing transactions, then during upgrade you could get a state where different
+processes disagree on the state of the Sleeper table. We would need some handling to avoid an upgrade changing the
+behaviour of a transaction that has already been written.
+
+For AddFilesTransaction and ReplaceFileReferencesTransaction, or ingest and compaction commit, if any of the individual
+operations are invalid, the transaction is still applied to the log, but is validated at read time to decide how the
+state should be updated. The others are validated before being written to the log.
+
+For AddFilesTransaction, if any file is in the state store the whole transaction is ignored. This assumes that those
+files are only ever added in an exact duplicate of this same transaction. It also prevents phantom files unless all of
+the files have been deleted from the state.
+
+For ReplaceFileReferencesTransaction, compaction commits are applied individually. If some are invalid, those commits
+are ignored but others in the batch are still applied.
+
+For AssignJobIdsTransaction, or compaction file assignment, the whole transaction is rejected if any of the files cannot
+be assigned, in order to refuse the batch as a whole.
+
+For DeleteFilesTransaction, if any file is not in the state store the whole transaction is rejected at write time. GC
+should handle this in the next run.
 
 #### Impact when file assignment fails
 
