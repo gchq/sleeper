@@ -33,6 +33,7 @@ import static java.util.Map.entry;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_CLASS_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
 
 public class BulkImportArguments {
 
@@ -85,7 +86,8 @@ public class BulkImportArguments {
     public String sparkSubmitParametersForServerless(BulkImportPlatformSpec platformSpec) {
         return sparkSubmitParameters(
                 SparkConfigurationUtils.getSparkServerlessConfiguration(
-                        instanceProperties, platformSpec, EmrInstanceArchitecture.X86_64))
+                        instanceProperties, platformSpec, instanceProperties.getEnumValue(
+                                BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE, EmrInstanceArchitecture.class)))
                 .collect(Collectors.joining(" "));
     }
 
