@@ -340,7 +340,8 @@ can log validation failure in the committer and move on.
 
 ### Transaction body file references
 
-In the section above where we looked at [problems with duplicate delivery for transactions validated at read time](#transactions-validated-at-read-time),
+In the section above where we looked at
+[problems with duplicate delivery for transactions validated at read time](#transactions-validated-at-read-time),
 we found there are cases where the same transaction body file is used for multiple log entries. This happens if a
 transaction to add files or commit compaction gets duplicated. Because validation of these happens at read time, the
 duplicate is added to the log even if the state changes do not pass validation. We can consider some options for how to
