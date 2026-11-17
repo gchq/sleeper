@@ -251,8 +251,9 @@ For AssignJobIds, DeleteFiles and SplitPartition, a second copy of the same tran
 is added to the log, and will fail. We could consider discarding these validation failures to avoid noisy messages on
 the dead letter queue. These will be permanently invalid, and a redrive could never succeed.
 
-It's also worth noting that DeleteFiles is always safe to discard, because if the deletion is not recorded, the garbage
-collector will repeat the deletion, which is idempotent, and create a fresh commit.
+These are always safe to discard, because the system that creates them will run again and repeat the process. For
+example, if DeleteFiles is not recorded, the garbage collector will repeat the deletion, which is idempotent, and create
+a fresh commit.
 
 #### Phantom files
 
