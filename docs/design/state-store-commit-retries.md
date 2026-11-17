@@ -254,7 +254,7 @@ When an AddFilesTransaction is retried, particularly due to a redrive from the d
 may have already been successful in the past, but the files have already been compacted and garbage collected, so that
 they are no longer recorded in the state store. In this case, they will be added back to the state store again. This
 creates references to files that have already been deleted by garbage collection, and puts the table in an invalid
-state.
+state. To avoid this, we may want to avoid redrives of AddFilesTransaction, or check that the files are still present.
 
 Because the transaction is validated as a whole, this will only happen if all of the files in the transaction have been
 compacted and garbage collected.
