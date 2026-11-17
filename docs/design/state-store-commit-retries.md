@@ -34,7 +34,7 @@ The rest are always committed synchronously:
 | ClearFilesTransaction            | Client                    |
 
 The synchronous commits are always in the log before any dependent queued commit is created. There could still be
-unexpected behaviour that results from the two separate paths.
+unexpected behaviour that results from the two separate paths, and we'll look at that in its own section.
 
 ## Dependent commits
 
