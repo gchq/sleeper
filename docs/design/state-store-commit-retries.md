@@ -265,6 +265,11 @@ compactions.
 
 ### Conflict between synchronous operations and asynchronous commits
 
+In general synchronous operations have a negative impact on throughput of the state store committer, because it will
+detect a conflict when it attempts to add a transaction, and it needs to read the new transaction and retry the commit
+against the new state. This is not generally related to retries of commits on the queue, so we won't cover this in
+depth.
+
 If a manual operation in a client clears the state of a table, there can still be asynchronous commits on the queue.
 For example, if you clear partitions there may be a transaction on the queue to add files to a partition that has now
 been deleted, but those files would still be added to partitions that no longer exist. If you clear files and actually
