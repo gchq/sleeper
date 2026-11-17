@@ -464,8 +464,11 @@ need to cover that here. We can assume retries of state store commits will be fa
 batches.
 
 This seems like enough to show that if a file assignment fails, and is discarded in the state store committer, we can
-detect that a pending compaction job batch has been superseded if any of the file references have been assigned to a new
-job, or if none of the file references exist. We will want to make sure this detection occurs, and the batch is deleted.
+detect that a pending compaction job batch has been superseded. We will want to make sure this detection occurs, and the
+batch is deleted. A check would need to cover every case where a batch can become unable to ever be assigned. This would
+include if any of the file references have been assigned to a new job, or if none of the file references exist, or if
+any file references have been split such that the file is now referenced on child partitions of the original partition
+for the compaction.
 
 We also need to make sure that the compaction dispatcher will fully distinguish between the superseded case and the
 partially processed case. If a file reference is missing, it could be because it has been superseded, or it could be
