@@ -160,11 +160,13 @@ the behaviour of a transaction that has already been written.
 
 #### Impact when file assignment fails
 
-In the case where a batch of compaction jobs fails because the file assignments failed to commit to the state store,
-the commit will end up on the dead letter queue for the state store committer. It won't cause any problem for the
-system because compaction creation will run again and the files will still be compacted because they were never locked.
-It does cause a problem for the user in that if there's a redrive of failed commits, it can never succeed if any of the
-files have since been locked for compaction.
+File assignment is done for a batch of compaction jobs at a time. Compaction creation creates a transaction for the
+batch, and sends the transaction to the commit queue and the batch to the pending compaction queue. The dispatcher
+receives the pending batch and checks if the file assignment has been done before it sends the jobs.
+
+If the file assignment never commits, it won't cause a problem for the system because compaction creation will run again
+and the files will still be compacted because they were never locked. It does cause a problem for the user in that if
+there's a redrive of failed commits, it can never succeed if any of the files have since been locked for compaction.
 
 If we discard an invalid AssignJobIdsTransaction, this could result in a dead letter for the pending compaction
 batch queue, because the dispatcher uses retries to wait for the file assignment. A redrive would never succeed because
