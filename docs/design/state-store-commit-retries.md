@@ -180,7 +180,6 @@ changes for file assignment handling may affect the way we handle this, or vice 
 
 #### Impact when compaction or ingest commit fails
 
-When a compaction job is duplicated, or processed twice, the second commit cannot be applied to the state store.
 Compaction commits are applied in batches, where many commits are included in a single transaction. Each transaction can
 include both passing and failing commits. We handle this by accepting every compaction commit transaction, whether it
 contains failed commits or not, and we validate them at read-time, applying only successful commits to the state. This
@@ -189,9 +188,14 @@ also allows us to report on failed commits in the job tracker by processing thes
 This means that every failed compaction commit is always retryable, because when it is added to the log the appropriate
 action will be taken to update the state and the job tracker based on the validity of the transaction.
 
-The same thing mostly applies to ingest, since they are also validated at read-time and reported to the job tracker in
-the same way. The exception is that for ingest there's a duplicate delivery problem that can result in phantom file
-references. This is discussed below.
+For example, when a compaction job is duplicated, or the compaction runs twice, that creates two commits for the same
+compaction, and the second commit cannot be applied to the state store. The second commit will still be included in a
+transaction and added to the log, but it will be ignored at read-time.
+
+Ingest is similar in that it is also validated at read-time and reported to the job tracker in the same way, but for
+ingest if any file is already in the state store the whole transaction is ignored. There's also a duplicate delivery
+problem that can result in phantom file references, which is mitigated against by this validation as a whole. This is
+discussed below.
 
 ### Duplicate delivery problems
 
