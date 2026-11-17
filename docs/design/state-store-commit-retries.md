@@ -417,11 +417,11 @@ directly on the dead letter queue, e.g. in S3.
 
 There are a few reasons a batch of pending compaction jobs can reach the dead letter queue:
 
-| Cause                                                     | Files locked to this batch? | Can a redrive succeed?      |
-|-----------------------------------------------------------|-----------------------------|-----------------------------|
-| An input file has been assigned to a different compaction | No                          | Never                       |
-| File assignment wasn't applied to the state store in time | If assignment happens       | If assignment happens       |
-| Something failed when sending jobs                        | Yes                         | Yes, with caveats           |
+| Cause                                                           | Files locked to this batch? | Can a redrive succeed?      |
+|-----------------------------------------------------------------|-----------------------------|-----------------------------|
+| An input file reference has been split or locked to another job | No                          | Never                       |
+| File assignment wasn't applied to the state store in time       | If assignment happens       | If assignment happens       |
+| Something failed when sending jobs                              | Yes                         | Yes, with caveats           |
 
 In the first row, since the input file assignments of the whole batch are committed atomically, the dispatcher can see
 that none of its file assignments can ever succeed. From the fact that none of the files are locked to the batch, but
@@ -448,8 +448,8 @@ The handling of a slow or partially processed batch seems separate from the retr
 need to cover that here.
 
 This seems like enough to show that if a file assignment fails, and is discarded in the state store committer, we can
-detect that a pending compaction job batch has been superseded by the fact that the files have been assigned to a new
-batch. We will want to make sure this detection occurs, and the batch is deleted.
+detect that a pending compaction job batch has been superseded if any of the file references have been assigned to a new
+job, or if none of the file references exist. We will want to make sure this detection occurs, and the batch is deleted.
 
 We also need to make sure that the compaction dispatcher will fully distinguish between the superseded case and the
 partially processed case. If a file reference is missing, it could be because it has been superseded, or it could be
