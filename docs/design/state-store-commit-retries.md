@@ -51,6 +51,10 @@ after the files have been successfully committed.
 Splitting partitions doesn't operate on files at all. When a partition is split, the files on that partition become
 references on a non-leaf partition, and are pushed down the tree later as a separate operation.
 
+### AssignJobIds vs ReplaceFileReferences
+
+The compaction dispatcher only sends compaction jobs to be run once the jobs are assigned to their input files.
+
 ### ReplaceFileReferences vs DeleteFiles
 
 The garbage collector only looks at files that have no remaining references, which can only be the case after the file
