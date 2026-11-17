@@ -2532,28 +2532,112 @@
           "Properties": {
             "TemplateURL": "removed-for-test",
             "Parameters": {
-              "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitQueue12F5A53FArn": {
-                "Fn::GetAtt": [
-                  "IngestBatcherNestedStackIngestBatcherNestedStackResource7DE08FC6",
-                  "Outputs.TestInstanceIngestBatcherIngestBatcherSubmitQueue12F5A53FArn"
-                ]
-              },
               "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryTrackingTableD59EF8F3Arn": {
                 "Fn::GetAtt": [
                   "QueryNestedStackQueryNestedStackResource4085691D",
                   "Outputs.TestInstanceQueryQueryTrackingTableD59EF8F3Arn"
                 ]
               },
-              "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchQCAC69541Arn": {
-                "Fn::GetAtt": [
-                  "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
-                  "Outputs.TestInstanceCompactionPendingCompactionJobBatchQCAC69541Arn"
-                ]
-              },
               "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotCreationTriggerCurrentVersion72902924Ref": {
                 "Fn::GetAtt": [
                   "TransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceD16A5FCE",
                   "Outputs.TestInstanceTransactionLogSnapshotTransactionLogSnapshotCreationTriggerCurrentVersion72902924Ref"
+                ]
+              },
+              "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Ref": {
+                "Fn::GetAtt": [
+                  "LoggingNestedStackLoggingNestedStackResourceBF8F7D28",
+                  "Outputs.TestInstanceLoggingstatestorecommitterCB6F35F0Ref"
+                ]
+              },
+              "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CRef": {
+                "Fn::GetAtt": [
+                  "IngestNestedStackIngestNestedStackResourceD6AFAC89",
+                  "Outputs.TestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CRef"
+                ]
+              },
+              "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn": {
+                "Fn::GetAtt": [
+                  "TableIndexNestedStackTableIndexNestedStackResource55615825",
+                  "Outputs.TestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                ]
+              },
+              "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitBatchQueueC09A0741Arn": {
+                "Fn::GetAtt": [
+                  "PartitionSplittingNestedStackPartitionSplittingNestedStackResource67512590",
+                  "Outputs.TestInstancePartitionSplittingFindPartitionsToSplitBatchQueueC09A0741Arn"
+                ]
+              },
+              "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionTriggerCurrentVersionEB512F8DRef": {
+                "Fn::GetAtt": [
+                  "TransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceD16A5FCE",
+                  "Outputs.TestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionTriggerCurrentVersionEB512F8DRef"
+                ]
+              },
+              "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueue61C01E76Arn": {
+                "Fn::GetAtt": [
+                  "QueryQueueNestedStackQueryQueueNestedStackResource093FA017",
+                  "Outputs.TestInstanceQueryQueue61C01E76Arn"
+                ]
+              },
+              "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Arn": {
+                "Fn::GetAtt": [
+                  "TransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceD16A5FCE",
+                  "Outputs.TestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Arn"
+                ]
+              },
+              "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherJobCreationLambdaCurrentVersion9A27FA14Ref": {
+                "Fn::GetAtt": [
+                  "IngestBatcherNestedStackIngestBatcherNestedStackResource7DE08FC6",
+                  "Outputs.TestInstanceIngestBatcherIngestBatcherJobCreationLambdaCurrentVersion9A27FA14Ref"
+                ]
+              },
+              "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FArn": {
+                "Fn::GetAtt": [
+                  "BulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceB972B25C",
+                  "Outputs.TestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FArn"
+                ]
+              },
+              "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueue6BB38617Arn": {
+                "Fn::GetAtt": [
+                  "TransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource81F69088",
+                  "Outputs.TestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueue6BB38617Arn"
+                ]
+              },
+              "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn": {
+                "Fn::GetAtt": [
+                  "TransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource8969808F",
+                  "Outputs.TestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                ]
+              },
+              "referencetoTestInstanceCompactionTrackerNestedStackCompactionTrackerNestedStackResource6AA07358OutputsTestInstanceCompactionTrackerDynamoDBCompactionJobLookupTable4CC99F10Arn": {
+                "Fn::GetAtt": [
+                  "CompactionTrackerNestedStackCompactionTrackerNestedStackResource452C5BE7",
+                  "Outputs.TestInstanceCompactionTrackerDynamoDBCompactionJobLookupTable4CC99F10Arn"
+                ]
+              },
+              "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobQueue5B390950Arn": {
+                "Fn::GetAtt": [
+                  "TableMetricsNestedStackTableMetricsNestedStackResource07C9A22F",
+                  "Outputs.TestInstanceTableMetricsMetricsJobQueue5B390950Arn"
+                ]
+              },
+              "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Arn": {
+                "Fn::GetAtt": [
+                  "QueryNestedStackQueryNestedStackResource4085691D",
+                  "Outputs.TestInstanceQueryQueryResultsQueue40C89520Arn"
+                ]
+              },
+              "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitQueue12F5A53FArn": {
+                "Fn::GetAtt": [
+                  "IngestBatcherNestedStackIngestBatcherNestedStackResource7DE08FC6",
+                  "Outputs.TestInstanceIngestBatcherIngestBatcherSubmitQueue12F5A53FArn"
+                ]
+              },
+              "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchQCAC69541Arn": {
+                "Fn::GetAtt": [
+                  "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
+                  "Outputs.TestInstanceCompactionPendingCompactionJobBatchQCAC69541Arn"
                 ]
               },
               "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGarbageCollectorTriggerCurrentVersionAA3B84DDRef": {
@@ -2572,12 +2656,6 @@
                 "Fn::GetAtt": [
                   "TableDataNestedStackTableDataNestedStackResourceBB9D1CD9",
                   "Outputs.TestInstanceTableDataTableDataBucket68FE959DArn"
-                ]
-              },
-              "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CRef": {
-                "Fn::GetAtt": [
-                  "IngestNestedStackIngestNestedStackResourceD6AFAC89",
-                  "Outputs.TestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CRef"
                 ]
               },
               "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Arn": {
@@ -2604,12 +2682,6 @@
                   "Outputs.TestInstanceStateStoreCommitterCurrentVersionSqsEventSourceTestInstanceStateStoreCommitterStateStoreCommitterQueue33B0078EDD58441ARef"
                 ]
               },
-              "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn": {
-                "Fn::GetAtt": [
-                  "TableIndexNestedStackTableIndexNestedStackResource55615825",
-                  "Outputs.TestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
-                ]
-              },
               "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobQueueD56E334DArn": {
                 "Fn::GetAtt": [
                   "GarbageCollectorNestedStackGarbageCollectorNestedStackResource6471D6BF",
@@ -2634,18 +2706,6 @@
                   "Outputs.TestInstanceIngestIngestJobQueue349E97BCArn"
                 ]
               },
-              "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitBatchQueueC09A0741Arn": {
-                "Fn::GetAtt": [
-                  "PartitionSplittingNestedStackPartitionSplittingNestedStackResource67512590",
-                  "Outputs.TestInstancePartitionSplittingFindPartitionsToSplitBatchQueueC09A0741Arn"
-                ]
-              },
-              "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionTriggerCurrentVersionEB512F8DRef": {
-                "Fn::GetAtt": [
-                  "TransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceD16A5FCE",
-                  "Outputs.TestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionTriggerCurrentVersionEB512F8DRef"
-                ]
-              },
               "referencetoTestInstanceStateStoreCommitterNestedStackStateStoreCommitterNestedStackResourceCC49BA8COutputsTestInstanceStateStoreCommitterStateStoreCommitterQueue595DA4CEArn": {
                 "Fn::GetAtt": [
                   "StateStoreCommitterNestedStackStateStoreCommitterNestedStackResource0A97A9D2",
@@ -2662,18 +2722,6 @@
                 "Fn::GetAtt": [
                   "BulkImportBucketNestedStackBulkImportBucketNestedStackResource59EDB97D",
                   "Outputs.TestInstanceBulkImportBucket58F540BAArn"
-                ]
-              },
-              "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueue61C01E76Arn": {
-                "Fn::GetAtt": [
-                  "QueryQueueNestedStackQueryQueueNestedStackResource093FA017",
-                  "Outputs.TestInstanceQueryQueue61C01E76Arn"
-                ]
-              },
-              "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Arn": {
-                "Fn::GetAtt": [
-                  "TransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceD16A5FCE",
-                  "Outputs.TestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Arn"
                 ]
               },
               "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingJobQueueCBD86C93Arn": {
@@ -2694,28 +2742,10 @@
                   "Outputs.TestInstancePartitionSplittingFindPartitionsToSplitTriggerLambdaCurrentVersionD6930CA9Ref"
                 ]
               },
-              "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherJobCreationLambdaCurrentVersion9A27FA14Ref": {
-                "Fn::GetAtt": [
-                  "IngestBatcherNestedStackIngestBatcherNestedStackResource7DE08FC6",
-                  "Outputs.TestInstanceIngestBatcherIngestBatcherJobCreationLambdaCurrentVersion9A27FA14Ref"
-                ]
-              },
-              "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FArn": {
-                "Fn::GetAtt": [
-                  "BulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceB972B25C",
-                  "Outputs.TestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FArn"
-                ]
-              },
               "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionTriggerCurrentVersion5F5C5690Ref": {
                 "Fn::GetAtt": [
                   "TransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource81F69088",
                   "Outputs.TestInstanceTransactionLogTransactionTransactionLogTransactionDeletionTriggerCurrentVersion5F5C5690Ref"
-                ]
-              },
-              "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueue6BB38617Arn": {
-                "Fn::GetAtt": [
-                  "TransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource81F69088",
-                  "Outputs.TestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueue6BB38617Arn"
                 ]
               },
               "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitQueue4935D065Arn": {
@@ -2728,12 +2758,6 @@
                 "Fn::GetAtt": [
                   "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
                   "Outputs.TestInstanceCompactionCompactionTasksCreatorCurrentVersion57E78EC7Ref"
-                ]
-              },
-              "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn": {
-                "Fn::GetAtt": [
-                  "TransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource8969808F",
-                  "Outputs.TestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
                 ]
               },
               "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Arn": {
@@ -2752,12 +2776,6 @@
                 "Fn::GetAtt": [
                   "CompactionTrackerNestedStackCompactionTrackerNestedStackResource452C5BE7",
                   "Outputs.TestInstanceCompactionTrackerDynamoDBCompactionJobUpdatesTable0B49652AArn"
-                ]
-              },
-              "referencetoTestInstanceCompactionTrackerNestedStackCompactionTrackerNestedStackResource6AA07358OutputsTestInstanceCompactionTrackerDynamoDBCompactionJobLookupTable4CC99F10Arn": {
-                "Fn::GetAtt": [
-                  "CompactionTrackerNestedStackCompactionTrackerNestedStackResource452C5BE7",
-                  "Outputs.TestInstanceCompactionTrackerDynamoDBCompactionJobLookupTable4CC99F10Arn"
                 ]
               },
               "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogAllSnapshotsTable2337E270Arn": {
@@ -2784,12 +2802,6 @@
                   "Outputs.TestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
                 ]
               },
-              "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobQueue5B390950Arn": {
-                "Fn::GetAtt": [
-                  "TableMetricsNestedStackTableMetricsNestedStackResource07C9A22F",
-                  "Outputs.TestInstanceTableMetricsMetricsJobQueue5B390950Arn"
-                ]
-              },
               "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationQueue04DB707FArn": {
                 "Fn::GetAtt": [
                   "CompactionNestedStackCompactionNestedStackResourceB3AC5D6A",
@@ -2800,12 +2812,6 @@
                 "Fn::GetAtt": [
                   "TransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource8969808F",
                   "Outputs.TestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
-                ]
-              },
-              "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Arn": {
-                "Fn::GetAtt": [
-                  "QueryNestedStackQueryNestedStackResource4085691D",
-                  "Outputs.TestInstanceQueryQueryResultsQueue40C89520Arn"
                 ]
               },
               "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobsCreationTriggerCurrentVersion5E26F8A5Ref": {
@@ -4406,7 +4412,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
+              "S3Key": "5c9fd00ba20b9f0f8161f2bd2ccae0f9c29df2b76d34155b8bf281abc354adc8.zip"
             },
             "Tags": [
               {
@@ -4542,7 +4548,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
+              "S3Key": "5c9fd00ba20b9f0f8161f2bd2ccae0f9c29df2b76d34155b8bf281abc354adc8.zip"
             },
             "Tags": [
               {
@@ -4985,7 +4991,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
+              "S3Key": "5c9fd00ba20b9f0f8161f2bd2ccae0f9c29df2b76d34155b8bf281abc354adc8.zip"
             },
             "Tags": [
               {
@@ -5003,16 +5009,58 @@
     },
     "Policies": {
       "Parameters": {
-        "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitQueue12F5A53FArn": {
-          "Type": "String"
-        },
         "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryTrackingTableD59EF8F3Arn": {
           "Type": "String"
         },
-        "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchQCAC69541Arn": {
+        "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotCreationTriggerCurrentVersion72902924Ref": {
           "Type": "String"
         },
-        "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotCreationTriggerCurrentVersion72902924Ref": {
+        "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Ref": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CRef": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn": {
+          "Type": "String"
+        },
+        "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitBatchQueueC09A0741Arn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionTriggerCurrentVersionEB512F8DRef": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueue61C01E76Arn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Arn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherJobCreationLambdaCurrentVersion9A27FA14Ref": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FArn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueue6BB38617Arn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceCompactionTrackerNestedStackCompactionTrackerNestedStackResource6AA07358OutputsTestInstanceCompactionTrackerDynamoDBCompactionJobLookupTable4CC99F10Arn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobQueue5B390950Arn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Arn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitQueue12F5A53FArn": {
+          "Type": "String"
+        },
+        "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchQCAC69541Arn": {
           "Type": "String"
         },
         "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGarbageCollectorTriggerCurrentVersionAA3B84DDRef": {
@@ -5022,9 +5070,6 @@
           "Type": "String"
         },
         "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DArn": {
-          "Type": "String"
-        },
-        "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CRef": {
           "Type": "String"
         },
         "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Arn": {
@@ -5039,9 +5084,6 @@
         "referencetoTestInstanceStateStoreCommitterNestedStackStateStoreCommitterNestedStackResourceCC49BA8COutputsTestInstanceStateStoreCommitterCurrentVersionSqsEventSourceTestInstanceStateStoreCommitterStateStoreCommitterQueue33B0078EDD58441ARef": {
           "Type": "String"
         },
-        "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn": {
-          "Type": "String"
-        },
         "referencetoTestInstanceGarbageCollectorNestedStackGarbageCollectorNestedStackResourceF5AFBC27OutputsTestInstanceGarbageCollectorGCJobQueueD56E334DArn": {
           "Type": "String"
         },
@@ -5054,12 +5096,6 @@
         "referencetoTestInstanceIngestNestedStackIngestNestedStackResource002D40ECOutputsTestInstanceIngestIngestJobQueue349E97BCArn": {
           "Type": "String"
         },
-        "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitBatchQueueC09A0741Arn": {
-          "Type": "String"
-        },
-        "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionTriggerCurrentVersionEB512F8DRef": {
-          "Type": "String"
-        },
         "referencetoTestInstanceStateStoreCommitterNestedStackStateStoreCommitterNestedStackResourceCC49BA8COutputsTestInstanceStateStoreCommitterStateStoreCommitterQueue595DA4CEArn": {
           "Type": "String"
         },
@@ -5067,12 +5103,6 @@
           "Type": "String"
         },
         "referencetoTestInstanceBulkImportBucketNestedStackBulkImportBucketNestedStackResource454CC05EOutputsTestInstanceBulkImportBucket58F540BAArn": {
-          "Type": "String"
-        },
-        "referencetoTestInstanceQueryQueueNestedStackQueryQueueNestedStackResource266433F9OutputsTestInstanceQueryQueue61C01E76Arn": {
-          "Type": "String"
-        },
-        "referencetoTestInstanceTransactionLogSnapshotNestedStackTransactionLogSnapshotNestedStackResourceE2C25218OutputsTestInstanceTransactionLogSnapshotTransactionLogSnapshotQueue3EEC9B32Arn": {
           "Type": "String"
         },
         "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingJobQueueCBD86C93Arn": {
@@ -5084,25 +5114,13 @@
         "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitTriggerLambdaCurrentVersionD6930CA9Ref": {
           "Type": "String"
         },
-        "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherJobCreationLambdaCurrentVersion9A27FA14Ref": {
-          "Type": "String"
-        },
-        "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessBulkImportEMRServerlessJobQueueA66BE23FArn": {
-          "Type": "String"
-        },
         "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionTriggerCurrentVersion5F5C5690Ref": {
-          "Type": "String"
-        },
-        "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueue6BB38617Arn": {
           "Type": "String"
         },
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionCommitQueue4935D065Arn": {
           "Type": "String"
         },
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionTasksCreatorCurrentVersion57E78EC7Ref": {
-          "Type": "String"
-        },
-        "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn": {
           "Type": "String"
         },
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Arn": {
@@ -5112,9 +5130,6 @@
           "Type": "String"
         },
         "referencetoTestInstanceCompactionTrackerNestedStackCompactionTrackerNestedStackResource6AA07358OutputsTestInstanceCompactionTrackerDynamoDBCompactionJobUpdatesTable0B49652AArn": {
-          "Type": "String"
-        },
-        "referencetoTestInstanceCompactionTrackerNestedStackCompactionTrackerNestedStackResource6AA07358OutputsTestInstanceCompactionTrackerDynamoDBCompactionJobLookupTable4CC99F10Arn": {
           "Type": "String"
         },
         "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogAllSnapshotsTable2337E270Arn": {
@@ -5129,16 +5144,10 @@
         "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn": {
           "Type": "String"
         },
-        "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobQueue5B390950Arn": {
-          "Type": "String"
-        },
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobCreationQueue04DB707FArn": {
           "Type": "String"
         },
         "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn": {
-          "Type": "String"
-        },
-        "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Arn": {
           "Type": "String"
         },
         "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobsCreationTriggerCurrentVersion5E26F8A5Ref": {
@@ -7313,9 +7322,26 @@
                     "logs:DescribeLogStreams"
                   ],
                   "Effect": "Allow",
-                  "Resource": {
-                    "Ref": "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Arn"
-                  }
+                  "Resource": [
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition"
+                          },
+                          ":logs:test-region:test-account:log-group:",
+                          {
+                            "Ref": "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Ref"
+                          }
+                        ]
+                      ]
+                    },
+                    {
+                      "Ref": "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Arn"
+                    }
+                  ]
                 },
                 {
                   "Action": [
@@ -7323,9 +7349,26 @@
                     "logs:GetQueryResults"
                   ],
                   "Effect": "Allow",
-                  "Resource": {
-                    "Ref": "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Arn"
-                  }
+                  "Resource": [
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:",
+                          {
+                            "Ref": "AWS::Partition"
+                          },
+                          ":logs:test-region:test-account:log-group:",
+                          {
+                            "Ref": "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Ref"
+                          }
+                        ]
+                      ]
+                    },
+                    {
+                      "Ref": "referencetoTestInstanceLoggingNestedStackLoggingNestedStackResourceF6F78B9BOutputsTestInstanceLoggingstatestorecommitterCB6F35F0Arn"
+                    }
+                  ]
                 },
                 {
                   "Action": "cloudwatch:GetMetricData",
@@ -13728,7 +13771,7 @@
             "Handler": "__entrypoint__.handler",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "3fc3a788e8730811e7ec758fb84134e1e24877f8248901484d1e046dee803b5a.zip"
+              "S3Key": "0f9ba37e959a44fec66494f0055b633ee8c198be61d538a0b9d8e47305ae4af6.zip"
             }
           }
         },
@@ -14623,7 +14666,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
+              "S3Key": "5c9fd00ba20b9f0f8161f2bd2ccae0f9c29df2b76d34155b8bf281abc354adc8.zip"
             },
             "Tags": [
               {
@@ -25256,7 +25299,7 @@
                   {
                     "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherSubmitDLQ615E0449QueueName"
                   },
-                  "\",{\"label\":\"Dead letters for ingest batcher submission\",\"stat\":\"Sum\"}]],\"period\":60}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":3,\"properties\":{\"markdown\":\"## Standard Ingest\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":4,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsSubmitted\",\"region\":\"",
+                  "\",{\"label\":\"Dead letters for ingest batcher submission\",\"stat\":\"Sum\"}]],\"period\":60}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":3,\"properties\":{\"markdown\":\"## Standard Ingest\",\"background\":\"transparent\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":4,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsSubmitted\",\"region\":\"",
                   {
                     "Ref": "AWS::Region"
                   },
@@ -25284,7 +25327,7 @@
                   {
                     "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
                   },
-                  "\"}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":0,\"y\":11,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Request Counts\",\"region\":\"",
+                  "\",\"background\":\"transparent\"}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":0,\"y\":11,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Request Counts\",\"region\":\"",
                   {
                     "Ref": "AWS::Region"
                   },
@@ -25328,7 +25371,7 @@
                   {
                     "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
                   },
-                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}]],\"yAxis\":{\"left\":{\"min\":0}}}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":17,\"properties\":{\"markdown\":\"## Compactions and Splits\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":18,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsSubmitted\",\"region\":\"",
+                  "\",\"FilterId\",\"all\",{\"period\":60,\"stat\":\"Sum\"}]],\"yAxis\":{\"left\":{\"min\":0}}}},{\"type\":\"text\",\"width\":24,\"height\":1,\"x\":0,\"y\":17,\"properties\":{\"markdown\":\"## Compactions and Splits\",\"background\":\"transparent\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":18,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberOfJobsSubmitted\",\"region\":\"",
                   {
                     "Ref": "AWS::Region"
                   },
@@ -26504,7 +26547,7 @@
             "Handler": "framework.onEvent",
             "Code": {
               "S3Bucket": "cdk-hnb659fds-assets-test-account-test-region",
-              "S3Key": "e16ffb3b34af185b8b30c88fdb19faa13b6c42bb38580485c4e84b384ee48b63.zip"
+              "S3Key": "5c9fd00ba20b9f0f8161f2bd2ccae0f9c29df2b76d34155b8bf281abc354adc8.zip"
             },
             "Tags": [
               {
