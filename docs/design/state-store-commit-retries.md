@@ -360,7 +360,8 @@ log entries.
    snapshot being created, so if snapshots are disabled for any reason this would cause problems.
 
 Option 5 seems appealing because of its simplicity. We'd need to be careful about documenting the invariant we rely on
-for this.
+for this. It would also mean that if a transaction body file is lost for any other reason, we would lose data. This may
+be better or worse than a louder failure, depending on how we handle it.
 
 In the case where phantom files are added back to the state store, option 5 would also mean that those are ignored if it
 used a transaction body file, and that has already been deleted. This could also mean that different processes would
