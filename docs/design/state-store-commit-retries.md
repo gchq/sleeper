@@ -39,7 +39,7 @@ The synchronous commits are always in the log before any dependent queued commit
 unexpected behaviour that results from the two separate paths, and we'll look at that in
 [its own section](#conflict-between-synchronous-operations-and-asynchronous-commits).
 
-## Dependent commits
+## Dependencies between commits
 
 Every producer reads the current state of the state store, and commits are created based on that state. The producers
 never take into account any state that is still in the commit queue. We'll go through each of the dependencies.
