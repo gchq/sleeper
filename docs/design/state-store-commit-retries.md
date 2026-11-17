@@ -11,7 +11,7 @@ SQS will keep that message at the head of the queue for retries rather than send
 retrying the message in place or re-sending it as a new message.
 
 We'll look at potential impacts of this. We'll look at the potential approaches we can consider to retry commits. We'll
-try to keep the scope of this to asynchronous commit retries. We'll try to avoid tieing too directly to aspects of the
+try to keep the scope of this to asynchronous commit retries. We'll try to avoid tying too directly to aspects of the
 system that may change, as we intend to use this document as a reference without keeping it up to date.
 
 ## Commit types
@@ -55,7 +55,7 @@ references on a non-leaf partition, and are pushed down the tree later as a sepa
 
 ### AssignJobIds vs ReplaceFileReferences
 
-The compaction dispatcher only sends compaction jobs to be run once the jobs are assigned to their input files.
+The compaction dispatcher only sends compaction jobs to be run once the input files are assigned to the jobs.
 
 ### ReplaceFileReferences vs DeleteFiles
 
@@ -92,14 +92,12 @@ from the processes that wrote these files. In practice it could be very difficul
 definitively.
 
 For ReplaceFileReferencesTransaction, if it is not committed then all the compactions' input files are left locked for
-compaction. They will never be compacted again until this is resolved. It would be possible to detect this by looking at
-the file references in the state store. You could potentially reconstruct a compaction job from this. For the output
-filename, you could re-derive it from the partition ID and job ID, and check if the output file exists in S3. You could
-potentially recreate a ReplaceFileReferencesTransaction from the available data even if the commit has been deleted. You
-would also need to find the count of rows in the output file, either from the file or from the job tracker.
-
-If ReplaceFileReferencesTransaction is not committed, the output file of compactions will be in S3, but
-not recorded in the state store.
+compaction. They will never be compacted again until this is resolved. Additionally, the compactions' output files will
+be in S3, but not recorded in the state store. It would be possible to detect stuck file references in the state store.
+You could potentially reconstruct a compaction job from this, and/or recreate a ReplaceFileReferencesTransaction from
+the available data even if the commit has been deleted. For the output filename, you could re-derive it from the
+partition ID and job ID, and check if the output file exists in S3. You would also need to find the count of rows in the
+output file, either from the file or from the job tracker.
 
 ### Some transaction failures are expected and non-retryable
 
