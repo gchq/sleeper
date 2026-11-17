@@ -34,6 +34,7 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
+import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.artefacts.SleeperInstanceArtefacts;
@@ -76,6 +77,10 @@ public final class WebSocketQueryStack extends NestedStack {
                 .timeout(Duration.seconds(29)));
 
         queryQueueStack.grantSendMessages(webSocketApiHandler);
+        // Import the bucket by name rather than referencing it in the query stack, as the query stack already
+        // depends on this stack for access to the WebSocket API, and a reference back would create a cycle.
+        Bucket.fromBucketName(this, "QueryResultsBucket", QueryStack.queryResultsBucketName(instanceProperties))
+                .grantPut(webSocketApiHandler);
         coreStacks.grantReadTablesConfig(webSocketApiHandler);
 
         CfnApi api = CfnApi.Builder.create(this, "api")

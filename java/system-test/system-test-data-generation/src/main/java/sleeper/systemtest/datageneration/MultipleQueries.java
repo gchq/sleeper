@@ -88,7 +88,7 @@ public class MultipleQueries {
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient);
         QueryLambdaClient queryLambdaClient = new QueryLambdaClient(
                 systemTestProperties, tableIndex, tablePropertiesProvider,
-                QuerySender.toSqs(systemTestProperties, tablePropertiesProvider, sqsClient),
+                QuerySender.toSqs(systemTestProperties, tablePropertiesProvider, sqsClient, s3Client),
                 new DynamoDBQueryTracker(systemTestProperties, dynamoClient),
                 ConsoleInput.stdIn(), ConsoleOutput.stdOut());
 

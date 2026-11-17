@@ -36,9 +36,11 @@ import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryMessageSerDe;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.tracker.QueryStatusReportListener;
+import sleeper.query.runner.S3QueryJsonStore;
 import sleeper.query.runner.output.WebSocketOutput;
 
 import java.net.URI;
@@ -55,6 +57,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryProcessorLambda.class);
 
     private final QuerySerDe serde;
+    private final QueryMessageSerDe messageSerDe;
     private final SqsClient sqsClient;
     private final InstanceProperties instanceProperties;
 
@@ -71,10 +74,11 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         this.serde = new QuerySerDe(tablePropertiesProvider);
+        this.messageSerDe = S3QueryJsonStore.createMessageSerDe(instanceProperties, serde, s3Client);
     }
 
     public void submitQueryForProcessing(Query query) {
-        String message = serde.toJson(query);
+        String message = messageSerDe.toMessage(query);
 
         sqsClient.sendMessage(SendMessageRequest.builder()
                 .queueUrl(instanceProperties.get(CdkDefinedInstanceProperty.QUERY_QUEUE_URL))

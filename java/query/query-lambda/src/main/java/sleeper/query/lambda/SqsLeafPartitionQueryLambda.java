@@ -40,6 +40,7 @@ import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 import sleeper.query.datafusion.DataFusionQueryFunctions;
+import sleeper.query.runner.S3QueryJsonStore;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
@@ -84,7 +85,8 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
                 Executors.newFixedThreadPool(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS)), hadoopProvider);
         LeafPartitionRowRetrieverProvider dataFusionProvider = dataFusionProviderFactory.apply(instanceProperties);
         QueryStatusReportListener queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
-        messageHandler = new QueryMessageHandler(tablePropertiesProvider, queryTracker);
+        messageHandler = new QueryMessageHandler(
+                S3QueryJsonStore.createMessageSerDe(instanceProperties, tablePropertiesProvider, s3Client), queryTracker);
         processor = new SqsLeafPartitionQueryProcessor(tablePropertiesProvider,
                 QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider),
                 new AwsResultsOutputProvider(instanceProperties, hadoopProvider, sqsClient),
