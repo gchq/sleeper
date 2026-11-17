@@ -161,11 +161,6 @@ rejected at write time. GC should handle this in the next run.
 
 #### Impact when file assignment fails
 
-In the case where a batch of compaction jobs fails all retries to send, it will reach the dead letter queue. This needs
-manual intervention to unlock the files or proceed with the compaction jobs, but it's not necessarily related to state
-store commits, except where those changes impact this functionality or vice versa. We have a separate issue for that
-analysis: https://github.com/gchq/sleeper/issues/8655
-
 In the case where a batch of compaction jobs fails because the file assignments failed to commit to the state store,
 the commit will end up on the dead letter queue for the state store committer. It won't cause any problem for the
 system because compaction creation will run again and the files will still be compacted because they were never locked.
@@ -177,6 +172,10 @@ batch queue, but a redrive could never succeed because the commit to assign the 
 don't discard an invalid AssignJobIdsTransaction, it can still become permanently invalid if the input files are
 reassigned, and if that happens a redrive of the compaction creation batch still can never succeed. We could consider
 handling for this.
+
+There's also a case where a batch of compaction jobs is successfully assigned, and the dispatcher attempts to send the
+jobs to the compaction job queue, but it fails all retries for this. This is not related to state store commits, but the
+changes for file assignment handling may affect the way we handle this, or vice versa.
 
 #### Impact when compaction or ingest commit fails
 
