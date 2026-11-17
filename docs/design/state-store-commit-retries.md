@@ -412,11 +412,11 @@ directly on the dead letter queue, e.g. in S3.
 
 There are a few reasons a batch of pending compaction jobs can reach the dead letter queue:
 
-| Cause                                                             | Files locked to this batch? | Can a redrive succeed?      |
-|-------------------------------------------------------------------|-----------------------------|-----------------------------|
-| An input file is in another compaction, or has been deleted by GC | No                          | Never                       |
-| File assignment wasn't applied to the state store in time         | If assignment happens       | If assignment happens       |
-| Something failed when sending jobs                                | Yes                         | Yes, with caveats           |
+| Cause                                                     | Files locked to this batch? | Can a redrive succeed?      |
+|-----------------------------------------------------------|-----------------------------|-----------------------------|
+| An input file has been assigned to a different compaction | No                          | Never                       |
+| File assignment wasn't applied to the state store in time | If assignment happens       | If assignment happens       |
+| Something failed when sending jobs                        | Yes                         | Yes, with caveats           |
 
 In the first row, since the input file assignments of the whole batch are committed atomically, the dispatcher can see
 that none of its file assignments can ever succeed. From the fact that none of the files are locked to the batch, but
