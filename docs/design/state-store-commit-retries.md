@@ -137,10 +137,6 @@ All of the asynchronous transactions except SplitPartitionTransaction apply a ba
 transaction. In all cases we need to be careful about what happens when only a part of the transaction is not valid, and
 whether this has impacts on the system.
 
-If we change any validation behaviour for existing transactions, then during upgrade you could get a state where
-different processes disagree on the state of the Sleeper table. We would need some handling to avoid an upgrade changing
-the behaviour of a transaction that has already been written.
-
 For AddFilesTransaction and ReplaceFileReferencesTransaction, or ingest and compaction commit, if any of the individual
 operations are invalid, the transaction is still applied to the log, but is validated at read time to decide how the
 state should be updated. The others are validated before being written to the log.
@@ -157,6 +153,10 @@ be assigned, in order to refuse the batch as a whole.
 
 For DeleteFilesTransaction, if any file is not in the state store, or still has references, the whole transaction is
 rejected at write time. GC should handle this in the next run.
+
+If we change any validation behaviour for existing transactions, then during upgrade you could get a state where
+different processes disagree on the state of the Sleeper table. We would need some handling to avoid an upgrade changing
+the behaviour of a transaction that has already been written.
 
 #### Impact when file assignment fails
 
