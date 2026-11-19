@@ -23,5 +23,6 @@ PYTHON_DIR=$(cd "$SCRIPTS_DIR" && cd ../python && pwd)
 echo "Setting up virtual environment for Python API"
 python3 -m venv "$PYTHON_DIR/env"
 source "$PYTHON_DIR/env/bin/activate"
+pip3 install --upgrade pip
 pip3 install "$PYTHON_DIR"
 deactivate
