@@ -84,7 +84,7 @@ public class FilesStatusReportTestBase {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             FileStatusReporter reporter = getReporter.apply(
                     new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
-            new FilesStatusReport(stateStore, maxFilesWithNoReferences, true, reporter).run();
+            new FilesStatusReport(stateStore, maxFilesWithNoReferences, detailLevel, reporter).run();
             return os.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

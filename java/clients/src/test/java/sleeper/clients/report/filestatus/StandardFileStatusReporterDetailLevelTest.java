@@ -61,10 +61,17 @@ public class StandardFileStatusReporterDetailLevelTest extends FilesStatusReport
     }
 
     @Test
-    void shouldShowReferencesOnly() {
+    void shouldShowStatsOnly() {
+        // When / Then
+        Approvals.verify(standardReportString(FileStatusDetailLevel.STATS_ONLY),
+                new Options().forFile().withBaseName("detailLevelStatsOnly"));
+    }
+
+    @Test
+    void shouldShowReferences() {
         // When / Then
         Approvals.verify(standardReportString(FileStatusDetailLevel.REFERENCES),
-                new Options().forFile().withBaseName("detailLevelReferencesOnly"));
+                new Options().forFile().withBaseName("detailLevelReferences"));
     }
 
 }

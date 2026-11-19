@@ -54,15 +54,21 @@ public class FilesStatusReport {
             .build();
 
     private final int maxNumberOfFilesWithNoReferencesToCount;
-    private final boolean verbose;
+    private final FileStatusDetailLevel detailLevel;
     private final FileStatusReporter fileStatusReporter;
     private final FileStatusCollector fileStatusCollector;
 
     public FilesStatusReport(
             StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, boolean verbose,
             FileStatusReporter fileStatusReporter) {
+        this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY, fileStatusReporter);
+    }
+
+    public FilesStatusReport(
+            StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, FileStatusDetailLevel detailLevel,
+            FileStatusReporter fileStatusReporter) {
         this.maxNumberOfFilesWithNoReferencesToCount = maxNumberOfFilesWithNoReferencesToCount;
-        this.verbose = verbose;
+        this.detailLevel = detailLevel;
         this.fileStatusReporter = fileStatusReporter;
         this.fileStatusCollector = new FileStatusCollector(stateStore);
     }
@@ -72,7 +78,7 @@ public class FilesStatusReport {
      */
     public void run() {
         TableFilesStatus tableStatus = fileStatusCollector.run(maxNumberOfFilesWithNoReferencesToCount);
-        fileStatusReporter.report(tableStatus, verbose ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY);
+        fileStatusReporter.report(tableStatus, detailLevel);
     }
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()

@@ -1,0 +1,14 @@
+
+Files Status Report:
+--------------------------
+There are 3 leaf partitions and 2 non-leaf partitions
+Number of files: 9
+Number of files with references: 7
+Number of files with no references, which will be garbage collected: 2
+Number of references to files: 7
+Number of file references in leaf partitions: min = 1, max = 5, mean = 3.000, median = 3.000, 90th percentile = 4.600, 99th percentile = 4.960, total = 6
+Number of file references in non-leaf partitions: min = 1, max = 1, mean = 1.000, median = 1.000, 90th percentile = 1.000, 99th percentile = 1.000, total = 1
+Number of rows referenced in partitions: 800
+Number of rows in non-leaf partitions: 100
+Number of rows in leaf partitions: 700
+Percentage of rows in leaf partitions: 87.5
