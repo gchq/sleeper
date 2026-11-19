@@ -38,6 +38,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_OPTIMIZATION;
 import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
@@ -139,6 +140,29 @@ public class SleeperPropertiesValidationTest {
             // When / Then
             assertThatThrownBy(instanceProperties::validate)
                     .hasMessageContaining(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName());
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"X86_64", "ARM64", "x86_64", "arm64"})
+        void shouldPassValidationForSupportedEmrServerlessArchitecture(String architecture) {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE, architecture);
+
+            // When / Then
+            assertThatCode(instanceProperties::validate).doesNotThrowAnyException();
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"X86_64,ARM64", "OTHER"})
+        void shouldFailValidationForUnsupportedEmrServerlessArchitecture(String architecture) {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE, architecture);
+
+            // When / Then
+            assertThatThrownBy(instanceProperties::validate)
+                    .hasMessageContaining(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE.getPropertyName());
         }
     }
 

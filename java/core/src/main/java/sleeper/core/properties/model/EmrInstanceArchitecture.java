@@ -37,4 +37,14 @@ public enum EmrInstanceArchitecture {
         return SleeperPropertyValueUtils.readList(input).stream()
                 .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
     }
+
+    /**
+     * Checks if the value is exactly one valid AWS EMR instance architecture, ignoring case.
+     *
+     * @param  input the value
+     * @return       true if it is valid
+     */
+    public static boolean isValidSingleArchitecture(String input) {
+        return EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, input);
+    }
 }

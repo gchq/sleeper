@@ -48,6 +48,7 @@ import sleeper.cdk.stack.core.AutoStopEmrServerlessApplicationStack;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.EmrInstanceArchitecture;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -136,7 +137,8 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         CfnApplication emrServerlessCluster = CfnApplication.Builder.create(this, "BulkImportEMRServerless")
                 .name(String.join("-", "sleeper", instanceProperties.cleanInstanceId()))
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE))
-                .architecture(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE))
+                .architecture(instanceProperties.getEnumValue(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE,
+                        EmrInstanceArchitecture.class).name())
                 .type("Spark")
                 .initialCapacity(createInitialCapacity(instanceProperties))
                 .autoStartConfiguration(AutoStartConfigurationProperty.builder()

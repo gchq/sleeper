@@ -373,10 +373,10 @@ public class SleeperClient implements AutoCloseable {
      * Waits for a query submitted for processing by the query lambdas to finish, by polling the query tracker with
      * default settings. A query is finished when it has completed, failed or partially failed.
      *
-     * @param  queryId                            the query ID
-     * @return                                    the entry for the query in the query tracker, in its finished state
-     * @throws InterruptedException               if the thread was interrupted while waiting
-     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     * @param  queryId                           the query ID
+     * @return                                   the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException              if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException if the query did not finish within the polling timeout
      */
     public TrackedQuery waitForQuery(String queryId) throws InterruptedException {
         return waitForQuery(queryId, DEFAULT_QUERY_POLL);
@@ -388,10 +388,10 @@ public class SleeperClient implements AutoCloseable {
      * are published to the results output set in the query's processing config, by default as Parquet files in the
      * query results bucket under the query ID.
      *
-     * @param  query                              the query to run
-     * @return                                    the entry for the query in the query tracker, in its finished state
-     * @throws InterruptedException               if the thread was interrupted while waiting
-     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     * @param  query                             the query to run
+     * @return                                   the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException              if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException if the query did not finish within the polling timeout
      */
     public TrackedQuery submitQueryAndWait(Query query) throws InterruptedException {
         return submitQueryAndWait(query, DEFAULT_QUERY_POLL);
@@ -403,11 +403,11 @@ public class SleeperClient implements AutoCloseable {
      * results output set in the query's processing config, by default as Parquet files in the query results bucket
      * under the query ID. The query's progress is logged on each poll.
      *
-     * @param  query                              the query to run
-     * @param  poll                               the polling interval and timeout
-     * @return                                    the entry for the query in the query tracker, in its finished state
-     * @throws InterruptedException               if the thread was interrupted while waiting
-     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     * @param  query                             the query to run
+     * @param  poll                              the polling interval and timeout
+     * @return                                   the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException              if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException if the query did not finish within the polling timeout
      */
     public TrackedQuery submitQueryAndWait(Query query, PollWithRetries poll) throws InterruptedException {
         return waitForQuery(submitQuery(query), poll);
@@ -420,11 +420,11 @@ public class SleeperClient implements AutoCloseable {
      * subqueries. A query that is not yet tracked is polled until it appears, as its entry is only written when the
      * query lambda starts processing it. The query's progress is logged on each poll.
      *
-     * @param  queryId                            the query ID
-     * @param  poll                               the polling interval and timeout
-     * @return                                    the entry for the query in the query tracker, in its finished state
-     * @throws InterruptedException               if the thread was interrupted while waiting
-     * @throws PollWithRetries.TimedOutException  if the query did not finish within the polling timeout
+     * @param  queryId                           the query ID
+     * @param  poll                              the polling interval and timeout
+     * @return                                   the entry for the query in the query tracker, in its finished state
+     * @throws InterruptedException              if the thread was interrupted while waiting
+     * @throws PollWithRetries.TimedOutException if the query did not finish within the polling timeout
      */
     public TrackedQuery waitForQuery(String queryId, PollWithRetries poll) throws InterruptedException {
         return poll.queryUntil("query " + queryId + " is finished",
