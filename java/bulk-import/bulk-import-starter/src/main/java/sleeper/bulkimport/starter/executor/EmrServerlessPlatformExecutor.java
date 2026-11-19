@@ -23,7 +23,11 @@ import software.amazon.awssdk.services.emrserverless.model.S3MonitoringConfigura
 import software.amazon.awssdk.services.emrserverless.model.SparkSubmit;
 import software.amazon.awssdk.services.emrserverless.model.StartJobRunRequest;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatformSpec;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
@@ -37,14 +41,20 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 public class EmrServerlessPlatformExecutor implements PlatformExecutor {
     private final EmrServerlessClient emrClient;
     private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
 
-    public EmrServerlessPlatformExecutor(EmrServerlessClient emrClient, InstanceProperties instanceProperties) {
+    public EmrServerlessPlatformExecutor(EmrServerlessClient emrClient,
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
         this.emrClient = emrClient;
         this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
     @Override
     public void runJobOnPlatform(BulkImportArguments arguments) {
+        BulkImportJob bulkImportJob = arguments.getBulkImportJob();
+        TableProperties tableProperties = tablePropertiesProvider.getByName(bulkImportJob.getTableName());
+        BulkImportPlatformSpec platformSpec = new BulkImportPlatformSpec(tableProperties, bulkImportJob);
         StartJobRunRequest job = StartJobRunRequest.builder()
                 .applicationId(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID))
                 .name(String.join("-", "job", arguments.getJobRunId()))
@@ -53,7 +63,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                 .jobDriver(JobDriver.builder().sparkSubmit(SparkSubmit.builder()
                         .entryPoint("s3://" + instanceProperties.get(JARS_BUCKET) + "/bulk-import-runner-" + instanceProperties.get(VERSION) + ".jar")
                         .entryPointArguments(arguments.entryPointArgumentsForServerless())
-                        .sparkSubmitParameters(arguments.sparkSubmitParametersForServerless())
+                        .sparkSubmitParameters(arguments.sparkSubmitParametersForServerless(platformSpec))
                         .build()).build())
                 .configurationOverrides(
                         ConfigurationOverrides.builder()

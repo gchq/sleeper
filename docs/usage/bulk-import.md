@@ -76,11 +76,31 @@ the Spark executors and driver. You can also access previous job Spark UIs from 
 It is possible to get Sleeper to deploy EMR Studio by enabling the optional stack `EmrStudioStack`.
 Note if EMR Serverless is not enabled then EMR Studio won't be deployed even if added to the optional stacks.
 
+The EMR Serverless application can run on x86_64 or ARM64 processors. This is set with the instance
+property `sleeper.bulk.import.emr.serverless.architecture`, which must be `x86_64` or `arm64`. It
+applies to all jobs in the application. Changing this property requires a CDK deployment.
+
 After your job finishes the application will auto shutdown after 15 minutes. When in the stopped state it takes seconds for the application to start when a new job is received.
 
-The following can be edited in the Sleeper Admin console. It it also possible to set these on a per job basis by setting `sparkConf`
+The resources used by each job can be configured per Sleeper table. The following table properties set the Spark
+executor and driver configuration for EMR Serverless jobs. Each one defaults to the matching instance property
+starting with `sleeper.default.table.bulk.import.emr.serverless.spark.`:
 
-An example for overriding at the job level is:
+```properties
+sleeper.table.bulk.import.emr.serverless.spark.executor.cores=4
+sleeper.table.bulk.import.emr.serverless.spark.executor.memory=16G
+sleeper.table.bulk.import.emr.serverless.spark.executor.disk=200G
+sleeper.table.bulk.import.emr.serverless.spark.executor.instances=36
+sleeper.table.bulk.import.emr.serverless.spark.driver.cores=4
+sleeper.table.bulk.import.emr.serverless.spark.driver.memory=16G
+sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.enabled=false
+sleeper.table.bulk.import.emr.serverless.spark.default.parallelism=288
+sleeper.table.bulk.import.emr.serverless.spark.sql.shuffle.partitions=288
+```
+
+These can also be overridden for a single job, either by setting the table property names in `platformSpec`, or by
+setting Spark configuration directly in `sparkConf`. Values in `sparkConf` take precedence over everything else.
+For example:
 
 ```JSON
 {
@@ -88,44 +108,20 @@ An example for overriding at the job level is:
   "files": [
     "my-bucket/my-files/"
   ],
+  "platformSpec": {
+    "sleeper.table.bulk.import.emr.serverless.spark.executor.disk": "120G",
+    "sleeper.table.bulk.import.emr.serverless.spark.executor.instances": "25"
+  },
   "sparkConf": {
-    "sleeper.bulk.import.emr.serverless.spark.emr-serverless.executor.disk": "120G",
-    "sleeper.bulk.import.emr.serverless.spark.executor.instances": "25",
-    "sleeper.bulk.import.emr.serverless.spark.driver.cores": "4",
-    "sleeper.bulk.import.emr.serverless.spark.driver.memory": "8G"
+    "spark.driver.cores": "4",
+    "spark.driver.memory": "8G"
   }
 }
 ```
-##### All Available Properties
 
-```properties
-# The following properties are used to define the custom Spark image used that has Java 11 installed
-sleeper.bulk.import.emr.serverless.repo=<insert-unique-sleeper-id>/bulk-import-runner-emr-serverless
-sleeper.bulk.import.emr.serverless.java.home=/usr/lib/jvm/jre-11
-
-# The following properties define the executor and driver configuration
-sleeper.bulk.import.emr.serverless.executor.cores=4
-sleeper.bulk.import.emr.serverless.executor.memory=16g
-sleeper.bulk.import.emr.serverless.executor.disk=200g
-sleeper.bulk.import.emr.serverless.executor.instances=36
-sleeper.bulk.import.emr.serverless.driver.cores=4
-sleeper.bulk.import.emr.serverless.driver.memory=16g
-sleeper.bulk.import.emr.serverless.dynamic.allocation.enabled=false
-
-# The following properties configure how Spark will function
-sleeper.bulk.import.emr.serverless.spark.rdd.compress=true
-sleeper.bulk.import.emr.serverless.spark.shuffle.compress=true
-sleeper.bulk.import.emr.serverless.spark.shuffle.spill.compress=true
-sleeper.bulk.import.emr.serverless.spark.default.parallelism=288
-sleeper.bulk.import.emr.serverless.spark.sql.shuffle.partitions=288
-sleeper.bulk.import.emr.serverless.spark.network.timeout=800s
-sleeper.bulk.import.emr.serverless.spark.executor.heartbeat.interval=60s
-sleeper.bulk.import.emr.serverless.spark.memory.fraction=0.80
-sleeper.bulk.import.emr.serverless.spark.memory.storage.fraction=0.30
-sleeper.bulk.import.emr.serverless.spark.speculation=false
-sleeper.bulk.import.emr.serverless.spark.speculation.quantile=0.75
-sleeper.bulk.import.emr.serverless.spark.shuffle.mapStatus.compression.codec=lz4
-```
+Other Spark settings for EMR Serverless are set in instance properties starting with
+`sleeper.bulk.import.emr.serverless.spark.`, and apply to all tables. See the
+[instance property documentation](properties/instance/user/bulk_import.md) for the full list.
 
 ##### Pre-initialised Capacity
 EMR Serverless can be configured to have a pre-initialised capacity where resources are ready to process jobs.
