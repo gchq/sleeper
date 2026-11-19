@@ -21,6 +21,9 @@ import java.util.List;
 
 public class CompactionJobAssignmentFromJobTestHelper {
 
+    private CompactionJobAssignmentFromJobTestHelper() {
+    }
+
     public static AssignJobIdRequest assignJobFiles(CompactionJob job) {
         return AssignJobIdRequest.assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles());
     }

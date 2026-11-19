@@ -53,6 +53,8 @@ public interface CompactionJobTrackerLookup {
 
     /**
      * Creates a lookup that will never query the job tracker.
+     *
+     * @return the lookup
      */
     static CompactionJobTrackerLookup none() {
         return id -> Optional.empty();

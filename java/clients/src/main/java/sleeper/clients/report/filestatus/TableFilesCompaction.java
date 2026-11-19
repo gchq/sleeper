@@ -20,6 +20,9 @@ import sleeper.core.statestore.FileReference;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * Information in the state store about a compaction currently assigned to files.
+ */
 public class TableFilesCompaction {
 
     private final String jobId;
