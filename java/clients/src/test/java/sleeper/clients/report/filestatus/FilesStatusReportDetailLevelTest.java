@@ -39,7 +39,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
-public class StandardFileStatusReporterDetailLevelTest extends FilesStatusReportTestBase {
+public class FilesStatusReportDetailLevelTest extends FilesStatusReportTestBase {
     PartitionTree partitions = new PartitionsBuilder(schema)
             .rootFirst("root")
             .splitToNewChildren("root", "L", "R", "mmm")
@@ -104,6 +104,13 @@ public class StandardFileStatusReporterDetailLevelTest extends FilesStatusReport
         // When / Then
         Approvals.verify(standardReportString(FileStatusDetailLevel.COMPACTION_JOBS),
                 new Options().forFile().withBaseName("detailLevelCompactions"));
+    }
+
+    @Test
+    void shouldBuildJson() {
+        // When / Then
+        Approvals.verify(verboseReportString(JsonFileStatusReporter::new),
+                new Options().forFile().withName("detailLevelJson", ".json"));
     }
 
 }

@@ -62,6 +62,10 @@ public class StandardFileStatusReporter implements FileStatusReporter {
                     + (status.getFilesWithReferences().isEmpty() ? " none" : ""));
             status.getFilesWithReferences().forEach(this::printFile);
         }
+        if (detailLevel.isShowCompactionJobs()) {
+            out.println();
+            out.println("Compactions assigned to files:" + (status.getCompactions().isEmpty() ? " none" : ""));
+        }
     }
 
     private void printPartitionStats(FileReferencesStats partitions, String type) {

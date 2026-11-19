@@ -12,3 +12,5 @@ Number of rows referenced in partitions: 800
 Number of rows in non-leaf partitions: 100
 Number of rows in leaf partitions: 700
 Percentage of rows in leaf partitions: 87.5
+
+Compactions assigned to files:

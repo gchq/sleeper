@@ -16,14 +16,11 @@
 package sleeper.clients.report.filestatus;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.StateStore;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static java.util.function.Function.identity;
 
 /**
  * Collects information about files in a Sleeper table for reporting. Produces a {@link TableFilesStatus} data
@@ -51,14 +48,14 @@ public class FileStatusCollector {
                 .filter(Partition::isLeafPartition)
                 .mapToInt(p -> 1).sum();
         int nonLeafPartitionCount = partitions.size() - leafPartitionCount;
-        Map<String, Partition> partitionById = partitions.stream()
-                .collect(Collectors.toMap(Partition::getId, identity()));
+        PartitionTree partitionTree = new PartitionTree(partitions);
 
         return TableFilesStatus.builder()
                 .leafPartitionCount(leafPartitionCount)
                 .nonLeafPartitionCount(nonLeafPartitionCount)
-                .statistics(TableFilesStatistics.from(files, partitionById))
+                .statistics(TableFilesStatistics.from(files, partitionTree))
                 .files(files)
+                .compactions(TableFilesPartitionCompactions.from(files, partitionTree))
                 .build();
     }
 

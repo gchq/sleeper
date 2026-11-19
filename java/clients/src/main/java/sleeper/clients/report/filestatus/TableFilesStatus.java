@@ -19,6 +19,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * A report on the status of files within a Sleeper table. This includes statistics on the number of partitions, how
@@ -33,12 +34,14 @@ public class TableFilesStatus {
     private final TableFilesStatistics statistics;
 
     private final AllReferencesToAllFiles files;
+    private final List<TableFilesPartitionCompactions> compactions;
 
     private TableFilesStatus(Builder builder) {
         leafPartitionCount = builder.leafPartitionCount;
         nonLeafPartitionCount = builder.nonLeafPartitionCount;
         statistics = builder.statistics;
         files = builder.files;
+        compactions = builder.compactions;
         moreThanMax = files.isMoreThanMax();
     }
 
@@ -114,6 +117,10 @@ public class TableFilesStatus {
         return statistics.getTotalRowsInNonLeafPartitionsApprox();
     }
 
+    public List<TableFilesPartitionCompactions> getCompactions() {
+        return compactions;
+    }
+
     /**
      * A builder for the status of files in a Sleeper table.
      */
@@ -122,6 +129,7 @@ public class TableFilesStatus {
         private int nonLeafPartitionCount;
         private TableFilesStatistics statistics;
         private AllReferencesToAllFiles files;
+        private List<TableFilesPartitionCompactions> compactions;
 
         private Builder() {
         }
@@ -173,6 +181,17 @@ public class TableFilesStatus {
          */
         public Builder files(AllReferencesToAllFiles files) {
             this.files = files;
+            return this;
+        }
+
+        /**
+         * Sets the compaction jobs currently assigned to files.
+         *
+         * @param  compactions the compactions
+         * @return             this builder
+         */
+        public Builder compactions(List<TableFilesPartitionCompactions> compactions) {
+            this.compactions = compactions;
             return this;
         }
 

@@ -23,3 +23,5 @@ pending-split.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.00
 split.parquet, 2 references total, last updated at 2022-08-22T14:20:00.001Z
 	Reference in partition B, 1000 rows (approx), last updated at 2022-08-22T14:20:00.001Z
 	Reference in partition C, 1000 rows (approx), last updated at 2022-08-22T14:20:00.001Z
+
+Compactions assigned to files: none

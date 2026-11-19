@@ -1,0 +1,185 @@
+{
+  "moreThanMax": false,
+  "leafPartitionCount": 3,
+  "nonLeafPartitionCount": 2,
+  "statistics": {
+    "rows": {
+      "allPartitions": {
+        "totalRows": 800,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 800
+      },
+      "leafPartitions": {
+        "totalRows": 700,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 700
+      },
+      "nonLeafPartitions": {
+        "totalRows": 100,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 100
+      }
+    },
+    "fileReferences": {
+      "totalFiles": 9,
+      "totalReferences": 7,
+      "leafPartitions": {
+        "minReferences": 1,
+        "maxReferences": 5,
+        "meanReferences": 3.0,
+        "medianReferences": 3.0,
+        "percentile90": 4.6,
+        "percentile99": 4.96,
+        "totalReferences": 6
+      },
+      "nonLeafPartitions": {
+        "minReferences": 1,
+        "maxReferences": 1,
+        "meanReferences": 1.0,
+        "medianReferences": 1.0,
+        "percentile90": 1.0,
+        "percentile99": 1.0,
+        "totalReferences": 1
+      }
+    }
+  },
+  "files": [
+    {
+      "filename": "gc-1.parquet",
+      "lastUpdateTime": "2022-08-22T14:22:00Z",
+      "totalReferenceCount": 0,
+      "internalReferences": []
+    },
+    {
+      "filename": "gc-2.parquet",
+      "lastUpdateTime": "2022-08-22T14:22:00Z",
+      "totalReferenceCount": 0,
+      "internalReferences": []
+    },
+    {
+      "filename": "left.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "L",
+          "numberOfRows": 100,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "rl-compaction-1a.parquet",
+      "lastUpdateTime": "2022-08-22T14:21:00Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "RL",
+          "numberOfRows": 100,
+          "jobId": "job-1",
+          "lastUpdateTime": "2022-08-22T14:21:00Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "rl-compaction-1b.parquet",
+      "lastUpdateTime": "2022-08-22T14:21:00Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "RL",
+          "numberOfRows": 100,
+          "jobId": "job-1",
+          "lastUpdateTime": "2022-08-22T14:21:00Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "rl-compaction-2a.parquet",
+      "lastUpdateTime": "2022-08-22T14:21:00Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "RL",
+          "numberOfRows": 100,
+          "jobId": "job-2",
+          "lastUpdateTime": "2022-08-22T14:21:00Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "rl-compaction-2b.parquet",
+      "lastUpdateTime": "2022-08-22T14:21:00Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "RL",
+          "numberOfRows": 100,
+          "jobId": "job-2",
+          "lastUpdateTime": "2022-08-22T14:21:00Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "rl-no-compaction.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "RL",
+          "numberOfRows": 200,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "root-output.parquet",
+      "lastUpdateTime": "2022-08-22T14:22:00Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "root",
+          "numberOfRows": 100,
+          "lastUpdateTime": "2022-08-22T14:22:00Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    }
+  ],
+  "compactions": [
+    {
+      "partitionId": "RL",
+      "jobs": [
+        {
+          "jobId": "job-1",
+          "assignmentTime": "2022-08-22T14:21:00Z",
+          "inputFiles": [
+            "rl-compaction-1a.parquet",
+            "rl-compaction-1b.parquet"
+          ]
+        },
+        {
+          "jobId": "job-2",
+          "assignmentTime": "2022-08-22T14:21:00Z",
+          "inputFiles": [
+            "rl-compaction-2a.parquet",
+            "rl-compaction-2b.parquet"
+          ]
+        }
+      ]
+    }
+  ]
+}
