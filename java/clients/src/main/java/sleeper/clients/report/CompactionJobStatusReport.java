@@ -99,12 +99,15 @@ public class CompactionJobStatusReport {
                     "\n" +
                     "When run with compactionJobStatusReport.sh, the following options are passed to the JVM " +
                     "rather than the report:\n" +
+                    "\n" +
                     "--jvm-memory <size>: The maximum memory for the JVM, e.g. 512m or 8g. If this is more than " +
                     "the memory currently available, you will be asked to confirm before the report runs. If it uses " +
                     "more memory than is available, the report may run slowly or be killed by the operating system. " +
                     "If the report needs more memory than this, it will stop with an OutOfMemoryError.\n" +
                     "\n" +
-                    "--force-memory: Skips the confirmation prompt for --jvm-memory.")
+                    "--force-memory: Skips the confirmation prompt for --jvm-memory.\n" +
+                    "\n" +
+                    "Below are the options for the report:")
             .build();
 
     /**
