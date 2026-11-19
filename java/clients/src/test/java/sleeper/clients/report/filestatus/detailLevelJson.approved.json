@@ -1,36 +1,36 @@
 {
   "moreThanMax": false,
-  "leafPartitionCount": 3,
-  "nonLeafPartitionCount": 2,
+  "leafPartitionCount": 4,
+  "nonLeafPartitionCount": 3,
   "statistics": {
     "rows": {
       "allPartitions": {
+        "totalRows": 1000,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 1000
+      },
+      "leafPartitions": {
         "totalRows": 800,
         "totalRowsApprox": 0,
         "totalRowsKnown": 800
       },
-      "leafPartitions": {
-        "totalRows": 700,
-        "totalRowsApprox": 0,
-        "totalRowsKnown": 700
-      },
       "nonLeafPartitions": {
-        "totalRows": 100,
+        "totalRows": 200,
         "totalRowsApprox": 0,
-        "totalRowsKnown": 100
+        "totalRowsKnown": 200
       }
     },
     "fileReferences": {
-      "totalFiles": 9,
-      "totalReferences": 7,
+      "totalFiles": 11,
+      "totalReferences": 9,
       "leafPartitions": {
-        "minReferences": 1,
+        "minReferences": 2,
         "maxReferences": 5,
-        "meanReferences": 3.0,
-        "medianReferences": 3.0,
-        "percentile90": 4.6,
-        "percentile99": 4.96,
-        "totalReferences": 6
+        "meanReferences": 3.5,
+        "medianReferences": 3.5,
+        "percentile90": 4.7,
+        "percentile99": 4.97,
+        "totalReferences": 7
       },
       "nonLeafPartitions": {
         "minReferences": 1,
@@ -39,7 +39,7 @@
         "medianReferences": 1.0,
         "percentile90": 1.0,
         "percentile99": 1.0,
-        "totalReferences": 1
+        "totalReferences": 2
       }
     }
   },
@@ -65,6 +65,36 @@
           "partitionId": "L",
           "numberOfRows": 100,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "lr-compaction-3a.parquet",
+      "lastUpdateTime": "2022-08-22T14:21:00Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "LR",
+          "numberOfRows": 100,
+          "jobId": "job-3",
+          "lastUpdateTime": "2022-08-22T14:21:00Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "lr-compaction-3b.parquet",
+      "lastUpdateTime": "2022-08-22T14:21:00Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "LR",
+          "numberOfRows": 100,
+          "jobId": "job-3",
+          "lastUpdateTime": "2022-08-22T14:21:00Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
@@ -160,6 +190,19 @@
     }
   ],
   "compactions": [
+    {
+      "partitionId": "LR",
+      "jobs": [
+        {
+          "jobId": "job-3",
+          "assignmentTime": "2022-08-22T14:21:00Z",
+          "inputFiles": [
+            "lr-compaction-3a.parquet",
+            "lr-compaction-3b.parquet"
+          ]
+        }
+      ]
+    },
     {
       "partitionId": "RL",
       "jobs": [

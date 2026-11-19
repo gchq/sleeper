@@ -38,7 +38,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     }
 
     @Override
-    public void report(TableFilesStatus status, FileStatusDetailLevel detailLevel) {
+    public void report(TableFilesStatus status, FileStatusDetailLevel detailLevel, CompactionJobTrackerLookup jobTracker) {
         out.println("\nFiles Status Report:\n--------------------------");
         out.println("There are " + status.getLeafPartitionCount() + " leaf partitions and " + status.getNonLeafPartitionCount() + " non-leaf partitions");
         out.println("Number of files: " + (status.isMoreThanMax() ? ">" : "") + status.getFileCount());
@@ -65,6 +65,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         if (detailLevel.isShowCompactionJobs()) {
             out.println();
             out.println("Compactions assigned to files:" + (status.getCompactions().isEmpty() ? " none" : ""));
+            status.getCompactions().forEach(this::printPartitionCompactions);
         }
     }
 
@@ -122,6 +123,13 @@ public class StandardFileStatusReporter implements FileStatusReporter {
                 + ", " + reference.getNumberOfRows() + " rows" + (reference.isCountApproximate() ? " (approx)" : "")
                 + ", last updated at " + reference.getLastStateStoreUpdateTime()
                 + (reference.getJobId() != null ? ", assigned to job " + reference.getJobId() : ""));
+    }
+
+    private void printPartitionCompactions(TableFilesPartitionCompactions compactions) {
+        out.println("Partition " + compactions.getPartitionId() + " has " + compactions.getJobs().size() + " jobs");
+        for (TableFilesCompaction compaction : compactions.getJobs()) {
+            out.println("\tJob " + compaction.getJobId() + " with " + compaction.getFileReferences().size() + " files assigned at " + compaction.getAssignmentTime());
+        }
     }
 
     private String totalReferenceCountStr(int count) {

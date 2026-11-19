@@ -43,6 +43,7 @@ public class FilesStatusReportDetailLevelTest extends FilesStatusReportTestBase 
     PartitionTree partitions = new PartitionsBuilder(schema)
             .rootFirst("root")
             .splitToNewChildren("root", "L", "R", "mmm")
+            .splitToNewChildren("L", "LL", "LR", "hhh")
             .splitToNewChildren("R", "RL", "RR", "ppp")
             .buildTree();
 
@@ -59,13 +60,16 @@ public class FilesStatusReportDetailLevelTest extends FilesStatusReportTestBase 
                 fileFactory.partitionFile("RL", "rl-compaction-1b.parquet", 100),
                 fileFactory.partitionFile("RL", "rl-compaction-2a.parquet", 100),
                 fileFactory.partitionFile("RL", "rl-compaction-2b.parquet", 100),
+                fileFactory.partitionFile("LR", "lr-compaction-3a.parquet", 100),
+                fileFactory.partitionFile("LR", "lr-compaction-3b.parquet", 100),
                 fileFactory.partitionFile("root", "gc-1.parquet", 100),
                 fileFactory.partitionFile("root", "gc-2.parquet", 100)));
         CompactionJob job1 = jobFactory.createCompactionJobWithFilenames("job-1", List.of("rl-compaction-1a.parquet", "rl-compaction-1b.parquet"), "RL");
         CompactionJob job2 = jobFactory.createCompactionJobWithFilenames("job-2", List.of("rl-compaction-2a.parquet", "rl-compaction-2b.parquet"), "RL");
+        CompactionJob job3 = jobFactory.createCompactionJobWithFilenames("job-3", List.of("lr-compaction-3a.parquet", "lr-compaction-3b.parquet"), "LR");
         CompactionJob jobForGc = jobFactory.createCompactionJobWithFilenames("job-gc", List.of("gc-1.parquet", "gc-2.parquet"), "root");
         setTime(Instant.parse("2022-08-22T14:21:00Z"));
-        update(stateStore).assignJobIds(assignJobFiles(List.of(job1, job2, jobForGc)));
+        update(stateStore).assignJobIds(assignJobFiles(List.of(job1, job2, job3, jobForGc)));
         setTime(Instant.parse("2022-08-22T14:22:00Z"));
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes("job-gc", List.of("gc-1.parquet", "gc-2.parquet"),
                 fileFactory.partitionFile("root", "root-output.parquet", 100));
@@ -104,6 +108,13 @@ public class FilesStatusReportDetailLevelTest extends FilesStatusReportTestBase 
         // When / Then
         Approvals.verify(standardReportString(FileStatusDetailLevel.COMPACTION_JOBS),
                 new Options().forFile().withBaseName("detailLevelCompactions"));
+    }
+
+    @Test
+    void shouldShowFullDetail() {
+        // When / Then
+        Approvals.verify(standardReportString(FileStatusDetailLevel.FULL),
+                new Options().forFile().withBaseName("detailLevelFull"));
     }
 
     @Test

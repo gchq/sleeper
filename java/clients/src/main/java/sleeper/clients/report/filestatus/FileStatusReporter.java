@@ -25,6 +25,7 @@ public interface FileStatusReporter {
      *
      * @param status      the status of files in the Sleeper table
      * @param detailLevel the level of detail to include
+     * @param jobTracker  the compaction job tracker
      */
-    void report(TableFilesStatus status, FileStatusDetailLevel detailLevel);
+    void report(TableFilesStatus status, FileStatusDetailLevel detailLevel, CompactionJobTrackerLookup jobTracker);
 }

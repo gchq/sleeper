@@ -81,7 +81,7 @@ public class FilesStatusReport {
      */
     public void run() {
         TableFilesStatus tableStatus = fileStatusCollector.run(maxNumberOfFilesWithNoReferencesToCount);
-        fileStatusReporter.report(tableStatus, detailLevel);
+        fileStatusReporter.report(tableStatus, detailLevel, jobTracker);
     }
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()

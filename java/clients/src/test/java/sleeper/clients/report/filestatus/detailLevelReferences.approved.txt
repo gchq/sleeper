@@ -1,17 +1,17 @@
 
 Files Status Report:
 --------------------------
-There are 3 leaf partitions and 2 non-leaf partitions
-Number of files: 9
-Number of files with references: 7
+There are 4 leaf partitions and 3 non-leaf partitions
+Number of files: 11
+Number of files with references: 9
 Number of files with no references, which will be garbage collected: 2
-Number of references to files: 7
-Number of file references in leaf partitions: min = 1, max = 5, mean = 3.000, median = 3.000, 90th percentile = 4.600, 99th percentile = 4.960, total = 6
-Number of file references in non-leaf partitions: min = 1, max = 1, mean = 1.000, median = 1.000, 90th percentile = 1.000, 99th percentile = 1.000, total = 1
-Number of rows referenced in partitions: 800
-Number of rows in non-leaf partitions: 100
-Number of rows in leaf partitions: 700
-Percentage of rows in leaf partitions: 87.5
+Number of references to files: 9
+Number of file references in leaf partitions: min = 2, max = 5, mean = 3.500, median = 3.500, 90th percentile = 4.700, 99th percentile = 4.970, total = 7
+Number of file references in non-leaf partitions: min = 1, max = 1, mean = 1.000, median = 1.000, 90th percentile = 1.000, 99th percentile = 1.000, total = 2
+Number of rows referenced in partitions: 1K (1,000)
+Number of rows in non-leaf partitions: 200
+Number of rows in leaf partitions: 800
+Percentage of rows in leaf partitions: 80.0
 
 Files with no references:
 gc-1.parquet, last updated at 2022-08-22T14:22:00Z
@@ -20,6 +20,10 @@ gc-2.parquet, last updated at 2022-08-22T14:22:00Z
 Files with references:
 left.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
 	Reference in partition L, 100 rows, last updated at 2022-08-22T14:20:00.001Z
+lr-compaction-3a.parquet, 1 reference total, last updated at 2022-08-22T14:21:00Z
+	Reference in partition LR, 100 rows, last updated at 2022-08-22T14:21:00Z, assigned to job job-3
+lr-compaction-3b.parquet, 1 reference total, last updated at 2022-08-22T14:21:00Z
+	Reference in partition LR, 100 rows, last updated at 2022-08-22T14:21:00Z, assigned to job job-3
 rl-compaction-1a.parquet, 1 reference total, last updated at 2022-08-22T14:21:00Z
 	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00Z, assigned to job job-1
 rl-compaction-1b.parquet, 1 reference total, last updated at 2022-08-22T14:21:00Z
