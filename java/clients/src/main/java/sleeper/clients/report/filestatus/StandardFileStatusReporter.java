@@ -38,7 +38,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     }
 
     @Override
-    public void report(TableFilesStatus status, boolean verbose) {
+    public void report(TableFilesStatus status, boolean verbose, FileStatusDetailLevel detailLevel) {
         out.println("\nFiles Status Report:\n--------------------------");
         out.println("There are " + status.getLeafPartitionCount() + " leaf partitions and " + status.getNonLeafPartitionCount() + " non-leaf partitions");
         out.println("Number of files: " + (status.isMoreThanMax() ? ">" : "") + status.getFileCount());

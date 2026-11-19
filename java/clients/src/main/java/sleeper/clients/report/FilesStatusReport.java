@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.report.arguments.OutputFormatArgument;
 import sleeper.clients.report.filestatus.CsvFileStatusReporter;
 import sleeper.clients.report.filestatus.FileStatusCollector;
+import sleeper.clients.report.filestatus.FileStatusDetailLevel;
 import sleeper.clients.report.filestatus.FileStatusReporter;
 import sleeper.clients.report.filestatus.JsonFileStatusReporter;
 import sleeper.clients.report.filestatus.StandardFileStatusReporter;
@@ -71,7 +72,7 @@ public class FilesStatusReport {
      */
     public void run() {
         TableFilesStatus tableStatus = fileStatusCollector.run(maxNumberOfFilesWithNoReferencesToCount);
-        fileStatusReporter.report(tableStatus, verbose);
+        fileStatusReporter.report(tableStatus, verbose, verbose ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY);
     }
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
