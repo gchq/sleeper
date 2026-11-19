@@ -15,6 +15,9 @@
  */
 package sleeper.clients.report.filestatus;
 
+/**
+ * The level of detail to show in a file status report.
+ */
 public enum FileStatusDetailLevel {
 
     STATS_ONLY,
