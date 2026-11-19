@@ -17,6 +17,7 @@ package sleeper.clients.report.filestatus;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.io.PrintStream;
 
@@ -65,7 +66,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         if (detailLevel.isShowCompactionJobs()) {
             out.println();
             out.println("Compactions assigned to files:" + (status.getCompactions().isEmpty() ? " none" : ""));
-            status.getCompactions().forEach(this::printPartitionCompactions);
+            status.getCompactions().forEach(partition -> printPartitionCompactions(partition, jobTracker));
         }
     }
 
@@ -125,10 +126,11 @@ public class StandardFileStatusReporter implements FileStatusReporter {
                 + (reference.getJobId() != null ? ", assigned to job " + reference.getJobId() : ""));
     }
 
-    private void printPartitionCompactions(TableFilesPartitionCompactions compactions) {
+    private void printPartitionCompactions(TableFilesPartitionCompactions compactions, CompactionJobTrackerLookup jobTracker) {
         out.println("Partition " + compactions.getPartitionId() + " has " + numJobsStr(compactions));
         for (TableFilesCompaction compaction : compactions.getJobs()) {
-            out.println("\tJob " + compaction.getJobId() + " with " + compaction.getFileReferences().size() + " files assigned at " + compaction.getAssignmentTime());
+            out.println("\tJob " + compaction.getJobId() + " with " + compaction.getFileReferences().size() + " files assigned at " + compaction.getAssignmentTime()
+                    + jobStatusStr(compaction, jobTracker));
         }
     }
 
@@ -148,6 +150,21 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             return "1 job";
         } else {
             return jobs + " jobs";
+        }
+    }
+
+    private String jobStatusStr(TableFilesCompaction compaction, CompactionJobTrackerLookup tracker) {
+        return tracker.getJob(compaction.getJobId())
+                .map(status -> ", tracker shows status " + status.getFurthestStatusType() + " with " + numRunsStr(status))
+                .orElse(", not in job tracker");
+    }
+
+    private String numRunsStr(CompactionJobStatus status) {
+        int runs = status.getRunsLatestFirst().size();
+        if (runs == 1) {
+            return "1 run";
+        } else {
+            return runs + " runs";
         }
     }
 }

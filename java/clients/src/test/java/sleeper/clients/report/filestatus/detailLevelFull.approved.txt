@@ -39,7 +39,7 @@ root-output.parquet, 1 reference total, last updated at 2022-08-22T14:22:00Z
 
 Compactions assigned to files:
 Partition LR has 1 job
-	Job job-3 with 2 files assigned at 2022-08-22T14:21:00Z
+	Job job-3 with 2 files assigned at 2022-08-22T14:21:00Z, not in job tracker
 Partition RL has 2 jobs
-	Job job-1 with 2 files assigned at 2022-08-22T14:21:00Z
-	Job job-2 with 2 files assigned at 2022-08-22T14:21:00Z
+	Job job-1 with 2 files assigned at 2022-08-22T14:21:00Z, tracker shows status UNCOMMITTED with 1 run
+	Job job-2 with 2 files assigned at 2022-08-22T14:21:00Z, tracker shows status UNCOMMITTED with 1 run
