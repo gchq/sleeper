@@ -126,7 +126,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     }
 
     private void printPartitionCompactions(TableFilesPartitionCompactions compactions) {
-        out.println("Partition " + compactions.getPartitionId() + " has " + compactions.getJobs().size() + " jobs");
+        out.println("Partition " + compactions.getPartitionId() + " has " + numJobsStr(compactions));
         for (TableFilesCompaction compaction : compactions.getJobs()) {
             out.println("\tJob " + compaction.getJobId() + " with " + compaction.getFileReferences().size() + " files assigned at " + compaction.getAssignmentTime());
         }
@@ -139,6 +139,15 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             return ", 1 reference total";
         } else {
             return ", " + count + " references total";
+        }
+    }
+
+    private String numJobsStr(TableFilesPartitionCompactions compactions) {
+        int jobs = compactions.getJobs().size();
+        if (jobs == 1) {
+            return "1 job";
+        } else {
+            return jobs + " jobs";
         }
     }
 }

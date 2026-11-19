@@ -14,7 +14,7 @@ Number of rows in leaf partitions: 800
 Percentage of rows in leaf partitions: 80.0
 
 Compactions assigned to files:
-Partition LR has 1 jobs
+Partition LR has 1 job
 	Job job-3 with 2 files assigned at 2022-08-22T14:21:00Z
 Partition RL has 2 jobs
 	Job job-1 with 2 files assigned at 2022-08-22T14:21:00Z
