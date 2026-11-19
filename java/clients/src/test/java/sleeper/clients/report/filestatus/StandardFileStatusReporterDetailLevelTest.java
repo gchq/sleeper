@@ -20,15 +20,24 @@ import org.approvaltests.core.Options;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReferenceFactory;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
+import static sleeper.compaction.core.job.CompactionJobAssignmentFromJobTestHelper.assignJobFiles;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
 public class StandardFileStatusReporterDetailLevelTest extends FilesStatusReportTestBase {
     PartitionTree partitions = new PartitionsBuilder(schema)
@@ -39,8 +48,10 @@ public class StandardFileStatusReporterDetailLevelTest extends FilesStatusReport
 
     @BeforeEach
     void setUp() {
+        setTime(Instant.parse("2022-08-22T14:20:00.001Z"));
         update(stateStore).initialise(partitions);
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
         update(stateStore).addFiles(List.of(
                 fileFactory.partitionFile("L", "left.parquet", 100),
                 fileFactory.partitionFile("RL", "rl-no-compaction.parquet", 200),
@@ -50,14 +61,28 @@ public class StandardFileStatusReporterDetailLevelTest extends FilesStatusReport
                 fileFactory.partitionFile("RL", "rl-compaction-2b.parquet", 100),
                 fileFactory.partitionFile("root", "gc-1.parquet", 100),
                 fileFactory.partitionFile("root", "gc-2.parquet", 100)));
-        moveTimeForward(Duration.ofMinutes(1));
-        update(stateStore).assignJobIds(List.of(
-                AssignJobIdRequest.assignJobOnPartitionToFiles("job-1", "RL", List.of("rl-compaction-1a.parquet", "rl-compaction-1b.parquet")),
-                AssignJobIdRequest.assignJobOnPartitionToFiles("job-2", "RL", List.of("rl-compaction-2a.parquet", "rl-compaction-2b.parquet")),
-                AssignJobIdRequest.assignJobOnPartitionToFiles("job-gc", "root", List.of("gc-1.parquet", "gc-2.parquet"))));
-        moveTimeForward(Duration.ofMinutes(1));
+        CompactionJob job1 = jobFactory.createCompactionJobWithFilenames("job-1", List.of("rl-compaction-1a.parquet", "rl-compaction-1b.parquet"), "RL");
+        CompactionJob job2 = jobFactory.createCompactionJobWithFilenames("job-2", List.of("rl-compaction-2a.parquet", "rl-compaction-2b.parquet"), "RL");
+        CompactionJob jobForGc = jobFactory.createCompactionJobWithFilenames("job-gc", List.of("gc-1.parquet", "gc-2.parquet"), "root");
+        setTime(Instant.parse("2022-08-22T14:21:00Z"));
+        update(stateStore).assignJobIds(assignJobFiles(List.of(job1, job2, jobForGc)));
+        setTime(Instant.parse("2022-08-22T14:22:00Z"));
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes("job-gc", List.of("gc-1.parquet", "gc-2.parquet"),
                 fileFactory.partitionFile("root", "root-output.parquet", 100));
+        setJobTrackerData(
+                compactionJobCreated(job1, Instant.parse("2022-08-22T14:21:10Z"),
+                        jobRunOnTask("test-task",
+                                compactionStartedStatus(Instant.parse("2022-08-22T14:21:11Z")),
+                                compactionFinishedStatus(summary(Instant.parse("2022-08-22T14:21:11Z"), Duration.ofSeconds(10), 200, 200)))),
+                compactionJobCreated(job2, Instant.parse("2022-08-22T14:21:10Z"),
+                        jobRunOnTask("test-task",
+                                compactionStartedStatus(Instant.parse("2022-08-22T14:21:23Z")),
+                                compactionFinishedStatus(summary(Instant.parse("2022-08-22T14:21:23Z"), Duration.ofSeconds(10), 200, 200)))),
+                compactionJobCreated(jobForGc, Instant.parse("2022-08-22T14:21:10Z"),
+                        jobRunOnTask("test-task",
+                                compactionStartedStatus(Instant.parse("2022-08-22T14:21:35Z")),
+                                compactionFinishedStatus(summary(Instant.parse("2022-08-22T14:21:35Z"), Duration.ofSeconds(10), 200, 200)),
+                                compactionCommittedStatus(Instant.parse("2022-08-22T14:22:00Z")))));
     }
 
     @Test
@@ -72,6 +97,13 @@ public class StandardFileStatusReporterDetailLevelTest extends FilesStatusReport
         // When / Then
         Approvals.verify(standardReportString(FileStatusDetailLevel.REFERENCES),
                 new Options().forFile().withBaseName("detailLevelReferences"));
+    }
+
+    @Test
+    void shouldShowCompactions() {
+        // When / Then
+        Approvals.verify(standardReportString(FileStatusDetailLevel.COMPACTION_JOBS),
+                new Options().forFile().withBaseName("detailLevelCompactions"));
     }
 
 }

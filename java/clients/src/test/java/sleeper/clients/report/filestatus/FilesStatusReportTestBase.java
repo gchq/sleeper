@@ -28,6 +28,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,6 +39,9 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -47,18 +51,30 @@ public class FilesStatusReportTestBase {
     protected final Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
     protected Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
 
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    protected final InstanceProperties instanceProperties = createTestInstanceProperties();
+    protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     protected final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
+    protected final Map<String, CompactionJobStatus> jobIdToStatus = new HashMap<>();
 
     @BeforeEach
     void setUpBase() {
         stateStore.fixFileUpdateTime(lastStateStoreUpdate);
     }
 
+    protected void setTime(Instant timeNow) {
+        lastStateStoreUpdate = timeNow;
+        stateStore.fixFileUpdateTime(timeNow);
+    }
+
     protected void moveTimeForward(Duration duration) {
         lastStateStoreUpdate = lastStateStoreUpdate.plus(duration);
         stateStore.fixFileUpdateTime(lastStateStoreUpdate);
+    }
+
+    protected void setJobTrackerData(CompactionJobStatus... jobs) {
+        for (CompactionJobStatus job : jobs) {
+            jobIdToStatus.put(job.getJobId(), job);
+        }
     }
 
     protected static String example(String path) throws IOException {
@@ -84,7 +100,7 @@ public class FilesStatusReportTestBase {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             FileStatusReporter reporter = getReporter.apply(
                     new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
-            new FilesStatusReport(stateStore, maxFilesWithNoReferences, detailLevel, reporter).run();
+            new FilesStatusReport(stateStore, maxFilesWithNoReferences, detailLevel, reporter, id -> Optional.ofNullable(jobIdToStatus.get(id))).run();
             return os.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

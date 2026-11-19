@@ -20,6 +20,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.report.arguments.OutputFormatArgument;
+import sleeper.clients.report.filestatus.CompactionJobTrackerLookup;
 import sleeper.clients.report.filestatus.CsvFileStatusReporter;
 import sleeper.clients.report.filestatus.FileStatusCollector;
 import sleeper.clients.report.filestatus.FileStatusDetailLevel;
@@ -57,20 +58,22 @@ public class FilesStatusReport {
     private final FileStatusDetailLevel detailLevel;
     private final FileStatusReporter fileStatusReporter;
     private final FileStatusCollector fileStatusCollector;
+    private final CompactionJobTrackerLookup jobTracker;
 
     public FilesStatusReport(
             StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, boolean verbose,
             FileStatusReporter fileStatusReporter) {
-        this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY, fileStatusReporter);
+        this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY, fileStatusReporter, CompactionJobTrackerLookup.none());
     }
 
     public FilesStatusReport(
             StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, FileStatusDetailLevel detailLevel,
-            FileStatusReporter fileStatusReporter) {
+            FileStatusReporter fileStatusReporter, CompactionJobTrackerLookup jobTracker) {
         this.maxNumberOfFilesWithNoReferencesToCount = maxNumberOfFilesWithNoReferencesToCount;
         this.detailLevel = detailLevel;
         this.fileStatusReporter = fileStatusReporter;
         this.fileStatusCollector = new FileStatusCollector(stateStore);
+        this.jobTracker = jobTracker;
     }
 
     /**

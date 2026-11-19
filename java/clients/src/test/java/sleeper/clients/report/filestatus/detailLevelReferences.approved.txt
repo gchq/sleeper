@@ -14,21 +14,21 @@ Number of rows in leaf partitions: 700
 Percentage of rows in leaf partitions: 87.5
 
 Files with no references:
-gc-1.parquet, last updated at 2022-08-22T14:22:00.001Z
-gc-2.parquet, last updated at 2022-08-22T14:22:00.001Z
+gc-1.parquet, last updated at 2022-08-22T14:22:00Z
+gc-2.parquet, last updated at 2022-08-22T14:22:00Z
 
 Files with references:
 left.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
 	Reference in partition L, 100 rows, last updated at 2022-08-22T14:20:00.001Z
-rl-compaction-1a.parquet, 1 reference total, last updated at 2022-08-22T14:21:00.001Z
-	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00.001Z, assigned to job job-1
-rl-compaction-1b.parquet, 1 reference total, last updated at 2022-08-22T14:21:00.001Z
-	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00.001Z, assigned to job job-1
-rl-compaction-2a.parquet, 1 reference total, last updated at 2022-08-22T14:21:00.001Z
-	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00.001Z, assigned to job job-2
-rl-compaction-2b.parquet, 1 reference total, last updated at 2022-08-22T14:21:00.001Z
-	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00.001Z, assigned to job job-2
+rl-compaction-1a.parquet, 1 reference total, last updated at 2022-08-22T14:21:00Z
+	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00Z, assigned to job job-1
+rl-compaction-1b.parquet, 1 reference total, last updated at 2022-08-22T14:21:00Z
+	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00Z, assigned to job job-1
+rl-compaction-2a.parquet, 1 reference total, last updated at 2022-08-22T14:21:00Z
+	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00Z, assigned to job job-2
+rl-compaction-2b.parquet, 1 reference total, last updated at 2022-08-22T14:21:00Z
+	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00Z, assigned to job job-2
 rl-no-compaction.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
 	Reference in partition RL, 200 rows, last updated at 2022-08-22T14:20:00.001Z
-root-output.parquet, 1 reference total, last updated at 2022-08-22T14:22:00.001Z
-	Reference in partition root, 100 rows, last updated at 2022-08-22T14:22:00.001Z
+root-output.parquet, 1 reference total, last updated at 2022-08-22T14:22:00Z
+	Reference in partition root, 100 rows, last updated at 2022-08-22T14:22:00Z
