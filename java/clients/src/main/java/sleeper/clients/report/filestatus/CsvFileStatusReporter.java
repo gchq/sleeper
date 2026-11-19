@@ -26,7 +26,7 @@ public class CsvFileStatusReporter implements FileStatusReporter {
     List<Object> outputData = new ArrayList<>();
 
     @Override
-    public void report(TableFilesStatus status, boolean verbose, FileStatusDetailLevel detailLevel) {
+    public void report(TableFilesStatus status, FileStatusDetailLevel detailLevel) {
         outputData.clear();
 
         appendToOutputDataList(status.getTotalRows());

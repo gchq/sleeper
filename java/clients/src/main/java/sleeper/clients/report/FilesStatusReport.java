@@ -72,7 +72,7 @@ public class FilesStatusReport {
      */
     public void run() {
         TableFilesStatus tableStatus = fileStatusCollector.run(maxNumberOfFilesWithNoReferencesToCount);
-        fileStatusReporter.report(tableStatus, verbose, verbose ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY);
+        fileStatusReporter.report(tableStatus, verbose ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY);
     }
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()

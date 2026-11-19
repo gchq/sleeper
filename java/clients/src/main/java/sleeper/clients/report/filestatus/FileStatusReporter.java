@@ -22,10 +22,9 @@ public interface FileStatusReporter {
 
     /**
      * Writes a report on the status of files.
-     *
+     * 
      * @param status      the status of files in the Sleeper table
-     * @param verbose     true if the report should be verbose
      * @param detailLevel the level of detail to include
      */
-    void report(TableFilesStatus status, boolean verbose, FileStatusDetailLevel detailLevel);
+    void report(TableFilesStatus status, FileStatusDetailLevel detailLevel);
 }

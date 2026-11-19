@@ -22,11 +22,11 @@ public enum FileStatusDetailLevel {
     REFERENCES,
     FULL;
 
-    public boolean isShowUnreferencedFiles() {
+    public boolean isShowFileReferences() {
         return this == REFERENCES || this == FULL;
     }
 
-    public boolean isShowReferencedFiles() {
-        return this == COMPACTION_JOBS || this == REFERENCES || this == FULL;
+    public boolean isShowCompactionJobs() {
+        return this == COMPACTION_JOBS || this == FULL;
     }
 }
