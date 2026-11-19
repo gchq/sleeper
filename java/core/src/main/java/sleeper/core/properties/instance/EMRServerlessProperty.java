@@ -94,6 +94,8 @@ public interface EMRServerlessProperty {
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES = Index
             .propertyBuilder("sleeper.default.table.bulk.import.emr.serverless.spark.executor.instances")
             .description("(EMR Serverless mode only) The default number of executors to be used with Serverless. Used to set spark.executor.instances.\n"
+                    + "This property is only used when dynamic allocation is disabled. When dynamic allocation is disabled "
+                    + "this property sets the number of executors to be used.\n"
                     + "This property is a default which can be overridden by a table property or by a property in the "
                     + "bulk import job specification.\n"
                     + "See https://spark.apache.org/docs/latest/configuration.html.")
@@ -123,10 +125,56 @@ public interface EMRServerlessProperty {
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION = Index
             .propertyBuilder("sleeper.default.table.bulk.import.emr.serverless.spark.dynamic.allocation.enabled")
             .description("(EMR Serverless mode only) Whether Spark should use dynamic allocation to scale resources up and down by default. Used to set spark.dynamicAllocation.enabled.\n"
+                    + "When enabled, the number of executors scales between the dynamic allocation min and max executors "
+                    + "properties, and spark.executor.instances is not set.\n"
                     + "This property is a default which can be overridden by a table property or by a property in the "
                     + "bulk import job specification.\n"
                     + "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("false")
+            .defaultValue("true")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS = Index
+            .propertyBuilder("sleeper.default.table.bulk.import.emr.serverless.spark.dynamic.allocation.min.executors")
+            .description("(EMR Serverless mode only) The default lower bound for the number of executors when dynamic allocation is enabled. Used to set spark.dynamicAllocation.minExecutors.\n"
+                    + "This property is a default which can be overridden by a table property or by a property in the "
+                    + "bulk import job specification.\n"
+                    + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("0")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS = Index
+            .propertyBuilder("sleeper.default.table.bulk.import.emr.serverless.spark.dynamic.allocation.initial.executors")
+            .description("(EMR Serverless mode only) The default number of executors to start with when dynamic allocation is enabled. Used to set spark.dynamicAllocation.initialExecutors.\n"
+                    + "This property is a default which can be overridden by a table property or by a property in the "
+                    + "bulk import job specification.\n"
+                    + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("3")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS = Index
+            .propertyBuilder("sleeper.default.table.bulk.import.emr.serverless.spark.dynamic.allocation.max.executors")
+            .description("(EMR Serverless mode only) The default upper bound for the number of executors when dynamic allocation is enabled. Used to set spark.dynamicAllocation.maxExecutors.\n"
+                    + "EMR Serverless does not limit this by default, so this should always be set to bound the cost of a job.\n"
+                    + "This property is a default which can be overridden by a table property or by a property in the "
+                    + "bulk import job specification.\n"
+                    + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("36")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT = Index
+            .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.dynamic.allocation.executor.idle.timeout")
+            .description("(EMR Serverless mode only) How long an executor can be idle before Spark removes it, when dynamic "
+                    + "allocation is enabled. Used to set spark.dynamicAllocation.executorIdleTimeout.\n"
+                    + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("60s")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_OPTIMIZATION = Index
+            .propertyBuilder("sleeper.bulk.import.emr.serverless.dynamic.allocation.optimization.enabled")
+            .description("(EMR Serverless mode only) Whether to turn on EMR Serverless dynamic allocation optimization when "
+                    + "dynamic allocation is enabled for a job. This aligns how Spark requests and releases executors with how "
+                    + "EMR Serverless creates and releases workers.\n"
+                    + "See https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/jobs-spark.html.")
+            .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_RDD_COMPRESS = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.rdd.compress")

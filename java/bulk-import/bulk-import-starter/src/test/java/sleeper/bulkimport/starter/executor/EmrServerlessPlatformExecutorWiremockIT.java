@@ -16,9 +16,11 @@
 
 package sleeper.bulkimport.starter.executor;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
+import net.javacrumbs.jsonunit.assertj.JsonAssert;
 import org.assertj.core.api.AbstractStringAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,7 +55,13 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_OPTIMIZATION;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION;
 import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -81,7 +89,7 @@ public class EmrServerlessPlatformExecutorWiremockIT {
     }
 
     @Test
-    void shouldRunAServerlessJob(WireMockRuntimeInfo runtimeInfo) {
+    void shouldRunAServerlessJob(WireMockRuntimeInfo runtimeInfo) throws Exception {
         BulkImportJob job = BulkImportJob.builder()
                 .id("my-job")
                 .files(List.of("file.parquet"))
@@ -112,7 +120,7 @@ public class EmrServerlessPlatformExecutorWiremockIT {
     }
 
     @Test
-    void shouldRunAServerlessJobWithJobSparkConfSet(WireMockRuntimeInfo runtimeInfo) {
+    void shouldRunAServerlessJobWithJobSparkConfSet(WireMockRuntimeInfo runtimeInfo) throws Exception {
         BulkImportJob job = BulkImportJob.builder()
                 .id("my-job")
                 .files(List.of("file.parquet"))
@@ -136,7 +144,7 @@ public class EmrServerlessPlatformExecutorWiremockIT {
     }
 
     @Test
-    void shouldSetSparkConfFromTableProperty(WireMockRuntimeInfo runtimeInfo) {
+    void shouldSetSparkConfFromTableProperty(WireMockRuntimeInfo runtimeInfo) throws Exception {
         tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK, "150G");
         BulkImportJob job = BulkImportJob.builder()
                 .id("my-job")
@@ -152,7 +160,8 @@ public class EmrServerlessPlatformExecutorWiremockIT {
     }
 
     @Test
-    void shouldSetSparkConfFromInstanceDefaultWhenTablePropertyUnset(WireMockRuntimeInfo runtimeInfo) {
+    void shouldSetSparkConfFromInstanceDefaultWhenTablePropertyUnset(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION, "false");
         instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES, "12");
         BulkImportJob job = BulkImportJob.builder()
                 .id("my-job")
@@ -168,7 +177,7 @@ public class EmrServerlessPlatformExecutorWiremockIT {
     }
 
     @Test
-    void shouldOverrideTablePropertyWithJobPlatformSpec(WireMockRuntimeInfo runtimeInfo) {
+    void shouldOverrideTablePropertyWithJobPlatformSpec(WireMockRuntimeInfo runtimeInfo) throws Exception {
         tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK, "150G");
         BulkImportJob job = BulkImportJob.builder()
                 .id("my-job")
@@ -185,6 +194,102 @@ public class EmrServerlessPlatformExecutorWiremockIT {
                 .doesNotContain("150G");
     }
 
+    @Test
+    void shouldUseDynamicAllocationByDefault(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        BulkImportJob job = BulkImportJob.builder()
+                .id("my-job")
+                .files(List.of("file.parquet"))
+                .tableName("table-name")
+                .build();
+        stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
+
+        executor(runtimeInfo).runJobOnPlatform(arguments(job));
+
+        assertThatSparkSubmitParameters()
+                .contains(" --conf spark.dynamicAllocation.enabled=true ")
+                .contains(" --conf spark.dynamicAllocation.minExecutors=0 ")
+                .contains(" --conf spark.dynamicAllocation.initialExecutors=3 ")
+                .contains(" --conf spark.dynamicAllocation.maxExecutors=36 ")
+                .contains(" --conf spark.dynamicAllocation.executorIdleTimeout=60s ")
+                .doesNotContain("spark.executor.instances");
+        assertThatApplicationConfiguration().isArray().singleElement().isEqualTo("""
+                {"classification": "spark", "properties": {"dynamicAllocationOptimization": "true"}}""");
+    }
+
+    @Test
+    void shouldUseFixedExecutorsWhenDynamicAllocationDisabledForTable(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION, "false");
+        BulkImportJob job = BulkImportJob.builder()
+                .id("my-job")
+                .files(List.of("file.parquet"))
+                .tableName("table-name")
+                .build();
+        stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
+
+        executor(runtimeInfo).runJobOnPlatform(arguments(job));
+
+        assertThatSparkSubmitParameters()
+                .contains(" --conf spark.dynamicAllocation.enabled=false ")
+                .contains(" --conf spark.executor.instances=36 ")
+                .doesNotContain("Executors=")
+                .doesNotContain("executorIdleTimeout");
+        assertThatApplicationConfiguration().isAbsent();
+    }
+
+    @Test
+    void shouldSetDynamicAllocationExecutorBoundsFromTableProperties(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS, "1");
+        tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS, "2");
+        tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS, "10");
+        BulkImportJob job = BulkImportJob.builder()
+                .id("my-job")
+                .files(List.of("file.parquet"))
+                .tableName("table-name")
+                .build();
+        stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
+
+        executor(runtimeInfo).runJobOnPlatform(arguments(job));
+
+        assertThatSparkSubmitParameters()
+                .contains(" --conf spark.dynamicAllocation.minExecutors=1 ")
+                .contains(" --conf spark.dynamicAllocation.initialExecutors=2 ")
+                .contains(" --conf spark.dynamicAllocation.maxExecutors=10 ");
+    }
+
+    @Test
+    void shouldOverrideDynamicAllocationMaxExecutorsWithJobPlatformSpec(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS, "10");
+        BulkImportJob job = BulkImportJob.builder()
+                .id("my-job")
+                .files(List.of("file.parquet"))
+                .tableName("table-name")
+                .platformSpec(Map.of(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS.getPropertyName(), "50"))
+                .build();
+        stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
+
+        executor(runtimeInfo).runJobOnPlatform(arguments(job));
+
+        assertThatSparkSubmitParameters()
+                .contains(" --conf spark.dynamicAllocation.maxExecutors=50 ");
+    }
+
+    @Test
+    void shouldNotSetDynamicAllocationOptimizationWhenDisabledForInstance(WireMockRuntimeInfo runtimeInfo) throws Exception {
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_OPTIMIZATION, "false");
+        BulkImportJob job = BulkImportJob.builder()
+                .id("my-job")
+                .files(List.of("file.parquet"))
+                .tableName("table-name")
+                .build();
+        stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
+
+        executor(runtimeInfo).runJobOnPlatform(arguments(job));
+
+        assertThatSparkSubmitParameters()
+                .contains(" --conf spark.dynamicAllocation.enabled=true ");
+        assertThatApplicationConfiguration().isAbsent();
+    }
+
     private BulkImportArguments arguments(BulkImportJob job) {
         return BulkImportArguments.builder()
                 .instanceProperties(instanceProperties)
@@ -193,11 +298,20 @@ public class EmrServerlessPlatformExecutorWiremockIT {
                 .build();
     }
 
-    private AbstractStringAssert<?> assertThatSparkSubmitParameters() {
+    private AbstractStringAssert<?> assertThatSparkSubmitParameters() throws Exception {
+        List<LoggedRequest> requests = findAll(postRequestedFor(urlEqualTo("/applications/application-id/jobruns")));
+        assertThat(requests).hasSize(1);
+        String parameters = new ObjectMapper().readTree(requests.get(0).getBodyAsString())
+                .at("/jobDriver/sparkSubmit/sparkSubmitParameters").asText();
+        // A trailing space is added so that every --conf entry can be matched with a space after it, including the last
+        return assertThat(parameters + " ");
+    }
+
+    private JsonAssert assertThatApplicationConfiguration() {
         List<LoggedRequest> requests = findAll(postRequestedFor(urlEqualTo("/applications/application-id/jobruns")));
         assertThat(requests).hasSize(1);
         return assertThatJson(requests.get(0).getBodyAsString())
-                .inPath("$.jobDriver.sparkSubmit.sparkSubmitParameters").asString();
+                .node("configurationOverrides.applicationConfiguration");
     }
 
     private EmrServerlessPlatformExecutor executor(WireMockRuntimeInfo runtimeInfo) {

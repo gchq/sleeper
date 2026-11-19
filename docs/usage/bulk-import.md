@@ -86,10 +86,14 @@ starting with `sleeper.default.table.bulk.import.emr.serverless.spark.`:
 sleeper.table.bulk.import.emr.serverless.spark.executor.cores=4
 sleeper.table.bulk.import.emr.serverless.spark.executor.memory=16G
 sleeper.table.bulk.import.emr.serverless.spark.executor.disk=200G
-sleeper.table.bulk.import.emr.serverless.spark.executor.instances=36
 sleeper.table.bulk.import.emr.serverless.spark.driver.cores=4
 sleeper.table.bulk.import.emr.serverless.spark.driver.memory=16G
-sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.enabled=false
+sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.enabled=true
+sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.min.executors=0
+sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.initial.executors=3
+sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.max.executors=36
+# The following property is only used when dynamic allocation is disabled
+sleeper.table.bulk.import.emr.serverless.spark.executor.instances=36
 sleeper.table.bulk.import.emr.serverless.spark.default.parallelism=288
 sleeper.table.bulk.import.emr.serverless.spark.sql.shuffle.partitions=288
 ```
@@ -106,7 +110,7 @@ For example:
   ],
   "platformSpec": {
     "sleeper.table.bulk.import.emr.serverless.spark.executor.disk": "120G",
-    "sleeper.table.bulk.import.emr.serverless.spark.executor.instances": "25"
+    "sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.max.executors": "25"
   },
   "sparkConf": {
     "spark.driver.cores": "4",
@@ -114,6 +118,27 @@ For example:
   }
 }
 ```
+
+##### Dynamic Resource Allocation
+
+By default, EMR Serverless jobs use Spark dynamic resource allocation. Each job starts with a small number of
+executors, and Spark adds executors while there are tasks waiting to run, up to a maximum. Executors that are idle for
+longer than `sleeper.bulk.import.emr.serverless.spark.dynamic.allocation.executor.idle.timeout` (60s by default) are
+released. This means small jobs use fewer resources than large ones.
+
+The number of executors is bounded by the `min.executors`, `initial.executors` and `max.executors` dynamic allocation
+properties listed above.
+
+To use a fixed number of executors for a table instead, set
+`sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.enabled=false`. The number of executors is then set
+by `sleeper.table.bulk.import.emr.serverless.spark.executor.instances`.
+
+When dynamic allocation is enabled, the EMR Serverless
+[dynamic allocation optimization](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/jobs-spark.html#spark-defaults-dynamicResourceAllocation),
+is used. This aligns how Spark requests and releases executors with how EMR Serverless creates and releases workers. This can be
+turned off for the instance by setting `sleeper.bulk.import.emr.serverless.dynamic.allocation.optimization.enabled=false`.
+
+##### Other Settings
 
 Other Spark settings for EMR Serverless are set in instance properties starting with
 `sleeper.bulk.import.emr.serverless.spark.`, and apply to all tables. See the
