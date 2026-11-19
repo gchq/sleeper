@@ -25,10 +25,20 @@ public enum FileStatusDetailLevel {
     REFERENCES,
     FULL;
 
+    /**
+     * Whether details of all files and their references should be included.
+     *
+     * @return true if all file references should be shown
+     */
     public boolean isShowFileReferences() {
         return this == REFERENCES || this == FULL;
     }
 
+    /**
+     * Whether current compaction job file assignments should be included.
+     *
+     * @return true if compaction job file assignments should be shown
+     */
     public boolean isShowCompactionJobs() {
         return this == COMPACTION_JOBS || this == FULL;
     }
