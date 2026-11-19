@@ -15,6 +15,8 @@
  */
 package sleeper.clients.report;
 
+import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -359,6 +361,17 @@ public class CompactionJobStatusReportTest {
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasNoCause()
                     .hasMessage("Cannot combine query types. Options have been set for the following types: RANGE, UNFINISHED");
+        }
+    }
+
+    @Nested
+    class HelpText {
+
+        @Test
+        void shouldOutputHelpText() {
+            // When / Then
+            Approvals.verify(CompactionJobStatusReport.USAGE.createHelpText(),
+                    new Options().forFile().withBaseName("CompactionJobStatusReportHelpText"));
         }
     }
 
