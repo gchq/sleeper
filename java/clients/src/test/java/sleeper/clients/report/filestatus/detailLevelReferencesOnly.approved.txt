@@ -1,0 +1,34 @@
+
+Files Status Report:
+--------------------------
+There are 3 leaf partitions and 2 non-leaf partitions
+Number of files: 9
+Number of files with references: 7
+Number of files with no references, which will be garbage collected: 2
+Number of references to files: 7
+Number of file references in leaf partitions: min = 1, max = 5, mean = 3.000, median = 3.000, 90th percentile = 4.600, 99th percentile = 4.960, total = 6
+Number of file references in non-leaf partitions: min = 1, max = 1, mean = 1.000, median = 1.000, 90th percentile = 1.000, 99th percentile = 1.000, total = 1
+Number of rows referenced in partitions: 800
+Number of rows in non-leaf partitions: 100
+Number of rows in leaf partitions: 700
+Percentage of rows in leaf partitions: 87.5
+
+Files with no references:
+gc-1.parquet, last updated at 2022-08-22T14:22:00.001Z
+gc-2.parquet, last updated at 2022-08-22T14:22:00.001Z
+
+Files with references:
+left.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
+	Reference in partition L, 100 rows, last updated at 2022-08-22T14:20:00.001Z
+rl-compaction-1a.parquet, 1 reference total, last updated at 2022-08-22T14:21:00.001Z
+	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00.001Z, assigned to job job-1
+rl-compaction-1b.parquet, 1 reference total, last updated at 2022-08-22T14:21:00.001Z
+	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00.001Z, assigned to job job-1
+rl-compaction-2a.parquet, 1 reference total, last updated at 2022-08-22T14:21:00.001Z
+	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00.001Z, assigned to job job-2
+rl-compaction-2b.parquet, 1 reference total, last updated at 2022-08-22T14:21:00.001Z
+	Reference in partition RL, 100 rows, last updated at 2022-08-22T14:21:00.001Z, assigned to job job-2
+rl-no-compaction.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
+	Reference in partition RL, 200 rows, last updated at 2022-08-22T14:20:00.001Z
+root-output.parquet, 1 reference total, last updated at 2022-08-22T14:22:00.001Z
+	Reference in partition root, 100 rows, last updated at 2022-08-22T14:22:00.001Z

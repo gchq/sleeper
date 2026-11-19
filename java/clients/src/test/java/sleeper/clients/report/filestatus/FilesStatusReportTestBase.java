@@ -34,7 +34,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Function;
 
@@ -43,14 +45,19 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 
 public class FilesStatusReportTestBase {
     protected final Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
-    protected final Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
+    protected Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     protected final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
 
     @BeforeEach
-    void setUp() {
+    void setUpBase() {
+        stateStore.fixFileUpdateTime(lastStateStoreUpdate);
+    }
+
+    protected void moveTimeForward(Duration duration) {
+        lastStateStoreUpdate = lastStateStoreUpdate.plus(duration);
         stateStore.fixFileUpdateTime(lastStateStoreUpdate);
     }
 
@@ -60,15 +67,27 @@ public class FilesStatusReportTestBase {
         }
     }
 
-    protected String verboseReportString(Function<PrintStream, FileStatusReporter> getReporter) throws Exception {
+    protected String verboseReportString(Function<PrintStream, FileStatusReporter> getReporter) {
         return verboseReportStringWithMaxFilesWithNoReferences(getReporter, 100);
     }
 
-    protected String verboseReportStringWithMaxFilesWithNoReferences(Function<PrintStream, FileStatusReporter> getReporter, int maxFilesWithNoReferences) throws Exception {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        FileStatusReporter reporter = getReporter.apply(
-                new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
-        new FilesStatusReport(stateStore, maxFilesWithNoReferences, true, reporter).run();
-        return os.toString(StandardCharsets.UTF_8);
+    protected String standardReportString(FileStatusDetailLevel detailLevel) {
+        return reportStringWithMaxFilesWithNoReferences(StandardFileStatusReporter::new, detailLevel, 100);
+    }
+
+    protected String verboseReportStringWithMaxFilesWithNoReferences(Function<PrintStream, FileStatusReporter> getReporter, int maxFilesWithNoReferences) {
+        return reportStringWithMaxFilesWithNoReferences(getReporter, FileStatusDetailLevel.FULL, maxFilesWithNoReferences);
+    }
+
+    protected String reportStringWithMaxFilesWithNoReferences(Function<PrintStream, FileStatusReporter> getReporter, FileStatusDetailLevel detailLevel, int maxFilesWithNoReferences) {
+        try {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            FileStatusReporter reporter = getReporter.apply(
+                    new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
+            new FilesStatusReport(stateStore, maxFilesWithNoReferences, true, reporter).run();
+            return os.toString(StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }
