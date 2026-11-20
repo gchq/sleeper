@@ -35,6 +35,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class ParallelResultsFileIteratorTest {
 
     @Test
+    void shouldRefuseReadingResultsFilesWithFewerThanOneThread() {
+        // Given
+        QueryResultsReader reader = (tableName, queryId) -> List.of();
+
+        // When / Then
+        assertThatThrownBy(() -> reader.withFileReadThreads(0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("at least 1");
+    }
+
+    @Test
     void shouldReadRowsFromMultipleFiles() throws Exception {
         // Given
         List<ResultsFile> files = List.of(

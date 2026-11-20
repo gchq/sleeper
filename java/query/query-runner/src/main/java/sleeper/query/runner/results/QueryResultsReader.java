@@ -28,10 +28,12 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.PollWithRetries;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.tracker.TrackedQuery;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -91,25 +93,35 @@ public interface QueryResultsReader {
     }
 
     /**
-     * Reads the results of a query that has finished. With more than one thread, the results files are read in
-     * parallel and the rows are interleaved across files in no particular order. With one thread, the files are read
-     * one at a time in order. The returned iterator must be closed after use.
+     * Streams the results of a query that has been submitted, as they are published. Each subquery publishes its
+     * results as a separate file, and these are read as they are found. The returned iterator must be closed after
+     * use.
      *
-     * @param  tableName                     the name of the table the query ran against
-     * @param  queryId                       the query ID
-     * @param  threads                       the number of threads to read results files in parallel
-     * @return                               an iterator over the rows in the results
-     * @throws QueryResultsNotFoundException if no results were published for the query
+     * @param  tableName      the name of the table the query ran against
+     * @param  queryId        the query ID
+     * @param  statusSupplier retrieves the entry for the query in the query tracker, null if it is not tracked yet
+     * @param  poll           the polling interval and timeout for each wait for more results
+     * @return                an iterator over the rows in the results, as they are published
      */
-    default CloseableIterator<Row> getResults(String tableName, String queryId, int threads) {
-        if (threads == 1) {
-            return getResults(tableName, queryId);
+    default CloseableIterator<Row> streamResults(
+            String tableName, String queryId, Supplier<TrackedQuery> statusSupplier, PollWithRetries poll) {
+        return new StreamingQueryResultsIterator(tableName, queryId, this, statusSupplier, poll);
+    }
+
+    /**
+     * Creates a copy of this reader that reads results files with the given number of threads. With more than one
+     * thread, the results files are read in parallel and the rows are interleaved across files in no particular order.
+     * With one thread, the files are read one at a time in order.
+     *
+     * @param  threads                  the number of threads to read results files in parallel
+     * @return                          the reader
+     * @throws IllegalArgumentException if the number of threads is less than 1
+     */
+    default QueryResultsReader withFileReadThreads(int threads) {
+        if (threads < 1) {
+            throw new IllegalArgumentException("Number of threads to read query results files must be at least 1, found " + threads);
         }
-        List<ResultsFile> files = listResultsFiles(tableName, queryId);
-        if (files.isEmpty()) {
-            throw new QueryResultsNotFoundException(queryId, null);
-        }
-        return new ParallelResultsFileIterator(files, threads);
+        return new QueryResultsReaderWithThreads(this, threads);
     }
 
     /**

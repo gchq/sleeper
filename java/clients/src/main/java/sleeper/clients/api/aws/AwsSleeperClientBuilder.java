@@ -88,8 +88,8 @@ public class AwsSleeperClientBuilder {
                 .queryWebSocketSender(QueryWebSocketSender.query(instanceProperties, tablePropertiesProvider,
                         awsClients.awsCredentialsProvider()))
                 .querySender(QuerySender.toSqs(instanceProperties, tablePropertiesProvider, awsClients.sqs()))
-                .queryResultsReader(QueryResultsReader.fromS3(instanceProperties, tablePropertiesProvider, hadoop))
-                .queryResultsFileReadThreads(queryResultsFileReadThreads)
+                .queryResultsReader(QueryResultsReader.fromS3(instanceProperties, tablePropertiesProvider, hadoop)
+                        .withFileReadThreads(queryResultsFileReadThreads))
                 .queryTrackerStore(new DynamoDBQueryTracker(instanceProperties, awsClients.dynamo()))
                 .shutdown(new UncheckedAutoCloseables(List.of(awsClients, rowRetrieverProvider)))
                 .build();

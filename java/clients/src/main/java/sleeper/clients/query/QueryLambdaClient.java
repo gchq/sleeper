@@ -43,7 +43,6 @@ import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.results.QueryResultsReader;
-import sleeper.query.runner.results.StreamingQueryResultsIterator;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.io.IOException;
@@ -147,8 +146,8 @@ public class QueryLambdaClient extends QueryCommandLineClient {
 
     private void printResults(TableProperties tableProperties, Query query) {
         Schema schema = tableProperties.getSchema();
-        try (CloseableIterator<Row> rows = queryResultsReader.getResults(
-                query.getTableName(), query.getQueryId(), queryResultsFileReadThreads)) {
+        try (CloseableIterator<Row> rows = queryResultsReader.withFileReadThreads(queryResultsFileReadThreads)
+                .getResults(query.getTableName(), query.getQueryId())) {
             out.println("Returned Rows:");
             while (rows.hasNext()) {
                 out.println(rows.next().toString(schema));
@@ -173,9 +172,9 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         Schema schema = tableProperties.getSchema();
         submitQuery(query);
         long count = 0;
-        try (CloseableIterator<Row> rows = new StreamingQueryResultsIterator(
-                query.getTableName(), query.getQueryId(), queryResultsReader,
-                () -> getTrackedQueryOrNull(query.getQueryId()), STREAM_RESULTS_POLL, queryResultsFileReadThreads)) {
+        try (CloseableIterator<Row> rows = queryResultsReader.withFileReadThreads(queryResultsFileReadThreads)
+                .streamResults(query.getTableName(), query.getQueryId(),
+                        () -> getTrackedQueryOrNull(query.getQueryId()), STREAM_RESULTS_POLL)) {
             out.println("Returned Rows:");
             while (rows.hasNext()) {
                 out.println(rows.next().toString(schema));

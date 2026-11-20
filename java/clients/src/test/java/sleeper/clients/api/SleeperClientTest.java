@@ -51,6 +51,7 @@ import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.results.QueryFailedException;
 import sleeper.query.runner.results.QueryResultsNotFoundException;
+import sleeper.query.runner.results.QueryResultsReader;
 import sleeper.query.runner.websocket.QueryWebSocketMessage;
 import sleeper.query.runner.websocket.QueryWebSocketMessageSerDe;
 
@@ -373,7 +374,9 @@ class SleeperClientTest {
     @Test
     void shouldGetResultsOfQueryReadingFilesInParallel() throws Exception {
         // Given a client configured to read results files in parallel, and a query with multiple results files
-        SleeperClient client = instance.sleeperClientBuilder().queryResultsFileReadThreads(2).build();
+        SleeperClient client = instance.sleeperClientBuilder()
+                .queryResultsReader(instance.queryResultsReader().withFileReadThreads(2))
+                .build();
         instance.publishQueryResultsFile("test-query", "file-1.parquet", List.of(
                 new Row(Map.of("key", "A")),
                 new Row(Map.of("key", "B"))));
@@ -396,19 +399,14 @@ class SleeperClientTest {
     @Test
     void shouldFailGettingResultsInParallelForQueryThatWasNeverProcessed() {
         // Given
-        SleeperClient client = instance.sleeperClientBuilder().queryResultsFileReadThreads(2).build();
+        SleeperClient client = instance.sleeperClientBuilder()
+                .queryResultsReader(instance.queryResultsReader().withFileReadThreads(2))
+                .build();
 
         // When / Then
         assertThatThrownBy(() -> client.getQueryResults("query-table", "test-query"))
                 .isInstanceOf(QueryResultsNotFoundException.class)
                 .hasMessageContaining("test-query");
-    }
-
-    @Test
-    void shouldThrowExceptionWithFewerThanOneQueryResultsFileReadThreads() {
-        assertThatThrownBy(() -> instance.sleeperClientBuilder().queryResultsFileReadThreads(0).build())
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("queryResultsFileReadThreads");
     }
 
     @Test
@@ -479,7 +477,9 @@ class SleeperClientTest {
         // Given a client configured to read results files in parallel, a query where one subquery has already
         // published its results, and a second subquery publishes its results and the query completes during the first
         // wait for more results
-        SleeperClient client = instance.sleeperClientBuilder().queryResultsFileReadThreads(2).build();
+        SleeperClient client = instance.sleeperClientBuilder()
+                .queryResultsReader(instance.queryResultsReader().withFileReadThreads(2))
+                .build();
         Query query = exactQuery("test-query", "A", "query-table");
         instance.queryTracker().queryInProgress(query);
         instance.publishQueryResultsFile("test-query", "file-1.parquet", List.of(new Row(Map.of("key", "A"))));
@@ -512,7 +512,9 @@ class SleeperClientTest {
     void shouldFailStreamingResultsInParallelWhenQueryFails() throws Exception {
         // Given a client configured to read results files in parallel, a query where one subquery has already
         // published its results, and the query fails during the first wait for more results
-        SleeperClient client = instance.sleeperClientBuilder().queryResultsFileReadThreads(2).build();
+        SleeperClient client = instance.sleeperClientBuilder()
+                .queryResultsReader(instance.queryResultsReader().withFileReadThreads(2))
+                .build();
         Query query = exactQuery("test-query", "A", "query-table");
         instance.queryTracker().queryInProgress(query);
         instance.publishQueryResultsFile("test-query", "file-1.parquet", List.of(new Row(Map.of("key", "A"))));
@@ -542,12 +544,12 @@ class SleeperClientTest {
         List<Duration> foundWaits = new ArrayList<>();
         PollWithRetries poll = pollRecordingWaits(foundWaits);
         List<String> listedQueryIds = new ArrayList<>();
+        QueryResultsReader resultsReader = (tableName, queryId) -> {
+            listedQueryIds.add(queryId);
+            return List.of();
+        };
         SleeperClient client = instance.sleeperClientBuilder()
-                .queryResultsFileReadThreads(2)
-                .queryResultsReader((tableName, queryId) -> {
-                    listedQueryIds.add(queryId);
-                    return List.of();
-                })
+                .queryResultsReader(resultsReader.withFileReadThreads(2))
                 .build();
 
         // When

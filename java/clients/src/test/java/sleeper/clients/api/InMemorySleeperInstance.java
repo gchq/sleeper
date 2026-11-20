@@ -102,12 +102,22 @@ public class InMemorySleeperInstance {
                 .bulkExportQuerySender(bulkExportQueue::add)
                 .queryWebSocketSender(queryWebSocketSender())
                 .querySender(queryQueue::add)
-                .queryResultsReader((tableName, queryId) -> queryResultsById
-                        .getOrDefault(queryId, Map.of()).entrySet().stream()
-                        .map(file -> new QueryResultsReader.ResultsFile(file.getKey(),
-                                () -> new WrappedIterator<>(file.getValue().iterator())))
-                        .toList())
+                .queryResultsReader(queryResultsReader())
                 .queryTrackerStore(queryTracker);
+    }
+
+    /**
+     * Creates a reader for query results files held in memory. Files can be added with
+     * {@link #publishQueryResultsFile}.
+     *
+     * @return the reader
+     */
+    public QueryResultsReader queryResultsReader() {
+        return (tableName, queryId) -> queryResultsById
+                .getOrDefault(queryId, Map.of()).entrySet().stream()
+                .map(file -> new QueryResultsReader.ResultsFile(file.getKey(),
+                        () -> new WrappedIterator<>(file.getValue().iterator())))
+                .toList();
     }
 
     /**
