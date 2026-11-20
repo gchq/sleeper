@@ -57,18 +57,32 @@ public interface JobRunReport {
     boolean isFinishedSuccessfully();
 
     /**
-     * Retrieves the time of the first update in the workflow of this job run. This is when the job was received, which
-     * may or may not be when it started processing. For example, bulk import jobs are accepted and then passed to be
-     * run in a Spark cluster.
+     * Retrieves the time of the update that recorded the start of this job run. This is when the job was received,
+     * which may or may not be when it started processing. For example, bulk import jobs are accepted and then passed to
+     * be run in a Spark cluster.
      * <p>
      * This should be based on the type of update, so when a bulk import is accepted and then starts in a cluster it
      * should always be the accepted update, even if the clock in the cluster says the time is before it was accepted.
      * Because the processing of a run can be distributed, and different machines can disagree on the time, it's
      * possible that this is not the first update according to the times recorded in each update.
      *
-     * @return the start time
+     * @return the start time, or null if there is no update of the type that starts a run
      */
     Instant getStartTime();
+
+    /**
+     * Retrieves the time of the first update in this run. If there is an update of the type that starts a run, that
+     * will be used even if there is an earlier update.
+     *
+     * @return the start time, or the time of the earliest update in the run if the start time is unknown
+     */
+    default Instant getStartOrFirstUpdateTime() {
+        Instant startTime = getStartTime();
+        if (startTime != null) {
+            return startTime;
+        }
+        return getStatusUpdates().get(0).getUpdateTime();
+    }
 
     /**
      * Retrieves the time of the last update in the workflow of this job run, if it is finished or failed. If the run

@@ -223,12 +223,26 @@ public class CompactionJobStatus {
      */
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
+        Instant firstUpdateTime = getFirstUpdateTime();
         if (isUnstartedOrInProgress()) {
-            return timeWindowQuery.isUnfinishedJobInWindow(createUpdateTime);
+            return timeWindowQuery.isUnfinishedJobInWindow(firstUpdateTime);
         } else {
             return timeWindowQuery.isFinishedJobInWindow(
-                    createUpdateTime, jobRuns.lastTime().orElseThrow());
+                    firstUpdateTime, jobRuns.lastTime().orElseThrow());
         }
+    }
+
+    /**
+     * Retrieves the time of the first status update for the job. This is the time the job was created, unless the
+     * created update is not present in the tracker, in which case it is the first update in any run of the job.
+     *
+     * @return the time of the first status update
+     */
+    private Instant getFirstUpdateTime() {
+        if (createUpdateTime != null) {
+            return createUpdateTime;
+        }
+        return jobRuns.firstTime().orElseThrow();
     }
 
     public List<CompactionJobRun> getRunsLatestFirst() {
