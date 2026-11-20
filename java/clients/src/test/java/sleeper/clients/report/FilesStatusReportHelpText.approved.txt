@@ -4,7 +4,7 @@ Available options: --help, --detail, --format, --max-no-ref-files
 Creates a report on the status of files in a Sleeper table.
 
 --detail <level>
-Level of detail to include in the report. Defaults to full. One of:
+Level of detail to include in the report. Defaults to stats_only. One of:
 stats_only: statistics on the files in the table.
 compaction_jobs: statistics, and compaction jobs assigned to files.
 references: statistics, and all files and their references.

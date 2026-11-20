@@ -68,6 +68,10 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             out.println("Compactions assigned to files:" + (status.getCompactions().isEmpty() ? " none" : ""));
             status.getCompactions().forEach(partition -> printPartitionCompactions(partition, jobTracker));
         }
+        if (detailLevel == FileStatusDetailLevel.STATS_ONLY) {
+            out.println();
+            out.println("To see the files or compactions currently in the state store, please set the detail level of the report.");
+        }
     }
 
     private void printPartitionStats(FileReferencesStats partitions, String type) {

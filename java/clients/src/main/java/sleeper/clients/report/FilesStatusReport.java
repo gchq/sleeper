@@ -96,7 +96,7 @@ public class FilesStatusReport {
                     CommandOption.withLongName("detail")
                             .numArgs(NumArgs.ONE)
                             .helpText("""
-                                    Level of detail to include in the report. Defaults to full. One of:
+                                    Level of detail to include in the report. Defaults to stats_only. One of:
                                     stats_only: statistics on the files in the table.
                                     compaction_jobs: statistics, and compaction jobs assigned to files.
                                     references: statistics, and all files and their references.
@@ -125,7 +125,7 @@ public class FilesStatusReport {
                 arguments.getIntegerOrDefault("max-no-ref-files", 1000),
                 arguments.getOptionalString("detail")
                         .map(FilesStatusReport::readDetailLevel)
-                        .orElse(FileStatusDetailLevel.FULL),
+                        .orElse(FileStatusDetailLevel.STATS_ONLY),
                 OUTPUT_FORMAT.read(arguments));
     }
 

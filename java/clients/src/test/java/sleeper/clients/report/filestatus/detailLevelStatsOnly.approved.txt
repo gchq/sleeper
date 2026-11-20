@@ -12,3 +12,5 @@ Number of rows referenced in partitions: 1K (1,000)
 Number of rows in non-leaf partitions: 200
 Number of rows in leaf partitions: 800
 Percentage of rows in leaf partitions: 80.0
+
+To see the files or compactions currently in the state store, please set the detail level of the report.

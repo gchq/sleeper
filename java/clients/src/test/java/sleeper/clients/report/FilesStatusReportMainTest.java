@@ -46,7 +46,7 @@ public class FilesStatusReportMainTest {
             assertThat(args.instanceId()).isEqualTo("my-instance");
             assertThat(args.tableName()).isEqualTo("my-table");
             assertThat(args.maxNoRefFiles()).isEqualTo(1000);
-            assertThat(args.detailLevel()).isEqualTo(FileStatusDetailLevel.FULL);
+            assertThat(args.detailLevel()).isEqualTo(FileStatusDetailLevel.STATS_ONLY);
             assertThat(args.reporter())
                     .usingRecursiveComparison()
                     .isEqualTo(new StandardFileStatusReporter());
