@@ -155,6 +155,7 @@ public class QueryExecutor {
                                 new RuntimeException("Exception returning rows for leaf partition " + leafPartitionQuery, e)));
                         sentTerminal = true;
                     } catch (RuntimeException | Error e) {
+                        // Catch the Error so that it reaches the caller and to avoid the query being marked as done
                         putIfOpen(queue, closed, ParallelQueryIterator.QueueItem.error(e));
                         sentTerminal = true;
                     } catch (InterruptedException e) {
