@@ -99,7 +99,7 @@
         <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of LZ4 Java with vulnerabilities. -->
         <org.lz4.version>1.8.1</org.lz4.version>
-        <yawk.lz4.version>1.14.0</yawk.lz4.version>
+        <yawk.lz4.version>1.14.1</yawk.lz4.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.2</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.59.1</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.59.2</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         It's not compatible with the latest version, so we match the version that it provides.
@@ -173,7 +173,7 @@
         <httpcore4.version>4.4.16</httpcore4.version>
         <httpclient4.version>4.5.14</httpclient4.version>
         <httpclient5.version>5.6.5</httpclient5.version>
-        <httpcore5.version>5.4.4</httpcore5.version>
+        <httpcore5.version>5.5</httpcore5.version>
         <jaxb.version>2.3.1</jaxb.version>
         <jline.version>4.7.0</jline.version>
         <jetbrains-annotations.version>26.1.0</jetbrains-annotations.version>
@@ -198,10 +198,10 @@
         <google.http-client.version>2.2.0</google.http-client.version>
         <google.grpc.version>1.85.1</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.276.0</cdk.version>
+        <cdk.version>2.277.0</cdk.version>
         <constructs.version>10.8.1</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
-        <jsii.version>1.142.0</jsii.version>
+        <jsii.version>1.143.0</jsii.version>
         <gson.version>2.15.0</gson.version>
         <slf4j.version>2.0.20</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
@@ -217,9 +217,9 @@
         <!-- This is not managed for the whole project as it conflicts with Trino. -->
         <jersey.build.version>4.0.0</jersey.build.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
-        <netty.version>4.2.20.Final</netty.version>
+        <netty.version>4.2.21.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
-        <netty-tcnative.version>2.0.85.Final</netty-tcnative.version>
+        <netty-tcnative.version>2.0.86.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>11.0.25</jetty.version>

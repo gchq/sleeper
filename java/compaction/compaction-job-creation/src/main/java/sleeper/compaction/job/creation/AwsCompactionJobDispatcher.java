@@ -68,7 +68,7 @@ public class AwsCompactionJobDispatcher {
                 returnToQueue(instanceProperties, sqs), sendDeadLetter(instanceProperties, sqs), timeSupplier);
     }
 
-    private static SendJobs sendJobs(InstanceProperties instanceProperties, SqsClient sqs, CompactionJobSerDe compactionJobSerDe) {
+    public static SendJobs sendJobs(InstanceProperties instanceProperties, SqsClient sqs, CompactionJobSerDe compactionJobSerDe) {
         return jobs -> {
             SendMessageBatchResponse response = sqs.sendMessageBatch(SendMessageBatchRequest.builder()
                     .queueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
