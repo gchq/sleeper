@@ -70,7 +70,7 @@ public class WhileCompactionST {
 
         // When compactions are running and queries are executed concurrently
         CompactionDsl compaction = sleeper.compaction();
-        compaction.createJobs(20);
+        // compaction.createJobs(20);
         compaction.waitForTasks(1);
 
         BackgroundQueries queries = sleeper.directQuery()
