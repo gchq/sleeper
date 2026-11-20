@@ -117,6 +117,51 @@ public interface PersistentEMRProperty {
             .defaultValue("60")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION = Index.propertyBuilder("sleeper.default.table.bulk.import.persistent.emr.spark.dynamic.allocation.enabled")
+            .description("(Persistent EMR mode only) Whether Spark should use dynamic allocation to scale the "
+                    + "executors used by each job on the persistent EMR cluster. "
+                    + "Used to set spark.dynamicAllocation.enabled for each job.\n"
+                    + "When enabled, each job scales between the dynamic allocation min and max executors, rather than using the "
+                    + "fixed number of executors set in sleeper.bulk.import.emr.spark.executor.instances.\n"
+                    + "This property is a default which can be overridden by a table property or by a property in the "
+                    + "bulk import job specification.\n"
+                    + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("true")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MIN_EXECUTORS = Index
+            .propertyBuilder("sleeper.default.table.bulk.import.persistent.emr.spark.dynamic.allocation.min.executors")
+            .description(
+                    "(Persistent EMR mode only) The default lower bound for the number of executors for a job when "
+                            + "dynamic allocation is enabled. Used to set spark.dynamicAllocation.minExecutors.\n"
+                            + "This property is a default which can be overridden by a table property or by a property "
+                            + "in the bulk import job specification.\n"
+                            + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("0")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS = Index
+            .propertyBuilder("sleeper.default.table.bulk.import.persistent.emr.spark.dynamic.allocation.initial.executors")
+            .description("(Persistent EMR mode only) The default number of executors a job starts with when dynamic "
+                    + "allocation is enabled. Used to set spark.dynamicAllocation.initialExecutors.\n"
+                    + "This property is a default which can be overridden by a table property or by a property in the "
+                    + "bulk import job specification.\n"
+                    + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("3")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS = Index
+            .propertyBuilder("sleeper.default.table.bulk.import.persistent.emr.spark.dynamic.allocation.max.executors")
+            .description(
+                    "(Persistent EMR mode only) The default upper bound for the number of executors for a job when "
+                            + "dynamic allocation is enabled. Used to set spark.dynamicAllocation.maxExecutors.\n"
+                            + "This limits how much of the shared persistent EMR cluster a single job can use.\n"
+                            + "This property is a default which can be overridden by a table property or by a property "
+                            + "in the bulk import job specification.\n"
+                            + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("29")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

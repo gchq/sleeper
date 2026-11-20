@@ -47,7 +47,7 @@ public interface PlatformExecutor {
                 return new PersistentEmrPlatformExecutor(
                         BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrClient.builder()),
                         ReturnBulkImportJobToQueue.forFullPersistentEmrCluster(instanceProperties, SqsClient.create()),
-                        instanceProperties);
+                        instanceProperties, tablePropertiesProvider);
             case EMRServerless:
                 return new EmrServerlessPlatformExecutor(
                         BulkImportStarterRetryStrategy.overrideAndBuildAwsClient(EmrServerlessClient.builder()),
