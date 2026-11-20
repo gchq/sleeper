@@ -43,6 +43,10 @@
             <outputDirectory>scripts/utility</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../scripts/maintenance</directory>
+            <outputDirectory>scripts/maintenance</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../scripts/templates</directory>
             <outputDirectory>./scripts/templates</outputDirectory>
         </fileSet>

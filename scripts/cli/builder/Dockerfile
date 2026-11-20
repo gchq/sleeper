@@ -28,9 +28,7 @@ RUN apt-get update && apt-get install -y \
     sudo \
     rsync \
     # Rust build time dependencies
-    build-essential pkg-config libssl-dev \
-    # Clang installation dependencies
-    lsb-release wget software-properties-common gnupg \
+    build-essential pkg-config libssl-dev clang-20 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Trivy for vulnerability scanning
@@ -39,10 +37,6 @@ RUN echo "deb [signed-by=/etc/apt/keyrings/trivy.gpg] https://aquasecurity.githu
     | tee /etc/apt/sources.list.d/trivy.list > /dev/null
 RUN apt-get update && apt-get install -y \
     trivy \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Clang 20
-RUN wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 20 \
     && rm -rf /var/lib/apt/lists/*
 
 # VS Code Java extension requires Java 21, so we install that but set the preferred version to match AWS EMR.
@@ -78,7 +72,9 @@ RUN chmod -R a+rw $CARGO_HOME
 # Create non-root user
 RUN adduser --disabled-password --gecos "" sleeper \
     && usermod -aG sudo,docker,rust sleeper \
-    && passwd -d sleeper
+    && passwd -d sleeper \
+    && echo "sleeper ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/sleeper \
+    && chmod 0440 /etc/sudoers.d/sleeper
 USER sleeper
 
 # Set command line prompt to show you're in the builder Docker container

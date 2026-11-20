@@ -15825,7 +15825,7 @@
               "Enabled": true
             },
             "Type": "Spark",
-            "Architecture": "X86_64",
+            "Architecture": "ARM64",
             "InitialCapacity": [],
             "AutoStopConfiguration": {
               "Enabled": true,
