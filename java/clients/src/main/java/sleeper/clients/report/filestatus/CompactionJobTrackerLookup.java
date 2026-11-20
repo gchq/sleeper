@@ -28,7 +28,7 @@ public interface CompactionJobTrackerLookup {
 
     /**
      * Retrieves the currently tracked status of a job. This will be derived from all events that have been tracked for
-     * that job. If the job tracker is disabled for the instance, nothing will be returned.
+     * that job. If no job tracker is available, nothing will be returned.
      *
      * @param  jobId the job ID
      * @return       the status of the job, if it has been tracked
@@ -36,19 +36,25 @@ public interface CompactionJobTrackerLookup {
     Optional<CompactionJobStatus> getJob(String jobId);
 
     /**
-     * Creates a lookup to query the job tracker, ignoring if the tracker is disabled for the instance.
+     * Checks whether a compaction job tracker is available.
+     *
+     * @return true if we can look up jobs in the tracker
+     */
+    default boolean isTrackerAvailable() {
+        return true;
+    }
+
+    /**
+     * Creates a lookup to query the job tracker.
      *
      * @param  tracker the job tracker
      * @return         the lookup
      */
     static CompactionJobTrackerLookup from(CompactionJobTracker tracker) {
-        return id -> {
-            try {
-                return tracker.getJob(id);
-            } catch (UnsupportedOperationException e) {
-                return Optional.empty();
-            }
-        };
+        if (tracker == CompactionJobTracker.NONE) {
+            return none();
+        }
+        return tracker::getJob;
     }
 
     /**
@@ -57,7 +63,17 @@ public interface CompactionJobTrackerLookup {
      * @return the lookup
      */
     static CompactionJobTrackerLookup none() {
-        return id -> Optional.empty();
+        return new CompactionJobTrackerLookup() {
+            @Override
+            public Optional<CompactionJobStatus> getJob(String jobId) {
+                return Optional.empty();
+            }
+
+            @Override
+            public boolean isTrackerAvailable() {
+                return false;
+            }
+        };
     }
 
 }

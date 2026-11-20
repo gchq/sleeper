@@ -158,6 +158,9 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     }
 
     private String jobStatusStr(TableFilesCompaction compaction, CompactionJobTrackerLookup tracker) {
+        if (!tracker.isTrackerAvailable()) {
+            return "";
+        }
         return tracker.getJob(compaction.getJobId())
                 .map(status -> ", tracker shows status " + status.getFurthestStatusType() + " with " + numRunsStr(status) + ", last tracker update at " + status.getLastUpdateTime())
                 .orElse(", not in job tracker");

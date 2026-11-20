@@ -55,6 +55,7 @@ public class FilesStatusReportTestBase {
     protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     protected final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
     protected final Map<String, CompactionJobStatus> jobIdToStatus = new HashMap<>();
+    protected CompactionJobTrackerLookup jobTracker = id -> Optional.ofNullable(jobIdToStatus.get(id));
 
     @BeforeEach
     void setUpBase() {
@@ -100,7 +101,7 @@ public class FilesStatusReportTestBase {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             FileStatusReporter reporter = getReporter.apply(
                     new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
-            new FilesStatusReport(stateStore, maxFilesWithNoReferences, detailLevel, reporter, id -> Optional.ofNullable(jobIdToStatus.get(id))).run();
+            new FilesStatusReport(stateStore, maxFilesWithNoReferences, detailLevel, reporter, jobTracker).run();
             return os.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

@@ -115,6 +115,16 @@ public class FilesStatusReportDetailLevelTest extends FilesStatusReportTestBase 
     }
 
     @Test
+    void shouldShowFullDetailWithNoJobTracker() {
+        // Given
+        jobTracker = CompactionJobTrackerLookup.none();
+
+        // When / Then
+        Approvals.verify(standardReportString(FileStatusDetailLevel.FULL),
+                new Options().forFile().withBaseName("detailLevelFullNoJobTracker"));
+    }
+
+    @Test
     void shouldBuildJson() {
         // When / Then
         Approvals.verify(verboseReportString(JsonFileStatusReporter::new),
