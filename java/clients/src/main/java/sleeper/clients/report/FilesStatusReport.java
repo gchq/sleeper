@@ -36,13 +36,17 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
 import sleeper.core.util.cli.CommandOption.NumArgs;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.joining;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
@@ -89,14 +93,21 @@ public class FilesStatusReport {
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
             .positionalArguments(List.of("instance-id", "table-name"))
             .options(List.of(
+                    CommandOption.withLongName("detail")
+                            .numArgs(NumArgs.ONE)
+                            .helpText("""
+                                    Level of detail to include in the report. Defaults to full. One of:
+                                    stats_only: statistics on the files in the table.
+                                    compaction_jobs: statistics, and compaction jobs assigned to files.
+                                    references: statistics, and all files and their references.
+                                    full: statistics, all files and their references, and compaction jobs assigned to files.""")
+                            .argsHelpText("<level>")
+                            .build(),
                     OUTPUT_FORMAT.option(),
                     CommandOption.withLongName("max-no-ref-files")
                             .numArgs(NumArgs.ONE)
                             .helpText("Maximum number of files with no references to count. Defaults to 1000.")
                             .argsHelpText("<number>")
-                            .build(),
-                    CommandOption.withLongName("verbose")
-                            .helpText("If set, the report will include detailed file information.")
                             .build()))
             .helpSummary("Creates a report on the status of files in a Sleeper table.")
             .build();
@@ -112,7 +123,9 @@ public class FilesStatusReport {
                 arguments.getString("instance-id"),
                 arguments.getString("table-name"),
                 arguments.getIntegerOrDefault("max-no-ref-files", 1000),
-                arguments.isFlagSet("verbose"),
+                arguments.getOptionalString("detail")
+                        .map(FilesStatusReport::readDetailLevel)
+                        .orElse(FileStatusDetailLevel.FULL),
                 OUTPUT_FORMAT.read(arguments));
     }
 
@@ -122,14 +135,14 @@ public class FilesStatusReport {
      * @param instanceId    the Sleeper instance ID
      * @param tableName     the name of the table to report on
      * @param maxNoRefFiles the maximum number of files with no references to count
-     * @param verbose       if true, the report will include detailed file information
+     * @param detailLevel   the level of detail to include in the report
      * @param reporter      the reporter for the given output format
      */
     public record Arguments(
             String instanceId,
             String tableName,
             int maxNoRefFiles,
-            boolean verbose,
+            FileStatusDetailLevel detailLevel,
             FileStatusReporter reporter) {
     }
 
@@ -145,8 +158,20 @@ public class FilesStatusReport {
             StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
             StateStore stateStore = stateStoreFactory.getStateStore(tablePropertiesProvider.getByName(args.tableName()));
             CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-            FileStatusDetailLevel detailLevel = args.verbose() ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY;
-            new FilesStatusReport(stateStore, args.maxNoRefFiles(), detailLevel, args.reporter(), CompactionJobTrackerLookup.from(jobTracker)).run();
+            new FilesStatusReport(stateStore, args.maxNoRefFiles(), args.detailLevel(), args.reporter(), CompactionJobTrackerLookup.from(jobTracker)).run();
         }
+    }
+
+    private static FileStatusDetailLevel readDetailLevel(String level) {
+        try {
+            return FileStatusDetailLevel.valueOf(level.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw new CommandArgumentsException(
+                    "Detail level not supported: " + level + ". Valid levels: " + validDetailLevels());
+        }
+    }
+
+    private static String validDetailLevels() {
+        return Stream.of(FileStatusDetailLevel.values()).map(level -> level.name().toLowerCase(Locale.ROOT)).collect(joining(", "));
     }
 }

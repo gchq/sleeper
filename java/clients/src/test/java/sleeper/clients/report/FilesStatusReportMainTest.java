@@ -15,15 +15,21 @@
  */
 package sleeper.clients.report;
 
+import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.report.FilesStatusReport.Arguments;
 import sleeper.clients.report.filestatus.CsvFileStatusReporter;
+import sleeper.clients.report.filestatus.FileStatusDetailLevel;
 import sleeper.clients.report.filestatus.JsonFileStatusReporter;
 import sleeper.clients.report.filestatus.StandardFileStatusReporter;
 import sleeper.core.util.cli.CommandArgumentReader;
 import sleeper.core.util.cli.CommandArgumentsException;
+
+import java.util.Locale;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,7 +46,7 @@ public class FilesStatusReportMainTest {
             assertThat(args.instanceId()).isEqualTo("my-instance");
             assertThat(args.tableName()).isEqualTo("my-table");
             assertThat(args.maxNoRefFiles()).isEqualTo(1000);
-            assertThat(args.verbose()).isFalse();
+            assertThat(args.detailLevel()).isEqualTo(FileStatusDetailLevel.FULL);
             assertThat(args.reporter())
                     .usingRecursiveComparison()
                     .isEqualTo(new StandardFileStatusReporter());
@@ -54,10 +60,10 @@ public class FilesStatusReportMainTest {
         }
 
         @Test
-        void shouldReadVerboseFlag() {
-            Arguments args = readArguments("my-instance", "my-table", "--verbose");
+        void shouldReadDetailLevel() {
+            Arguments args = readArguments("my-instance", "my-table", "--detail", "compaction_jobs");
 
-            assertThat(args.verbose()).isTrue();
+            assertThat(args.detailLevel()).isEqualTo(FileStatusDetailLevel.COMPACTION_JOBS);
         }
 
         @Test
@@ -81,6 +87,27 @@ public class FilesStatusReportMainTest {
     }
 
     @Nested
+    class HelpText {
+
+        @Test
+        void shouldOutputHelpText() {
+            Approvals.verify(FilesStatusReport.USAGE.createHelpText(),
+                    new Options().forFile().withBaseName("FilesStatusReportHelpText"));
+        }
+
+        @Test
+        void shouldIncludeAllDetailOptionsInHelpText() {
+            // When
+            String helpText = FilesStatusReport.USAGE.createHelpText();
+
+            // Then
+            assertThat(helpText).contains(Stream.of(FileStatusDetailLevel.values())
+                    .map(level -> level.toString().toLowerCase(Locale.ROOT))
+                    .toList());
+        }
+    }
+
+    @Nested
     class ArgumentsValidation {
 
         @Test
@@ -88,6 +115,13 @@ public class FilesStatusReportMainTest {
             assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--format", "unknown"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Output format not supported: unknown. Valid formats: CSV, JSON, STANDARD");
+        }
+
+        @Test
+        void shouldRejectUnknownDetailLevel() {
+            assertThatThrownBy(() -> readArguments("my-instance", "my-table", "--detail", "unknown"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Detail level not supported: unknown. Valid levels: stats_only, compaction_jobs, references, full");
         }
     }
 
