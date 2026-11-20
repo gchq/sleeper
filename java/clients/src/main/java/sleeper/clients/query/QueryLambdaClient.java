@@ -75,7 +75,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     private Map<String, String> resultsPublisherConfig;
     private boolean printResultsToConsole;
     private boolean streamResultsToConsole;
-    private int resultsReadThreads = 1;
+    private int queryResultsFileReadThreads = 1;
 
     public QueryLambdaClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
@@ -148,7 +148,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     private void printResults(TableProperties tableProperties, Query query) {
         Schema schema = tableProperties.getSchema();
         try (CloseableIterator<Row> rows = queryResultsReader.getResults(
-                query.getTableName(), query.getQueryId(), resultsReadThreads)) {
+                query.getTableName(), query.getQueryId(), queryResultsFileReadThreads)) {
             out.println("Returned Rows:");
             while (rows.hasNext()) {
                 out.println(rows.next().toString(schema));
@@ -175,7 +175,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         long count = 0;
         try (CloseableIterator<Row> rows = new StreamingQueryResultsIterator(
                 query.getTableName(), query.getQueryId(), queryResultsReader,
-                () -> getTrackedQueryOrNull(query.getQueryId()), STREAM_RESULTS_POLL, resultsReadThreads)) {
+                () -> getTrackedQueryOrNull(query.getQueryId()), STREAM_RESULTS_POLL, queryResultsFileReadThreads)) {
             out.println("Returned Rows:");
             while (rows.hasNext()) {
                 out.println(rows.next().toString(schema));
@@ -205,7 +205,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         resultsPublisherConfig = new HashMap<>();
         printResultsToConsole = false;
         streamResultsToConsole = false;
-        resultsReadThreads = 1;
+        queryResultsFileReadThreads = 1;
         boolean chosen = false;
 
         while (!chosen) {
@@ -235,7 +235,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
 
                     printResultsToConsole = true;
                     streamResultsToConsole = promptStreamResults();
-                    resultsReadThreads = promptResultsReadThreads();
+                    queryResultsFileReadThreads = promptResultsReadThreads();
 
                     yield true;
                 }

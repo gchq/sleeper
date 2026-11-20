@@ -373,7 +373,7 @@ class SleeperClientTest {
     @Test
     void shouldGetResultsOfQueryReadingFilesInParallel() throws Exception {
         // Given a client configured to read results files in parallel, and a query with multiple results files
-        SleeperClient client = instance.sleeperClientBuilder().resultsReadThreads(2).build();
+        SleeperClient client = instance.sleeperClientBuilder().queryResultsFileReadThreads(2).build();
         instance.publishQueryResultsFile("test-query", "file-1.parquet", List.of(
                 new Row(Map.of("key", "A")),
                 new Row(Map.of("key", "B"))));
@@ -396,7 +396,7 @@ class SleeperClientTest {
     @Test
     void shouldFailGettingResultsInParallelForQueryThatWasNeverProcessed() {
         // Given
-        SleeperClient client = instance.sleeperClientBuilder().resultsReadThreads(2).build();
+        SleeperClient client = instance.sleeperClientBuilder().queryResultsFileReadThreads(2).build();
 
         // When / Then
         assertThatThrownBy(() -> client.getQueryResults("query-table", "test-query"))
@@ -405,10 +405,10 @@ class SleeperClientTest {
     }
 
     @Test
-    void shouldThrowExceptionWithFewerThanOneResultsReadThreads() {
-        assertThatThrownBy(() -> instance.sleeperClientBuilder().resultsReadThreads(0).build())
+    void shouldThrowExceptionWithFewerThanOneQueryResultsFileReadThreads() {
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().queryResultsFileReadThreads(0).build())
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("resultsReadThreads");
+                .hasMessageContaining("queryResultsFileReadThreads");
     }
 
     @Test
@@ -479,7 +479,7 @@ class SleeperClientTest {
         // Given a client configured to read results files in parallel, a query where one subquery has already
         // published its results, and a second subquery publishes its results and the query completes during the first
         // wait for more results
-        SleeperClient client = instance.sleeperClientBuilder().resultsReadThreads(2).build();
+        SleeperClient client = instance.sleeperClientBuilder().queryResultsFileReadThreads(2).build();
         Query query = exactQuery("test-query", "A", "query-table");
         instance.queryTracker().queryInProgress(query);
         instance.publishQueryResultsFile("test-query", "file-1.parquet", List.of(new Row(Map.of("key", "A"))));
@@ -512,7 +512,7 @@ class SleeperClientTest {
     void shouldFailStreamingResultsInParallelWhenQueryFails() throws Exception {
         // Given a client configured to read results files in parallel, a query where one subquery has already
         // published its results, and the query fails during the first wait for more results
-        SleeperClient client = instance.sleeperClientBuilder().resultsReadThreads(2).build();
+        SleeperClient client = instance.sleeperClientBuilder().queryResultsFileReadThreads(2).build();
         Query query = exactQuery("test-query", "A", "query-table");
         instance.queryTracker().queryInProgress(query);
         instance.publishQueryResultsFile("test-query", "file-1.parquet", List.of(new Row(Map.of("key", "A"))));
@@ -543,7 +543,7 @@ class SleeperClientTest {
         PollWithRetries poll = pollRecordingWaits(foundWaits);
         List<String> listedQueryIds = new ArrayList<>();
         SleeperClient client = instance.sleeperClientBuilder()
-                .resultsReadThreads(2)
+                .queryResultsFileReadThreads(2)
                 .queryResultsReader((tableName, queryId) -> {
                     listedQueryIds.add(queryId);
                     return List.of();

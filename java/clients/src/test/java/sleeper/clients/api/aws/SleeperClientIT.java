@@ -146,7 +146,7 @@ public class SleeperClientIT extends LocalAwsTestBase {
 
         // When
         List<Row> rows = new ArrayList<>();
-        try (SleeperClient client = createClientBuilder().resultsReadThreads(2).build();
+        try (SleeperClient client = createClientBuilder().queryResultsFileReadThreads(2).build();
                 CloseableIterator<Row> iterator = client.getQueryResults(query)) {
             iterator.forEachRemaining(rows::add);
         }
@@ -279,7 +279,7 @@ public class SleeperClientIT extends LocalAwsTestBase {
                             queryTracker.queryCompleted(query, new ResultsOutputInfo(3L, List.of()));
                         }))
                 .build();
-        try (SleeperClient client = createClientBuilder().resultsReadThreads(2).build();
+        try (SleeperClient client = createClientBuilder().queryResultsFileReadThreads(2).build();
                 CloseableIterator<Row> iterator = client.submitQueryAndStreamResults(query, poll)) {
             iterator.forEachRemaining(rows::add);
         }

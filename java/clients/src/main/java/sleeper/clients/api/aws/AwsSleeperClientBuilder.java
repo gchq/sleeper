@@ -56,7 +56,7 @@ public class AwsSleeperClientBuilder {
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
     private SleeperClientQueryProvider queryProvider;
     private Integer queryThreadPoolSize;
-    private int resultsReadThreads = 1;
+    private int queryResultsFileReadThreads = 1;
 
     /**
      * Creates a Sleeper client.
@@ -89,7 +89,7 @@ public class AwsSleeperClientBuilder {
                         awsClients.awsCredentialsProvider()))
                 .querySender(QuerySender.toSqs(instanceProperties, tablePropertiesProvider, awsClients.sqs()))
                 .queryResultsReader(QueryResultsReader.fromS3(instanceProperties, tablePropertiesProvider, hadoop))
-                .resultsReadThreads(resultsReadThreads)
+                .queryResultsFileReadThreads(queryResultsFileReadThreads)
                 .queryTrackerStore(new DynamoDBQueryTracker(instanceProperties, awsClients.dynamo()))
                 .shutdown(new UncheckedAutoCloseables(List.of(awsClients, rowRetrieverProvider)))
                 .build();
@@ -154,11 +154,11 @@ public class AwsSleeperClientBuilder {
      * parallel and the rows are interleaved across files in no particular order. Defaults to 1, where the files are
      * read one at a time.
      *
-     * @param  resultsReadThreads the number of threads
-     * @return                    this builder
+     * @param  queryResultsFileReadThreads the number of threads
+     * @return                             this builder
      */
-    public AwsSleeperClientBuilder resultsReadThreads(int resultsReadThreads) {
-        this.resultsReadThreads = resultsReadThreads;
+    public AwsSleeperClientBuilder queryResultsFileReadThreads(int queryResultsFileReadThreads) {
+        this.queryResultsFileReadThreads = queryResultsFileReadThreads;
         return this;
     }
 

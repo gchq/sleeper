@@ -98,7 +98,7 @@ public class SleeperClient implements AutoCloseable {
     private final QueryWebSocketSender queryWebSocketSender;
     private final QuerySender querySender;
     private final QueryResultsReader queryResultsReader;
-    private final int resultsReadThreads;
+    private final int queryResultsFileReadThreads;
     private final QueryTrackerStore queryTrackerStore;
     private final IngestBatcherSender ingestBatcherSender;
     private final Runnable shutdown;
@@ -117,10 +117,10 @@ public class SleeperClient implements AutoCloseable {
         queryWebSocketSender = Objects.requireNonNull(builder.queryWebSocketSender, "queryWebSocketSender must not be null");
         querySender = Objects.requireNonNull(builder.querySender, "querySender must not be null");
         queryResultsReader = Objects.requireNonNull(builder.queryResultsReader, "queryResultsReader must not be null");
-        if (builder.resultsReadThreads < 1) {
-            throw new IllegalArgumentException("resultsReadThreads must be at least 1");
+        if (builder.queryResultsFileReadThreads < 1) {
+            throw new IllegalArgumentException("queryResultsFileReadThreads must be at least 1");
         }
-        resultsReadThreads = builder.resultsReadThreads;
+        queryResultsFileReadThreads = builder.queryResultsFileReadThreads;
         queryTrackerStore = Objects.requireNonNull(builder.queryTrackerStore, "queryTrackerStore must not be null");
         ingestBatcherSender = Objects.requireNonNull(builder.ingestBatcherSender, "ingestBatcherSender must not be null");
         shutdown = Objects.requireNonNull(builder.shutdown, "shutdown must not be null");
@@ -559,7 +559,7 @@ public class SleeperClient implements AutoCloseable {
         submitQuery(query);
         return new StreamingQueryResultsIterator(
                 query.getTableName(), query.getQueryId(), queryResultsReader,
-                () -> getTrackedQuery(query.getQueryId()), poll, resultsReadThreads);
+                () -> getTrackedQuery(query.getQueryId()), poll, queryResultsFileReadThreads);
     }
 
     private static void validateResultsWillBePublishedToDefaultLocation(Query query) {
@@ -594,7 +594,7 @@ public class SleeperClient implements AutoCloseable {
      * @throws QueryResultsNotFoundException if no results were published for the query
      */
     public CloseableIterator<Row> getQueryResults(String tableName, String queryId) {
-        return queryResultsReader.getResults(tableName, queryId, resultsReadThreads);
+        return queryResultsReader.getResults(tableName, queryId, queryResultsFileReadThreads);
     }
 
     /**
@@ -704,7 +704,7 @@ public class SleeperClient implements AutoCloseable {
         private QueryWebSocketSender queryWebSocketSender;
         private QuerySender querySender;
         private QueryResultsReader queryResultsReader;
-        private int resultsReadThreads = 1;
+        private int queryResultsFileReadThreads = 1;
         private QueryTrackerStore queryTrackerStore;
         private IngestBatcherSender ingestBatcherSender;
         private Runnable shutdown = () -> {
@@ -869,11 +869,11 @@ public class SleeperClient implements AutoCloseable {
          * in parallel and the rows are interleaved across files in no particular order. Defaults to 1, where the
          * files are read one at a time and so results will be locally sorted, but not globally sorted.
          *
-         * @param  resultsReadThreads the number of threads
-         * @return                    this builder for chaining
+         * @param  queryResultsFileReadThreads the number of threads
+         * @return                             this builder for chaining
          */
-        public Builder resultsReadThreads(int resultsReadThreads) {
-            this.resultsReadThreads = resultsReadThreads;
+        public Builder queryResultsFileReadThreads(int queryResultsFileReadThreads) {
+            this.queryResultsFileReadThreads = queryResultsFileReadThreads;
             return this;
         }
 
