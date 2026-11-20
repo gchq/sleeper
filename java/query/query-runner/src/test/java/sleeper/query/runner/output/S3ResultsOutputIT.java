@@ -39,7 +39,9 @@ import sleeper.core.schema.type.StringType;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
+import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.output.ResultsOutput;
+import sleeper.query.core.output.ResultsOutputInfo;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -105,6 +107,42 @@ class S3ResultsOutputIT {
     }
 
     @Test
+    void shouldOutputResultsWhenSubsetOfValuesFieldsRequested() throws Exception {
+        // Given
+        Query queryWithRequestedValueFields = Query.builder()
+                .tableName("table")
+                .queryId("query-id")
+                .regions(List.of())
+                .processingConfig(QueryProcessingConfig.none().withRequestedValueFields(List.of("count")))
+                .build();
+        List<Row> narrowedRows = rowList.stream()
+                .map(row -> {
+                    Row narrowedRow = new Row(row);
+                    narrowedRow.remove("map");
+                    narrowedRow.remove("str");
+                    narrowedRow.remove("list");
+                    return narrowedRow;
+                })
+                .collect(Collectors.toList());
+        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new Configuration(), new HashMap<>());
+
+        // When
+        ResultsOutputInfo outputInfo = resultsOutput.publish(
+                new QueryOrLeafPartitionQuery(queryWithRequestedValueFields), new WrappedIterator<>(narrowedRows.iterator()));
+
+        // Then
+        assertThat(outputInfo.getError()).isNull();
+        assertThat(outputInfo.getRowCount()).isEqualTo(rowList.size());
+        String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
+        Schema narrowedSchema = Schema.builder()
+                .rowKeyFields(schema.getRowKeyFields())
+                .sortKeyFields(schema.getSortKeyFields())
+                .valueFields(new Field("count", new LongType()))
+                .build();
+        assertThat(getRowsFromOutput(pathToResultsFile, narrowedSchema)).as("Results list matches rows").isEqualTo(narrowedRows);
+    }
+
+    @Test
     void testPassingPageSizeAsParam() throws Exception {
         // Given
         Map<String, String> config = new HashMap<>();
@@ -163,6 +201,10 @@ class S3ResultsOutputIT {
     }
 
     private List<Row> getRowsFromOutput(String path) {
+        return getRowsFromOutput(path, schema);
+    }
+
+    private List<Row> getRowsFromOutput(String path, Schema schema) {
         List<Row> rows = new ArrayList<>();
         try {
             ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new org.apache.hadoop.fs.Path(path), schema).build();
