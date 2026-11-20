@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -101,20 +100,23 @@ public class RequeueCompactionJobsFromStateStoreTest {
     }
 
     @Test
-    void shouldFailWhenJobIdIsAssignedInMultiplePartitions() {
+    void shouldSkipJobAssignedInMultiplePartitionsAndRequeueOtherJobs() {
         // Given
         FileReference file1 = fileFactory.partitionFile("L", "file1.parquet", 100);
         FileReference file2 = fileFactory.partitionFile("R", "file2.parquet", 200);
-        update(stateStore).addFiles(List.of(file1, file2));
-        update(stateStore).assignJobId("job-1", List.of(file1));
-        update(stateStore).assignJobId("job-1", List.of(file2));
+        FileReference file3 = fileFactory.partitionFile("R", "file3.parquet", 300);
+        update(stateStore).addFiles(List.of(file1, file2, file3));
+        update(stateStore).assignJobId("bad-job", List.of(file1));
+        update(stateStore).assignJobId("bad-job", List.of(file2));
+        update(stateStore).assignJobId("good-job", List.of(file3));
 
-        // When / Then
-        assertThatThrownBy(this::requeue)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("job-1");
-        assertThat(sentBatches).isEmpty();
-        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
+        // When
+        List<CompactionJob> jobs = requeue();
+
+        // Then
+        CompactionJob expectedJob = jobFactory.createCompactionJob("good-job", List.of(file3), "R");
+        assertThat(jobs).containsExactly(expectedJob);
+        assertThat(sentBatches).containsExactly(List.of(expectedJob));
     }
 
     @Test

@@ -29,6 +29,7 @@ import sleeper.core.util.SplitIntoBatches;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -76,18 +77,19 @@ public class RequeueCompactionJobsFromStateStore {
                 .filter(reference -> reference.getJobId() != null)
                 .collect(Collectors.groupingBy(FileReference::getJobId, LinkedHashMap::new, Collectors.toList()));
         return referencesByJobId.entrySet().stream()
-                .map(entry -> createJob(factory, entry.getKey(), entry.getValue()))
+                .flatMap(entry -> createJob(factory, entry.getKey(), entry.getValue()).stream())
                 .toList();
     }
 
-    private static CompactionJob createJob(CompactionJobFactory factory, String jobId, List<FileReference> references) {
+    private static Optional<CompactionJob> createJob(CompactionJobFactory factory, String jobId, List<FileReference> references) {
         Set<String> partitionIds = references.stream()
                 .map(FileReference::getPartitionId)
                 .collect(Collectors.toSet());
         if (partitionIds.size() != 1) {
-            throw new IllegalStateException("Found file references assigned to compaction job " + jobId
-                    + " in multiple partitions: " + partitionIds);
+            LOGGER.error("Found file references assigned to compaction job {} in multiple partitions, skipping job. Partitions: {}",
+                    jobId, partitionIds);
+            return Optional.empty();
         }
-        return factory.createCompactionJob(jobId, references, references.get(0).getPartitionId());
+        return Optional.of(factory.createCompactionJob(jobId, references, references.get(0).getPartitionId()));
     }
 }

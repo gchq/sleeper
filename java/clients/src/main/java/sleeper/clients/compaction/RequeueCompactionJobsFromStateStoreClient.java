@@ -48,8 +48,7 @@ public class RequeueCompactionJobsFromStateStoreClient {
 
     public static void main(String[] args) {
         if (args.length != 2) {
-            System.out.println("Usage: <instance-id> <table-name>");
-            return;
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name>");
         }
         String instanceId = args[0];
         String tableName = args[1];
