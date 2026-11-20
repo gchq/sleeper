@@ -72,7 +72,9 @@ RUN chmod -R a+rw $CARGO_HOME
 # Create non-root user
 RUN adduser --disabled-password --gecos "" sleeper \
     && usermod -aG sudo,docker,rust sleeper \
-    && passwd -d sleeper
+    && passwd -d sleeper \
+    && echo "sleeper ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/sleeper \
+    && chmod 0440 /etc/sudoers.d/sleeper
 USER sleeper
 
 # Set command line prompt to show you're in the builder Docker container
