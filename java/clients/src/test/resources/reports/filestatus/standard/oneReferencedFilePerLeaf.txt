@@ -32,3 +32,5 @@ G.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
 	Reference in partition G, 50000007 rows, last updated at 2022-08-22T14:20:00.001Z
 H.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
 	Reference in partition H, 50000008 rows, last updated at 2022-08-22T14:20:00.001Z
+
+Compactions assigned to files: none

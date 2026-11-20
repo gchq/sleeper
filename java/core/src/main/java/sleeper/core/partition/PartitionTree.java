@@ -211,6 +211,28 @@ public class PartitionTree {
         return idToPartition.get(partitionId);
     }
 
+    /**
+     * Checks if a partition is a leaf partition.
+     *
+     * @param  partitionId the ID of the partition
+     * @return             true if the partition is in the tree and is a leaf partition
+     */
+    public boolean isLeafPartition(String partitionId) {
+        Partition partition = getPartition(partitionId);
+        return partition != null && partition.isLeafPartition();
+    }
+
+    /**
+     * Checks if a partition is a non-leaf partition.
+     *
+     * @param  partitionId the ID of the partition
+     * @return             true if the partition is in the tree and is not a leaf partition
+     */
+    public boolean isNonLeafPartition(String partitionId) {
+        Partition partition = getPartition(partitionId);
+        return partition != null && !partition.isLeafPartition();
+    }
+
     public List<Partition> getAllPartitions() {
         return List.copyOf(idToPartition.values());
     }

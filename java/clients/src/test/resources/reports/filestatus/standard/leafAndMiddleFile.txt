@@ -20,3 +20,5 @@ B.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
 	Reference in partition B, 50000002 rows, last updated at 2022-08-22T14:20:00.001Z
 D.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
 	Reference in partition D, 50000001 rows, last updated at 2022-08-22T14:20:00.001Z
+
+Compactions assigned to files: none

@@ -18,4 +18,5 @@ Statistics for delay between finish and commit time:
 | FINISHED | 2022-10-13T12:00:00.001Z | job11111-1111-1111-1111-111111111111 |           1 | root         | task-id | 2022-10-13T12:00:10Z | 2022-10-13T12:00:31Z | 2022-10-13T12:00:30Z |      21s |         0 |            0 |          0.00 |           0.00 | File not found. |
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-For more information concerning any failure reasons, please consult the more detailed report.
+For more information concerning any failure reasons, please use the detailed query type.
+To see compaction jobs assigned to files in the state store, please use the file status report.

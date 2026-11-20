@@ -94,7 +94,8 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
             if (!jobStatusList.isEmpty()) {
                 out.println();
-                out.println("For more information concerning any failure reasons, please consult the more detailed report.");
+                out.println("For more information concerning any failure reasons, please use the detailed query type.");
+                out.println("To see compaction jobs assigned to files in the state store, please use the file status report.");
             }
         }
     }

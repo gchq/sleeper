@@ -28,8 +28,8 @@
         "maxReferences": 1,
         "meanReferences": 1.0,
         "medianReferences": 1.0,
-        "percentile90":1.0,
-        "percentile99":1.0,
+        "percentile90": 1.0,
+        "percentile99": 1.0,
         "totalReferences": 8
       },
       "nonLeafPartitions": {
@@ -150,5 +150,6 @@
         }
       ]
     }
-  ]
+  ],
+  "compactions": []
 }

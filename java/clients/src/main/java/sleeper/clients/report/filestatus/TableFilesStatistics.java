@@ -16,12 +16,11 @@
 
 package sleeper.clients.report.filestatus;
 
-import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -44,22 +43,20 @@ public class TableFilesStatistics {
     /**
      * Computes statistics on files in a Sleeper table.
      *
-     * @param  files         the files held in the table
-     * @param  partitionById all partitions in the table, indexed by their ID
-     * @return               the statistics
+     * @param  files      the files held in the table
+     * @param  partitions the table's partition tree
+     * @return            the statistics
      */
-    public static TableFilesStatistics from(AllReferencesToAllFiles files, Map<String, Partition> partitionById) {
+    public static TableFilesStatistics from(AllReferencesToAllFiles files, PartitionTree partitions) {
 
         List<FileReference> fileReferences = files.getFilesWithReferences().stream()
                 .flatMap(file -> file.getReferences().stream())
                 .collect(Collectors.toUnmodifiableList());
         List<FileReference> fileReferencesInLeafPartitions = fileReferences.stream()
-                .filter(f -> partitionById.containsKey(f.getPartitionId()))
-                .filter(f -> partitionById.get(f.getPartitionId()).isLeafPartition())
+                .filter(f -> partitions.isLeafPartition(f.getPartitionId()))
                 .collect(Collectors.toList());
         List<FileReference> fileReferencesInNonLeafPartitions = fileReferences.stream()
-                .filter(f -> partitionById.containsKey(f.getPartitionId()))
-                .filter(f -> !partitionById.get(f.getPartitionId()).isLeafPartition())
+                .filter(f -> partitions.isNonLeafPartition(f.getPartitionId()))
                 .collect(Collectors.toList());
 
         return new TableFilesStatistics(

@@ -18,4 +18,5 @@ Statistics for delay between finish and commit time:
 | FINISHED |             | job-1  |             |              | test-task-id |            | 2025-05-14T10:47:00Z | 2025-05-14T10:47:01Z |       0s |        10 |            5 |               |                |                 |
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-For more information concerning any failure reasons, please consult the more detailed report.
+For more information concerning any failure reasons, please use the detailed query type.
+To see compaction jobs assigned to files in the state store, please use the file status report.

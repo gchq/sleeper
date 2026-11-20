@@ -14,4 +14,4 @@ Average ingest rate: 10.00 read/s, 5.00 write/s
 | ACCEPTED    | job11111-1111-1111-1111-111111111111 |           1 |           0 |                                      | 2022-09-18T13:34:12.001Z |                          |          |           |              |               |                |                                |
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-For more information concerning any failure reasons, please consult the more detailed report.
+For more information concerning any failure reasons, please use the detailed query type.

@@ -1,0 +1,21 @@
+
+Files Status Report:
+--------------------------
+There are 4 leaf partitions and 3 non-leaf partitions
+Number of files: 11
+Number of files with references: 9
+Number of files with no references, which will be garbage collected: 2
+Number of references to files: 9
+Number of file references in leaf partitions: min = 2, max = 5, mean = 3.500, median = 3.500, 90th percentile = 4.700, 99th percentile = 4.970, total = 7
+Number of file references in non-leaf partitions: min = 1, max = 1, mean = 1.000, median = 1.000, 90th percentile = 1.000, 99th percentile = 1.000, total = 2
+Number of rows referenced in partitions: 1K (1,000)
+Number of rows in non-leaf partitions: 200
+Number of rows in leaf partitions: 800
+Percentage of rows in leaf partitions: 80.0
+
+Compactions assigned to files:
+Partition LR has 1 job
+	Job job-3 with 2 files assigned at 2022-08-22T14:21:00Z, not in job tracker
+Partition RL has 2 jobs
+	Job job-1 with 2 files assigned at 2022-08-22T14:21:00Z, tracker shows status UNCOMMITTED with 1 run, last tracker update at 2022-08-22T14:21:21.123Z
+	Job job-2 with 2 files assigned at 2022-08-22T14:21:00Z, tracker shows status CREATED with 0 runs, last tracker update at 2022-08-22T14:21:10Z

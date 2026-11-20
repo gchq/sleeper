@@ -17,6 +17,7 @@ package sleeper.clients.report.filestatus;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.io.PrintStream;
 
@@ -38,7 +39,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     }
 
     @Override
-    public void report(TableFilesStatus status, boolean verbose) {
+    public void report(TableFilesStatus status, FileStatusDetailLevel detailLevel, CompactionJobTrackerLookup jobTracker) {
         out.println("\nFiles Status Report:\n--------------------------");
         out.println("There are " + status.getLeafPartitionCount() + " leaf partitions and " + status.getNonLeafPartitionCount() + " non-leaf partitions");
         out.println("Number of files: " + (status.isMoreThanMax() ? ">" : "") + status.getFileCount());
@@ -50,7 +51,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         printPartitionStats(status.getNonLeafPartitionFileReferenceStats(), "non-leaf");
         printRowStats(status);
 
-        if (verbose) {
+        if (detailLevel.isShowFileReferences()) {
             out.println();
             out.println("Files with no references"
                     + (status.isMoreThanMax() ? " (more are present, maximum count applied)" : "") + ":"
@@ -61,6 +62,15 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             out.println("Files with references:"
                     + (status.getFilesWithReferences().isEmpty() ? " none" : ""));
             status.getFilesWithReferences().forEach(this::printFile);
+        }
+        if (detailLevel.isShowCompactionJobs()) {
+            out.println();
+            out.println("Compactions assigned to files:" + (status.getCompactions().isEmpty() ? " none" : ""));
+            status.getCompactions().forEach(partition -> printPartitionCompactions(partition, jobTracker));
+        }
+        if (detailLevel == FileStatusDetailLevel.STATS_ONLY) {
+            out.println();
+            out.println("To see the files or compactions currently in the state store, please set the detail level of the report.");
         }
     }
 
@@ -120,6 +130,14 @@ public class StandardFileStatusReporter implements FileStatusReporter {
                 + (reference.getJobId() != null ? ", assigned to job " + reference.getJobId() : ""));
     }
 
+    private void printPartitionCompactions(TableFilesPartitionCompactions compactions, CompactionJobTrackerLookup jobTracker) {
+        out.println("Partition " + compactions.getPartitionId() + " has " + numJobsStr(compactions)); // TODO print partition location in tree
+        for (TableFilesCompaction compaction : compactions.getJobs()) {
+            out.println("\tJob " + compaction.getJobId() + " with " + compaction.getFileReferences().size() + " files assigned at " + compaction.getAssignmentTime()
+                    + jobStatusStr(compaction, jobTracker));
+        }
+    }
+
     private String totalReferenceCountStr(int count) {
         if (count < 1) {
             return "";
@@ -127,6 +145,33 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             return ", 1 reference total";
         } else {
             return ", " + count + " references total";
+        }
+    }
+
+    private String numJobsStr(TableFilesPartitionCompactions compactions) {
+        int jobs = compactions.getJobs().size();
+        if (jobs == 1) {
+            return "1 job";
+        } else {
+            return jobs + " jobs";
+        }
+    }
+
+    private String jobStatusStr(TableFilesCompaction compaction, CompactionJobTrackerLookup tracker) {
+        if (!tracker.isTrackerAvailable()) {
+            return "";
+        }
+        return tracker.getJob(compaction.getJobId())
+                .map(status -> ", tracker shows status " + status.getFurthestStatusType() + " with " + numRunsStr(status) + ", last tracker update at " + status.getLastUpdateTime())
+                .orElse(", not in job tracker");
+    }
+
+    private String numRunsStr(CompactionJobStatus status) {
+        int runs = status.getRunsLatestFirst().size();
+        if (runs == 1) {
+            return "1 run";
+        } else {
+            return runs + " runs";
         }
     }
 }

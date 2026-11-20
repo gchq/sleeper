@@ -1,0 +1,17 @@
+Usage: <instance-id> <table-name>
+Available options: --help, --detail, --format, --max-no-ref-files
+
+Creates a report on the status of files in a Sleeper table.
+
+--detail <level>
+Level of detail to include in the report. Defaults to stats_only. One of:
+stats_only: statistics on the files in the table.
+compaction_jobs: statistics, and compaction jobs assigned to files.
+references: statistics, and all files and their references.
+full: statistics, all files and their references, and compaction jobs assigned to files.
+
+--format <format>
+Output format. One of CSV, JSON, STANDARD. Defaults to STANDARD.
+
+--max-no-ref-files <number>
+Maximum number of files with no references to count. Defaults to 1000.
