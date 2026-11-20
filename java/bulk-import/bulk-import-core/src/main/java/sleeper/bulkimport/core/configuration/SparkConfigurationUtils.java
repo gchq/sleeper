@@ -73,6 +73,7 @@ import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_EXECUTOR_HEARTBEAT_INTERVAL;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_MEMORY_FRACTION;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_MEMORY_STORAGE_FRACTION;
@@ -88,6 +89,9 @@ import static sleeper.core.properties.model.EmrInstanceArchitecture.X86_64;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
@@ -244,7 +248,6 @@ public class SparkConfigurationUtils {
         sparkConf.put("spark.executor.cores", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES));
         sparkConf.put("spark.emr-serverless.executor.disk", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK));
         sparkConf.put("spark.executor.heartbeatInterval", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_SPARK_EXECUTOR_HEARTBEAT_INTERVAL));
-        sparkConf.put("spark.executor.instances", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES));
         sparkConf.put("spark.executor.memory", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY));
 
         // spark.default properties
@@ -254,7 +257,17 @@ public class SparkConfigurationUtils {
         sparkConf.put("spark.network.timeout", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_SPARK_NETWORK_TIMEOUT));
 
         // spark.dynamicAllocation properties
-        sparkConf.put("spark.dynamicAllocation.enabled", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION));
+        if (platformSpec.getBoolean(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION)) {
+            sparkConf.put("spark.dynamicAllocation.enabled", "true");
+            sparkConf.put("spark.dynamicAllocation.minExecutors", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS));
+            sparkConf.put("spark.dynamicAllocation.initialExecutors", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS));
+            sparkConf.put("spark.dynamicAllocation.maxExecutors", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS));
+            sparkConf.put("spark.dynamicAllocation.executorIdleTimeout",
+                    instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT));
+        } else {
+            sparkConf.put("spark.dynamicAllocation.enabled", "false");
+            sparkConf.put("spark.executor.instances", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES));
+        }
 
         // spark.memory properties
         sparkConf.put("spark.memory.fraction", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_SPARK_MEMORY_FRACTION));
