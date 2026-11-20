@@ -67,6 +67,17 @@ skipped by the compaction strategy:
 ./scripts/utility/compactAllFiles.sh ${INSTANCE_ID} <table-name-1> <table-name-2> ...
 ```
 
+### Requeue compaction jobs from the state store
+
+This is a maintenance script to be used in the scenario that there are compaction jobs assigned to files in the state
+store but for some reason all attempts at executing those compactions failed. The following script can be used to
+recreate every compaction job that files in the table are assigned to, and send those jobs back to the compaction
+job queue:
+
+```bash
+./scripts/maintenance/requeueCompactionJobsFromStateStore.sh ${INSTANCE_ID} <table-name>
+```
+
 ## Java API
 
 The clients module can be used as a dependency for an application to interact with Sleeper. This is not currently
