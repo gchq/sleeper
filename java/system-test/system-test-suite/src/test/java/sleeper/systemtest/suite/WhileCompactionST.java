@@ -19,8 +19,6 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.systemtest.dsl.SleeperDsl;
@@ -46,8 +44,6 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 @SystemTest
 public class WhileCompactionST {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(WhileCompactionST.class);
-
     @TempDir
     private Path tempDir;
 
@@ -72,13 +68,10 @@ public class WhileCompactionST {
                     .numberedRows(LongStream.range(0, 100));
         }
 
-        LOGGER.info("Created 20 ingest files containing 100 rows each");
-
         CompactionDsl compaction = sleeper.compaction();
 
         // When compactions are running and queries are executed concurrently
         compaction.createJobs(20);
-        LOGGER.info("Created compaction jobs");
 
         compaction.waitForTasks(1);
 
@@ -86,35 +79,19 @@ public class WhileCompactionST {
                 .startContinuousQueries();
 
         compaction.waitForJobs();
-        LOGGER.info("Compaction jobs completed");
 
         queries.stopAndWait();
 
         // Then queries succeed
-        LOGGER.info("Query failures recorded={}",
-                queries.getFailures().size());
-
         queries.assertNoFailures();
-
-        LOGGER.info("Queries completed during compaction={}",
-                queries.getQueriesCompleted());
 
         assertThat(queries.getQueriesCompleted()).isGreaterThan(0);
 
         // And all data is preserved after compaction
         var rows = sleeper.directQuery().allRowsInTable();
 
-        LOGGER.info(
-                "Verifying all rows are preserved after compaction. Row count={}",
-                rows.size());
-
         assertThat(rows)
                 .hasSize(2_000);
 
-        LOGGER.info(
-                "Compaction test completed successfully. Queries executed={}, query failures={}, final row count={}",
-                queries.getQueriesCompleted(),
-                queries.getFailures().size(),
-                rows.size());
     }
 }
