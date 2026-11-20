@@ -28,11 +28,13 @@ import sleeper.clients.report.filestatus.FileStatusReporter;
 import sleeper.clients.report.filestatus.JsonFileStatusReporter;
 import sleeper.clients.report.filestatus.StandardFileStatusReporter;
 import sleeper.clients.report.filestatus.TableFilesStatus;
+import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
@@ -142,7 +144,9 @@ public class FilesStatusReport {
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
             StateStore stateStore = stateStoreFactory.getStateStore(tablePropertiesProvider.getByName(args.tableName()));
-            new FilesStatusReport(stateStore, args.maxNoRefFiles(), args.verbose(), args.reporter()).run();
+            CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
+            FileStatusDetailLevel detailLevel = args.verbose() ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY;
+            new FilesStatusReport(stateStore, args.maxNoRefFiles(), detailLevel, args.reporter(), CompactionJobTrackerLookup.from(jobTracker)).run();
         }
     }
 }

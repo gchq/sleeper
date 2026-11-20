@@ -41,7 +41,7 @@ public interface CompactionJobTrackerLookup {
      * @param  tracker the job tracker
      * @return         the lookup
      */
-    static CompactionJobTrackerLookup forTracker(CompactionJobTracker tracker) {
+    static CompactionJobTrackerLookup from(CompactionJobTracker tracker) {
         return id -> {
             try {
                 return tracker.getJob(id);
