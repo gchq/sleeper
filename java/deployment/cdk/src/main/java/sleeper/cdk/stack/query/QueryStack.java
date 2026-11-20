@@ -117,13 +117,15 @@ public class QueryStack extends NestedStack {
 
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, queryTrackingTable.getTableName());
 
-        queryExecutorLambda = setupQueryExecutorLambda(coreStacks, queryQueueStack, instanceProperties, lambdaCode, jarsBucket, queryTrackingTable);
-        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, lambdaCode, jarsBucket, queryTrackingTable);
+        // The results bucket also holds queries that are too large to fit in an SQS message
+        IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, lambdaCode);
+        queryExecutorLambda = setupQueryExecutorLambda(coreStacks, queryQueueStack, instanceProperties, lambdaCode, jarsBucket, queryTrackingTable, queryResultsBucket);
+        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, lambdaCode, jarsBucket, queryTrackingTable, queryResultsBucket);
         Utils.addTags(this, instanceProperties);
     }
 
     private IFunction setupQueryExecutorLambda(SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode,
-            IBucket jarsBucket, ITable queryTrackingTable) {
+            IBucket jarsBucket, ITable queryTrackingTable, IBucket queryResultsBucket) {
         String functionName = String.join("-", "sleeper",
                 instanceProperties.cleanInstanceId(), "query-executor");
         IFunction lambda = lambdaCode.buildFunction(LambdaHandler.QUERY_EXECUTOR, "QueryExecutorLambda", builder -> builder
@@ -144,6 +146,11 @@ public class QueryStack extends NestedStack {
         lambda.addEventSource(new SqsEventSource(queryQueueStack.getQueue(), eventSourceProps));
 
         setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, queryQueueStack.getQueue());
+        // Read large queries from the query queue and write large sub-queries for the leaf partition query queue
+        queryResultsBucket.grantReadWrite(lambda);
+        if (autoDeleteS3Objects != null) {
+            lambda.getNode().addDependency(autoDeleteS3Objects);
+        }
 
         /*
          * Output the role of the lambda as a property so that clients that want the results of queries written
@@ -163,10 +170,9 @@ public class QueryStack extends NestedStack {
 
     private IFunction setupLeafPartitionQueryQueueAndLambda(
             SleeperCoreStacks coreStacks, InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode,
-            IBucket jarsBucket, ITable queryTrackingTable) {
+            IBucket jarsBucket, ITable queryTrackingTable, IBucket queryResultsBucket) {
         Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, coreStacks);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
-        IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, lambdaCode);
         String leafQueryFunctionName = String.join("-", "sleeper",
                 instanceProperties.cleanInstanceId(), "query-leaf-partition");
         IFunction lambda = lambdaCode.buildFunction(LambdaHandler.QUERY_LEAF_PARTITION, "QueryLeafPartitionExecutorLambda", builder -> builder
@@ -296,7 +302,7 @@ public class QueryStack extends NestedStack {
 
     private IBucket setupResultsBucket(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
-        String bucketName = S3BucketName.create(instanceProperties, "query-results");
+        String bucketName = queryResultsBucketName(instanceProperties);
 
         Bucket resultsBucket = Bucket.Builder
                 .create(this, "QueryResultsBucket")
@@ -352,6 +358,17 @@ public class QueryStack extends NestedStack {
         setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, queue);
         resultsBucket.grantReadWrite(lambda);
         resultsQueue.grantSendMessages(lambda);
+    }
+
+    /**
+     * Computes the name of the query results bucket. This can be used to import the bucket by name in another stack,
+     * avoiding a dependency on this stack.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the bucket name
+     */
+    public static String queryResultsBucketName(InstanceProperties instanceProperties) {
+        return S3BucketName.create(instanceProperties, "query-results");
     }
 
     public IFunction getQueryExecutorLambda() {

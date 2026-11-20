@@ -29,8 +29,8 @@ import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
+import sleeper.query.core.model.QueryMessageSerDe;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
-import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.core.tracker.QueryStatusReportListener;
@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
@@ -54,6 +55,7 @@ public class SqsQueryProcessor {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final QueryStatusReportListener queryListener;
+    private final QueryMessageSerDe messageSerDe;
     private final Map<String, QueryPlanner> queryPlannerCache = new HashMap<>();
 
     private SqsQueryProcessor(Builder builder) throws ObjectFactoryException {
@@ -62,6 +64,7 @@ public class SqsQueryProcessor {
         tablePropertiesProvider = builder.tablePropertiesProvider;
         stateStoreProvider = builder.stateStoreProvider;
         queryListener = builder.queryListener;
+        messageSerDe = Objects.requireNonNull(builder.messageSerDe, "messageSerDe must not be null");
     }
 
     public static Builder builder() {
@@ -119,7 +122,7 @@ public class SqsQueryProcessor {
         // Put these subqueries on to the leaf partition query queue so they can be processed independently
         String sqsLeafPartitionQueryQueueURL = instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL);
         for (LeafPartitionQuery subQuery : subQueries) {
-            String serialisedQuery = new QuerySerDe(tablePropertiesProvider).toJson(subQuery);
+            String serialisedQuery = messageSerDe.toMessage(subQuery);
             sqsClient.sendMessage(SendMessageRequest.builder()
                     .queueUrl(sqsLeafPartitionQueryQueueURL)
                     .messageBody(serialisedQuery)
@@ -134,6 +137,7 @@ public class SqsQueryProcessor {
         private TablePropertiesProvider tablePropertiesProvider;
         private StateStoreProvider stateStoreProvider;
         private QueryStatusReportListener queryListener;
+        private QueryMessageSerDe messageSerDe;
 
         private Builder() {
         }
@@ -160,6 +164,11 @@ public class SqsQueryProcessor {
 
         public Builder queryListener(QueryStatusReportListener queryListener) {
             this.queryListener = queryListener;
+            return this;
+        }
+
+        public Builder messageSerDe(QueryMessageSerDe messageSerDe) {
+            this.messageSerDe = messageSerDe;
             return this;
         }
 

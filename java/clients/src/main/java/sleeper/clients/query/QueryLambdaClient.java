@@ -200,7 +200,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, s3Client);
             QueryLambdaClient queryLambdaClient = new QueryLambdaClient(
                     instanceProperties, tableIndex, tablePropertiesProvider,
-                    QuerySender.toSqs(instanceProperties, tablePropertiesProvider, sqsClient),
+                    QuerySender.toSqs(instanceProperties, tablePropertiesProvider, sqsClient, s3Client),
                     new DynamoDBQueryTracker(instanceProperties, dynamoClient),
                     ConsoleInput.stdIn(), ConsoleOutput.stdOut());
             queryLambdaClient.run();
