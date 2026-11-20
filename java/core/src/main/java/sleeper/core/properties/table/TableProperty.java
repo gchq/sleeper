@@ -729,6 +729,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
     TableProperty BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.min.executors")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS)
             .description("(EMR Serverless mode only) The lower bound for the number of executors when dynamic allocation is enabled. Used to set spark.dynamicAllocation.minExecutors.\n" +
+                    "Must be less than or equal to the initial executors.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
@@ -737,6 +738,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
     TableProperty BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.initial.executors")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS)
             .description("(EMR Serverless mode only) The number of executors to start with when dynamic allocation is enabled. Used to set spark.dynamicAllocation.initialExecutors.\n" +
+                    "Must be between the min and max executors, inclusive.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
@@ -745,6 +747,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
     TableProperty BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.max.executors")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS)
             .description("(EMR Serverless mode only) The upper bound for the number of executors when dynamic allocation is enabled. Used to set spark.dynamicAllocation.maxExecutors.\n" +
+                    "Must be greater than or equal to the initial executors.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
