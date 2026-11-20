@@ -19,6 +19,8 @@ package sleeper.core.properties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -36,6 +38,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -132,6 +135,29 @@ public class SleeperPropertiesValidationTest {
             // When / Then
             assertThatThrownBy(instanceProperties::validate)
                     .hasMessageContaining(MAXIMUM_CONNECTIONS_TO_S3.getPropertyName());
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"X86_64", "ARM64", "x86_64", "arm64"})
+        void shouldPassValidationForSupportedEmrServerlessArchitecture(String architecture) {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE, architecture);
+
+            // When / Then
+            assertThatCode(instanceProperties::validate).doesNotThrowAnyException();
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"X86_64,ARM64", "OTHER"})
+        void shouldFailValidationForUnsupportedEmrServerlessArchitecture(String architecture) {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE, architecture);
+
+            // When / Then
+            assertThatThrownBy(instanceProperties::validate)
+                    .hasMessageContaining(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE.getPropertyName());
         }
     }
 
