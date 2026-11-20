@@ -73,6 +73,7 @@ import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_EXECUTOR_HEARTBEAT_INTERVAL;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_MEMORY_FRACTION;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_MEMORY_STORAGE_FRACTION;
@@ -88,12 +89,19 @@ import static sleeper.core.properties.model.EmrInstanceArchitecture.X86_64;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_DEFAULT_PARALLELISM;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_SQL_SHUFFLE_PARTITIONS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MIN_EXECUTORS;
 
 /**
  * Properties in this class are based on AWS recommended values. See this blog for details:
@@ -104,6 +112,22 @@ public class SparkConfigurationUtils {
     private static final String JAVA_HOME = "/usr/lib/jvm/java-17-amazon-corretto.%s";
 
     private SparkConfigurationUtils() {
+    }
+
+    /**
+     * Creates the Spark defaults for the persistent EMR cluster. This is the same as for non-persistent EMR, except
+     * spark.dynamicAllocation.enabled is not set because for persistent EMR each bulk import job sets that property
+     * itself from the table properties.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  arch               the architecture of the cluster
+     * @return                    the Spark defaults for the persistent EMR cluster
+     */
+    public static Map<String, String> getSparkConfigurationForPersistentEMRFromInstanceProperties(
+            InstanceProperties instanceProperties, EmrInstanceArchitecture arch) {
+        Map<String, String> sparkConf = getSparkConfigurationForEMRFromInstanceProperties(instanceProperties, arch);
+        sparkConf.remove("spark.dynamicAllocation.enabled");
+        return sparkConf;
     }
 
     public static Map<String, String> getSparkConfigurationForEMRFromInstanceProperties(
@@ -244,7 +268,6 @@ public class SparkConfigurationUtils {
         sparkConf.put("spark.executor.cores", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES));
         sparkConf.put("spark.emr-serverless.executor.disk", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK));
         sparkConf.put("spark.executor.heartbeatInterval", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_SPARK_EXECUTOR_HEARTBEAT_INTERVAL));
-        sparkConf.put("spark.executor.instances", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES));
         sparkConf.put("spark.executor.memory", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY));
 
         // spark.default properties
@@ -254,7 +277,17 @@ public class SparkConfigurationUtils {
         sparkConf.put("spark.network.timeout", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_SPARK_NETWORK_TIMEOUT));
 
         // spark.dynamicAllocation properties
-        sparkConf.put("spark.dynamicAllocation.enabled", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION));
+        if (platformSpec.getBoolean(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION)) {
+            sparkConf.put("spark.dynamicAllocation.enabled", "true");
+            sparkConf.put("spark.dynamicAllocation.minExecutors", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS));
+            sparkConf.put("spark.dynamicAllocation.initialExecutors", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS));
+            sparkConf.put("spark.dynamicAllocation.maxExecutors", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS));
+            sparkConf.put("spark.dynamicAllocation.executorIdleTimeout",
+                    instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_EXECUTOR_IDLE_TIMEOUT));
+        } else {
+            sparkConf.put("spark.dynamicAllocation.enabled", "false");
+            sparkConf.put("spark.executor.instances", platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES));
+        }
 
         // spark.memory properties
         sparkConf.put("spark.memory.fraction", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_SPARK_MEMORY_FRACTION));
@@ -282,6 +315,31 @@ public class SparkConfigurationUtils {
         sparkConf.put("spark.executorEnv.JAVA_HOME", getJavaHome(arch));
         sparkConf.put("spark.emr-serverless.driverEnv.JAVA_HOME", getJavaHome(arch));
 
+        return sparkConf;
+    }
+
+    /**
+     * Creates the Spark dynamic allocation configuration for a bulk import job on the persistent EMR cluster. This is
+     * passed with each job, and overrides the Spark defaults set on the cluster when it was deployed.
+     * <p>
+     * When dynamic allocation is enabled, this sets spark.executor.instances to 0. Otherwise the cluster's default for
+     * that property would apply, and Spark would start the job with that many executors rather than the initial
+     * executors.
+     *
+     * @param  platformSpec the platform spec for the job, including the table properties
+     * @return              the Spark configuration to pass with the job
+     */
+    public static Map<String, String> getSparkPersistentEmrDynamicAllocationConfiguration(BulkImportPlatformSpec platformSpec) {
+        Map<String, String> sparkConf = new TreeMap<>();
+        if (platformSpec.getBoolean(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION)) {
+            sparkConf.put("spark.dynamicAllocation.enabled", "true");
+            sparkConf.put("spark.dynamicAllocation.minExecutors", platformSpec.get(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MIN_EXECUTORS));
+            sparkConf.put("spark.dynamicAllocation.initialExecutors", platformSpec.get(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS));
+            sparkConf.put("spark.dynamicAllocation.maxExecutors", platformSpec.get(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS));
+            sparkConf.put("spark.executor.instances", "0");
+        } else {
+            sparkConf.put("spark.dynamicAllocation.enabled", "false");
+        }
         return sparkConf;
     }
 

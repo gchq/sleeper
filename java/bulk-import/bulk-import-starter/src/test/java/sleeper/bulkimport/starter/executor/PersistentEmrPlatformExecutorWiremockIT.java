@@ -15,9 +15,13 @@
  */
 package sleeper.bulkimport.starter.executor;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -34,9 +38,11 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -54,6 +60,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MIN_EXECUTORS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -264,6 +274,114 @@ class PersistentEmrPlatformExecutorWiremockIT {
         assertThat(jobsReturnedToQueue).containsExactly(job);
     }
 
+    @Test
+    void shouldUseFixedExecutorsWhenDynamicAllocationDisabledForTable(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        tableProperties.set(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION, "false");
+        BulkImportJob job = jobForTable()
+                .id("test-job")
+                .files(List.of("file.parquet"))
+                .build();
+        stubClusterWithAddJobFlowStepsSuccess();
+
+        // When
+        createExecutor(runtimeInfo).runJob(job, "test-run");
+
+        // Then
+        assertThat(sparkSubmitArgs())
+                .containsSequence("--conf", "spark.dynamicAllocation.enabled=false")
+                .noneMatch(arg -> arg.startsWith("spark.dynamicAllocation.") && !arg.equals("spark.dynamicAllocation.enabled=false"))
+                .noneMatch(arg -> arg.startsWith("spark.executor.instances="));
+    }
+
+    @Test
+    void shouldSetDynamicAllocationExecutorBoundsFromTableProperties(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        tableProperties.set(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MIN_EXECUTORS, "1");
+        tableProperties.set(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS, "2");
+        tableProperties.set(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS, "10");
+        BulkImportJob job = jobForTable()
+                .id("test-job")
+                .files(List.of("file.parquet"))
+                .build();
+        stubClusterWithAddJobFlowStepsSuccess();
+
+        // When
+        createExecutor(runtimeInfo).runJob(job, "test-run");
+
+        // Then
+        assertThat(sparkSubmitArgs())
+                .containsSequence("--conf", "spark.dynamicAllocation.minExecutors=1")
+                .containsSequence("--conf", "spark.dynamicAllocation.initialExecutors=2")
+                .containsSequence("--conf", "spark.dynamicAllocation.maxExecutors=10");
+    }
+
+    @Test
+    void shouldOverrideDynamicAllocationMaxExecutorsWithJobPlatformSpec(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        tableProperties.set(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS, "10");
+        BulkImportJob job = jobForTable()
+                .id("test-job")
+                .files(List.of("file.parquet"))
+                .platformSpec(Map.of(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS.getPropertyName(), "50"))
+                .build();
+        stubClusterWithAddJobFlowStepsSuccess();
+
+        // When
+        createExecutor(runtimeInfo).runJob(job, "test-run");
+
+        // Then
+        assertThat(sparkSubmitArgs())
+                .containsSequence("--conf", "spark.dynamicAllocation.maxExecutors=50")
+                .doesNotContain("spark.dynamicAllocation.maxExecutors=10");
+    }
+
+    @Test
+    void shouldOverrideDynamicAllocationWithJobSparkConf(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        BulkImportJob job = jobForTable()
+                .id("test-job")
+                .files(List.of("file.parquet"))
+                .sparkConf("spark.dynamicAllocation.maxExecutors", "5")
+                .sparkConf("spark.executor.instances", "7")
+                .build();
+        stubClusterWithAddJobFlowStepsSuccess();
+
+        // When
+        createExecutor(runtimeInfo).runJob(job, "test-run");
+
+        // Then
+        assertThat(sparkSubmitArgs())
+                .containsSequence("--conf", "spark.dynamicAllocation.maxExecutors=5")
+                .containsSequence("--conf", "spark.executor.instances=7")
+                .doesNotContain("spark.dynamicAllocation.maxExecutors=29", "spark.executor.instances=0");
+    }
+
+    private void stubClusterWithAddJobFlowStepsSuccess() {
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.ListClusters"))
+                .willReturn(aResponse().withStatus(200)
+                        .withBody(exampleString("example/persistent-emr/listclusters-response.json"))));
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.AddJobFlowSteps"))
+                .willReturn(aResponse().withStatus(200)));
+    }
+
+    private List<String> sparkSubmitArgs() {
+        List<LoggedRequest> requests = findAll(postRequestedFor(urlEqualTo("/"))
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.AddJobFlowSteps")));
+        assertThat(requests).hasSize(1);
+        try {
+            JsonNode args = new ObjectMapper().readTree(requests.get(0).getBodyAsString())
+                    .at("/Steps/0/HadoopJarStep/Args");
+            List<String> list = new ArrayList<>();
+            args.forEach(arg -> list.add(arg.asText()));
+            return list;
+        } catch (JsonProcessingException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     private BulkImportExecutor createExecutor(WireMockRuntimeInfo runtimeInfo) {
         return new BulkImportExecutor(
                 instanceProperties, new FixedTablePropertiesProvider(tableProperties),
@@ -276,7 +394,7 @@ class PersistentEmrPlatformExecutorWiremockIT {
         return new PersistentEmrPlatformExecutor(
                 wiremockAwsV2ClientWithRetryAttempts(2, runtimeInfo, EmrClient.builder()),
                 jobsReturnedToQueue::add,
-                instanceProperties);
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties));
     }
 
     private WriteJobToBucket noWriteToBucket() {

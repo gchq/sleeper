@@ -90,10 +90,14 @@ starting with `sleeper.default.table.bulk.import.emr.serverless.spark.`:
 sleeper.table.bulk.import.emr.serverless.spark.executor.cores=4
 sleeper.table.bulk.import.emr.serverless.spark.executor.memory=16G
 sleeper.table.bulk.import.emr.serverless.spark.executor.disk=200G
-sleeper.table.bulk.import.emr.serverless.spark.executor.instances=36
 sleeper.table.bulk.import.emr.serverless.spark.driver.cores=4
 sleeper.table.bulk.import.emr.serverless.spark.driver.memory=16G
-sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.enabled=false
+sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.enabled=true
+sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.min.executors=0
+sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.initial.executors=3
+sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.max.executors=36
+# The following property is only used when dynamic allocation is disabled
+sleeper.table.bulk.import.emr.serverless.spark.executor.instances=36
 sleeper.table.bulk.import.emr.serverless.spark.default.parallelism=288
 sleeper.table.bulk.import.emr.serverless.spark.sql.shuffle.partitions=288
 ```
@@ -110,7 +114,7 @@ For example:
   ],
   "platformSpec": {
     "sleeper.table.bulk.import.emr.serverless.spark.executor.disk": "120G",
-    "sleeper.table.bulk.import.emr.serverless.spark.executor.instances": "25"
+    "sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.max.executors": "25"
   },
   "sparkConf": {
     "spark.driver.cores": "4",
@@ -118,6 +122,27 @@ For example:
   }
 }
 ```
+
+##### Dynamic Resource Allocation
+
+By default, EMR Serverless jobs use Spark dynamic resource allocation. Each job starts with a small number of
+executors, and Spark adds executors while there are tasks waiting to run, up to a maximum. Executors that are idle for
+longer than `sleeper.bulk.import.emr.serverless.spark.dynamic.allocation.executor.idle.timeout` (60s by default) are
+released. This means small jobs use fewer resources than large ones.
+
+The number of executors is bounded by the `min.executors`, `initial.executors` and `max.executors` dynamic allocation
+properties listed above.
+
+To use a fixed number of executors for a table instead, set
+`sleeper.table.bulk.import.emr.serverless.spark.dynamic.allocation.enabled=false`. The number of executors is then set
+by `sleeper.table.bulk.import.emr.serverless.spark.executor.instances`.
+
+When dynamic allocation is enabled, the EMR Serverless
+[dynamic allocation optimization](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/jobs-spark.html#spark-defaults-dynamicResourceAllocation),
+is used. This aligns how Spark requests and releases executors with how EMR Serverless creates and releases workers. This can be
+turned off for the instance by setting `sleeper.bulk.import.emr.serverless.dynamic.allocation.optimization.enabled=false`.
+
+##### Other Settings
 
 Other Spark settings for EMR Serverless are set in instance properties starting with
 `sleeper.bulk.import.emr.serverless.spark.`, and apply to all tables. See the
@@ -277,9 +302,9 @@ the cdk deploy.
 By default, EMR managed auto-scaling is enabled for this cluster.
 The `sleeper.bulk.import.persistent.emr.use.managed.scaling` instance property determines whether managed scaling is
 used for this cluster. If this is set to false then the number of executors in the cluster is set
-to `sleeper.bulk.import.persistent.emr.min.instances`. If it is set to true then the number of executors automatically
-scales up and down between `sleeper.bulk.import.persistent.emr.min.instances`
-and `sleeper.bulk.import.persistent.emr.max.instances`.
+to `sleeper.bulk.import.persistent.emr.min.capacity`. If it is set to true then the number of executors automatically
+scales up and down between `sleeper.bulk.import.persistent.emr.min.capacity`
+and `sleeper.bulk.import.persistent.emr.max.capacity`.
 
 The other properties of the cluster are controlled using similar properties to the non-persistent EMR cluster, e.g.
 
@@ -288,8 +313,8 @@ sleeper.bulk.import.persistent.emr.instance.architecture=x86_64
 sleeper.bulk.import.persistent.emr.master.x86.instance.types=m6i.xlarge
 sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m6i.4xlarge
 sleeper.bulk.import.persistent.emr.use.managed.scaling=true
-sleeper.bulk.import.persistent.emr.min.instances=1
-sleeper.bulk.import.persistent.emr.max.instances=10
+sleeper.bulk.import.persistent.emr.min.capacity=1
+sleeper.bulk.import.persistent.emr.max.capacity=10
 ```
 
 There is an additional property `sleeper.bulk.import.persistent.emr.step.concurrency.level` that is not applicable to
@@ -299,8 +324,36 @@ The URL of the SQS queue to which messages should be sent is given by the instan
 `sleeper.bulk.import.persistent.emr.job.queue.url`which can be found in the config
 object in the bucket named `sleeper-<instance-id>-config`.
 
-Note however that as there is one persistent EMR cluster deployed for the whole instance there are no per-table
-persistent EMR properties, and it does not make sense to change the cluster properties on a per-job basis.
+As there is one persistent EMR cluster deployed for the whole instance, the cluster's properties apply to all tables,
+and it does not make sense to change them on a per-job basis. The exception is how many executors each job uses, which
+can be set per table with dynamic resource allocation, as described below.
+
+##### Dynamic resource allocation on persistent EMR
+
+By default, each bulk import job on the persistent EMR cluster uses Spark dynamic resource allocation. A job starts with
+a small number of executors, and Spark adds executors while there are tasks waiting to run, up to a maximum. Executors
+that are idle are released, so that other jobs running on the cluster at the same time can use them. This also lets EMR
+managed scaling grow and shrink the cluster to match the work being done.
+
+The number of executors for each job is set by these table properties. Each one defaults to the matching instance
+property starting with `sleeper.default.table.bulk.import.persistent.emr.spark.dynamic.allocation.`:
+
+```properties
+sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.enabled=true
+sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.min.executors=0
+sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.initial.executors=3
+sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.max.executors=29
+```
+
+The max executors limits how much of the shared cluster a single job can use. The total size of the cluster is still
+limited by the managed scaling min and max capacity.
+
+These can be overridden for a single job by setting the table property names in `platformSpec`, or by setting Spark
+configuration directly in `sparkConf`.
+
+To use a fixed number of executors for a table instead, set
+`sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.enabled=false`. Each job then uses the number of
+executors set for the cluster in `sleeper.bulk.import.emr.spark.executor.instances`.
 
 #### Instance properties common to the EMR and persistent EMR stacks
 
@@ -379,7 +432,7 @@ created by setting the following instance properties:
 sleeper.bulk.import.persistent.emr.master.x86.instance.types=m6i.xlarge
 sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m6i.4xlarge
 sleeper.bulk.import.persistent.emr.use.managed.scaling=false
-sleeper.bulk.import.persistent.emr.min.instances=10
+sleeper.bulk.import.persistent.emr.min.capacity=10
 sleeper.bulk.import.persistent.emr.step.concurrency.level=2
 ```
 

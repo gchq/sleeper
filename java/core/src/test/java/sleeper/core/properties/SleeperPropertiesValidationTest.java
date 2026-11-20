@@ -39,6 +39,15 @@ import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTION
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_OPTIMIZATION;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MIN_EXECUTORS;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -184,6 +193,90 @@ public class SleeperPropertiesValidationTest {
             // When / Then
             assertThatThrownBy(tableProperties::validate)
                     .hasMessageContaining("Property sleeper.table.name was invalid. It was unset.");
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"-1", "abc", "1.5"})
+        void shouldFailValidationIfEmrServerlessDynamicAllocationExecutorCountIsInvalid(String value) {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+            tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS, value);
+            tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS, value);
+            tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS, value);
+            // When / Then
+            assertThatThrownBy(tableProperties::validate)
+                    .isInstanceOf(SleeperPropertiesInvalidException.class)
+                    .extracting("invalidValues")
+                    .isEqualTo(Map.of(
+                            BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS, value,
+                            BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS, value,
+                            BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS, value));
+        }
+
+        @Test
+        void shouldFailValidationIfEmrServerlessDynamicAllocationMaxExecutorsIsZero() {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+            tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS, "0");
+            tableProperties.set(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS, "0");
+            // When / Then
+            assertThatThrownBy(tableProperties::validate)
+                    .isInstanceOf(SleeperPropertiesInvalidException.class)
+                    .extracting("invalidValues")
+                    .isEqualTo(Map.of(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS, "0"));
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"-1", "abc", "1.5"})
+        void shouldFailValidationIfPersistentEmrDynamicAllocationExecutorCountIsInvalid(String value) {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+            tableProperties.set(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MIN_EXECUTORS, value);
+            tableProperties.set(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS, value);
+            tableProperties.set(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS, value);
+            // When / Then
+            assertThatThrownBy(tableProperties::validate)
+                    .isInstanceOf(SleeperPropertiesInvalidException.class)
+                    .extracting("invalidValues")
+                    .isEqualTo(Map.of(
+                            BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MIN_EXECUTORS, value,
+                            BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS, value,
+                            BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS, value));
+        }
+
+        @Test
+        void shouldFailValidationIfPersistentEmrDynamicAllocationMaxExecutorsIsZeroOrEnabledIsInvalid() {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+            tableProperties.set(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION, "maybe");
+            tableProperties.set(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MIN_EXECUTORS, "0");
+            tableProperties.set(BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS, "0");
+            // When / Then
+            assertThatThrownBy(tableProperties::validate)
+                    .isInstanceOf(SleeperPropertiesInvalidException.class)
+                    .extracting("invalidValues")
+                    .isEqualTo(Map.of(
+                            BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION, "maybe",
+                            BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS, "0"));
+        }
+
+        @Test
+        void shouldFailValidationIfEmrServerlessDynamicAllocationInstanceDefaultIsInvalid() {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS, "0");
+            instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_OPTIMIZATION, "maybe");
+            // When / Then
+            assertThatThrownBy(instanceProperties::validate)
+                    .isInstanceOf(SleeperPropertiesInvalidException.class)
+                    .extracting("invalidValues")
+                    .isEqualTo(Map.of(
+                            DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS, "0",
+                            BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_OPTIMIZATION, "maybe"));
         }
     }
 

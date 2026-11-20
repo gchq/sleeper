@@ -106,8 +106,10 @@ public interface EMRProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED = Index.propertyBuilder("sleeper.bulk.import.emr.spark.dynamic.allocation.enabled")
-            .description("(Non-persistent or persistent EMR mode only) Whether Spark should use dynamic allocation to scale resources up and down. " +
+            .description("(Non-persistent EMR mode only) Whether Spark should use dynamic allocation to scale resources up and down. " +
                     "Used to set spark.dynamicAllocation.enabled.\n" +
+                    "For persistent EMR, use the table property sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.enabled " +
+                    "instead.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("false")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
