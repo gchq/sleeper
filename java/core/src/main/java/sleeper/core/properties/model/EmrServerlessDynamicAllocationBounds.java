@@ -41,7 +41,8 @@ import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVER
 public record EmrServerlessDynamicAllocationBounds(int minExecutors, int initialExecutors, int maxExecutors) {
 
     /**
-     * Checks whether the bounds are consistent with one another, i.e. min <= initial <= max.
+     * Checks whether the bounds are consistent with one another, i.e. the initial executors are between the min and max
+     * executors, inclusive.
      *
      * @return true if the bounds are valid
      */
@@ -52,7 +53,8 @@ public record EmrServerlessDynamicAllocationBounds(int minExecutors, int initial
     /**
      * Creates a validation criteria for the instance defaults for the dynamic allocation bounds.
      *
-     * @return a validation criteria that fails unless min <= initial <= max
+     * @return a validation criteria that fails unless the initial executors are between the
+     *         min and max executors, inclusive
      */
     public static SleeperPropertiesValidationCriteria<InstanceProperty> instanceDefaultsValidationCriteria() {
         return validationCriteria(
@@ -65,7 +67,8 @@ public record EmrServerlessDynamicAllocationBounds(int minExecutors, int initial
      * Creates a validation criteria for the dynamic allocation bounds in table properties. This includes any values
      * inherited from the instance defaults.
      *
-     * @return a validation criteria that fails unless min <= initial <= max
+     * @return a validation criteria that fails unless the initial executors are between the
+     *         min and max executors, inclusive
      */
     public static SleeperPropertiesValidationCriteria<TableProperty> tableValidationCriteria() {
         return validationCriteria(
