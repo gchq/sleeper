@@ -182,6 +182,8 @@ them in the committer.
 
 ![Transaction log commits diagram](design/transaction-log-state-store-commits.png)
 
+We've also done some analysis on [retries of asynchronous state store commits](design/state-store-commit-retries.md).
+
 #### Snapshots & cleanup
 
 To keep queries of the state store fast, we take regular snapshots of the state, and delete old transactions and
