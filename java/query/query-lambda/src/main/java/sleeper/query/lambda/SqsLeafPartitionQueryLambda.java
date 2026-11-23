@@ -86,7 +86,7 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
         LeafPartitionRowRetrieverProvider dataFusionProvider = dataFusionProviderFactory.apply(instanceProperties);
         QueryStatusReportListener queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         messageHandler = new QueryMessageHandler(
-                S3QueryJsonStore.createMessageSerDe(instanceProperties, tablePropertiesProvider, s3Client), queryTracker);
+                S3QueryJsonStore.createReader(instanceProperties, tablePropertiesProvider, s3Client), queryTracker);
         processor = new SqsLeafPartitionQueryProcessor(tablePropertiesProvider,
                 QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider),
                 new AwsResultsOutputProvider(instanceProperties, hadoopProvider, sqsClient),

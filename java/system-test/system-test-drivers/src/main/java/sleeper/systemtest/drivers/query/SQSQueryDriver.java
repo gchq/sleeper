@@ -76,9 +76,9 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     public void send(Query query) {
         sqsClient.sendMessage(request -> request
                 .queueUrl(instance.getInstanceProperties().get(QUERY_QUEUE_URL))
-                .messageBody(S3QueryJsonStore.createMessageSerDe(instance.getInstanceProperties(),
+                .messageBody(S3QueryJsonStore.createUploader(instance.getInstanceProperties(),
                         new QuerySerDe(new SchemaLoaderFromInstanceContext(instance)), s3Client)
-                        .toMessage(query)));
+                        .serialiseAndUploadIfTooBig(query)));
     }
 
     @Override

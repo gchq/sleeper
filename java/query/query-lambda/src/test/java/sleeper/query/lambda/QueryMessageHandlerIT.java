@@ -30,7 +30,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.query.core.model.InMemoryQueryJsonStore;
 import sleeper.query.core.model.Query;
-import sleeper.query.core.model.QueryMessageSerDe;
+import sleeper.query.core.model.QueryMessageReader;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.tracker.QueryState;
@@ -60,7 +60,7 @@ public class QueryMessageHandlerIT extends LocalAwsTestBase {
 
     private final TableProperties tableProperties = createTable("table-1");
     private final QueryMessageHandler queryMessageHandler = new QueryMessageHandler(
-            new QueryMessageSerDe(new QuerySerDe(new FixedTablePropertiesProvider(tableProperties)), new InMemoryQueryJsonStore()),
+            new QueryMessageReader(new InMemoryQueryJsonStore(), new QuerySerDe(new FixedTablePropertiesProvider(tableProperties))),
             queryTracker, () -> "invalid-query-id");
 
     @Nested

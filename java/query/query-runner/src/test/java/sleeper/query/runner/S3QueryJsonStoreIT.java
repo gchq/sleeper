@@ -25,7 +25,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.query.core.model.Query;
-import sleeper.query.core.model.QueryMessageSerDe;
+import sleeper.query.core.model.QueryMessageReader;
+import sleeper.query.core.model.QueryMessageUploader;
 import sleeper.query.core.model.QuerySerDe;
 
 import java.util.List;
@@ -53,7 +54,8 @@ public class S3QueryJsonStoreIT extends LocalAwsTestBase {
     @Test
     void shouldStoreAndLoadQueryTooLargeForSqsMessage() {
         // Given
-        QueryMessageSerDe messageSerDe = S3QueryJsonStore.createMessageSerDe(instanceProperties, querySerDe, s3Client);
+        QueryMessageUploader uploader = S3QueryJsonStore.createUploader(instanceProperties, querySerDe, s3Client);
+        QueryMessageReader reader = S3QueryJsonStore.createReader(instanceProperties, querySerDe, s3Client);
         Query query = Query.builder()
                 .queryId("large-query")
                 .tableName("test-table")
@@ -65,19 +67,19 @@ public class S3QueryJsonStoreIT extends LocalAwsTestBase {
         assertThat(json.length()).isGreaterThan(256 * 1024);
 
         // When
-        String message = messageSerDe.toMessage(query);
+        String message = uploader.serialiseAndUploadIfTooBig(query);
 
         // Then
         assertThat(message).startsWith("{\"queryJsonS3Key\":\"queries/large-query/query-").hasSizeLessThan(200);
         assertThat(listObjectKeys(instanceProperties.get(QUERY_RESULTS_BUCKET)))
                 .singleElement().satisfies(key -> assertThat(key).startsWith("queries/large-query/query-"));
-        assertThat(messageSerDe.fromMessage(message).asParentQuery()).isEqualTo(query);
+        assertThat(reader.readAndLoadIfStored(message).asParentQuery()).isEqualTo(query);
     }
 
     @Test
     void shouldNotStoreSmallQuery() {
         // Given
-        QueryMessageSerDe messageSerDe = S3QueryJsonStore.createMessageSerDe(instanceProperties, querySerDe, s3Client);
+        QueryMessageUploader uploader = S3QueryJsonStore.createUploader(instanceProperties, querySerDe, s3Client);
         Query query = Query.builder()
                 .queryId("small-query")
                 .tableName("test-table")
@@ -85,7 +87,7 @@ public class S3QueryJsonStoreIT extends LocalAwsTestBase {
                 .build();
 
         // When
-        String message = messageSerDe.toMessage(query);
+        String message = uploader.serialiseAndUploadIfTooBig(query);
 
         // Then
         assertThat(message).isEqualTo(querySerDe.toJson(query));

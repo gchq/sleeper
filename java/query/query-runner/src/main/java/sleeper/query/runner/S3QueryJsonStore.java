@@ -22,7 +22,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.query.core.model.QueryJsonStore;
-import sleeper.query.core.model.QueryMessageSerDe;
+import sleeper.query.core.model.QueryMessageReader;
+import sleeper.query.core.model.QueryMessageUploader;
 import sleeper.query.core.model.QuerySerDe;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
@@ -45,29 +46,55 @@ public class S3QueryJsonStore implements QueryJsonStore {
     }
 
     /**
-     * Creates a serialiser for query messages which will store large queries in S3.
+     * Creates an uploader for query messages which will upload large queries to S3.
      *
      * @param  instanceProperties      the instance properties
      * @param  tablePropertiesProvider the table properties provider
      * @param  s3Client                the S3 client
-     * @return                         the serialiser
+     * @return                         the uploader
      */
-    public static QueryMessageSerDe createMessageSerDe(
+    public static QueryMessageUploader createUploader(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, S3Client s3Client) {
-        return createMessageSerDe(instanceProperties, new QuerySerDe(tablePropertiesProvider), s3Client);
+        return createUploader(instanceProperties, new QuerySerDe(tablePropertiesProvider), s3Client);
     }
 
     /**
-     * Creates a serialiser for query messages which will store large queries in S3.
+     * Creates an uploader for query messages which will upload large queries to S3.
      *
      * @param  instanceProperties the instance properties
      * @param  querySerDe         the query serialiser
      * @param  s3Client           the S3 client
-     * @return                    the serialiser
+     * @return                    the uploader
      */
-    public static QueryMessageSerDe createMessageSerDe(
+    public static QueryMessageUploader createUploader(
             InstanceProperties instanceProperties, QuerySerDe querySerDe, S3Client s3Client) {
-        return new QueryMessageSerDe(querySerDe, new S3QueryJsonStore(instanceProperties, s3Client));
+        return new QueryMessageUploader(new S3QueryJsonStore(instanceProperties, s3Client), querySerDe);
+    }
+
+    /**
+     * Creates a reader for query messages which will load large queries from S3.
+     *
+     * @param  instanceProperties      the instance properties
+     * @param  tablePropertiesProvider the table properties provider
+     * @param  s3Client                the S3 client
+     * @return                         the reader
+     */
+    public static QueryMessageReader createReader(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, S3Client s3Client) {
+        return createReader(instanceProperties, new QuerySerDe(tablePropertiesProvider), s3Client);
+    }
+
+    /**
+     * Creates a reader for query messages which will load large queries from S3.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  querySerDe         the query serialiser
+     * @param  s3Client           the S3 client
+     * @return                    the reader
+     */
+    public static QueryMessageReader createReader(
+            InstanceProperties instanceProperties, QuerySerDe querySerDe, S3Client s3Client) {
+        return new QueryMessageReader(new S3QueryJsonStore(instanceProperties, s3Client), querySerDe);
     }
 
     @Override

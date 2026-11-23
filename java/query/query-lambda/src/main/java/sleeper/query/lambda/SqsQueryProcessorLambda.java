@@ -30,7 +30,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.query.core.model.QueryMessageSerDe;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.runner.S3QueryJsonStore;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
@@ -110,11 +109,12 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         }
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-        QueryMessageSerDe messageSerDe = S3QueryJsonStore.createMessageSerDe(instanceProperties, tablePropertiesProvider, s3Client);
-        messageHandler = new QueryMessageHandler(messageSerDe, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
+        messageHandler = new QueryMessageHandler(
+                S3QueryJsonStore.createReader(instanceProperties, tablePropertiesProvider, s3Client),
+                new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsQueryProcessor.builder()
                 .sqsClient(sqsClient)
-                .messageSerDe(messageSerDe)
+                .messageUploader(S3QueryJsonStore.createUploader(instanceProperties, tablePropertiesProvider, s3Client))
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                 .queryListener(new DynamoDBQueryTracker(instanceProperties, dynamoClient))

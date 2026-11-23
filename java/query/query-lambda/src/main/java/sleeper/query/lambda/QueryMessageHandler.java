@@ -19,7 +19,7 @@ package sleeper.query.lambda;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.query.core.model.QueryMessageSerDe;
+import sleeper.query.core.model.QueryMessageReader;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.model.QueryValidationException;
 import sleeper.query.core.tracker.QueryStatusReportListener;
@@ -32,25 +32,25 @@ import java.util.function.Supplier;
 public class QueryMessageHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryMessageHandler.class);
     private final QueryStatusReportListener queryTracker;
-    private final QueryMessageSerDe messageSerDe;
+    private final QueryMessageReader messageReader;
     private final Supplier<String> invalidQueryIdSupplier;
 
     public QueryMessageHandler(
-            QueryMessageSerDe messageSerDe, QueryStatusReportListener queryTracker) {
-        this(messageSerDe, queryTracker, () -> UUID.randomUUID().toString());
+            QueryMessageReader messageReader, QueryStatusReportListener queryTracker) {
+        this(messageReader, queryTracker, () -> UUID.randomUUID().toString());
     }
 
     public QueryMessageHandler(
-            QueryMessageSerDe messageSerDe, QueryStatusReportListener queryTracker,
+            QueryMessageReader messageReader, QueryStatusReportListener queryTracker,
             Supplier<String> invalidQueryIdSupplier) {
         this.queryTracker = queryTracker;
         this.invalidQueryIdSupplier = invalidQueryIdSupplier;
-        this.messageSerDe = messageSerDe;
+        this.messageReader = messageReader;
     }
 
     public Optional<QueryOrLeafPartitionQuery> deserialiseAndValidate(String message) {
         try {
-            QueryOrLeafPartitionQuery query = messageSerDe.fromMessage(message);
+            QueryOrLeafPartitionQuery query = messageReader.readAndLoadIfStored(message);
             LOGGER.info("Deserialised message to query {}", query);
             return Optional.of(query);
         } catch (QueryValidationException e) {
