@@ -109,7 +109,10 @@ public class FilesStatusReport {
                             .helpText("Maximum number of files with no references to count. Defaults to 1000.")
                             .argsHelpText("<number>")
                             .build()))
-            .helpSummary("Creates a report on the status of files in a Sleeper table.")
+            .helpSummary("Creates a report on the status of files in a Sleeper table.\n" +
+                    "\n" +
+                    "Note that further information on compaction jobs is available in the compaction " +
+                    "job status report, which can show full details of compactions that have run.")
             .build();
 
     /**
