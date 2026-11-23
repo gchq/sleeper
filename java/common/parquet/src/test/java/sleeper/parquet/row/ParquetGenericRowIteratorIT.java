@@ -221,6 +221,74 @@ class ParquetGenericRowIteratorIT {
     }
 
     @Test
+    void shouldReadMapWithOnlyKeysAsNullValues() throws IOException {
+        // Given
+        // - Parquet allows a map with no value field, where each key has a null value
+        MessageType parquetSchema = MessageTypeParser.parseMessageType("""
+                message results {
+                  required group map (MAP) {
+                    repeated group key_value {
+                      required int32 key;
+                    }
+                  }
+                }
+                """);
+        Path path = newPath();
+        try (ParquetWriter<Group> writer = ExampleParquetWriter.builder(path).withType(parquetSchema).build()) {
+            Group group = new SimpleGroupFactory(parquetSchema).newGroup();
+            Group map = group.addGroup("map");
+            map.addGroup("key_value").append("key", 7);
+            map.addGroup("key_value").append("key", 8);
+            writer.write(group);
+        }
+
+        // When
+        List<Row> rows = readRows(path);
+
+        // Then
+        Map<Integer, Object> expectedMap = new HashMap<>();
+        expectedMap.put(7, null);
+        expectedMap.put(8, null);
+        Row expected = new Row();
+        expected.put("map", expectedMap);
+        assertThat(rows).containsExactly(expected);
+    }
+
+    @Test
+    void shouldReadMapWithOptionalValues() throws IOException {
+        // Given
+        MessageType parquetSchema = MessageTypeParser.parseMessageType("""
+                message results {
+                  required group map (MAP) {
+                    repeated group key_value {
+                      required binary key (STRING);
+                      optional int64 value;
+                    }
+                  }
+                }
+                """);
+        Path path = newPath();
+        try (ParquetWriter<Group> writer = ExampleParquetWriter.builder(path).withType(parquetSchema).build()) {
+            Group group = new SimpleGroupFactory(parquetSchema).newGroup();
+            Group map = group.addGroup("map");
+            map.addGroup("key_value").append("key", "a").append("value", 1L);
+            map.addGroup("key_value").append("key", "b");
+            writer.write(group);
+        }
+
+        // When
+        List<Row> rows = readRows(path);
+
+        // Then
+        Map<String, Object> expectedMap = new HashMap<>();
+        expectedMap.put("a", 1L);
+        expectedMap.put("b", null);
+        Row expected = new Row();
+        expected.put("map", expectedMap);
+        assertThat(rows).containsExactly(expected);
+    }
+
+    @Test
     void shouldReadJavaTypesHeldInSleeperRows() throws IOException {
         // Given
         Schema schema = Schema.builder()
