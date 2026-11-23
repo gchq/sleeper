@@ -16,28 +16,23 @@
 package sleeper.query.core.model;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 
-import java.util.Optional;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
- * Serialises messages for a query queue to and from JSON. The message may contain the query serialissed to JSON or
- * if it is a large query a pointer to where the query is stored.
+ * Serialises messages for a query queue to and from JSON. A message holds either a query serialised to JSON, or a
+ * pointer to where a large query has been stored. Both are read with the same model, so a message is only parsed once.
+ * <p>
+ * A pointer message holds the key the query is stored under in a field {@value #STORED_QUERY_KEY_FIELD}, and may
+ * optionally hold the query ID. The query ID is used to report a failure if the stored query cannot be read, and must
+ * match the ID of the stored query. No other fields are allowed in a pointer message.
  */
 public class QueryMessageSerDe {
 
     public static final String STORED_QUERY_KEY_FIELD = "queryJsonS3Key";
 
-    /**
-     * Maximum length of a message that may be a pointer to a stored query. Longer messages are not checked for a
-     * pointer, to avoid parsing large queries twice.
-     */
-    private static final int MAX_POINTER_MESSAGE_LENGTH = 4096;
-    private static final Gson GSON = new Gson();
-
+    private final Gson gson = new Gson();
     private final QuerySerDe querySerDe;
 
     public QueryMessageSerDe(QuerySerDe querySerDe) {
@@ -45,7 +40,7 @@ public class QueryMessageSerDe {
     }
 
     /**
-     * Serialises a query to a string.
+     * Serialises a query to a message holding the query.
      *
      * @param  query the query
      * @return       the message body
@@ -55,7 +50,7 @@ public class QueryMessageSerDe {
     }
 
     /**
-     * Serialises a leaf partition query to a string.
+     * Serialises a leaf partition query to a message holding the query.
      *
      * @param  query the leaf partition query
      * @return       the message body
@@ -65,50 +60,56 @@ public class QueryMessageSerDe {
     }
 
     /**
-     * Creates a string containing a pointer to a query whose JSON has been stored in a store.
+     * Creates a message pointing to a query that has been stored separately.
      *
-     * @param  key the key the JSON is stored under
-     * @return     the message body
+     * @param  queryId the query ID, used to report a failure if the stored query cannot be read
+     * @param  key     the key the query JSON is stored under
+     * @return         the message body
      */
-    public String toJsonPointingToStoredQuery(String key) {
-        JsonObject pointer = new JsonObject();
-        pointer.addProperty(STORED_QUERY_KEY_FIELD, key);
-        return GSON.toJson(pointer);
+    public String toJsonPointingToStoredQuery(String queryId, String key) {
+        return gson.toJson(QueryJson.pointingToStoredQuery(queryId, key));
     }
 
     /**
-     * Reads the key of a stored query if the string points to one rather than holding the query directly.
+     * Deserialises a message. If the message points to a stored query, the query is loaded and deserialised.
      *
-     * @param  message the message body
-     * @return         the key the query JSON is stored under, if the message is a pointer, otherwise empty
+     * @param  message   the message body
+     * @param  loadQuery a function to load the JSON of a stored query, given its key
+     * @return           the query
      */
-    public Optional<String> readStoredQueryKey(String message) {
-        if (message.length() > MAX_POINTER_MESSAGE_LENGTH || !message.contains(STORED_QUERY_KEY_FIELD)) {
-            return Optional.empty();
+    public QueryOrLeafPartitionQuery fromJson(String message, Function<String, String> loadQuery) {
+        QueryJson json = gson.fromJson(message, QueryJson.class);
+        String key = json.getQueryJsonS3Key();
+        if (key == null) {
+            return querySerDe.fromQueryJson(json);
         }
+        String messageQueryId = json.getQueryId();
+        if (!json.isOnlyPointerToStoredQuery()) {
+            throw new QueryValidationException(messageQueryId, null,
+                    "Message pointing to a stored query must only contain the fields queryId and " + STORED_QUERY_KEY_FIELD);
+        }
+        QueryOrLeafPartitionQuery query = loadStoredQuery(messageQueryId, key, loadQuery);
+        if (messageQueryId != null && !Objects.equals(messageQueryId, query.getQueryId())) {
+            throw new QueryValidationException(messageQueryId, null,
+                    "Query ID in message does not match stored query at " + key + ", found \"" + query.getQueryId() + "\"");
+        }
+        return query;
+    }
+
+    private QueryOrLeafPartitionQuery loadStoredQuery(String messageQueryId, String key, Function<String, String> loadQuery) {
+        String storedJson;
         try {
-            JsonElement element = JsonParser.parseString(message);
-            if (!element.isJsonObject()) {
-                return Optional.empty();
+            storedJson = loadQuery.apply(key);
+        } catch (RuntimeException e) {
+            if (messageQueryId == null) {
+                throw e;
             }
-            JsonObject object = element.getAsJsonObject();
-            JsonElement key = object.get(STORED_QUERY_KEY_FIELD);
-            if (key == null || !key.isJsonPrimitive() || object.size() != 1) {
-                return Optional.empty();
-            }
-            return Optional.of(key.getAsString());
-        } catch (JsonSyntaxException e) {
-            return Optional.empty();
+            throw new QueryValidationException(messageQueryId, null, e);
         }
-    }
-
-    /**
-     * Deserialises the JSON of a query or leaf partition query.
-     *
-     * @param  json the query JSON
-     * @return      the query
-     */
-    public QueryOrLeafPartitionQuery fromJson(String json) {
-        return querySerDe.fromJsonOrLeafQuery(json);
+        QueryJson stored = gson.fromJson(storedJson, QueryJson.class);
+        if (stored.getQueryJsonS3Key() != null) {
+            throw new QueryValidationException(messageQueryId, null, "Stored query at " + key + " points to another stored query");
+        }
+        return querySerDe.fromQueryJson(stored);
     }
 }

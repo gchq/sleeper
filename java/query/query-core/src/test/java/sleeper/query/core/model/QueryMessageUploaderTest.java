@@ -68,7 +68,7 @@ public class QueryMessageUploaderTest {
         String message = uploader.serialiseAndUploadIfTooBig(query);
 
         // Then
-        assertThat(message).isEqualTo("{\"queryJsonS3Key\":\"queries/test-query/query-test-uuid.json\"}");
+        assertThat(message).isEqualTo("{\"queryId\":\"test-query\",\"queryJsonS3Key\":\"queries/test-query/query-test-uuid.json\"}");
         assertThat(store.getJsonByKey()).isEqualTo(Map.of(
                 "queries/test-query/query-test-uuid.json", querySerDe.toJson(query)));
         assertThat(reader.readAndLoadIfStored(message).asParentQuery()).isEqualTo(query);
@@ -97,7 +97,7 @@ public class QueryMessageUploaderTest {
         String message = uploader.serialiseAndUploadIfTooBig(query);
 
         // Then
-        assertThat(message).isEqualTo("{\"queryJsonS3Key\":\"queries/test-query/test-subquery-test-uuid.json\"}");
+        assertThat(message).isEqualTo("{\"queryId\":\"test-query\",\"queryJsonS3Key\":\"queries/test-query/test-subquery-test-uuid.json\"}");
         assertThat(store.getJsonByKey()).containsOnlyKeys("queries/test-query/test-subquery-test-uuid.json");
         assertThat(reader.readAndLoadIfStored(message).asLeafQuery()).isEqualTo(query);
     }
@@ -105,7 +105,7 @@ public class QueryMessageUploaderTest {
     @Test
     void shouldFailToReadWhenStoredQueryIsMissing() {
         // Given
-        String message = messageSerDe.toJsonPointingToStoredQuery("queries/missing.json");
+        String message = messageSerDe.toJsonPointingToStoredQuery("test-query", "queries/missing.json");
 
         // When / Then
         assertThatThrownBy(() -> reader.readAndLoadIfStored(message))

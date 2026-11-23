@@ -91,6 +91,6 @@ public class QueryMessageUploader {
         String key = createKey(queryId, subQueryId, uuidSupplier.get());
         LOGGER.info("Query JSON of length {} is too large for a message, uploading to {}", json.length(), key);
         jsonStore.store(key, json);
-        return messageSerDe.toJsonPointingToStoredQuery(key);
+        return messageSerDe.toJsonPointingToStoredQuery(queryId, key);
     }
 }

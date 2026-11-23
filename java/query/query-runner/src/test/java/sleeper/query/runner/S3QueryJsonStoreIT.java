@@ -70,7 +70,7 @@ public class S3QueryJsonStoreIT extends LocalAwsTestBase {
         String message = uploader.serialiseAndUploadIfTooBig(query);
 
         // Then
-        assertThat(message).startsWith("{\"queryJsonS3Key\":\"queries/large-query/query-").hasSizeLessThan(200);
+        assertThat(message).startsWith("{\"queryId\":\"large-query\",\"queryJsonS3Key\":\"queries/large-query/query-").hasSizeLessThan(200);
         assertThat(listObjectKeys(instanceProperties.get(QUERY_RESULTS_BUCKET)))
                 .singleElement().satisfies(key -> assertThat(key).startsWith("queries/large-query/query-"));
         assertThat(reader.readAndLoadIfStored(message).asParentQuery()).isEqualTo(query);

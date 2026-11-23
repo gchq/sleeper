@@ -131,7 +131,16 @@ public class QuerySerDe {
      * @return      a Sleeper query or leaf partition query
      */
     public QueryOrLeafPartitionQuery fromJsonOrLeafQuery(String json) {
-        QueryJson queryJson = gson.fromJson(json, QueryJson.class);
+        return fromQueryJson(gson.fromJson(json, QueryJson.class));
+    }
+
+    /**
+     * Converts a parsed JSON model into either a Sleeper Query or a LeafPartitionQuery object.
+     *
+     * @param  queryJson the parsed JSON model
+     * @return           a Sleeper query or leaf partition query
+     */
+    QueryOrLeafPartitionQuery fromQueryJson(QueryJson queryJson) {
         return queryJson.toQueryOrLeafQuery(schemaLoader);
     }
 

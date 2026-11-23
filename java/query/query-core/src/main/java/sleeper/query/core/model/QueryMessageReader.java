@@ -44,12 +44,9 @@ public class QueryMessageReader {
      * @return         the query
      */
     public QueryOrLeafPartitionQuery readAndLoadIfStored(String message) {
-        String json = messageSerDe.readStoredQueryKey(message)
-                .map(key -> {
-                    LOGGER.info("Loading query JSON from {}", key);
-                    return jsonStore.load(key);
-                })
-                .orElse(message);
-        return messageSerDe.fromJson(json);
+        return messageSerDe.fromJson(message, key -> {
+            LOGGER.info("Loading query JSON from {}", key);
+            return jsonStore.load(key);
+        });
     }
 }

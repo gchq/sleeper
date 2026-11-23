@@ -52,6 +52,7 @@ class QueryJson {
     private final JsonElement partitionRegion;
     private final List<String> files;
     private final String attemptId;
+    private final String queryJsonS3Key;
 
     private QueryJson(Builder builder) {
         tableName = builder.tableName;
@@ -70,6 +71,7 @@ class QueryJson {
         partitionRegion = builder.partitionRegion;
         files = builder.files;
         attemptId = builder.attemptId;
+        queryJsonS3Key = builder.queryJsonS3Key;
     }
 
     static QueryJson from(Query query, QuerySerDe.SchemaLoader schemaLoader) {
@@ -97,6 +99,40 @@ class QueryJson {
                 .files(leafQuery.getFiles())
                 .attemptId(leafQuery.getAttemptId())
                 .build();
+    }
+
+    /**
+     * Creates a message pointing to a query that was too large to send directly, and has been stored separately.
+     *
+     * @param  queryId the ID of the query, for reporting if the stored query cannot be read
+     * @param  key     the key the query JSON is stored under
+     * @return         the pointer
+     */
+    static QueryJson pointingToStoredQuery(String queryId, String key) {
+        return builder().queryId(queryId).queryJsonS3Key(key).build();
+    }
+
+    /**
+     * Checks whether this only points to a stored query, with no other fields set except the query ID.
+     *
+     * @return true if this is only a pointer to a stored query
+     */
+    boolean isOnlyPointerToStoredQuery() {
+        return queryJsonS3Key != null
+                && tableName == null && tableId == null && type == null && regions == null
+                && requestedValueFields == null && sqlQuery == null
+                && queryTimeIteratorClassName == null && queryTimeIteratorConfig == null
+                && resultsPublisherConfig == null && statusReportDestinations == null
+                && subQueryId == null && leafPartitionId == null && partitionRegion == null
+                && files == null && attemptId == null;
+    }
+
+    String getQueryJsonS3Key() {
+        return queryJsonS3Key;
+    }
+
+    String getQueryId() {
+        return queryId;
     }
 
     QueryOrLeafPartitionQuery toQueryOrLeafQuery(QuerySerDe.SchemaLoader schemaLoader) {
@@ -232,6 +268,7 @@ class QueryJson {
         private JsonElement partitionRegion;
         private List<String> files;
         private String attemptId;
+        private String queryJsonS3Key;
 
         private Builder() {
         }
@@ -322,6 +359,11 @@ class QueryJson {
 
         public Builder attemptId(String attemptId) {
             this.attemptId = attemptId;
+            return this;
+        }
+
+        public Builder queryJsonS3Key(String queryJsonS3Key) {
+            this.queryJsonS3Key = queryJsonS3Key;
             return this;
         }
 
