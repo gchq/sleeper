@@ -262,6 +262,32 @@ To send the results to a particular SQS queue use:
 You will need to give Sleeper's writing data IAM role (given by the CloudFormation
 export `<instance-id>-QueryLambdaRoleArn`) permission to write to the above S3 bucket or SQS queue.
 
+### Large queries
+
+An SQS message has a maximum size of 256KiB. If a query is too large to fit in a message, for example because it has
+a very large number of regions, you can write the query JSON to a file in the S3 query results bucket instead. The
+name of this bucket is given by the `sleeper.query.results.bucket` property in the instance properties file. Then send
+a message to the query queue holding only the S3 key of that file:
+
+```JSON
+{
+  "queryId": "a_unique_id",
+  "queryJsonS3Key": "queries/a_unique_id/query.json"
+}
+```
+
+The `queryId` field is optional, and no other fields are allowed in this message. If it is set, it must match the
+`queryId` in the file. If the query cannot be read from S3, or the IDs do not match, the query will be reported as
+failed against that query ID. Without it, the failure is reported against a randomly generated ID, so you will not be
+able to find it in the query tracker.
+
+You will need permission to write to the query results bucket. The file is not deleted after the query is read. It
+will be deleted by the expiry rule on the query results bucket, after the number of days set in
+`sleeper.query.results.bucket.expiry.days`.
+
+The Java and Python clients do this automatically. Queries submitted with the Java `QueryLambdaClient` or
+`SleeperClient`, or with the Python `SleeperClient`, will be written to S3 if they are too large for an SQS message.
+
 ### SQL Query Filtering (Experimental)
 
 SQL query filtering is also supported when submitting queries via SQS. See the [SQL Query Filtering](#sql-query-filtering-experimental)
