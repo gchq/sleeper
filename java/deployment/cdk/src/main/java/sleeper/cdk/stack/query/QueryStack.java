@@ -148,6 +148,9 @@ public class QueryStack extends NestedStack {
         setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, queryQueueStack.getQueue());
         // Read large queries from the query queue and write large sub-queries for the leaf partition query queue
         queryResultsBucket.grantReadWrite(lambda);
+        // This lambda writes large sub-queries to the results bucket. When the stack is deleted, CloudFormation deletes
+        // resources in reverse dependency order, so this makes sure the lambda is deleted before the bucket is emptied.
+        // Otherwise the lambda could write to the bucket after it was emptied, and the bucket would fail to delete.
         if (autoDeleteS3Objects != null) {
             lambda.getNode().addDependency(autoDeleteS3Objects);
         }
@@ -193,6 +196,9 @@ public class QueryStack extends NestedStack {
                 .batchSize(1)
                 .build();
 
+        // This lambda writes query results to the results bucket. When the stack is deleted, CloudFormation deletes
+        // resources in reverse dependency order, so this makes sure the lambda is deleted before the bucket is emptied.
+        // Otherwise the lambda could write to the bucket after it was emptied, and the bucket would fail to delete.
         if (autoDeleteS3Objects != null) {
             lambda.getNode().addDependency(autoDeleteS3Objects);
         }

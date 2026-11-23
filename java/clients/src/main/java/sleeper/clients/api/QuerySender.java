@@ -50,19 +50,7 @@ public interface QuerySender {
      */
     static QuerySender toSqs(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             SqsClient sqsClient, S3Client s3Client) {
-        return toSqs(instanceProperties, sqsClient,
-                S3QueryJsonStore.createUploader(instanceProperties, tablePropertiesProvider, s3Client));
-    }
-
-    /**
-     * Creates a sender that will submit queries to an SQS queue.
-     *
-     * @param  instanceProperties the instance properties
-     * @param  sqsClient          the SQS client
-     * @param  messageUploader    the uploader for query messages
-     * @return                    the sender
-     */
-    static QuerySender toSqs(InstanceProperties instanceProperties, SqsClient sqsClient, QueryMessageUploader messageUploader) {
+        QueryMessageUploader messageUploader = S3QueryJsonStore.createUploader(instanceProperties, tablePropertiesProvider, s3Client);
         return query -> {
             sqsClient.sendMessage(request -> request.queueUrl(instanceProperties.get(QUERY_QUEUE_URL))
                     .messageBody(messageUploader.serialiseAndUploadIfTooBig(query)));
