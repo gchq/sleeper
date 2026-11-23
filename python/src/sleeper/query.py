@@ -13,8 +13,26 @@
 #  limitations under the License.
 
 import json
+import logging
 import uuid
 from itertools import chain
+
+from mypy_boto3_s3 import S3Client
+from mypy_boto3_sqs import SQSServiceResource
+
+from sleeper.properties import InstanceProperties, QueryCdkProperty
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_JSON_LENGTH_TO_STORE = 1024 * 200
+"""
+Minimum size in bytes of a query's JSON that will be written to S3 rather than sent in an SQS message.
+
+The maximum size of an SQS message is 256KiB. Setting this to less than that leaves room for message attributes.
+This matches the threshold used by the Java clients.
+"""
+
+STORED_QUERY_KEY_FIELD = "queryJsonS3Key"
 
 
 class Range:
@@ -115,3 +133,43 @@ class Query:
 
     def to_json(self):
         return json.dumps(self.to_dict())
+
+
+class QuerySender:
+    """
+    Sends queries to the query queue, to be executed in a lambda. If a query is too large to fit in an SQS message,
+    it is written to the query results bucket in S3, and the message only holds the query ID and the S3 key.
+    """
+
+    def __init__(
+        self,
+        sqs: SQSServiceResource,
+        s3_client: S3Client,
+        properties: InstanceProperties,
+        json_length_to_store: int = DEFAULT_JSON_LENGTH_TO_STORE,
+    ):
+        self.sqs = sqs
+        self.s3_client = s3_client
+        self.properties = properties
+        self.json_length_to_store = json_length_to_store
+
+    def send(self, query: Query):
+        message = self._upload_if_too_big(query)
+        queue_url = self.properties.get(QueryCdkProperty.QUERY_QUEUE_URL)
+        self.sqs.Queue(queue_url).send_message(MessageBody=message)
+        logger.debug(f"Submitted query with id {query.query_id}")
+
+    def _upload_if_too_big(self, query: Query) -> str:
+        query_json = query.to_json()
+        query_bytes = query_json.encode("utf-8")
+        if len(query_bytes) < self.json_length_to_store:
+            return query_json
+        key = _create_stored_query_key(query.query_id)
+        bucket = self.properties.get(QueryCdkProperty.QUERY_RESULTS_BUCKET)
+        logger.info(f"Query JSON of {len(query_bytes)} bytes is too large for a message, uploading to s3://{bucket}/{key}")
+        self.s3_client.put_object(Bucket=bucket, Key=key, Body=query_bytes)
+        return json.dumps({"queryId": query.query_id, STORED_QUERY_KEY_FIELD: key})
+
+
+def _create_stored_query_key(query_id: str) -> str:
+    return f"queries/{query_id}/query-{uuid.uuid4()}.json"
