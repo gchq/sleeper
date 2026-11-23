@@ -24,8 +24,11 @@ import sleeper.core.tracker.job.run.JobRunSummaryTestHelper;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFromSingleRunUpdates;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_TASK_ID;
@@ -241,5 +244,49 @@ public class CompactionJobStatusInPeriodTest {
 
         // When / Then
         assertThat(status.isInPeriod(periodStart, periodEnd)).isTrue();
+    }
+
+    @Test
+    public void shouldOverlapPeriodWhenUnfinishedWithNoCreatedOrStartedUpdate() {
+        // Given
+        Instant beforeTime1 = Instant.parse("2022-09-23T11:43:00.000Z");
+        Instant beforeTime2 = Instant.parse("2022-09-23T11:43:30.000Z");
+        Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
+        Instant endTime = Instant.parse("2022-09-23T11:44:01.000Z");
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(
+                compactionFinishedStatus(startAndFinishTime(beforeTime1, beforeTime2)));
+
+        // When / Then
+        assertThat(status.isInPeriod(startTime, endTime)).isTrue();
+    }
+
+    @Test
+    public void shouldBeAfterPeriodWhenUnfinishedWithNoCreatedOrStartedUpdate() {
+        // Given
+        Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
+        Instant endTime = Instant.parse("2022-09-23T11:44:01.000Z");
+        Instant afterTime1 = Instant.parse("2022-09-23T11:44:02.000Z");
+        Instant afterTime2 = Instant.parse("2022-09-23T11:44:03.000Z");
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(
+                compactionFinishedStatus(startAndFinishTime(afterTime1, afterTime2)));
+
+        // When / Then
+        assertThat(status.isInPeriod(startTime, endTime)).isFalse();
+    }
+
+    @Test
+    public void shouldOverlapPeriodWhenFinishedWithNoCreatedOrStartedUpdate() {
+        // Given
+        Instant beforeTime1 = Instant.parse("2022-09-23T11:43:00.000Z");
+        Instant beforeTime2 = Instant.parse("2022-09-23T11:43:30.000Z");
+        Instant startTime = Instant.parse("2022-09-23T11:44:00.000Z");
+        Instant middleTime = Instant.parse("2022-09-23T11:44:01.000Z");
+        Instant endTime = Instant.parse("2022-09-23T11:44:02.000Z");
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(
+                compactionFinishedStatus(startAndFinishTime(beforeTime1, beforeTime2)),
+                compactionCommittedStatus(middleTime));
+
+        // When / Then
+        assertThat(status.isInPeriod(startTime, endTime)).isTrue();
     }
 }
