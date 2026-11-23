@@ -22,13 +22,16 @@ import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
+import sleeper.core.properties.SleeperPropertiesValidationCriteria;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.EmrServerlessDynamicAllocationBounds;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.table.TableStatus;
 
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -91,6 +94,11 @@ public class TableProperties extends SleeperProperties<TableProperty> {
      */
     public static TableProperties recreateWithoutValidation(TableProperties tableProperties, Properties newProperties) {
         return new TableProperties(tableProperties.instanceProperties, newProperties);
+    }
+
+    @Override
+    protected List<SleeperPropertiesValidationCriteria<TableProperty>> getValidationCriteria() {
+        return List.of(EmrServerlessDynamicAllocationBounds.tableValidationCriteria());
     }
 
     @Override

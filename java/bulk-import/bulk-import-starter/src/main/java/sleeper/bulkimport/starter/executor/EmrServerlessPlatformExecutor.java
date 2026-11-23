@@ -16,6 +16,7 @@
 package sleeper.bulkimport.starter.executor;
 
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
+import software.amazon.awssdk.services.emrserverless.model.Configuration;
 import software.amazon.awssdk.services.emrserverless.model.ConfigurationOverrides;
 import software.amazon.awssdk.services.emrserverless.model.JobDriver;
 import software.amazon.awssdk.services.emrserverless.model.MonitoringConfiguration;
@@ -29,11 +30,15 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 
+import java.util.Map;
+
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_OPTIMIZATION;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION;
 
 /**
  * Starts a bulk import job on EMR Serverless.
@@ -65,15 +70,33 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                         .entryPointArguments(arguments.entryPointArgumentsForServerless())
                         .sparkSubmitParameters(arguments.sparkSubmitParametersForServerless(platformSpec))
                         .build()).build())
-                .configurationOverrides(
-                        ConfigurationOverrides.builder()
-                                .monitoringConfiguration(MonitoringConfiguration.builder()
-                                        .s3MonitoringConfiguration(S3MonitoringConfiguration.builder()
-                                                .logUri("s3://" + instanceProperties.get(BULK_IMPORT_BUCKET))
-                                                .build())
-                                        .build())
-                                .build())
+                .configurationOverrides(configurationOverrides(platformSpec))
                 .build();
         emrClient.startJobRun(job);
+    }
+
+    /**
+     * Creates the configuration overrides for a job. This sets where logs are written. It also turns on EMR Serverless
+     * dynamic allocation optimization if dynamic allocation is enabled for the job. That setting must be set in the
+     * "spark" classification of the application configuration, rather than as Spark configuration.
+     *
+     * @param  platformSpec the platform spec for the job, including the table properties
+     * @return              the configuration overrides
+     */
+    private ConfigurationOverrides configurationOverrides(BulkImportPlatformSpec platformSpec) {
+        ConfigurationOverrides.Builder builder = ConfigurationOverrides.builder()
+                .monitoringConfiguration(MonitoringConfiguration.builder()
+                        .s3MonitoringConfiguration(S3MonitoringConfiguration.builder()
+                                .logUri("s3://" + instanceProperties.get(BULK_IMPORT_BUCKET))
+                                .build())
+                        .build());
+        if (platformSpec.getBoolean(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION)
+                && instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_OPTIMIZATION)) {
+            builder.applicationConfiguration(Configuration.builder()
+                    .classification("spark")
+                    .properties(Map.of("dynamicAllocationOptimization", "true"))
+                    .build());
+        }
+        return builder.build();
     }
 }
