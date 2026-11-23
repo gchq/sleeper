@@ -39,6 +39,7 @@ import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type;
 
 import sleeper.core.row.Row;
+import sleeper.core.schema.type.ByteArray;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -82,7 +83,9 @@ import java.util.function.LongFunction;
  * Boolean, as they are held in
  * Parquet</li>
  * <li>Lists and repeated fields are read as a list</li>
- * <li>Maps are read as a map, with any type of key</li>
+ * <li>Maps are read as a map, with any type of key. A map with no value field is read with a null value for each
+ * key. If a key in a map is binary and would normally be read as a byte
+ * array are then it is stored in the map as a {@link ByteArray}, so that keys with the same bytes are equal</li>
  * <li>Any other group is read as a map from field name to value</li>
  * <li>An optional field with no value is read as null</li>
  * </ul>
@@ -131,7 +134,7 @@ class GenericRowConverter extends GroupConverter {
         }
         if ((annotation instanceof MapLogicalTypeAnnotation || annotation instanceof MapKeyValueTypeAnnotation)
                 && isRepeatedOnly(group) && !group.getType(0).isPrimitive()
-                && group.getType(0).asGroupType().getFieldCount() == 2) {
+                && isKeyValueCount(group.getType(0).asGroupType().getFieldCount())) {
             return new MapConverter(group, setter);
         }
         return new StructConverter(group, setter);
@@ -215,6 +218,11 @@ class GenericRowConverter extends GroupConverter {
         long nanosOfDay = buffer.getLong();
         long julianDay = buffer.getInt();
         return Instant.ofEpochSecond((julianDay - JULIAN_DAY_OF_EPOCH) * SECONDS_PER_DAY, nanosOfDay);
+    }
+
+    // A map entry holds a key and a value, or only a key, in which case every value is null
+    private static boolean isKeyValueCount(int fieldCount) {
+        return fieldCount == 1 || fieldCount == 2;
     }
 
     private static boolean isRepeatedOnly(GroupType group) {
@@ -492,7 +500,11 @@ class GenericRowConverter extends GroupConverter {
 
             KeyValueConverter(GroupType keyValueType) {
                 this.keyConverter = converterFor(keyValueType.getType(0), read -> key = read);
-                this.valueConverter = converterFor(keyValueType.getType(1), read -> value = read);
+                if (keyValueType.getFieldCount() > 1) {
+                    this.valueConverter = converterFor(keyValueType.getType(1), read -> value = read);
+                } else {
+                    this.valueConverter = null;
+                }
             }
 
             @Override
@@ -508,7 +520,13 @@ class GenericRowConverter extends GroupConverter {
 
             @Override
             public void end() {
-                map.put(key, value);
+                if (key instanceof byte[]) {
+                    // Byte arrays use identity equality, so they are wrapped to give content-based equality.
+                    // The array was freshly allocated by Binary.getBytes() and is not held anywhere else.
+                    map.put(ByteArray.wrap((byte[]) key), value);
+                } else {
+                    map.put(key, value);
+                }
             }
         }
     }

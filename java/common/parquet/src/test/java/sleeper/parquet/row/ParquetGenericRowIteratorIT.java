@@ -34,6 +34,7 @@ import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.ListType;
@@ -151,13 +152,140 @@ class ParquetGenericRowIteratorIT {
         // Then
         Map<?, ?> bytesToBytes = (Map<?, ?>) found.get("bytesToBytes");
         assertThat(bytesToBytes).hasSize(1);
-        assertThat(bytesToBytes.keySet().iterator().next()).isEqualTo(new byte[]{3});
-        assertThat(bytesToBytes.values().iterator().next()).isEqualTo(new byte[]{4});
+        assertThat(bytesToBytes.keySet().iterator().next()).isEqualTo(ByteArray.wrap(new byte[]{3}));
+        assertThat(bytesToBytes.get(ByteArray.wrap(new byte[]{3}))).isEqualTo(new byte[]{4});
         assertThat(((Map<?, ?>) found.get("stringToBytes")).get("k")).isEqualTo(new byte[]{8, 9});
         List<?> byteArrays = (List<?>) found.get("byteArrays");
         assertThat(byteArrays).hasSize(2);
         assertThat(byteArrays.get(0)).isEqualTo(new byte[]{5});
         assertThat(byteArrays.get(1)).isEqualTo(new byte[]{6, 7});
+    }
+
+    @Test
+    void shouldLookUpBinaryMapKeysByContent() throws IOException {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("bytesToLong", new MapType(new ByteArrayType(), new LongType())))
+                .build();
+        Map<byte[], Long> written = new HashMap<>();
+        written.put(new byte[]{1, 2}, 12L);
+        written.put(new byte[]{3}, 3L);
+        written.put(new byte[]{}, 0L);
+        Row row = new Row();
+        row.put("key", "A");
+        row.put("bytesToLong", written);
+        Path path = writeRows(schema, row);
+
+        // When
+        Map<?, ?> found = (Map<?, ?>) readRows(path).get(0).get("bytesToLong");
+
+        // Then
+        assertThat(found).isEqualTo(Map.of(
+                ByteArray.wrap(new byte[]{1, 2}), 12L,
+                ByteArray.wrap(new byte[]{3}), 3L,
+                ByteArray.wrap(new byte[]{}), 0L));
+    }
+
+    @Test
+    void shouldKeepLastValueForDuplicateBinaryMapKeys() throws IOException {
+        // Given
+        // - Parquet does not prevent a map holding the same key twice
+        MessageType parquetSchema = MessageTypeParser.parseMessageType("""
+                message results {
+                  required group map (MAP) {
+                    repeated group key_value {
+                      required binary key;
+                      required int64 value;
+                    }
+                  }
+                }
+                """);
+        Path path = newPath();
+        try (ParquetWriter<Group> writer = ExampleParquetWriter.builder(path).withType(parquetSchema).build()) {
+            Group group = new SimpleGroupFactory(parquetSchema).newGroup();
+            Group map = group.addGroup("map");
+            map.addGroup("key_value").append("key", Binary.fromConstantByteArray(new byte[]{1})).append("value", 1L);
+            map.addGroup("key_value").append("key", Binary.fromConstantByteArray(new byte[]{2})).append("value", 2L);
+            map.addGroup("key_value").append("key", Binary.fromConstantByteArray(new byte[]{1})).append("value", 3L);
+            writer.write(group);
+        }
+
+        // When
+        Map<?, ?> found = (Map<?, ?>) readRows(path).get(0).get("map");
+
+        // Then
+        assertThat(found).isEqualTo(Map.of(
+                ByteArray.wrap(new byte[]{1}), 3L,
+                ByteArray.wrap(new byte[]{2}), 2L));
+    }
+
+    @Test
+    void shouldReadMapWithOnlyKeysAsNullValues() throws IOException {
+        // Given
+        // - Parquet allows a map with no value field, where each key has a null value
+        MessageType parquetSchema = MessageTypeParser.parseMessageType("""
+                message results {
+                  required group map (MAP) {
+                    repeated group key_value {
+                      required int32 key;
+                    }
+                  }
+                }
+                """);
+        Path path = newPath();
+        try (ParquetWriter<Group> writer = ExampleParquetWriter.builder(path).withType(parquetSchema).build()) {
+            Group group = new SimpleGroupFactory(parquetSchema).newGroup();
+            Group map = group.addGroup("map");
+            map.addGroup("key_value").append("key", 7);
+            map.addGroup("key_value").append("key", 8);
+            writer.write(group);
+        }
+
+        // When
+        List<Row> rows = readRows(path);
+
+        // Then
+        Map<Integer, Object> expectedMap = new HashMap<>();
+        expectedMap.put(7, null);
+        expectedMap.put(8, null);
+        Row expected = new Row();
+        expected.put("map", expectedMap);
+        assertThat(rows).containsExactly(expected);
+    }
+
+    @Test
+    void shouldReadMapWithOptionalValues() throws IOException {
+        // Given
+        MessageType parquetSchema = MessageTypeParser.parseMessageType("""
+                message results {
+                  required group map (MAP) {
+                    repeated group key_value {
+                      required binary key (STRING);
+                      optional int64 value;
+                    }
+                  }
+                }
+                """);
+        Path path = newPath();
+        try (ParquetWriter<Group> writer = ExampleParquetWriter.builder(path).withType(parquetSchema).build()) {
+            Group group = new SimpleGroupFactory(parquetSchema).newGroup();
+            Group map = group.addGroup("map");
+            map.addGroup("key_value").append("key", "a").append("value", 1L);
+            map.addGroup("key_value").append("key", "b");
+            writer.write(group);
+        }
+
+        // When
+        List<Row> rows = readRows(path);
+
+        // Then
+        Map<String, Object> expectedMap = new HashMap<>();
+        expectedMap.put("a", 1L);
+        expectedMap.put("b", null);
+        Row expected = new Row();
+        expected.put("map", expectedMap);
+        assertThat(rows).containsExactly(expected);
     }
 
     @Test
