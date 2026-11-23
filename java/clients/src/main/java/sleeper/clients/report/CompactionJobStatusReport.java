@@ -97,6 +97,9 @@ public class CompactionJobStatusReport {
                     "The jobs to report on are chosen with one of the query type options. " +
                     "Only one may be set at a time. If none is set, you will be prompted to choose one.\n" +
                     "\n" +
+                    "Note that further information on compaction jobs is available in the file status report, which " +
+                    "can show the current file assignments for compactions in the state store.\n" +
+                    "\n" +
                     "When run with compactionJobStatusReport.sh, the following options are passed to the JVM " +
                     "rather than the report:\n" +
                     "\n" +
