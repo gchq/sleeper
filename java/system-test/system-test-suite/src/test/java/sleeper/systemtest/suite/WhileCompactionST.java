@@ -19,6 +19,8 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.systemtest.dsl.SleeperDsl;
@@ -44,6 +46,8 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 @SystemTest
 public class WhileCompactionST {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(WhileCompactionST.class);
+
     @TempDir
     private Path tempDir;
 
@@ -68,24 +72,39 @@ public class WhileCompactionST {
                     .numberedRows(LongStream.range(0, 100));
         }
 
+        LOGGER.info("Created 20 ingest files containing 100 rows each");
+
         // When queries are executed and queries are running concurrently
         BackgroundQueries queries = sleeper.directQuery()
                 .startContinuousQueries();
 
         CompactionDsl compaction = sleeper.compaction();
+        LOGGER.info("Created compaction jobs");
         compaction.createJobs(20)
                 .waitForTasks(1)
                 .waitForJobs();
 
+        LOGGER.info("Compaction jobs completed");
+
         queries.stopAndWait();
+
+        LOGGER.info("Query failures recorded={}", queries.getFailures().size());
+        LOGGER.info("Queries completed during compaction={}",
+                queries.getQueriesCompleted());
 
         // Then queries succeed
         assertThat(queries.getFailures()).isEmpty();
+        LOGGER.info("Verified queries succeeded");
         assertThat(queries.getQueriesCompleted()).isGreaterThan(0);
 
         // And all data is preserved after compaction
         assertThat(sleeper.directQuery().allRowsInTable())
                 .hasSize(2_000);
+
+        LOGGER.info(
+                "Compaction test completed successfully. Queries executed={}, query failures={}",
+                queries.getQueriesCompleted(),
+                queries.getFailures().size());
 
     }
 }
