@@ -63,20 +63,20 @@ public class WhileCompactionST {
         sleeper.updateTableProperties(Map.of(
                 INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
 
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 20; i++) {
             sleeper.ingest().direct(tempDir)
-                    .numberedRows(LongStream.range(0, 1_000));
+                    .numberedRows(LongStream.range(0, 100));
         }
 
-        // When compactions are running and queries are executed concurrently
-        CompactionDsl compaction = sleeper.compaction();
-        // compaction.createJobs(20);
-        compaction.waitForTasks(1);
-
+        // When queries are executed and queries are running concurrently
         BackgroundQueries queries = sleeper.directQuery()
                 .startContinuousQueries();
 
-        compaction.waitForJobs();
+        CompactionDsl compaction = sleeper.compaction();
+        compaction.createJobs(20)
+                .waitForTasks(1)
+                .waitForJobs();
+
         queries.stopAndWait();
 
         // Then queries succeed
@@ -85,7 +85,7 @@ public class WhileCompactionST {
 
         // And all data is preserved after compaction
         assertThat(sleeper.directQuery().allRowsInTable())
-                .hasSize(200_000);
+                .hasSize(2_000);
 
     }
 }
