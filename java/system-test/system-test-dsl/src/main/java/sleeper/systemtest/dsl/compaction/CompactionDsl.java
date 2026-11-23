@@ -156,7 +156,7 @@ public class CompactionDsl {
 
     public CompactionDsl waitForJobsToFinishThenCommit(
             PollWithRetries pollUntilFinished, PollWithRetries pollUntilCommitted) {
-        waitForJobs.waitForJobs(lastJobIds, pollUntilFinished, pollUntilCommitted);
+        waitForJobs.waitForJobsAllowingRetries(lastJobIds, pollUntilFinished, pollUntilCommitted);
         return this;
     }
 
