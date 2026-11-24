@@ -131,6 +131,55 @@ async fn should_call_progress_callback_during_compaction() -> Result<(), Error> 
 }
 
 #[test(tokio::test)]
+async fn should_increase_row_group_size_when_output_would_exceed_parquet_row_group_limit()
+-> Result<(), Error> {
+    // Given
+    let dir = tempdir()?;
+    let file_1 = file(&dir, "file1.parquet");
+    let file_2 = file(&dir, "file2.parquet");
+    let output = file(&dir, "output.parquet");
+    // DataFusion can only write Parquet with at most 32,767 row groups in a file. With one row per row group, this
+    // would exceed that.
+    let evens = (0..40_000).step_by(2).collect::<Vec<i32>>();
+    let odds = (1..40_000).step_by(2).collect::<Vec<i32>>();
+    write_file_of_ints(&file_1, "key", evens)?;
+    write_file_of_ints(&file_2, "key", odds)?;
+
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(true)
+        .row_key_cols(col_names(["key"]))
+        .region(SleeperRegion::new(single_int_range("key", 0, 40_000)))
+        .output(OutputType::File {
+            output_file: output.clone(),
+            write_sketch_file: false,
+            opts: SleeperParquetOptions {
+                max_row_group_size: 1,
+                ..Default::default()
+            },
+        })
+        .build()?;
+
+    // When
+    let result = run_compaction(
+        &input,
+        &Arc::new(SleeperContext::default()),
+        None,
+        DEFAULT_PROGRESS_CALLBACK_INTERVAL,
+    )
+    .await?;
+
+    // Then
+    assert_eq!(
+        read_file_of_ints(&output, "key")?,
+        (0..40_000).collect::<Vec<i32>>()
+    );
+    assert_eq!([result.rows_read, result.rows_written], [40_000, 40_000]);
+    assert_eq!(read_row_group_count(&output)?, 20_000);
+    Ok(())
+}
+
+#[test(tokio::test)]
 async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     // Given
     let dir = tempdir()?;

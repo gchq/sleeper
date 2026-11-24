@@ -27,9 +27,9 @@ use crate::{
         sketch::Sketcher,
         unalias::unalias_view_projection_columns,
         util::{
-            add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
-            calculate_upload_size, find_topmost_sort_ordering, output_partition_count,
-            register_store, remove_coalesce_physical_stage,
+            add_numeric_casts, apply_full_sort_ordering, calculate_max_row_group_size,
+            calculate_metadata_size_hint, calculate_upload_size, find_topmost_sort_ordering,
+            output_partition_count, register_store, remove_coalesce_physical_stage,
             remove_non_schema_columns_from_ordering, retrieve_input_size,
         },
     },
@@ -45,6 +45,7 @@ use datafusion::{
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
     logical_expr::{Expr, LogicalPlanBuilder, SortExpr, ident},
+    parquet::file::metadata::PageIndexPolicy,
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
         ExecutionPlan, expressions::Column, sorts::sort_preserving_merge::SortPreservingMergeExec,
@@ -202,7 +203,12 @@ impl<'a> SleeperOperations<'a> {
         // then we need to take action to prepopulate DF's metadata cache. We read the Parquet metadata without page indexes
         // and put it in the cache. Therefore, when DF runs the query, it will already see the metadata in the cache and
         // will not attempt to do so itself.
-        if !self.config.read_page_indexes() {
+        //
+        // If we are writing an output file, we also need to know the total number of input rows to work out the size of
+        // the row groups, so we
+        // prepopulate the cache in that case too. Page indexes are then loaded if configured, matching what DF would do.
+        let writing_file = matches!(self.config.output(), OutputType::File { .. });
+        if !self.config.read_page_indexes() || writing_file {
             let metadata_size_hint = ctx
                 .state_ref()
                 .read()
@@ -211,8 +217,22 @@ impl<'a> SleeperOperations<'a> {
                 .execution
                 .parquet
                 .metadata_size_hint;
-            prepopulate_metadata_cache(ctx, self.config.input_files(), metas, metadata_size_hint)
-                .await?;
+            let page_index_policy = if self.config.read_page_indexes() {
+                PageIndexPolicy::Optional
+            } else {
+                PageIndexPolicy::Skip
+            };
+            let total_input_rows = prepopulate_metadata_cache(
+                ctx,
+                self.config.input_files(),
+                metas,
+                metadata_size_hint,
+                page_index_policy,
+            )
+            .await?;
+            if writing_file {
+                self.apply_max_row_group_size(ctx, total_input_rows);
+            }
         }
         // Read Parquet files and apply sort order
         let frame = ctx
@@ -226,6 +246,19 @@ impl<'a> SleeperOperations<'a> {
                 frame
             },
         )
+    }
+
+    /// Increases the maximum rows per Parquet row group if needed so the output file will not exceed the Parquet limit
+    /// on the number of row groups in a file. The configured maximum is treated as a hint.
+    ///
+    /// This must be called before the [`DataFrame`] is created, as the frame takes a copy of the session state, which
+    /// the Parquet writer options are read from.
+    fn apply_max_row_group_size(&self, ctx: &SessionContext, total_input_rows: u64) {
+        let state = ctx.state_ref();
+        let mut state = state.write();
+        let parquet = &mut state.config_mut().options_mut().execution.parquet;
+        parquet.max_row_group_size =
+            calculate_max_row_group_size(parquet.max_row_group_size, total_input_rows);
     }
 
     /// Creates the sort order for a given schema.
