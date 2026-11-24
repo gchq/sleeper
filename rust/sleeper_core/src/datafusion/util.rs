@@ -130,6 +130,19 @@ pub fn calculate_max_row_group_size(configured: usize, total_input_rows: u64) ->
     }
 }
 
+/// Increases the maximum rows per Parquet row group in the session config if needed, so the output file will not exceed
+/// the Parquet limit on the number of row groups in a file. The configured maximum is treated as a hint.
+///
+/// This must be called before the [`DataFrame`] is created, as the frame takes a copy of the session state, which
+/// the Parquet writer options are read from.
+pub fn apply_max_row_group_size(ctx: &SessionContext, total_input_rows: u64) {
+    let state = ctx.state_ref();
+    let mut state = state.write();
+    let parquet = &mut state.config_mut().options_mut().execution.parquet;
+    parquet.max_row_group_size =
+        calculate_max_row_group_size(parquet.max_row_group_size, total_input_rows);
+}
+
 /// Calculate the metadata size hint to use based on the largest file size. This value will be clamped
 /// between [`MIN_METADATA_SIZE_HINT`] and [`MAX_METADATA_SIZE_HINT`].
 #[allow(

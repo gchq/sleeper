@@ -27,7 +27,7 @@ use crate::{
         sketch::Sketcher,
         unalias::unalias_view_projection_columns,
         util::{
-            add_numeric_casts, apply_full_sort_ordering, calculate_max_row_group_size,
+            add_numeric_casts, apply_full_sort_ordering, apply_max_row_group_size,
             calculate_metadata_size_hint, calculate_upload_size, find_topmost_sort_ordering,
             output_partition_count, register_store, remove_coalesce_physical_stage,
             remove_non_schema_columns_from_ordering, retrieve_input_size,
@@ -231,7 +231,7 @@ impl<'a> SleeperOperations<'a> {
             )
             .await?;
             if writing_file {
-                self.apply_max_row_group_size(ctx, total_input_rows);
+                apply_max_row_group_size(ctx, total_input_rows);
             }
         }
         // Read Parquet files and apply sort order
@@ -246,19 +246,6 @@ impl<'a> SleeperOperations<'a> {
                 frame
             },
         )
-    }
-
-    /// Increases the maximum rows per Parquet row group if needed so the output file will not exceed the Parquet limit
-    /// on the number of row groups in a file. The configured maximum is treated as a hint.
-    ///
-    /// This must be called before the [`DataFrame`] is created, as the frame takes a copy of the session state, which
-    /// the Parquet writer options are read from.
-    fn apply_max_row_group_size(&self, ctx: &SessionContext, total_input_rows: u64) {
-        let state = ctx.state_ref();
-        let mut state = state.write();
-        let parquet = &mut state.config_mut().options_mut().execution.parquet;
-        parquet.max_row_group_size =
-            calculate_max_row_group_size(parquet.max_row_group_size, total_input_rows);
     }
 
     /// Creates the sort order for a given schema.
