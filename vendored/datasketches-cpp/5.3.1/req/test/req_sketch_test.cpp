@@ -1,0 +1,738 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+#include <catch2/catch.hpp>
+
+#include <req_sketch.hpp>
+
+#include <fstream>
+#include <sstream>
+#include <cstring>
+#include <limits>
+#include <stdexcept>
+
+namespace datasketches {
+
+#ifdef TEST_BINARY_INPUT_PATH
+const std::string input_path = TEST_BINARY_INPUT_PATH;
+#else
+const std::string input_path = "test/";
+#endif
+
+TEST_CASE("req sketch: empty", "[req_sketch]") {
+  //std::cout << "sizeof(req_float_sketch)=" << sizeof(req_sketch<float>) << "\n";
+  req_sketch<float> sketch(12);
+  REQUIRE(sketch.get_k() == 12);
+  REQUIRE(sketch.is_HRA());
+  REQUIRE(sketch.is_empty());
+  REQUIRE_FALSE(sketch.is_estimation_mode());
+  REQUIRE(sketch.get_n() == 0);
+  REQUIRE(sketch.get_num_retained() == 0);
+  REQUIRE(sketch.get_RSE(sketch.get_k(), 0.5, true, 0) == 0);
+  REQUIRE_THROWS_AS(sketch.get_min_item(), std::runtime_error);
+  REQUIRE_THROWS_AS(sketch.get_max_item(), std::runtime_error);
+  REQUIRE_THROWS_AS(sketch.get_rank(0), std::runtime_error);
+  REQUIRE_THROWS_AS(sketch.get_quantile(0), std::runtime_error);
+
+  const float split_points[1] {0};
+  REQUIRE_THROWS_AS(sketch.get_CDF(split_points, 1), std::runtime_error);
+  REQUIRE_THROWS_AS(sketch.get_PMF(split_points, 1), std::runtime_error);
+}
+
+TEST_CASE("req sketch: k above 255", "[req_sketch]") {
+  // k used to be truncated to 8 bits: 256 became 4 and 500 became 244
+  REQUIRE(req_sketch<float>(256).get_k() == 256);
+  REQUIRE(req_sketch<float>(500).get_k() == 500);
+  REQUIRE(req_sketch<float>(1024).get_k() == 1024);
+  REQUIRE(req_sketch<float>(1001).get_k() == 1000); // rounds down if odd
+
+  req_sketch<float> sketch(1024);
+  const size_t n = 100000;
+  for (size_t i = 0; i < n; i++) sketch.update(static_cast<float>(i));
+  REQUIRE(sketch.is_estimation_mode());
+  auto bytes = sketch.serialize();
+  auto sketch2 = req_sketch<float>::deserialize(bytes.data(), bytes.size());
+  REQUIRE(sketch2.get_k() == 1024);
+  REQUIRE(sketch2.get_n() == n);
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+}
+
+TEST_CASE("req sketch: k bounds", "[req_sketch]") {
+  for (bool hra: {true, false}) {
+    REQUIRE(req_sketch<float>(0, hra).get_k() == 4);
+    REQUIRE(req_sketch<float>(3, hra).get_k() == 4);
+    REQUIRE(req_sketch<float>(4, hra).get_k() == 4);
+    REQUIRE(req_sketch<float>(5, hra).get_k() == 4);
+    REQUIRE(req_sketch<float>(1023, hra).get_k() == 1022);
+    REQUIRE(req_sketch<float>(1024, hra).get_k() == 1024);
+    // Reject the original k, even if rounding down would put it in range.
+    REQUIRE_THROWS_AS(req_sketch<float>(1025, hra), std::invalid_argument);
+    REQUIRE_THROWS_AS(req_sketch<float>(1026, hra), std::invalid_argument);
+    REQUIRE_THROWS_AS(req_sketch<float>(std::numeric_limits<uint16_t>::max(), hra), std::invalid_argument);
+  }
+}
+
+TEST_CASE("req sketch: single value, lra", "[req_sketch]") {
+  req_sketch<float> sketch(12, false);
+  sketch.update(1.0f);
+  REQUIRE_FALSE(sketch.is_HRA());
+  REQUIRE_FALSE(sketch.is_empty());
+  REQUIRE_FALSE(sketch.is_estimation_mode());
+  REQUIRE(sketch.get_n() == 1);
+  REQUIRE(sketch.get_num_retained() == 1);
+  REQUIRE(sketch.get_RSE(sketch.get_k(), 0.5, false, sketch.get_n()) == 0);
+  REQUIRE(sketch.get_rank(1.0f, false) == 0);
+  REQUIRE(sketch.get_rank(1.0f) == 1);
+  REQUIRE(sketch.get_rank(1.1f, false) == 1);
+  REQUIRE(sketch.get_rank(std::numeric_limits<float>::infinity()) == 1);
+  REQUIRE(sketch.get_quantile(0, false) == 1);
+  REQUIRE(sketch.get_quantile(0.5, false) == 1);
+  REQUIRE(sketch.get_quantile(1, false) == 1);
+
+  unsigned count = 0;
+  for (auto pair: sketch) {
+    REQUIRE(pair.second == 1);
+    ++count;
+  }
+  REQUIRE(count == 1);
+
+  // iterator dereferencing
+  auto it = sketch.begin();
+  REQUIRE(it->first == 1.0f);
+  REQUIRE((*it).first == 1.0f);
+}
+
+TEST_CASE("req sketch: repeated values", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  sketch.update(1.0f);
+  sketch.update(1.0f);
+  sketch.update(1.0f);
+  sketch.update(2.0f);
+  sketch.update(2.0f);
+  sketch.update(2.0f);
+  REQUIRE_FALSE(sketch.is_empty());
+  REQUIRE_FALSE(sketch.is_estimation_mode());
+  REQUIRE(sketch.get_n() == 6);
+  REQUIRE(sketch.get_num_retained() == 6);
+  REQUIRE(sketch.get_rank(1.0f, false) == 0);
+  REQUIRE(sketch.get_rank(1.0f) == 0.5);
+  REQUIRE(sketch.get_rank(2.0f, false) == 0.5);
+  REQUIRE(sketch.get_rank(2.0f) == 1);
+}
+
+TEST_CASE("req sketch: exact mode", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  for (size_t i = 1; i <= 10; ++i) sketch.update(static_cast<float>(i));
+  REQUIRE_FALSE(sketch.is_empty());
+  REQUIRE_FALSE(sketch.is_estimation_mode());
+  REQUIRE(sketch.get_n() == 10);
+  REQUIRE(sketch.get_num_retained() == 10);
+
+  // exclusive
+  REQUIRE(sketch.get_rank(1.0f, false) == 0);
+  REQUIRE(sketch.get_rank(2.0f, false) == 0.1);
+  REQUIRE(sketch.get_rank(6.0f, false) == 0.5);
+  REQUIRE(sketch.get_rank(9.0f, false) == 0.8);
+  REQUIRE(sketch.get_rank(10.0f, false) == 0.9);
+
+  // inclusive
+  REQUIRE(sketch.get_rank(1.0f) == 0.1);
+  REQUIRE(sketch.get_rank(2.0f) == 0.2);
+  REQUIRE(sketch.get_rank(5.0f) == 0.5);
+  REQUIRE(sketch.get_rank(9.0f) == 0.9);
+  REQUIRE(sketch.get_rank(10.0f) == 1);
+
+  // exclusive
+  REQUIRE(sketch.get_quantile(0, false) == 1);
+  REQUIRE(sketch.get_quantile(0.1, false) == 2);
+  REQUIRE(sketch.get_quantile(0.5, false) == 6);
+  REQUIRE(sketch.get_quantile(0.9, false) == 10);
+  REQUIRE(sketch.get_quantile(1, false) == 10);
+
+  // inclusive
+  REQUIRE(sketch.get_quantile(0) == 1);
+  REQUIRE(sketch.get_quantile(0.1) == 1);
+  REQUIRE(sketch.get_quantile(0.5) == 5);
+  REQUIRE(sketch.get_quantile(0.9) == 9);
+  REQUIRE(sketch.get_quantile(1) == 10);
+
+  const float splits[3] {2, 6, 9};
+  auto cdf = sketch.get_CDF(splits, 3, false);
+  REQUIRE(cdf[0] == 0.1);
+  REQUIRE(cdf[1] == 0.5);
+  REQUIRE(cdf[2] == 0.8);
+  REQUIRE(cdf[3] == 1);
+  auto pmf = sketch.get_PMF(splits, 3, false);
+  REQUIRE(pmf[0] == Approx(0.1).margin(1e-8));
+  REQUIRE(pmf[1] == Approx(0.4).margin(1e-8));
+  REQUIRE(pmf[2] == Approx(0.3).margin(1e-8));
+  REQUIRE(pmf[3] == Approx(0.2).margin(1e-8));
+
+  REQUIRE(sketch.get_rank_lower_bound(0.5, 1) == 0.5);
+  REQUIRE(sketch.get_rank_upper_bound(0.5, 1) == 0.5);
+}
+
+TEST_CASE("req sketch: estimation mode", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  const size_t n = 100000;
+  for (size_t i = 0; i < n; ++i) sketch.update(static_cast<float>(i));
+  REQUIRE_FALSE(sketch.is_empty());
+  REQUIRE(sketch.is_estimation_mode());
+  REQUIRE(sketch.get_n() == n);
+//  std::cout << sketch.to_string(true);
+  REQUIRE(sketch.get_num_retained() < n);
+  REQUIRE(sketch.get_rank(0, false) == 0);
+  REQUIRE(sketch.get_rank(static_cast<float>(n), false) == 1);
+  REQUIRE(sketch.get_rank(n / 2.0f, false) == Approx(0.5).margin(0.01));
+  REQUIRE(sketch.get_rank(n - 1.0f, false) == Approx(1).margin(0.01));
+  REQUIRE(sketch.get_min_item() == 0);
+  REQUIRE(sketch.get_max_item() == n - 1);
+  REQUIRE(sketch.get_rank_lower_bound(0.5, 1) < 0.5);
+  REQUIRE(sketch.get_rank_upper_bound(0.5, 1) > 0.5);
+
+  unsigned count = 0;
+  for (auto pair: sketch) {
+    REQUIRE(pair.second >= 1);
+    ++count;
+  }
+  REQUIRE(count == sketch.get_num_retained());
+}
+
+TEST_CASE("req sketch: stream serialize-deserialize empty", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+
+  std::stringstream s(std::ios::in | std::ios::out | std::ios::binary);
+  sketch.serialize(s);
+  auto sketch2 = req_sketch<float>::deserialize(s);
+  REQUIRE(s.tellg() == s.tellp());
+  REQUIRE(sketch2.is_empty() == sketch.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE_THROWS_AS(sketch2.get_min_item(), std::runtime_error);
+  REQUIRE_THROWS_AS(sketch2.get_max_item(), std::runtime_error);
+}
+
+TEST_CASE("req sketch: byte serialize-deserialize empty", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+
+  auto bytes = sketch.serialize();
+  REQUIRE(bytes.size() == sketch.get_serialized_size_bytes());
+  auto sketch2 = req_sketch<float>::deserialize(bytes.data(), bytes.size());
+  REQUIRE(bytes.size() == sketch2.get_serialized_size_bytes());
+  REQUIRE(sketch2.is_empty() == sketch.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE_THROWS_AS(sketch2.get_min_item(), std::runtime_error);
+  REQUIRE_THROWS_AS(sketch2.get_max_item(), std::runtime_error);
+}
+
+TEST_CASE("req sketch: stream serialize-deserialize single item", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  sketch.update(1.0f);
+
+  std::stringstream s(std::ios::in | std::ios::out | std::ios::binary);
+  sketch.serialize(s);
+  auto sketch2 = req_sketch<float>::deserialize(s);
+  REQUIRE(s.tellg() == s.tellp());
+  REQUIRE(sketch2.is_empty() == sketch.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE(sketch2.get_min_item() == sketch.get_min_item());
+  REQUIRE(sketch2.get_max_item() == sketch.get_max_item());
+}
+
+TEST_CASE("req sketch: byte serialize-deserialize single item", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  sketch.update(1.0f);
+
+  auto bytes = sketch.serialize();
+  REQUIRE(bytes.size() == sketch.get_serialized_size_bytes());
+  auto sketch2 = req_sketch<float>::deserialize(bytes.data(), bytes.size());
+  //std::cout << sketch2.to_string(true);
+  REQUIRE(bytes.size() == sketch2.get_serialized_size_bytes());
+  REQUIRE(sketch2.is_empty() == sketch.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE(sketch2.get_min_item() == sketch.get_min_item());
+  REQUIRE(sketch2.get_max_item() == sketch.get_max_item());
+}
+
+TEST_CASE("req sketch: stream serialize-deserialize exact mode", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  const size_t n = 50;
+  for (size_t i = 0; i < n; ++i) sketch.update(static_cast<float>(i));
+  REQUIRE_FALSE(sketch.is_estimation_mode());
+
+  std::stringstream s(std::ios::in | std::ios::out | std::ios::binary);
+  sketch.serialize(s);
+  auto sketch2 = req_sketch<float>::deserialize(s);
+  REQUIRE(s.tellg() == s.tellp());
+  REQUIRE(sketch2.is_empty() == sketch.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE(sketch2.get_min_item() == sketch.get_min_item());
+  REQUIRE(sketch2.get_max_item() == sketch.get_max_item());
+}
+
+TEST_CASE("req sketch: byte serialize-deserialize exact mode", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  const size_t n = 50;
+  for (size_t i = 0; i < n; ++i) sketch.update(static_cast<float>(i));
+  REQUIRE_FALSE(sketch.is_estimation_mode());
+
+  auto bytes = sketch.serialize();
+  REQUIRE(bytes.size() == sketch.get_serialized_size_bytes());
+  auto sketch2 = req_sketch<float>::deserialize(bytes.data(), bytes.size());
+  //std::cout << sketch2.to_string(true);
+  REQUIRE(bytes.size() == sketch2.get_serialized_size_bytes());
+  REQUIRE(sketch2.is_empty() == sketch.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE(sketch2.get_min_item() == sketch.get_min_item());
+  REQUIRE(sketch2.get_max_item() == sketch.get_max_item());
+}
+
+TEST_CASE("req sketch: stream serialize-deserialize estimation mode", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  const size_t n = 100000;
+  for (size_t i = 0; i < n; ++i) sketch.update(static_cast<float>(i));
+  REQUIRE(sketch.is_estimation_mode());
+
+  std::stringstream s(std::ios::in | std::ios::out | std::ios::binary);
+  sketch.serialize(s);
+  auto sketch2 = req_sketch<float>::deserialize(s);
+  REQUIRE(s.tellg() == s.tellp());
+  REQUIRE(sketch2.is_empty() == sketch.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE(sketch2.get_min_item() == sketch.get_min_item());
+  REQUIRE(sketch2.get_max_item() == sketch.get_max_item());
+}
+
+TEST_CASE("req sketch: byte serialize-deserialize estimation mode", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  const size_t n = 100000;
+  for (size_t i = 0; i < n; ++i) sketch.update(static_cast<float>(i));
+  REQUIRE(sketch.is_estimation_mode());
+
+  auto bytes = sketch.serialize();
+  REQUIRE(bytes.size() == sketch.get_serialized_size_bytes());
+  auto sketch2 = req_sketch<float>::deserialize(bytes.data(), bytes.size());
+  REQUIRE(bytes.size() == sketch2.get_serialized_size_bytes());
+  REQUIRE(sketch2.is_empty() == sketch.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE(sketch2.get_min_item() == sketch.get_min_item());
+  REQUIRE(sketch2.get_max_item() == sketch.get_max_item());
+}
+
+TEST_CASE("req sketch: stream serialize-deserialize negative values", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  const size_t n = 50;
+  for (size_t i = 1; i <= n; ++i) sketch.update(-static_cast<float>(i));
+
+  std::stringstream s(std::ios::in | std::ios::out | std::ios::binary);
+  sketch.serialize(s);
+  auto sketch2 = req_sketch<float>::deserialize(s);
+  REQUIRE(s.tellg() == s.tellp());
+  REQUIRE(sketch2.is_empty() == sketch.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE(sketch2.get_min_item() == -static_cast<float>(n));
+  REQUIRE(sketch2.get_max_item() == -1.0f);
+}
+
+TEST_CASE("req sketch: byte serialize-deserialize negative values", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  const size_t n = 50;
+  for (size_t i = 1; i <= n; ++i) sketch.update(-static_cast<float>(i));
+
+  auto bytes = sketch.serialize();
+  REQUIRE(bytes.size() == sketch.get_serialized_size_bytes());
+  auto sketch2 = req_sketch<float>::deserialize(bytes.data(), bytes.size());
+  REQUIRE(bytes.size() == sketch2.get_serialized_size_bytes());
+  REQUIRE(sketch2.is_empty() == sketch.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE(sketch2.get_min_item() == -static_cast<float>(n));
+  REQUIRE(sketch2.get_max_item() == -1.0f);
+}
+
+TEST_CASE("req sketch: stream serialize-deserialize mixed values", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  const int half = 25;
+  for (int i = -half; i < half; ++i) sketch.update(static_cast<float>(i));
+
+  std::stringstream s(std::ios::in | std::ios::out | std::ios::binary);
+  sketch.serialize(s);
+  auto sketch2 = req_sketch<float>::deserialize(s);
+  REQUIRE(s.tellg() == s.tellp());
+  REQUIRE(sketch2.is_empty() == sketch.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE(sketch2.get_min_item() == static_cast<float>(-half));
+  REQUIRE(sketch2.get_max_item() == static_cast<float>(half - 1));
+}
+
+TEST_CASE("req sketch: byte serialize-deserialize mixed values", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  const int half = 25;
+  for (int i = -half; i < half; ++i) sketch.update(static_cast<float>(i));
+
+  auto bytes = sketch.serialize();
+  REQUIRE(bytes.size() == sketch.get_serialized_size_bytes());
+  auto sketch2 = req_sketch<float>::deserialize(bytes.data(), bytes.size());
+  REQUIRE(bytes.size() == sketch2.get_serialized_size_bytes());
+  REQUIRE(sketch2.is_empty() == sketch.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE(sketch2.get_min_item() == static_cast<float>(-half));
+  REQUIRE(sketch2.get_max_item() == static_cast<float>(half - 1));
+}
+
+TEST_CASE("req sketch: serialize deserialize stream and bytes equivalence", "[req_sketch]") {
+  req_sketch<float> sketch(12);
+  const size_t n = 100000;
+  for (size_t i = 0; i < n; ++i) sketch.update(static_cast<float>(i));
+  REQUIRE(sketch.is_estimation_mode());
+
+  std::stringstream s(std::ios::in | std::ios::out | std::ios::binary);
+  sketch.serialize(s);
+  auto bytes = sketch.serialize();
+  REQUIRE(bytes.size() == static_cast<size_t>(s.tellp()));
+  for (size_t i = 0; i < bytes.size(); ++i) {
+    REQUIRE(((char*)bytes.data())[i] == (char)s.get());
+  }
+
+  s.seekg(0); // rewind
+  auto sketch1 = req_sketch<float>::deserialize(s);
+  auto sketch2 = req_sketch<float>::deserialize(bytes.data(), bytes.size());
+  REQUIRE(bytes.size() == static_cast<size_t>(s.tellg()));
+  REQUIRE(sketch2.is_empty() == sketch1.is_empty());
+  REQUIRE(sketch2.is_estimation_mode() == sketch.is_estimation_mode());
+  REQUIRE(sketch2.get_num_retained() == sketch.get_num_retained());
+  REQUIRE(sketch2.get_n() == sketch.get_n());
+  REQUIRE(sketch2.get_min_item() == sketch.get_min_item());
+  REQUIRE(sketch2.get_max_item() == sketch.get_max_item());
+}
+
+TEST_CASE("req sketch: merge into empty", "[req_sketch]") {
+  req_sketch<float> sketch1(40);
+
+  req_sketch<float> sketch2(40);
+  for (size_t i = 0; i < 1000; ++i) sketch2.update(static_cast<float>(i));
+
+  sketch1.merge(sketch2);
+  REQUIRE(sketch1.get_min_item() == 0);
+  REQUIRE(sketch1.get_max_item() == 999);
+  REQUIRE(sketch1.get_quantile(0.25) == Approx(250).epsilon(0.01));
+  REQUIRE(sketch1.get_quantile(0.5) == Approx(500).epsilon(0.01));
+  REQUIRE(sketch1.get_quantile(0.75) == Approx(750).epsilon(0.01));
+  REQUIRE(sketch1.get_rank(500.0f) == Approx(0.5).margin(0.01));
+}
+
+TEST_CASE("req sketch: merge", "[req_sketch]") {
+  req_sketch<float> sketch1(100);
+  for (size_t i = 0; i < 1000; ++i) sketch1.update(static_cast<float>(i));
+
+  req_sketch<float> sketch2(100);
+  for (size_t i = 1000; i < 2000; ++i) sketch2.update(static_cast<float>(i));
+
+  sketch1.merge(sketch2);
+  REQUIRE(sketch1.get_min_item() == 0);
+  REQUIRE(sketch1.get_max_item() == 1999);
+  REQUIRE(sketch1.get_quantile(0.25) == Approx(500).epsilon(0.01));
+  REQUIRE(sketch1.get_quantile(0.5) == Approx(1000).epsilon(0.01));
+  REQUIRE(sketch1.get_quantile(0.75) == Approx(1500).epsilon(0.01));
+  REQUIRE(sketch1.get_rank(1000.0f) == Approx(0.5).margin(0.01));
+}
+
+TEST_CASE("req sketch: merge multiple", "[req_sketch]") {
+  req_sketch<float> sketch1(12);
+  for (size_t i = 0; i < 40; ++i) sketch1.update(static_cast<float>(i));
+
+  req_sketch<float> sketch2(12);
+  for (size_t i = 40; i < 80; ++i) sketch2.update(static_cast<float>(i));
+
+  req_sketch<float> sketch3(12);
+  for (size_t i = 80; i < 120; ++i) sketch3.update(static_cast<float>(i));
+
+  req_sketch<float> sketch(12);
+  sketch.merge(sketch1);
+  sketch.merge(sketch2);
+  sketch.merge(sketch3);
+  REQUIRE(sketch.get_min_item() == 0);
+  REQUIRE(sketch.get_max_item() == 119);
+  REQUIRE(sketch.get_quantile(0.5) == Approx(60).epsilon(0.02));
+  REQUIRE(sketch.get_rank(60.0f) == Approx(0.5).margin(0.01));
+}
+
+TEST_CASE("req sketch: merge incompatible HRA and LRA", "[req_sketch]") {
+  req_sketch<float> sketch1(12);
+  sketch1.update(1.0f);
+
+  req_sketch<float> sketch2(12, false);
+  sketch2.update(1.0f);
+
+  REQUIRE_THROWS_AS(sketch1.merge(sketch2), std::invalid_argument);
+}
+
+TEST_CASE("req sketch: type conversion - empty", "[req_sketch]") {
+  req_sketch<double> req_double(12);
+  req_sketch<float> req_float(req_double);
+  REQUIRE(req_float.is_empty());
+  REQUIRE(req_float.get_k() == req_double.get_k());
+  REQUIRE(req_float.get_n() == 0);
+  REQUIRE(req_float.get_num_retained() == 0);
+}
+
+TEST_CASE("req sketch: type conversion - several levels", "[req_sketch]") {
+  req_sketch<double> req_double(12);
+  for (int i = 0; i < 1000; ++i) req_double.update(static_cast<double>(i));
+  req_sketch<float> req_float(req_double);
+  REQUIRE(!req_float.is_empty());
+  REQUIRE(req_float.get_k() == req_double.get_k());
+  REQUIRE(req_float.get_n() == req_double.get_n());
+  REQUIRE(req_float.get_num_retained() == req_double.get_num_retained());
+
+  auto sv_float = req_float.get_sorted_view();
+  auto sv_double = req_double.get_sorted_view();
+  auto sv_float_it = sv_float.begin();
+  auto sv_double_it = sv_double.begin();
+  while (sv_float_it != sv_float.end()) {
+    REQUIRE(sv_double_it != sv_double.end());
+    auto float_pair = *sv_float_it;
+    auto double_pair = *sv_double_it;
+    REQUIRE(float_pair.first == Approx(double_pair.first).margin(0.01));
+    REQUIRE(float_pair.second == double_pair.second);
+    ++sv_float_it;
+    ++sv_double_it;
+  }
+  REQUIRE(sv_double_it == sv_double.end());
+}
+
+class A {
+    int val;
+  public:
+    A(int val): val(val) {}
+    int get_val() const { return val; }
+  };
+
+  struct less_A {
+    bool operator()(const A& a1, const A& a2) const { return a1.get_val() < a2.get_val(); }
+  };
+
+  class B {
+    int val;
+  public:
+    explicit B(const A& a): val(a.get_val()) {}
+    int get_val() const { return val; }
+  };
+
+  struct less_B {
+    bool operator()(const B& b1, const B& b2) const { return b1.get_val() < b2.get_val(); }
+  };
+
+TEST_CASE("req sketch: type conversion - custom types") {
+  req_sketch<A, less_A> sa(4);
+  sa.update(1);
+  sa.update(2);
+  sa.update(3);
+
+  req_sketch<B, less_B> sb(sa);
+  REQUIRE(sb.get_n() == 3);
+}
+
+TEST_CASE("get_rank equivalence") {
+  req_sketch<int> sketch(12);
+  const int n = 1000;
+  for (int i = 0; i < n; ++i) sketch.update(i);
+  REQUIRE(sketch.get_n() == n);
+  auto view = sketch.get_sorted_view();
+  for (int i = 0; i < n; ++i) {
+    REQUIRE(sketch.get_rank(i) == view.get_rank(i));
+  }
+}
+
+//TEST_CASE("for manual comparison with Java") {
+//  req_sketch<float> sketch(12, false);
+//  for (size_t i = 0; i < 100000; ++i) sketch.update(i);
+//  sketch.merge(sketch);
+//  std::ofstream os;
+//  os.exceptions(std::ios::failbit | std::ios::badbit);
+//  os.open("req_float_lra_12_100000_merged.sk", std::ios::binary);
+//  sketch.get_quantile(0.5); // force sorting level 0
+//  sketch.serialize(os);
+//}
+
+
+template<typename Bytes, typename V>
+static void put_value(Bytes& bytes, size_t offset, V value) {
+  std::memcpy(bytes.data() + offset, &value, sizeof(value));
+}
+
+TEST_CASE("req sketch: deserialize rejects inconsistent compactors", "[req_sketch]") {
+  using vector_bytes = req_sketch<float>::vector_bytes;
+  // preamble: k at 4, number of levels at 6, number of raw items at 7
+  // compactor: state(8), section size(4), lg_weight(1), number of sections(1), padding(2), number of items(4), items
+  const size_t k_offset = 4;
+  const size_t num_levels_offset = 6;
+  const size_t num_raw_items_offset = 7;
+  const size_t estimation_compactor = 24; // after the preamble, n, min and max
+  const size_t exact_compactor = 8; // after the preamble
+  const size_t section_size = 8;
+  const size_t lg_weight = 12;
+  const size_t num_sections = 13;
+  const size_t num_items = 16;
+  const size_t items = 20;
+  auto check_rejected = [](const vector_bytes& bytes) {
+    REQUIRE_THROWS_AS(req_sketch<float>::deserialize(bytes.data(), bytes.size()), std::invalid_argument);
+    std::stringstream s(std::ios::in | std::ios::out | std::ios::binary);
+    s.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    REQUIRE_THROWS_AS(req_sketch<float>::deserialize(s), std::invalid_argument);
+  };
+
+  req_sketch<float> raw(12);
+  for (int i = 0; i < 3; ++i) raw.update(static_cast<float>(i));
+  req_sketch<float> exact(12);
+  for (int i = 0; i < 50; ++i) exact.update(static_cast<float>(i));
+  req_sketch<float> estimation(12);
+  for (int i = 0; i < 1000; ++i) estimation.update(static_cast<float>(i));
+  REQUIRE(estimation.serialize()[num_levels_offset] > 2);
+
+  SECTION("valid images") {
+    // sketches deep enough for the sections to have grown, in both rank accuracy modes
+    for (bool hra: {true, false}) {
+      req_sketch<float> sketch(12, hra);
+      for (int i = 0; i < 1000000; ++i) sketch.update(static_cast<float>(i));
+      auto bytes = sketch.serialize();
+      REQUIRE(req_sketch<float>::deserialize(bytes.data(), bytes.size()).get_n() == sketch.get_n());
+      std::stringstream s(std::ios::in | std::ios::out | std::ios::binary);
+      sketch.serialize(s);
+      REQUIRE(req_sketch<float>::deserialize(s).get_n() == sketch.get_n());
+    }
+  }
+
+  SECTION("valid images with the smallest section size") {
+    // the raw section size has shrunk to 3, which the section size rounds up to 4
+    req_sketch<float> sketch(6);
+    for (int i = 0; i < 100000; ++i) sketch.update(static_cast<float>(i));
+    auto bytes = sketch.serialize();
+    float raw_section_size;
+    std::memcpy(&raw_section_size, bytes.data() + estimation_compactor + section_size, sizeof(raw_section_size));
+    REQUIRE(raw_section_size == Approx(3).margin(0.001));
+    REQUIRE(bytes[estimation_compactor + num_sections] == 12);
+    REQUIRE(req_sketch<float>::deserialize(bytes.data(), bytes.size()).get_n() == sketch.get_n());
+    std::stringstream s(std::ios::in | std::ios::out | std::ios::binary);
+    sketch.serialize(s);
+    REQUIRE(req_sketch<float>::deserialize(s).get_n() == sketch.get_n());
+
+    // k = 12 needs about 2 billion items to get here, so set the header it would have
+    bytes = estimation.serialize();
+    put_value(bytes, estimation_compactor + section_size, 3.0f);
+    put_value(bytes, estimation_compactor + num_sections, static_cast<uint8_t>(48));
+    REQUIRE(req_sketch<float>::deserialize(bytes.data(), bytes.size()).get_n() == estimation.get_n());
+  }
+
+  SECTION("invalid k") {
+    for (uint16_t k: {2, 13, 2000}) {
+      auto bytes = estimation.serialize();
+      put_value(bytes, k_offset, k);
+      check_rejected(bytes);
+    }
+  }
+
+  SECTION("section size out of range") {
+    for (float size: {0.0f, 2.0f, 14.0f, 1e12f, std::numeric_limits<float>::quiet_NaN()}) {
+      auto bytes = estimation.serialize();
+      put_value(bytes, estimation_compactor + section_size, size);
+      check_rejected(bytes);
+    }
+  }
+
+  SECTION("number of sections out of range") {
+    for (uint8_t sections: {0, 65}) {
+      auto bytes = estimation.serialize();
+      put_value(bytes, estimation_compactor + num_sections, sections);
+      check_rejected(bytes);
+    }
+    // in range, but too many for this section size and k
+    auto bytes = estimation.serialize();
+    put_value(bytes, estimation_compactor + section_size, 3.0f);
+    put_value(bytes, estimation_compactor + num_sections, static_cast<uint8_t>(64));
+    check_rejected(bytes);
+  }
+
+  SECTION("wrong lg_weight") {
+    for (uint8_t weight: {1, 70}) {
+      auto bytes = estimation.serialize();
+      put_value(bytes, estimation_compactor + lg_weight, weight);
+      check_rejected(bytes);
+    }
+    auto bytes = exact.serialize();
+    put_value(bytes, exact_compactor + lg_weight, static_cast<uint8_t>(1));
+    check_rejected(bytes);
+    // the second compactor repeats the first one's lg_weight
+    bytes = estimation.serialize();
+    uint32_t count;
+    std::memcpy(&count, bytes.data() + estimation_compactor + num_items, sizeof(count));
+    const size_t second_compactor = estimation_compactor + items + count * sizeof(float);
+    REQUIRE(bytes[second_compactor + lg_weight] == 1);
+    put_value(bytes, second_compactor + lg_weight, static_cast<uint8_t>(0));
+    check_rejected(bytes);
+  }
+
+  SECTION("no levels") {
+    auto bytes = exact.serialize();
+    bytes[num_levels_offset] = 0;
+    check_rejected(bytes);
+    bytes = raw.serialize();
+    bytes[num_levels_offset] = 0;
+    check_rejected(bytes);
+  }
+
+  SECTION("no items") {
+    auto bytes = exact.serialize();
+    put_value(bytes, exact_compactor + num_items, static_cast<uint32_t>(0));
+    check_rejected(bytes);
+    bytes = raw.serialize();
+    bytes[num_raw_items_offset] = 0;
+    check_rejected(bytes);
+  }
+
+  SECTION("compactor header beyond the input") {
+    auto bytes = estimation.serialize();
+    bytes.resize(estimation_compactor + 10);
+    REQUIRE_THROWS_AS(req_sketch<float>::deserialize(bytes.data(), bytes.size()), std::out_of_range);
+  }
+}
+
+} /* namespace datasketches */
