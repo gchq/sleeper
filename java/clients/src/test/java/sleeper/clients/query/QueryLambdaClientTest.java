@@ -227,6 +227,37 @@ public class QueryLambdaClientTest {
     }
 
     @Test
+    void shouldPrintFieldsComputedBySqlThatAreNotInTheTableSchema() throws Exception {
+        // Given a query run with SQL publishes results that do not match the table schema
+        createTable("test-table", createSchemaWithKey("key"));
+        List<Query> queries = new ArrayList<>();
+        QuerySender querySender = query -> {
+            queries.add(query);
+            resultsByQueryId.put(query.getQueryId(), List.of(new Row(Map.of("count(*)", 3L))));
+            queryTracker.queryCompleted(query, new ResultsOutputInfo(1,
+                    List.of(new ResultsOutputLocation("s3", "test.parquet"))));
+        };
+
+        // When
+        in.enterNextPrompts(
+                SEND_TO_CONSOLE_OPTION,
+                PRINT_WHEN_FINISHED_OPTION,
+                DEFAULT_RESULTS_READ_THREADS_OPTION,
+                RANGE_QUERY_OPTION,
+                NO_OPTION, YES_OPTION,
+                "3", "6", "SELECT count(*) FROM query_results",
+                EXIT_OPTION);
+        runQueryClient(querySender, queryTracker);
+
+        // Then
+        assertThat(queries).extracting(query -> query.getProcessingConfig().getSqlQuery())
+                .containsExactly("SELECT count(*) FROM query_results");
+        assertThat(out.toString())
+                .contains("Returned Rows:\n" +
+                        "Row{values={count(*)=3}}");
+    }
+
+    @Test
     void shouldRunRangeQueryStreamingResultsToConsole() throws Exception {
         // Given
         Schema schema = createSchemaWithKey("key");

@@ -18,11 +18,9 @@ package sleeper.systemtest.drivers.util;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetReader;
 
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
-import sleeper.core.schema.Schema;
-import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 
 import java.io.IOException;
@@ -35,12 +33,10 @@ public class ReadRowsFromS3 {
     private ReadRowsFromS3() {
     }
 
-    public static Stream<Row> getRows(String bucketName, String objectKey, Schema schema, Configuration conf) {
+    public static Stream<Row> getRows(String bucketName, String objectKey, Configuration conf) {
         String path = "s3a://" + bucketName + "/" + objectKey;
         List<Row> rows = new ArrayList<>();
-        try (ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(path), schema)
-                .withConf(conf).build();
-                ParquetReaderIterator iterator = new ParquetReaderIterator(reader)) {
+        try (CloseableIterator<Row> iterator = ParquetRowReaderFactory.parquetGenericRowIterator(new Path(path), conf)) {
             iterator.forEachRemaining(rows::add);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
