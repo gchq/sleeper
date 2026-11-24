@@ -29,7 +29,9 @@ import sleeper.core.statestore.FileReferenceFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobAssignmentFromJobTestHelper.assignJobFiles;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
@@ -131,4 +133,59 @@ public class FilesStatusReportDetailLevelTest extends FilesStatusReportTestBase 
                 new Options().forFile().withName("detailLevelJson", ".json"));
     }
 
+    @Test
+    void shouldBuildJsonWithNoJobTracker() {
+        // Given
+        jobTracker = CompactionJobTrackerLookup.none();
+
+        // When / Then
+        Approvals.verify(verboseReportString(JsonFileStatusReporter::new),
+                new Options().forFile().withName("detailLevelJsonNoJobTracker", ".json"));
+    }
+
+    @Test
+    void shouldLookUpEachAssignedJobInTrackerWhenShowingCompactions() {
+        // Given
+        List<String> lookedUpJobIds = recordJobTrackerLookups();
+
+        // When
+        standardReportString(FileStatusDetailLevel.COMPACTION_JOBS);
+
+        // Then
+        assertThat(lookedUpJobIds).containsExactlyInAnyOrder("job-1", "job-2", "job-3");
+    }
+
+    @Test
+    void shouldNotLookUpJobsInTrackerWhenShowingStatsOnly() {
+        // Given
+        List<String> lookedUpJobIds = recordJobTrackerLookups();
+
+        // When
+        standardReportString(FileStatusDetailLevel.STATS_ONLY);
+
+        // Then
+        assertThat(lookedUpJobIds).isEmpty();
+    }
+
+    @Test
+    void shouldNotLookUpJobsInTrackerWhenShowingReferencesOnly() {
+        // Given
+        List<String> lookedUpJobIds = recordJobTrackerLookups();
+
+        // When
+        standardReportString(FileStatusDetailLevel.REFERENCES);
+
+        // Then
+        assertThat(lookedUpJobIds).isEmpty();
+    }
+
+    private List<String> recordJobTrackerLookups() {
+        List<String> lookedUpJobIds = new CopyOnWriteArrayList<>();
+        CompactionJobTrackerLookup tracker = jobTracker;
+        jobTracker = jobId -> {
+            lookedUpJobIds.add(jobId);
+            return tracker.getJob(jobId);
+        };
+        return lookedUpJobIds;
+    }
 }

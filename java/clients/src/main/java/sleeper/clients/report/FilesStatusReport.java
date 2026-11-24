@@ -34,7 +34,6 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
@@ -66,7 +65,6 @@ public class FilesStatusReport {
     private final FileStatusDetailLevel detailLevel;
     private final FileStatusReporter fileStatusReporter;
     private final FileStatusCollector fileStatusCollector;
-    private final CompactionJobTrackerLookup jobTracker;
 
     public FilesStatusReport(
             StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, FileStatusDetailLevel detailLevel,
@@ -74,16 +72,15 @@ public class FilesStatusReport {
         this.maxNumberOfFilesWithNoReferencesToCount = maxNumberOfFilesWithNoReferencesToCount;
         this.detailLevel = detailLevel;
         this.fileStatusReporter = fileStatusReporter;
-        this.fileStatusCollector = new FileStatusCollector(stateStore, timeSupplier);
-        this.jobTracker = jobTracker;
+        this.fileStatusCollector = new FileStatusCollector(stateStore, jobTracker, timeSupplier);
     }
 
     /**
      * Creates a report.
      */
     public void run() {
-        TableFilesStatus tableStatus = fileStatusCollector.run(maxNumberOfFilesWithNoReferencesToCount);
-        fileStatusReporter.report(tableStatus, detailLevel, jobTracker);
+        TableFilesStatus tableStatus = fileStatusCollector.run(maxNumberOfFilesWithNoReferencesToCount, detailLevel);
+        fileStatusReporter.report(tableStatus, detailLevel);
     }
 
     public static final CommandLineUsage USAGE = CommandLineUsage.builder()
@@ -100,6 +97,11 @@ public class FilesStatusReport {
                             .argsHelpText("<level>")
                             .build(),
                     OUTPUT_FORMAT.option(),
+                    CommandOption.withLongName("job-tracker")
+                            .helpText("Look up compaction jobs assigned to files in the compaction job tracker, to " +
+                                    "report their status. Only used when the detail level includes compaction jobs. Defaults to true. " +
+                                    "Set --job-tracker=false to disable this.")
+                            .build(),
                     CommandOption.withLongName("max-no-ref-files")
                             .numArgs(NumArgs.ONE)
                             .helpText("Maximum number of files with no references to count. Defaults to 1000.")
@@ -125,7 +127,8 @@ public class FilesStatusReport {
                 arguments.getOptionalString("detail")
                         .map(FilesStatusReport::readDetailLevel)
                         .orElse(FileStatusDetailLevel.STATS_ONLY),
-                OUTPUT_FORMAT.read(arguments));
+                OUTPUT_FORMAT.read(arguments),
+                arguments.isFlagSetWithDefault("job-tracker", true));
     }
 
     /**
@@ -136,13 +139,15 @@ public class FilesStatusReport {
      * @param maxNoRefFiles the maximum number of files with no references to count
      * @param detailLevel   the level of detail to include in the report
      * @param reporter      the reporter for the given output format
+     * @param useJobTracker whether to look up compaction jobs in the job tracker
      */
     public record Arguments(
             String instanceId,
             String tableName,
             int maxNoRefFiles,
             FileStatusDetailLevel detailLevel,
-            FileStatusReporter reporter) {
+            FileStatusReporter reporter,
+            boolean useJobTracker) {
     }
 
     public static void main(String[] rawArgs) {
@@ -156,8 +161,10 @@ public class FilesStatusReport {
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
             StateStore stateStore = stateStoreFactory.getStateStore(tablePropertiesProvider.getByName(args.tableName()));
-            CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-            new FilesStatusReport(stateStore, args.maxNoRefFiles(), args.detailLevel(), args.reporter(), CompactionJobTrackerLookup.from(jobTracker), Instant::now).run();
+            CompactionJobTrackerLookup jobTracker = args.useJobTracker()
+                    ? CompactionJobTrackerLookup.from(CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties))
+                    : CompactionJobTrackerLookup.none();
+            new FilesStatusReport(stateStore, args.maxNoRefFiles(), args.detailLevel(), args.reporter(), jobTracker, Instant::now).run();
         }
     }
 

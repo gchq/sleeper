@@ -16,9 +16,11 @@
 package sleeper.clients.report.filestatus;
 
 import sleeper.core.statestore.FileReference;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Information in the state store about a compaction currently assigned to files.
@@ -27,10 +29,29 @@ public class TableFilesCompaction {
 
     private final String jobId;
     private final List<FileReference> fileReferences;
+    private final boolean checkedInJobTracker;
+    private final CompactionJobStatus trackedStatus;
 
-    public TableFilesCompaction(String jobId, List<FileReference> fileReferences) {
+    private TableFilesCompaction(String jobId, List<FileReference> fileReferences, boolean checkedInJobTracker, CompactionJobStatus trackedStatus) {
         this.jobId = jobId;
         this.fileReferences = fileReferences;
+        this.checkedInJobTracker = checkedInJobTracker;
+        this.trackedStatus = trackedStatus;
+    }
+
+    /**
+     * Creates information about a compaction, looking up its status in the job tracker if one is available.
+     *
+     * @param  jobId          the compaction job ID
+     * @param  fileReferences the file references assigned to the job
+     * @param  jobTracker     the job tracker lookup
+     * @return                the compaction
+     */
+    public static TableFilesCompaction from(String jobId, List<FileReference> fileReferences, CompactionJobTrackerLookup jobTracker) {
+        if (!jobTracker.isTrackerAvailable()) {
+            return new TableFilesCompaction(jobId, fileReferences, false, null);
+        }
+        return new TableFilesCompaction(jobId, fileReferences, true, jobTracker.getJob(jobId).orElse(null));
     }
 
     public String getJobId() {
@@ -43,6 +64,25 @@ public class TableFilesCompaction {
 
     public Instant getAssignmentTime() {
         return fileReferences.get(0).getLastStateStoreUpdateTime();
+    }
+
+    /**
+     * Checks whether the job tracker was queried for this compaction.
+     *
+     * @return true if the job tracker was queried
+     */
+    public boolean isCheckedInJobTracker() {
+        return checkedInJobTracker;
+    }
+
+    /**
+     * Retrieves the status of the job in the job tracker. This will be empty if the job was not found in the tracker,
+     * or if the tracker was not queried.
+     *
+     * @return the status of the job in the tracker, if found
+     */
+    public Optional<CompactionJobStatus> getTrackedStatus() {
+        return Optional.ofNullable(trackedStatus);
     }
 
 }

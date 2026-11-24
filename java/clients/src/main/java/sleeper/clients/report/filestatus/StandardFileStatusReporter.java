@@ -39,7 +39,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     }
 
     @Override
-    public void report(TableFilesStatus status, FileStatusDetailLevel detailLevel, CompactionJobTrackerLookup jobTracker) {
+    public void report(TableFilesStatus status, FileStatusDetailLevel detailLevel) {
         out.println("\nFiles Status Report:\n--------------------------");
         out.println("Time of report: " + status.getTimeOfReport());
         out.println("There are " + status.getLeafPartitionCount() + " leaf partitions and " + status.getNonLeafPartitionCount() + " non-leaf partitions");
@@ -68,7 +68,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         if (detailLevel.isShowCompactionJobs()) {
             out.println();
             out.println("Compactions assigned to files:" + (status.getCompactions().isEmpty() ? " none" : ""));
-            status.getCompactions().forEach(partition -> printPartitionCompactions(partition, jobTracker));
+            status.getCompactions().forEach(this::printPartitionCompactions);
         }
         if (detailLevel == FileStatusDetailLevel.STATS_ONLY) {
             out.println();
@@ -148,11 +148,11 @@ public class StandardFileStatusReporter implements FileStatusReporter {
                 + (reference.getJobId() != null ? ", assigned to job " + reference.getJobId() : ""));
     }
 
-    private void printPartitionCompactions(TableFilesPartitionCompactions compactions, CompactionJobTrackerLookup jobTracker) {
+    private void printPartitionCompactions(TableFilesPartitionCompactions compactions) {
         out.println("Partition " + compactions.getPartitionId() + " has " + numJobsStr(compactions)); // TODO print partition location in tree
         for (TableFilesCompaction compaction : compactions.getJobs()) {
             out.println("\tJob " + compaction.getJobId() + " with " + compaction.getFileReferences().size() + " files assigned at " + compaction.getAssignmentTime()
-                    + jobStatusStr(compaction, jobTracker));
+                    + jobStatusStr(compaction));
         }
     }
 
@@ -175,11 +175,11 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         }
     }
 
-    private String jobStatusStr(TableFilesCompaction compaction, CompactionJobTrackerLookup tracker) {
-        if (!tracker.isTrackerAvailable()) {
+    private String jobStatusStr(TableFilesCompaction compaction) {
+        if (!compaction.isCheckedInJobTracker()) {
             return "";
         }
-        return tracker.getJob(compaction.getJobId())
+        return compaction.getTrackedStatus()
                 .map(status -> ", tracker shows status " + status.getFurthestStatusType() + " with " + numRunsStr(status) + ", last tracker update at " + status.getLastUpdateTime())
                 .orElse(", not in job tracker");
     }

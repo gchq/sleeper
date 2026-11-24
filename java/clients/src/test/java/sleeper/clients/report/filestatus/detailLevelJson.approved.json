@@ -213,7 +213,8 @@
           "inputFiles": [
             "lr-compaction-3a.parquet",
             "lr-compaction-3b.parquet"
-          ]
+          ],
+          "inJobTracker": false
         }
       ]
     },
@@ -226,7 +227,11 @@
           "inputFiles": [
             "rl-compaction-1a.parquet",
             "rl-compaction-1b.parquet"
-          ]
+          ],
+          "inJobTracker": true,
+          "trackerStatus": "UNCOMMITTED",
+          "trackerRuns": 1,
+          "lastTrackerUpdateTime": "2022-08-22T14:21:21.123Z"
         },
         {
           "jobId": "job-2",
@@ -234,7 +239,11 @@
           "inputFiles": [
             "rl-compaction-2a.parquet",
             "rl-compaction-2b.parquet"
-          ]
+          ],
+          "inJobTracker": true,
+          "trackerStatus": "CREATED",
+          "trackerRuns": 0,
+          "lastTrackerUpdateTime": "2022-08-22T14:21:10Z"
         }
       ]
     }

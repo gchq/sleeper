@@ -50,6 +50,14 @@ public class FilesStatusReportMainTest {
             assertThat(args.reporter())
                     .usingRecursiveComparison()
                     .isEqualTo(new StandardFileStatusReporter());
+            assertThat(args.useJobTracker()).isTrue();
+        }
+
+        @Test
+        void shouldDisableJobTracker() {
+            Arguments args = readArguments("my-instance", "my-table", "--job-tracker=false");
+
+            assertThat(args.useJobTracker()).isFalse();
         }
 
         @Test

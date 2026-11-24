@@ -44,12 +44,13 @@ public class TableFilesPartitionCompactions {
      *
      * @param  files      the files in the state store
      * @param  partitions the partition tree
+     * @param  jobTracker the job tracker lookup
      * @return            the compactions for each partition
      */
-    public static List<TableFilesPartitionCompactions> from(AllReferencesToAllFiles files, PartitionTree partitions) {
+    public static List<TableFilesPartitionCompactions> from(AllReferencesToAllFiles files, PartitionTree partitions, CompactionJobTrackerLookup jobTracker) {
         Map<String, List<FileReference>> partitionIdToFiles = files.streamFileReferences().collect(groupingBy(FileReference::getPartitionId));
         return partitions.traverseLeavesFirst()
-                .map(partition -> TableFilesPartitionCompactions.from(partition.getId(), partitionIdToFiles.getOrDefault(partition.getId(), List.of())))
+                .map(partition -> TableFilesPartitionCompactions.from(partition.getId(), partitionIdToFiles.getOrDefault(partition.getId(), List.of()), jobTracker))
                 .filter(compactions -> !compactions.getJobs().isEmpty())
                 .toList();
     }
@@ -59,15 +60,16 @@ public class TableFilesPartitionCompactions {
      *
      * @param  partitionId    the partition ID
      * @param  fileReferences the file references in that partition
+     * @param  jobTracker     the job tracker lookup
      * @return                the compactions assigned in the partition
      */
-    public static TableFilesPartitionCompactions from(String partitionId, List<FileReference> fileReferences) {
+    public static TableFilesPartitionCompactions from(String partitionId, List<FileReference> fileReferences, CompactionJobTrackerLookup jobTracker) {
         Map<String, List<FileReference>> jobIdToFiles = fileReferences.stream()
                 .filter(reference -> reference.getJobId() != null)
                 .collect(groupingBy(FileReference::getJobId));
         Set<String> jobIds = new TreeSet<>(jobIdToFiles.keySet());
         return new TableFilesPartitionCompactions(partitionId, jobIds.stream()
-                .map(jobId -> new TableFilesCompaction(jobId, jobIdToFiles.get(jobId)))
+                .map(jobId -> TableFilesCompaction.from(jobId, jobIdToFiles.get(jobId), jobTracker))
                 .toList());
     }
 

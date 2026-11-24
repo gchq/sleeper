@@ -50,7 +50,7 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     }
 
     @Override
-    public void report(TableFilesStatus status, FileStatusDetailLevel detailLevel, CompactionJobTrackerLookup jobTracker) {
+    public void report(TableFilesStatus status, FileStatusDetailLevel detailLevel) {
         out.println(gson.toJson(status));
     }
 
@@ -67,6 +67,14 @@ public class JsonFileStatusReporter implements FileStatusReporter {
         object.addProperty("jobId", compaction.getJobId());
         object.add("assignmentTime", context.serialize(compaction.getAssignmentTime()));
         object.add("inputFiles", context.serialize(compaction.getFileReferences().stream().map(FileReference::getFilename).toList()));
+        if (compaction.isCheckedInJobTracker()) {
+            object.addProperty("inJobTracker", compaction.getTrackedStatus().isPresent());
+            compaction.getTrackedStatus().ifPresent(status -> {
+                object.addProperty("trackerStatus", status.getFurthestStatusType().toString());
+                object.addProperty("trackerRuns", status.getRunsLatestFirst().size());
+                object.add("lastTrackerUpdateTime", context.serialize(status.getLastUpdateTime()));
+            });
+        }
         return object;
     }
 
