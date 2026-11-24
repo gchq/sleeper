@@ -72,14 +72,15 @@ public class FileStatusCollector {
                 .mapToInt(p -> 1).sum();
         int nonLeafPartitionCount = partitions.size() - leafPartitionCount;
         PartitionTree partitionTree = new PartitionTree(partitions);
-        List<TableFilesPartitionCompactions> compactions = TableFilesPartitionCompactions.from(files, partitionTree, lookUpJobs(files, detailLevel));
+        CompactionJobTrackerLookup jobTrackerLookup = lookUpJobs(files, detailLevel);
+        List<TableFilesPartitionCompactions> compactions = TableFilesPartitionCompactions.from(files, partitionTree, jobTrackerLookup);
         Instant now = timeSupplier.get();
 
         return TableFilesStatus.builder()
                 .timeOfReport(now)
                 .leafPartitionCount(leafPartitionCount)
                 .nonLeafPartitionCount(nonLeafPartitionCount)
-                .statistics(TableFilesStatistics.from(now, files, partitionTree, compactions))
+                .statistics(TableFilesStatistics.from(now, files, partitionTree, compactions, jobTrackerLookup.isTrackerAvailable()))
                 .files(files)
                 .compactions(compactions)
                 .build();

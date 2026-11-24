@@ -47,12 +47,32 @@
       "assigned": {
         "numJobsAssignedTo": 0,
         "onNumPartitions": 0,
-        "numReferencesAssigned": 0
+        "numReferencesAssigned": 0,
+        "trackerStatusCounts": {
+          "numJobsByStatus": {
+            "CREATED": 0,
+            "FAILED": 0,
+            "IN_PROGRESS": 0,
+            "UNCOMMITTED": 0,
+            "FINISHED": 0
+          },
+          "numJobsNotInTracker": 0
+        }
       },
       "assignedMoreThan12HoursAgo": {
         "numJobsAssignedTo": 0,
         "onNumPartitions": 0,
-        "numReferencesAssigned": 0
+        "numReferencesAssigned": 0,
+        "trackerStatusCounts": {
+          "numJobsByStatus": {
+            "CREATED": 0,
+            "FAILED": 0,
+            "IN_PROGRESS": 0,
+            "UNCOMMITTED": 0,
+            "FINISHED": 0
+          },
+          "numJobsNotInTracker": 0
+        }
       }
     }
   },

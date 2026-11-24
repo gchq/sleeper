@@ -47,13 +47,14 @@ public class TableFilesStatistics {
     /**
      * Computes statistics on files in a Sleeper table.
      *
-     * @param  timeNow     the time now
-     * @param  files       the files held in the table
-     * @param  partitions  the table's partition tree
-     * @param  compactions compaction file assignments in the table
-     * @return             the statistics
+     * @param  timeNow           the time now
+     * @param  files             the files held in the table
+     * @param  partitions        the table's partition tree
+     * @param  compactions       compaction file assignments in the table
+     * @param  jobTrackerChecked whether the compaction jobs were looked up in the job tracker
+     * @return                   the statistics
      */
-    static TableFilesStatistics from(Instant timeNow, AllReferencesToAllFiles files, PartitionTree partitions, List<TableFilesPartitionCompactions> compactions) {
+    static TableFilesStatistics from(Instant timeNow, AllReferencesToAllFiles files, PartitionTree partitions, List<TableFilesPartitionCompactions> compactions, boolean jobTrackerChecked) {
 
         List<FileReference> fileReferences = files.getFilesWithReferences().stream()
                 .flatMap(file -> file.getReferences().stream())
@@ -75,7 +76,7 @@ public class TableFilesStatistics {
                         fileReferences.size(),
                         FileReferencesStats.from(fileReferencesInLeafPartitions),
                         FileReferencesStats.from(fileReferencesInNonLeafPartitions)),
-                Compactions.from(timeNow, compactions));
+                Compactions.from(timeNow, compactions, jobTrackerChecked));
     }
 
     public long getReferencesInLeafPartitions() {
@@ -186,37 +187,26 @@ public class TableFilesStatistics {
             this.oldestAssignmentTime = oldestAssignmentTime;
         }
 
-        static Compactions from(Instant timeNow, List<TableFilesPartitionCompactions> compactions) {
-            int numPartitions = compactions.size();
-            int numAssigned = 0;
-            int numReferences = 0;
-            int partitionsOlderThan12Hours = 0;
-            int compactionsOlderThan12Hours = 0;
-            int referencesOlderThan12Hours = 0;
+        static Compactions from(Instant timeNow, List<TableFilesPartitionCompactions> compactions, boolean jobTrackerChecked) {
+            CompactionJobsSummary.Builder assigned = CompactionJobsSummary.builder().countTrackerStatuses(jobTrackerChecked);
+            CompactionJobsSummary.Builder assignedMoreThan12HoursAgo = CompactionJobsSummary.builder().countTrackerStatuses(jobTrackerChecked);
             Instant oldestTime = null;
             Instant time12HoursAgo = timeNow.minus(Duration.ofHours(12));
             for (TableFilesPartitionCompactions partition : compactions) {
-                numAssigned += partition.getJobs().size();
-                boolean olderThan12HoursOnPartition = false;
+                assigned.startPartition();
+                assignedMoreThan12HoursAgo.startPartition();
                 for (TableFilesCompaction job : partition.getJobs()) {
-                    numReferences += job.getFileReferences().size();
+                    assigned.addJob(job);
                     Instant assignmentTime = job.getAssignmentTime();
                     if (oldestTime == null || assignmentTime.isBefore(oldestTime)) {
                         oldestTime = assignmentTime;
                     }
                     if (assignmentTime.isBefore(time12HoursAgo)) {
-                        compactionsOlderThan12Hours++;
-                        olderThan12HoursOnPartition = true;
-                        referencesOlderThan12Hours += job.getFileReferences().size();
+                        assignedMoreThan12HoursAgo.addJob(job);
                     }
                 }
-                if (olderThan12HoursOnPartition) {
-                    partitionsOlderThan12Hours++;
-                }
             }
-            CompactionJobsSummary all = new CompactionJobsSummary(numAssigned, numPartitions, numReferences);
-            CompactionJobsSummary assignedMoreThan12HoursAgo = new CompactionJobsSummary(compactionsOlderThan12Hours, partitionsOlderThan12Hours, referencesOlderThan12Hours);
-            return new Compactions(all, assignedMoreThan12HoursAgo, oldestTime);
+            return new Compactions(assigned.build(), assignedMoreThan12HoursAgo.build(), oldestTime);
         }
     }
 

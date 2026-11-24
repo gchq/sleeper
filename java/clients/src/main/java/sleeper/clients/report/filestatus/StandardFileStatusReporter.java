@@ -20,6 +20,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import static sleeper.clients.util.ClientUtils.abbreviatedRowCount;
 
@@ -124,11 +126,34 @@ public class StandardFileStatusReporter implements FileStatusReporter {
             return;
         }
         out.println("Number of compaction jobs assigned to files: " + compactionsSummaryStr(status, status.getCompactionsAssignedSummary()));
+        printTrackerStatusCounts(status.getCompactionsAssignedSummary());
         out.println("Number of compaction jobs assigned more than 12 hours ago: " + compactionsSummaryStr(status, status.getCompactionsAssignedMoreThan12HoursAgoSummary()));
+        printTrackerStatusCounts(status.getCompactionsAssignedMoreThan12HoursAgoSummary());
         out.println("Oldest file assignment time: " + status.getOldestCompactionAssignmentTime());
     }
 
+    private void printTrackerStatusCounts(CompactionJobsSummary summary) {
+        if (summary.getNumJobsAssignedTo() < 1) {
+            return;
+        }
+        summary.getTrackerStatusCounts().ifPresent(counts -> {
+            List<String> countStrs = new ArrayList<>();
+            counts.getNumJobsByStatus().forEach((statusType, count) -> {
+                if (count > 0) {
+                    countStrs.add(statusType + ": " + count);
+                }
+            });
+            if (counts.getNumJobsNotInTracker() > 0) {
+                countStrs.add("not in tracker: " + counts.getNumJobsNotInTracker());
+            }
+            out.println("\tBy job tracker status: " + String.join(", ", countStrs));
+        });
+    }
+
     private String compactionsSummaryStr(TableFilesStatus status, CompactionJobsSummary summary) {
+        if (summary.getNumJobsAssignedTo() == 0) {
+            return "none";
+        }
         return String.format("%s, in %s partitions, with %s file references (%.2f%% of references)",
                 summary.getNumJobsAssignedTo(), summary.getOnNumPartitions(), summary.getNumReferencesAssigned(),
                 summary.getPercentOfFileReferencesAssigned(status.getFileReferenceCount()));
