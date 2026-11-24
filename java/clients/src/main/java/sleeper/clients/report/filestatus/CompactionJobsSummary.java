@@ -15,6 +15,9 @@
  */
 package sleeper.clients.report.filestatus;
 
+/**
+ * A summary of compaction jobs assigned to file references in the state store.
+ */
 public class CompactionJobsSummary {
 
     private final int numJobsAssignedTo;
@@ -39,6 +42,12 @@ public class CompactionJobsSummary {
         return numReferencesAssigned;
     }
 
+    /**
+     * Computes the percentage of file references that are assigned to these compaction jobs.
+     *
+     * @param  totalFileReferences the total number of file references in the state store
+     * @return                     the percentage of references assigned to these jobs
+     */
     public double getPercentOfFileReferencesAssigned(long totalFileReferences) {
         return 100.0 * (double) numReferencesAssigned / (double) totalFileReferences;
     }

@@ -47,6 +47,7 @@ public class TableFilesStatistics {
     /**
      * Computes statistics on files in a Sleeper table.
      *
+     * @param  timeNow     the time now
      * @param  files       the files held in the table
      * @param  partitions  the table's partition tree
      * @param  compactions compaction file assignments in the table
@@ -169,6 +170,9 @@ public class TableFilesStatistics {
         }
     }
 
+    /**
+     * Statistics on compactions assigned to file references in the state store.
+     */
     private static class Compactions {
         private final CompactionJobsSummary assigned;
         private final CompactionJobsSummary assignedMoreThan12HoursAgo;
