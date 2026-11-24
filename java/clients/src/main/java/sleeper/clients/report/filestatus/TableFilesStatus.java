@@ -18,6 +18,7 @@ package sleeper.clients.report.filestatus;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
@@ -27,6 +28,7 @@ import java.util.List;
  */
 public class TableFilesStatus {
 
+    private final Instant timeOfReport;
     private final boolean moreThanMax;
     private final int leafPartitionCount;
     private final int nonLeafPartitionCount;
@@ -37,6 +39,7 @@ public class TableFilesStatus {
     private final List<TableFilesPartitionCompactions> compactions;
 
     private TableFilesStatus(Builder builder) {
+        timeOfReport = builder.timeOfReport;
         leafPartitionCount = builder.leafPartitionCount;
         nonLeafPartitionCount = builder.nonLeafPartitionCount;
         statistics = builder.statistics;
@@ -47,6 +50,10 @@ public class TableFilesStatus {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public Instant getTimeOfReport() {
+        return timeOfReport;
     }
 
     public int getLeafPartitionCount() {
@@ -121,10 +128,23 @@ public class TableFilesStatus {
         return compactions;
     }
 
+    public CompactionJobsSummary getCompactionsAssignedSummary() {
+        return statistics.getCompactionsAssignedSummary();
+    }
+
+    public CompactionJobsSummary getCompactionsAssignedMoreThan12HoursAgoSummary() {
+        return statistics.getCompactionsAssignedMoreThan12HoursAgoSummary();
+    }
+
+    public Instant getOldestCompactionAssignmentTime() {
+        return statistics.getOldestCompactionAssignmentTime();
+    }
+
     /**
      * A builder for the status of files in a Sleeper table.
      */
     public static final class Builder {
+        private Instant timeOfReport;
         private int leafPartitionCount;
         private int nonLeafPartitionCount;
         private TableFilesStatistics statistics;
@@ -136,6 +156,17 @@ public class TableFilesStatus {
 
         public static Builder builder() {
             return new Builder();
+        }
+
+        /**
+         * Sets the time this report was generated.
+         *
+         * @param  timeOfReport the time of the report
+         * @return              this builder
+         */
+        public Builder timeOfReport(Instant timeOfReport) {
+            this.timeOfReport = timeOfReport;
+            return this;
         }
 
         /**

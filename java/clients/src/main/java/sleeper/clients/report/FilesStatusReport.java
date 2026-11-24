@@ -42,8 +42,10 @@ import sleeper.core.util.cli.CommandOption;
 import sleeper.core.util.cli.CommandOption.NumArgs;
 import sleeper.statestore.StateStoreFactory;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
@@ -67,18 +69,12 @@ public class FilesStatusReport {
     private final CompactionJobTrackerLookup jobTracker;
 
     public FilesStatusReport(
-            StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, boolean verbose,
-            FileStatusReporter fileStatusReporter) {
-        this(stateStore, maxNumberOfFilesWithNoReferencesToCount, verbose ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY, fileStatusReporter, CompactionJobTrackerLookup.none());
-    }
-
-    public FilesStatusReport(
             StateStore stateStore, int maxNumberOfFilesWithNoReferencesToCount, FileStatusDetailLevel detailLevel,
-            FileStatusReporter fileStatusReporter, CompactionJobTrackerLookup jobTracker) {
+            FileStatusReporter fileStatusReporter, CompactionJobTrackerLookup jobTracker, Supplier<Instant> timeSupplier) {
         this.maxNumberOfFilesWithNoReferencesToCount = maxNumberOfFilesWithNoReferencesToCount;
         this.detailLevel = detailLevel;
         this.fileStatusReporter = fileStatusReporter;
-        this.fileStatusCollector = new FileStatusCollector(stateStore);
+        this.fileStatusCollector = new FileStatusCollector(stateStore, timeSupplier);
         this.jobTracker = jobTracker;
     }
 
@@ -161,7 +157,7 @@ public class FilesStatusReport {
             StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient);
             StateStore stateStore = stateStoreFactory.getStateStore(tablePropertiesProvider.getByName(args.tableName()));
             CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-            new FilesStatusReport(stateStore, args.maxNoRefFiles(), args.detailLevel(), args.reporter(), CompactionJobTrackerLookup.from(jobTracker)).run();
+            new FilesStatusReport(stateStore, args.maxNoRefFiles(), args.detailLevel(), args.reporter(), CompactionJobTrackerLookup.from(jobTracker), Instant::now).run();
         }
     }
 

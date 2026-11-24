@@ -1,6 +1,7 @@
 
 Files Status Report:
 --------------------------
+Time of report: 2022-08-22T15:00:00.001Z
 There are 4 leaf partitions and 3 non-leaf partitions
 Number of files: 11
 Number of files with references: 9
@@ -12,5 +13,8 @@ Number of rows referenced in partitions: 1K (1,000)
 Number of rows in non-leaf partitions: 200
 Number of rows in leaf partitions: 800
 Percentage of rows in leaf partitions: 80.0
+Number of compaction jobs assigned to files: 3, in 2 partitions, with 6 file references (66.67% of references)
+Number of compaction jobs assigned more than 12 hours ago: 0, in 0 partitions, with 0 file references (0.00% of references)
+Oldest file assignment time: 2022-08-22T14:21:00Z
 
 To see the files or compactions currently in the state store, please set the detail level of the report.

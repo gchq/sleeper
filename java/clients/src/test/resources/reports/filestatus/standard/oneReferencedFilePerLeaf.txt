@@ -1,6 +1,7 @@
 
 Files Status Report:
 --------------------------
+Time of report: 2022-08-22T15:00:00.001Z
 There are 8 leaf partitions and 7 non-leaf partitions
 Number of files: 8
 Number of files with references: 8
@@ -12,6 +13,7 @@ Number of rows referenced in partitions: 400M (400,000,036)
 Number of rows in non-leaf partitions: 0
 Number of rows in leaf partitions: 400M (400,000,036)
 Percentage of rows in leaf partitions: 100.0
+No compaction jobs assigned to files
 
 Files with no references: none
 

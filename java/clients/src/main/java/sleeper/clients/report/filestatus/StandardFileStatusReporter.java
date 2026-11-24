@@ -41,6 +41,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     @Override
     public void report(TableFilesStatus status, FileStatusDetailLevel detailLevel, CompactionJobTrackerLookup jobTracker) {
         out.println("\nFiles Status Report:\n--------------------------");
+        out.println("Time of report: " + status.getTimeOfReport());
         out.println("There are " + status.getLeafPartitionCount() + " leaf partitions and " + status.getNonLeafPartitionCount() + " non-leaf partitions");
         out.println("Number of files: " + (status.isMoreThanMax() ? ">" : "") + status.getFileCount());
         out.println("Number of files with references: " + status.getFilesWithReferences().size());
@@ -50,6 +51,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         printPartitionStats(status.getLeafPartitionFileReferenceStats(), "leaf");
         printPartitionStats(status.getNonLeafPartitionFileReferenceStats(), "non-leaf");
         printRowStats(status);
+        printCompactionStats(status);
 
         if (detailLevel.isShowFileReferences()) {
             out.println();
@@ -114,6 +116,22 @@ public class StandardFileStatusReporter implements FileStatusReporter {
                 abbreviatedRowCount(status.getTotalRowsInLeafPartitions()));
         out.println("Percentage of rows in leaf partitions" + percentageSuffix +
                 (status.getTotalRowsInLeafPartitions() / (double) status.getTotalRows()) * 100.0);
+    }
+
+    private void printCompactionStats(TableFilesStatus status) {
+        if (status.getCompactions().isEmpty()) {
+            out.println("No compaction jobs assigned to files");
+            return;
+        }
+        out.println("Number of compaction jobs assigned to files: " + compactionsSummaryStr(status, status.getCompactionsAssignedSummary()));
+        out.println("Number of compaction jobs assigned more than 12 hours ago: " + compactionsSummaryStr(status, status.getCompactionsAssignedMoreThan12HoursAgoSummary()));
+        out.println("Oldest file assignment time: " + status.getOldestCompactionAssignmentTime());
+    }
+
+    private String compactionsSummaryStr(TableFilesStatus status, CompactionJobsSummary summary) {
+        return String.format("%s, in %s partitions, with %s file references (%.2f%% of references)",
+                summary.getNumJobsAssignedTo(), summary.getOnNumPartitions(), summary.getNumReferencesAssigned(),
+                summary.getPercentOfFileReferencesAssigned(status.getFileReferenceCount()));
     }
 
     private void printFile(AllReferencesToAFile file) {

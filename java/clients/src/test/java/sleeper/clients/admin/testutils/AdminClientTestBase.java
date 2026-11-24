@@ -24,8 +24,10 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.table.TableStatus;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
@@ -41,6 +43,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATime;
 
 public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness {
 
@@ -60,6 +63,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     protected String region = "test-region";
     protected String dnsSuffix = "amazonaws.com";
     protected static final String TABLE_NAME_VALUE = "test-table";
+    protected Supplier<Instant> timeSupplier = timePassesAMinuteAtATime();
 
     @Override
     public String getInstanceId() {

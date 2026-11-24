@@ -460,7 +460,7 @@ public class InstanceConfigurationScreenMockTest extends AdminClientTestBase {
     public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws Exception {
         new AdminClient(tableIndex, store, trackers,
                 editor, out.consoleOut(), in.consoleIn(),
-                queueClient, properties -> Collections.emptyMap())
+                queueClient, properties -> Collections.emptyMap(), timeSupplier)
                 .start(instanceId);
     }
 

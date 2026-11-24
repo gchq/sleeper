@@ -20,7 +20,9 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.StateStore;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Collects information about files in a Sleeper table for reporting. Produces a {@link TableFilesStatus} data
@@ -28,9 +30,16 @@ import java.util.List;
  */
 public class FileStatusCollector {
     private final StateStore stateStore;
+    private final Supplier<Instant> timeSupplier;
 
     public FileStatusCollector(StateStore stateStore) {
         this.stateStore = stateStore;
+        this.timeSupplier = Instant::now;
+    }
+
+    public FileStatusCollector(StateStore stateStore, Supplier<Instant> timeSupplier) {
+        this.stateStore = stateStore;
+        this.timeSupplier = timeSupplier;
     }
 
     /**
@@ -49,13 +58,16 @@ public class FileStatusCollector {
                 .mapToInt(p -> 1).sum();
         int nonLeafPartitionCount = partitions.size() - leafPartitionCount;
         PartitionTree partitionTree = new PartitionTree(partitions);
+        List<TableFilesPartitionCompactions> compactions = TableFilesPartitionCompactions.from(files, partitionTree);
+        Instant now = timeSupplier.get();
 
         return TableFilesStatus.builder()
+                .timeOfReport(now)
                 .leafPartitionCount(leafPartitionCount)
                 .nonLeafPartitionCount(nonLeafPartitionCount)
-                .statistics(TableFilesStatistics.from(files, partitionTree))
+                .statistics(TableFilesStatistics.from(now, files, partitionTree, compactions))
                 .files(files)
-                .compactions(TableFilesPartitionCompactions.from(files, partitionTree))
+                .compactions(compactions)
                 .build();
     }
 

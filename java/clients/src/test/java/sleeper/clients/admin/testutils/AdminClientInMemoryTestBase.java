@@ -75,11 +75,10 @@ public abstract class AdminClientInMemoryTestBase extends AdminClientTestBase {
     }
 
     @Override
-    public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient)
-            throws InterruptedException {
+    public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws InterruptedException {
         new AdminClient(clientProperties.createTableIndex(instanceProperties), store, trackers,
                 editor, out.consoleOut(), in.consoleIn(),
-                queueClient, properties -> Collections.emptyMap())
+                queueClient, properties -> Collections.emptyMap(), timeSupplier)
                 .start(instanceId);
     }
 

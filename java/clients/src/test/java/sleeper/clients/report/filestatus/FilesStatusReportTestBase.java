@@ -43,9 +43,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATimeFrom;
 
 public class FilesStatusReportTestBase {
     protected final Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
@@ -56,6 +58,7 @@ public class FilesStatusReportTestBase {
     protected final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
     protected final Map<String, CompactionJobStatus> jobIdToStatus = new HashMap<>();
     protected CompactionJobTrackerLookup jobTracker = id -> Optional.ofNullable(jobIdToStatus.get(id));
+    protected Supplier<Instant> timeSupplier = timePassesAMinuteAtATimeFrom(Instant.parse("2022-08-22T15:00:00.001Z"));
 
     @BeforeEach
     void setUpBase() {
@@ -101,7 +104,7 @@ public class FilesStatusReportTestBase {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             FileStatusReporter reporter = getReporter.apply(
                     new PrintStream(os, false, StandardCharsets.UTF_8.displayName()));
-            new FilesStatusReport(stateStore, maxFilesWithNoReferences, detailLevel, reporter, jobTracker).run();
+            new FilesStatusReport(stateStore, maxFilesWithNoReferences, detailLevel, reporter, jobTracker, timeSupplier).run();
             return os.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

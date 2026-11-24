@@ -1,4 +1,5 @@
 {
+  "timeOfReport": "2022-08-22T15:01:00.001Z",
   "moreThanMax": false,
   "leafPartitionCount": 8,
   "nonLeafPartitionCount": 7,
@@ -34,6 +35,18 @@
       },
       "nonLeafPartitions": {
         "totalReferences": 0
+      }
+    },
+    "compactions": {
+      "assigned": {
+        "numJobsAssignedTo": 0,
+        "onNumPartitions": 0,
+        "numReferencesAssigned": 0
+      },
+      "assignedMoreThan12HoursAgo": {
+        "numJobsAssignedTo": 0,
+        "onNumPartitions": 0,
+        "numReferencesAssigned": 0
       }
     }
   },

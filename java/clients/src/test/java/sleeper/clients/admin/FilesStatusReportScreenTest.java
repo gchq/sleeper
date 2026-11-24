@@ -86,6 +86,7 @@ class FilesStatusReportScreenTest extends AdminClientInMemoryTestBase {
                 .contains("" +
                         "Files Status Report:\n" +
                         "--------------------------\n" +
+                        "Time of report: 2026-01-01T00:00:00Z\n" +
                         "There are 2 leaf partitions and 1 non-leaf partitions");
         confirmAndVerifyNoMoreInteractions();
     }
@@ -106,6 +107,7 @@ class FilesStatusReportScreenTest extends AdminClientInMemoryTestBase {
                 .contains("" +
                         "Files Status Report:\n" +
                         "--------------------------\n" +
+                        "Time of report: 2026-01-01T00:00:00Z\n" +
                         "There are 2 leaf partitions and 1 non-leaf partitions")
                 .contains("" +
                         "Files with no references: none\n" +
@@ -130,6 +132,7 @@ class FilesStatusReportScreenTest extends AdminClientInMemoryTestBase {
                 .contains("" +
                         "Files Status Report:\n" +
                         "--------------------------\n" +
+                        "Time of report: 2026-01-01T00:00:00Z\n" +
                         "There are 2 leaf partitions and 1 non-leaf partitions")
                 .contains("" +
                         "Files with no references: none\n" +

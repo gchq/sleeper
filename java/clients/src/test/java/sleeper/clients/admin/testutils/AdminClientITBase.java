@@ -67,7 +67,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     @Override
     public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws InterruptedException {
         AdminClient.start(instanceId, store(), AdminClientTrackerFactory.from(dynamoDB),
-                out.consoleOut(), in.consoleIn(), editor, queueClient, properties -> Map.of());
+                out.consoleOut(), in.consoleIn(), editor, queueClient, properties -> Map.of(), timeSupplier);
     }
 
     protected AdminClientPropertiesStore store() {
