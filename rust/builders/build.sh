@@ -30,7 +30,8 @@ usage() {
 #
 # Here's a list of configuration that needs to apply when we build the builder image:
 #
-# - Rustup configuration to point to a custom install script and distribution/update server.
+# - Rustup configuration to point to a custom installer and distribution/update server.
+# - Amazon Linux package repository mirror.
 # - Which Rust toolchain version to install.
 # - C/C++ toolchain to create sysroot for target platform of the image.
 # - Clang compiler wrappers to use correct sysroot.
@@ -79,7 +80,7 @@ SCCACHE_IMAGE="${IMAGE_PATH_PREFIX}sleeper-rust-builder-sccache:latest"
 # If environment variables are set, then expand them into a string like
 # --build-arg RUSTUP_DIST_SERVER=${RUSTUP_SERVER} in BUILD_ARGS. If all are empty, then BUILD_ARGS is empty,
 # otherwise, e.g. if RUSTUP_DIST_SERVER=http://example.com then BUILD_ARGS is "--build-arg RUSTUP_DIST_SERVER=http://example.com "
-BUILD_ARGS="${RUSTUP_INIT_URL:+--build-arg RUSTUP_INIT_URL=${RUSTUP_INIT_URL} }${RUSTUP_DIST_SERVER:+--build-arg RUSTUP_DIST_SERVER=${RUSTUP_DIST_SERVER} }${RUSTUP_UPDATE_ROOT:+--build-arg RUSTUP_UPDATE_ROOT=${RUSTUP_UPDATE_ROOT} }"
+BUILD_ARGS="${RUSTUP_INIT_URL:+--build-arg RUSTUP_INIT_URL=${RUSTUP_INIT_URL} }${RUSTUP_DIST_SERVER:+--build-arg RUSTUP_DIST_SERVER=${RUSTUP_DIST_SERVER} }${RUSTUP_UPDATE_ROOT:+--build-arg RUSTUP_UPDATE_ROOT=${RUSTUP_UPDATE_ROOT} }${AL2023_REPO_URL:+--build-arg AL2023_REPO_URL=${AL2023_REPO_URL} }"
 
 pushd "$THIS_DIR"/base
 rm -rf certs
