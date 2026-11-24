@@ -58,6 +58,8 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
 import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
 import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
 import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
 import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
@@ -236,6 +238,8 @@ class GenerateConfigExamplesIT {
             givenProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY, "8G");
             givenProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK, "60G");
             givenProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES, "2");
+            givenProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS, "2");
+            givenProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS, "2");
             givenProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES, "2");
             givenProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY, "8G");
 

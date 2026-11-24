@@ -211,6 +211,33 @@ public class WaitForJobsStatusTest {
     }
 
     @Test
+    void shouldReportCompactionJobInProgressWhenRunHasNoStartedUpdate() {
+        // Given
+        CompactionJob job = compactionJob("test-job", "1.parquet");
+        addCreatedJob(job, Instant.parse("2023-09-18T14:47:00Z"));
+        compactionTracker.fixUpdateTime(defaultUpdateTime(Instant.parse("2023-09-18T14:50:00Z")));
+        compactionTracker.jobFinished(job.finishedEventBuilder(
+                summary(Instant.parse("2023-09-18T14:48:00Z"), Instant.parse("2023-09-18T14:50:00Z"), 100L, 100L))
+                .taskId("test-task").jobRunId("test-run").build());
+
+        // When
+        WaitForJobsStatus status = compactionStatus(
+                List.of("test-job"),
+                Instant.parse("2023-09-18T14:52:00Z"));
+
+        // Then
+        assertThat(status).hasToString("{\n" +
+                "  \"countByFurthestStatus\": {\n" +
+                "    \"UNCOMMITTED\": 1\n" +
+                "  },\n" +
+                "  \"numUnfinished\": 1,\n" +
+                "  \"firstInProgressStartTime\": \"2023-09-18T14:50:00.123Z\",\n" +
+                "  \"longestInProgressDuration\": \"PT1M59.877S\"\n" +
+                "}");
+        assertThat(status.areAllJobsFinished()).isFalse();
+    }
+
+    @Test
     void shouldReportIngestJobUnfinishedWhenUncommitted() {
         // Given
         IngestJob job = createJobWithTableAndFiles("test-job", table, "test.parquet");

@@ -200,7 +200,7 @@ public class WaitForJobsStatus {
                     if (status.isRunFinished.test(run)) {
                         continue;
                     }
-                    Instant startTime = run.getStartTime();
+                    Instant startTime = run.getStartOrFirstUpdateTime();
                     if (firstInProgressStartTime == null || startTime.isBefore(firstInProgressStartTime)) {
                         firstInProgressStartTime = startTime;
                         longestInProgressDuration = Duration.between(startTime, now);

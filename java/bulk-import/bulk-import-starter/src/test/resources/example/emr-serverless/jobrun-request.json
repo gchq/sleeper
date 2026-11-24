@@ -18,7 +18,15 @@
       "s3MonitoringConfiguration": {
         "logUri": "s3://import-bucket"
       }
-    }
+    },
+    "applicationConfiguration": [
+      {
+        "classification": "spark",
+        "properties": {
+          "dynamicAllocationOptimization": "true"
+        }
+      }
+    ]
   },
   "name": "job-run-id"
 }
