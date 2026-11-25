@@ -78,7 +78,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "L",
+          "partitionId": "left",
           "numberOfRows": 100,
           "jobId": "created-job",
           "lastUpdateTime": "2022-08-22T14:00:00Z",
@@ -93,7 +93,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "L",
+          "partitionId": "left",
           "numberOfRows": 100,
           "jobId": "failed-job-1",
           "lastUpdateTime": "2022-08-22T01:00:00Z",
@@ -108,7 +108,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "R",
+          "partitionId": "right",
           "numberOfRows": 100,
           "jobId": "failed-job-2",
           "lastUpdateTime": "2022-08-22T14:00:00Z",
@@ -123,7 +123,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "R",
+          "partitionId": "right",
           "numberOfRows": 100,
           "jobId": "finished-job",
           "lastUpdateTime": "2022-08-22T14:00:00Z",
@@ -138,7 +138,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "R",
+          "partitionId": "right",
           "numberOfRows": 100,
           "jobId": "in-progress-job",
           "lastUpdateTime": "2022-08-22T01:00:00Z",
@@ -153,7 +153,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "L",
+          "partitionId": "left",
           "numberOfRows": 100,
           "jobId": "uncommitted-job",
           "lastUpdateTime": "2022-08-22T14:00:00Z",
@@ -168,7 +168,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "R",
+          "partitionId": "right",
           "numberOfRows": 100,
           "jobId": "untracked-job",
           "lastUpdateTime": "2022-08-22T01:00:00Z",
@@ -180,7 +180,8 @@
   ],
   "compactions": [
     {
-      "partitionId": "L",
+      "partitionId": "left",
+      "partitionLocation": "L",
       "jobs": [
         {
           "jobId": "created-job",
@@ -218,7 +219,8 @@
       ]
     },
     {
-      "partitionId": "R",
+      "partitionId": "right",
+      "partitionLocation": "R",
       "jobs": [
         {
           "jobId": "failed-job-2",

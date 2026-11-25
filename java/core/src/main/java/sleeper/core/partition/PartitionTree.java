@@ -202,6 +202,39 @@ public class PartitionTree {
     }
 
     /**
+     * Generates a name for a partition based on its location in the tree.
+     *
+     * @param  partition the partition
+     * @return           the name for the partition based on its location in the tree
+     */
+    public String buildLocationName(Partition partition) {
+        String parentId = partition.getParentPartitionId();
+        if (parentId == null) {
+            return "root";
+        }
+        String partitionId = partition.getId();
+        StringBuilder name = new StringBuilder();
+        while (parentId != null) {
+            Partition parent = getPartition(parentId);
+            name.append(getSideOfParentName(partitionId, parent));
+            partitionId = parent.getId();
+            parentId = parent.getParentPartitionId();
+        }
+        return name.reverse().toString();
+    }
+
+    private static char getSideOfParentName(String partitionId, Partition parent) {
+        int index = parent.getChildPartitionIds().indexOf(partitionId);
+        if (index == 0) {
+            return 'L';
+        } else if (index == 1) {
+            return 'R';
+        } else {
+            throw new IllegalStateException("Unexpected index " + index + " for partition " + partitionId + " in parent: " + parent);
+        }
+    }
+
+    /**
      * Retrieves a partition by its unique ID.
      *
      * @param  partitionId the ID of the partition

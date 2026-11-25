@@ -20,11 +20,11 @@ Number of compaction jobs assigned more than 12 hours ago: 3, in 2 partitions, w
 Oldest file assignment time: 2022-08-22T01:00:00Z
 
 Compactions assigned to files:
-Partition L has 3 jobs
+Partition left has 3 jobs, at location L
 	Job created-job with 1 files assigned at 2022-08-22T14:00:00Z, tracker shows status CREATED with 0 runs, last tracker update at 2022-08-22T14:00:10Z
 	Job failed-job-1 with 1 files assigned at 2022-08-22T01:00:00Z, tracker shows status FAILED with 1 run, last tracker update at 2022-08-22T01:02:00.123Z
 	Job uncommitted-job with 1 files assigned at 2022-08-22T14:00:00Z, tracker shows status UNCOMMITTED with 1 run, last tracker update at 2022-08-22T14:02:00.123Z
-Partition R has 4 jobs
+Partition right has 4 jobs, at location R
 	Job failed-job-2 with 1 files assigned at 2022-08-22T14:00:00Z, tracker shows status FAILED with 1 run, last tracker update at 2022-08-22T14:02:00.123Z
 	Job finished-job with 1 files assigned at 2022-08-22T14:00:00Z, tracker shows status FINISHED with 1 run, last tracker update at 2022-08-22T14:03:00.123Z
 	Job in-progress-job with 1 files assigned at 2022-08-22T01:00:00Z, tracker shows status IN_PROGRESS with 1 run, last tracker update at 2022-08-22T01:01:00.123Z

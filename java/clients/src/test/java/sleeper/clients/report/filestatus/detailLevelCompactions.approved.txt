@@ -19,8 +19,8 @@ Number of compaction jobs assigned more than 12 hours ago: none
 Oldest file assignment time: 2022-08-22T14:21:00Z
 
 Compactions assigned to files:
-Partition LR has 1 job
+Partition left-right has 1 job, at location LR
 	Job job-3 with 2 files assigned at 2022-08-22T14:21:00Z, not in job tracker
-Partition RL has 2 jobs
+Partition right-left has 2 jobs, at location RL
 	Job job-1 with 2 files assigned at 2022-08-22T14:21:00Z, tracker shows status UNCOMMITTED with 1 run, last tracker update at 2022-08-22T14:21:21.123Z
 	Job job-2 with 2 files assigned at 2022-08-22T14:21:00Z, tracker shows status CREATED with 0 runs, last tracker update at 2022-08-22T14:21:10Z

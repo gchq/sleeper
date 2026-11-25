@@ -44,9 +44,9 @@ import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 public class FilesStatusReportDetailLevelTest extends FilesStatusReportTestBase {
     PartitionTree partitions = new PartitionsBuilder(schema)
             .rootFirst("root")
-            .splitToNewChildren("root", "L", "R", "mmm")
-            .splitToNewChildren("L", "LL", "LR", "hhh")
-            .splitToNewChildren("R", "RL", "RR", "ppp")
+            .splitToNewChildren("root", "left", "right", "mmm")
+            .splitToNewChildren("left", "left-left", "left-right", "hhh")
+            .splitToNewChildren("right", "right-left", "right-right", "ppp")
             .buildTree();
 
     @BeforeEach
@@ -56,19 +56,19 @@ public class FilesStatusReportDetailLevelTest extends FilesStatusReportTestBase 
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
         update(stateStore).addFiles(List.of(
-                fileFactory.partitionFile("L", "left.parquet", 100),
-                fileFactory.partitionFile("RL", "rl-no-compaction.parquet", 200),
-                fileFactory.partitionFile("RL", "rl-compaction-1a.parquet", 100),
-                fileFactory.partitionFile("RL", "rl-compaction-1b.parquet", 100),
-                fileFactory.partitionFile("RL", "rl-compaction-2a.parquet", 100),
-                fileFactory.partitionFile("RL", "rl-compaction-2b.parquet", 100),
-                fileFactory.partitionFile("LR", "lr-compaction-3a.parquet", 100),
-                fileFactory.partitionFile("LR", "lr-compaction-3b.parquet", 100),
+                fileFactory.partitionFile("left", "left.parquet", 100),
+                fileFactory.partitionFile("right-left", "rl-no-compaction.parquet", 200),
+                fileFactory.partitionFile("right-left", "rl-compaction-1a.parquet", 100),
+                fileFactory.partitionFile("right-left", "rl-compaction-1b.parquet", 100),
+                fileFactory.partitionFile("right-left", "rl-compaction-2a.parquet", 100),
+                fileFactory.partitionFile("right-left", "rl-compaction-2b.parquet", 100),
+                fileFactory.partitionFile("left-right", "lr-compaction-3a.parquet", 100),
+                fileFactory.partitionFile("left-right", "lr-compaction-3b.parquet", 100),
                 fileFactory.partitionFile("root", "gc-1.parquet", 100),
                 fileFactory.partitionFile("root", "gc-2.parquet", 100)));
-        CompactionJob job1 = jobFactory.createCompactionJobWithFilenames("job-1", List.of("rl-compaction-1a.parquet", "rl-compaction-1b.parquet"), "RL");
-        CompactionJob job2 = jobFactory.createCompactionJobWithFilenames("job-2", List.of("rl-compaction-2a.parquet", "rl-compaction-2b.parquet"), "RL");
-        CompactionJob job3 = jobFactory.createCompactionJobWithFilenames("job-3", List.of("lr-compaction-3a.parquet", "lr-compaction-3b.parquet"), "LR");
+        CompactionJob job1 = jobFactory.createCompactionJobWithFilenames("job-1", List.of("rl-compaction-1a.parquet", "rl-compaction-1b.parquet"), "right-left");
+        CompactionJob job2 = jobFactory.createCompactionJobWithFilenames("job-2", List.of("rl-compaction-2a.parquet", "rl-compaction-2b.parquet"), "right-left");
+        CompactionJob job3 = jobFactory.createCompactionJobWithFilenames("job-3", List.of("lr-compaction-3a.parquet", "lr-compaction-3b.parquet"), "left-right");
         CompactionJob jobForGc = jobFactory.createCompactionJobWithFilenames("job-gc", List.of("gc-1.parquet", "gc-2.parquet"), "root");
         setTime(Instant.parse("2022-08-22T14:21:00Z"));
         update(stateStore).assignJobIds(assignJobFiles(List.of(job1, job2, job3, jobForGc)));

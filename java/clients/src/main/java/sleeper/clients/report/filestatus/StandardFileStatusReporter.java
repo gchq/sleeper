@@ -174,7 +174,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     }
 
     private void printPartitionCompactions(TableFilesPartitionCompactions compactions) {
-        out.println("Partition " + compactions.getPartitionId() + " has " + numJobsStr(compactions)); // TODO print partition location in tree
+        out.println("Partition " + compactions.getPartitionId() + " has " + numJobsStr(compactions) + ", at location " + compactions.getPartitionLocation());
         for (TableFilesCompaction compaction : compactions.getJobs()) {
             out.println("\tJob " + compaction.getJobId() + " with " + compaction.getFileReferences().size() + " files assigned at " + compaction.getAssignmentTime()
                     + jobStatusStr(compaction));

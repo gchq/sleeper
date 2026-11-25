@@ -76,7 +76,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "L",
+          "partitionId": "left",
           "numberOfRows": 100,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
@@ -90,7 +90,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "LR",
+          "partitionId": "left-right",
           "numberOfRows": 100,
           "jobId": "job-3",
           "lastUpdateTime": "2022-08-22T14:21:00Z",
@@ -105,7 +105,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "LR",
+          "partitionId": "left-right",
           "numberOfRows": 100,
           "jobId": "job-3",
           "lastUpdateTime": "2022-08-22T14:21:00Z",
@@ -120,7 +120,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "RL",
+          "partitionId": "right-left",
           "numberOfRows": 100,
           "jobId": "job-1",
           "lastUpdateTime": "2022-08-22T14:21:00Z",
@@ -135,7 +135,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "RL",
+          "partitionId": "right-left",
           "numberOfRows": 100,
           "jobId": "job-1",
           "lastUpdateTime": "2022-08-22T14:21:00Z",
@@ -150,7 +150,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "RL",
+          "partitionId": "right-left",
           "numberOfRows": 100,
           "jobId": "job-2",
           "lastUpdateTime": "2022-08-22T14:21:00Z",
@@ -165,7 +165,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "RL",
+          "partitionId": "right-left",
           "numberOfRows": 100,
           "jobId": "job-2",
           "lastUpdateTime": "2022-08-22T14:21:00Z",
@@ -180,7 +180,7 @@
       "totalReferenceCount": 1,
       "internalReferences": [
         {
-          "partitionId": "RL",
+          "partitionId": "right-left",
           "numberOfRows": 200,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
@@ -205,7 +205,8 @@
   ],
   "compactions": [
     {
-      "partitionId": "LR",
+      "partitionId": "left-right",
+      "partitionLocation": "LR",
       "jobs": [
         {
           "jobId": "job-3",
@@ -218,7 +219,8 @@
       ]
     },
     {
-      "partitionId": "RL",
+      "partitionId": "right-left",
+      "partitionLocation": "RL",
       "jobs": [
         {
           "jobId": "job-1",

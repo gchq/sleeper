@@ -42,7 +42,7 @@ import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 public class FilesStatusReportJobTrackerTest extends FilesStatusReportTestBase {
     private final PartitionTree partitions = new PartitionsBuilder(schema)
             .rootFirst("root")
-            .splitToNewChildren("root", "L", "R", "mmm")
+            .splitToNewChildren("root", "left", "right", "mmm")
             .buildTree();
     private final FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
     private final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
@@ -53,20 +53,20 @@ public class FilesStatusReportJobTrackerTest extends FilesStatusReportTestBase {
         setTime(Instant.parse("2022-08-22T00:00:00Z"));
         update(stateStore).initialise(partitions);
         update(stateStore).addFiles(List.of(
-                fileFactory.partitionFile("L", "created.parquet", 100),
-                fileFactory.partitionFile("L", "failed-1.parquet", 100),
-                fileFactory.partitionFile("R", "failed-2.parquet", 100),
-                fileFactory.partitionFile("R", "in-progress.parquet", 100),
-                fileFactory.partitionFile("L", "uncommitted.parquet", 100),
-                fileFactory.partitionFile("R", "finished.parquet", 100),
-                fileFactory.partitionFile("R", "untracked.parquet", 100)));
-        CompactionJob createdJob = job("created-job", "created.parquet", "L");
-        CompactionJob failedJob1 = job("failed-job-1", "failed-1.parquet", "L");
-        CompactionJob failedJob2 = job("failed-job-2", "failed-2.parquet", "R");
-        CompactionJob inProgressJob = job("in-progress-job", "in-progress.parquet", "R");
-        CompactionJob uncommittedJob = job("uncommitted-job", "uncommitted.parquet", "L");
-        CompactionJob finishedJob = job("finished-job", "finished.parquet", "R");
-        CompactionJob untrackedJob = job("untracked-job", "untracked.parquet", "R");
+                fileFactory.partitionFile("left", "created.parquet", 100),
+                fileFactory.partitionFile("left", "failed-1.parquet", 100),
+                fileFactory.partitionFile("right", "failed-2.parquet", 100),
+                fileFactory.partitionFile("right", "in-progress.parquet", 100),
+                fileFactory.partitionFile("left", "uncommitted.parquet", 100),
+                fileFactory.partitionFile("right", "finished.parquet", 100),
+                fileFactory.partitionFile("right", "untracked.parquet", 100)));
+        CompactionJob createdJob = job("created-job", "created.parquet", "left");
+        CompactionJob failedJob1 = job("failed-job-1", "failed-1.parquet", "left");
+        CompactionJob failedJob2 = job("failed-job-2", "failed-2.parquet", "right");
+        CompactionJob inProgressJob = job("in-progress-job", "in-progress.parquet", "right");
+        CompactionJob uncommittedJob = job("uncommitted-job", "uncommitted.parquet", "left");
+        CompactionJob finishedJob = job("finished-job", "finished.parquet", "right");
+        CompactionJob untrackedJob = job("untracked-job", "untracked.parquet", "right");
         setTime(Instant.parse("2022-08-22T01:00:00Z"));
         update(stateStore).assignJobIds(assignJobFiles(List.of(failedJob1, inProgressJob, untrackedJob)));
         setTime(Instant.parse("2022-08-22T14:00:00Z"));

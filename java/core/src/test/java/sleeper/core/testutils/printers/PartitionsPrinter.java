@@ -62,7 +62,7 @@ public class PartitionsPrinter {
         PrintStream out = printer.getPrintStream();
         RegionSerDe regionSerDe = new RegionSerDe(schema);
         partitionTree.traverseLeavesFirst().forEach(partition -> {
-            String locationName = buildPartitionLocationName(partition, partitionTree);
+            String locationName = partitionTree.buildLocationName(partition);
             if (partition.isLeafPartition()) {
                 out.println("Leaf partition at " + locationName + ":");
             } else {
@@ -71,30 +71,6 @@ public class PartitionsPrinter {
             out.println(regionSerDe.toJson(partition.getRegion()));
         });
         return printer.toString();
-    }
-
-    /**
-     * Generates a name for a partition based on its location in the tree. This is the same name used when printing a
-     * whole partition tree.
-     *
-     * @param  partition the partition
-     * @param  tree      the partition tree
-     * @return           the name for the partition based on its location in the tree
-     */
-    public static String buildPartitionLocationName(Partition partition, PartitionTree tree) {
-        String parentId = partition.getParentPartitionId();
-        if (parentId == null) {
-            return "root";
-        }
-        String partitionId = partition.getId();
-        StringBuilder name = new StringBuilder();
-        while (parentId != null) {
-            Partition parent = tree.getPartition(parentId);
-            name.append(getPartitionSideOfParentName(partitionId, parent));
-            partitionId = parent.getId();
-            parentId = parent.getParentPartitionId();
-        }
-        return name.reverse().toString();
     }
 
     /**
@@ -127,17 +103,6 @@ public class PartitionsPrinter {
             return new PartitionTree((List<Partition>) list);
         } else {
             throw new IllegalArgumentException("Could not read partitions as object is not a PartitionTree or List");
-        }
-    }
-
-    private static char getPartitionSideOfParentName(String partitionId, Partition parent) {
-        int index = parent.getChildPartitionIds().indexOf(partitionId);
-        if (index == 0) {
-            return 'L';
-        } else if (index == 1) {
-            return 'R';
-        } else {
-            throw new IllegalStateException("Unexpected index " + index + " for partition " + partitionId + " in parent: " + parent);
         }
     }
 }

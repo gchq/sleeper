@@ -32,10 +32,12 @@ import static java.util.stream.Collectors.groupingBy;
 public class TableFilesPartitionCompactions {
 
     private final String partitionId;
+    private final String partitionLocation;
     private final List<TableFilesCompaction> jobs;
 
-    private TableFilesPartitionCompactions(String partitionId, List<TableFilesCompaction> jobs) {
+    private TableFilesPartitionCompactions(String partitionId, String partitionLocation, List<TableFilesCompaction> jobs) {
         this.partitionId = partitionId;
+        this.partitionLocation = partitionLocation;
         this.jobs = jobs;
     }
 
@@ -50,7 +52,7 @@ public class TableFilesPartitionCompactions {
     public static List<TableFilesPartitionCompactions> from(AllReferencesToAllFiles files, PartitionTree partitions, CompactionJobTrackerLookup jobTracker) {
         Map<String, List<FileReference>> partitionIdToFiles = files.streamFileReferences().collect(groupingBy(FileReference::getPartitionId));
         return partitions.traverseLeavesFirst()
-                .map(partition -> TableFilesPartitionCompactions.from(partition.getId(), partitionIdToFiles.getOrDefault(partition.getId(), List.of()), jobTracker))
+                .map(partition -> TableFilesPartitionCompactions.from(partition.getId(), partitions.buildLocationName(partition), partitionIdToFiles.getOrDefault(partition.getId(), List.of()), jobTracker))
                 .filter(compactions -> !compactions.getJobs().isEmpty())
                 .toList();
     }
@@ -58,23 +60,28 @@ public class TableFilesPartitionCompactions {
     /**
      * Finds information about compactions assigned in a partition.
      *
-     * @param  partitionId    the partition ID
-     * @param  fileReferences the file references in that partition
-     * @param  jobTracker     the job tracker lookup
-     * @return                the compactions assigned in the partition
+     * @param  partitionId       the partition ID
+     * @param  partitionLocation the name of the partition's location in the partition tree
+     * @param  fileReferences    the file references in that partition
+     * @param  jobTracker        the job tracker lookup
+     * @return                   the compactions assigned in the partition
      */
-    public static TableFilesPartitionCompactions from(String partitionId, List<FileReference> fileReferences, CompactionJobTrackerLookup jobTracker) {
+    public static TableFilesPartitionCompactions from(String partitionId, String partitionLocation, List<FileReference> fileReferences, CompactionJobTrackerLookup jobTracker) {
         Map<String, List<FileReference>> jobIdToFiles = fileReferences.stream()
                 .filter(reference -> reference.getJobId() != null)
                 .collect(groupingBy(FileReference::getJobId));
         Set<String> jobIds = new TreeSet<>(jobIdToFiles.keySet());
-        return new TableFilesPartitionCompactions(partitionId, jobIds.stream()
+        return new TableFilesPartitionCompactions(partitionId, partitionLocation, jobIds.stream()
                 .map(jobId -> TableFilesCompaction.from(jobId, jobIdToFiles.get(jobId), jobTracker))
                 .toList());
     }
 
     public String getPartitionId() {
         return partitionId;
+    }
+
+    public String getPartitionLocation() {
+        return partitionLocation;
     }
 
     public List<TableFilesCompaction> getJobs() {
