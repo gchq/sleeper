@@ -41,7 +41,7 @@ Bulk export:
 Query:
 - Added methods to `SleeperClient` to read the results of a query run via the query lambda. Results can be read once
   the query has finished, or streamed as each subquery finishes. The number of threads used to read results files can
-  be set in `AwsSleeperClientBuilder`.
+  be set in `AwsSleeperClientBuilder`. Also added an option to read the results with `scripts/utility/lambdaQuery.sh`.
 
 Compaction:
 - Added `scripts/maintenance/requeueCompactionJobsFromStateStore.sh` to recreate every compaction job that files in a
