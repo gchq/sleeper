@@ -6,9 +6,9 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
-## Version 0.38.3
+## Version 0.39.0
 
-### 24th November 2026
+### 25th November 2026
 
 *Note: this may be a breaking change if you have set EMR Serverless instance properties, see below under Bulk import.*
 
@@ -41,7 +41,7 @@ Bulk export:
 Query:
 - Added methods to `SleeperClient` to read the results of a query run via the query lambda. Results can be read once
   the query has finished, or streamed as each subquery finishes. The number of threads used to read results files can
-  be set in `AwsSleeperClientBuilder`.
+  be set in `AwsSleeperClientBuilder`. Also added an option to read the results with `scripts/utility/lambdaQuery.sh`.
 
 Compaction:
 - Added `scripts/maintenance/requeueCompactionJobsFromStateStore.sh` to recreate every compaction job that files in a
@@ -66,6 +66,8 @@ Bugfixes:
   update in the job tracker.
 - The transaction log follower no longer logs errors for transactions deleted from the transaction log. It now only
   processes new transactions.
+- The demo deployment no longer logs a failure at the end if the `scripts/generated` directory does not exist. This
+  directory is now created before details of data generation tasks are written.
 
 
 ## Version 0.38.2
