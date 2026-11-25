@@ -66,6 +66,8 @@ Bugfixes:
   update in the job tracker.
 - The transaction log follower no longer logs errors for transactions deleted from the transaction log. It now only
   processes new transactions.
+- The demo deployment no longer logs a failure at the end if the `scripts/generated` directory does not exist. This
+  directory is now created before details of data generation tasks are written.
 
 
 ## Version 0.38.2
