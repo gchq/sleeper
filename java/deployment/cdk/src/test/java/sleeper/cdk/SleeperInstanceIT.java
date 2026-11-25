@@ -16,13 +16,13 @@
 package sleeper.cdk;
 
 import org.approvaltests.Approvals;
-import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 
 import sleeper.cdk.testutil.SleeperStackTestBase;
 
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_RELEASE;
+import static sleeper.core.testutils.ApprovalTestsHelper.namedApprovalFile;
 
 public class SleeperInstanceIT extends SleeperStackTestBase {
 
@@ -36,9 +36,8 @@ public class SleeperInstanceIT extends SleeperStackTestBase {
         SleeperInstance.create(rootStack, instanceProps());
 
         // Then
-        Approvals.verify(printer.toJson(rootStack), new Options()
-                .withReporter((receieved, approved) -> false) // Generating diff output for failures is too slow, so skip it
-                .forFile().withName("default-instance", ".json"));
+        Approvals.verify(printer.toJson(rootStack), namedApprovalFile("default-instance", ".json")
+                .withReporter((receieved, approved) -> false)); // Generating diff output for failures is too slow, so skip it
     }
 
 }
