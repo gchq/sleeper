@@ -6,9 +6,9 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
-## Version 0.38.3
+## Version 0.39.0
 
-### 24th November 2026
+### 25th November 2026
 
 *Note: this may be a breaking change if you have set EMR Serverless instance properties, see below under Bulk import.*
 
