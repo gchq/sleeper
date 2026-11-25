@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin.screen;
 
+import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.TableSelectHelper;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.report.FilesStatusReport;
@@ -36,13 +37,16 @@ public class FilesStatusReportScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final AdminClientPropertiesStore store;
+    private final AdminClientTrackerFactory trackers;
     private final TableSelectHelper tableSelectHelper;
     private final Supplier<Instant> timeSupplier;
 
-    public FilesStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, TableNamesReport tableNamesReport, Supplier<Instant> timeSupplier) {
+    public FilesStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, AdminClientTrackerFactory trackers, TableNamesReport tableNamesReport,
+            Supplier<Instant> timeSupplier) {
         this.out = out;
         this.in = in;
         this.store = store;
+        this.trackers = trackers;
         this.tableSelectHelper = new TableSelectHelper(out, in, store, tableNamesReport);
         this.timeSupplier = timeSupplier;
     }
@@ -73,6 +77,7 @@ public class FilesStatusReportScreen {
         new FilesStatusReport(store.loadStateStore(instanceId, tableProperties), maxReadyForGCFiles,
                 verbose ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY,
                 new StandardFileStatusReporter(out.printStream()),
-                CompactionJobTrackerLookup.none(), timeSupplier).run();
+                CompactionJobTrackerLookup.from(trackers.loadCompactionJobTracker(tableProperties.getInstanceProperties())),
+                timeSupplier).run();
     }
 }

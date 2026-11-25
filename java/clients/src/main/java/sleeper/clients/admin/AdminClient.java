@@ -160,7 +160,7 @@ public class AdminClient {
     }
 
     public FilesStatusReportScreen filesStatusReportScreen() {
-        return new FilesStatusReportScreen(out, in, store, tableNamesReport(), timeSupplier);
+        return new FilesStatusReportScreen(out, in, store, trackers, tableNamesReport(), timeSupplier);
     }
 
     public CompactionStatusReportScreen compactionStatusReportScreen() {
