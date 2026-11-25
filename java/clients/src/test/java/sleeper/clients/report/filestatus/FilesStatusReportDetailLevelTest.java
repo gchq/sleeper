@@ -144,6 +144,27 @@ public class FilesStatusReportDetailLevelTest extends FilesStatusReportTestBase 
     }
 
     @Test
+    void shouldBuildJsonWithStatsOnly() {
+        // When / Then
+        Approvals.verify(jsonReportString(FileStatusDetailLevel.STATS_ONLY),
+                new Options().forFile().withName("detailLevelJsonStatsOnly", ".json"));
+    }
+
+    @Test
+    void shouldBuildJsonWithReferences() {
+        // When / Then
+        Approvals.verify(jsonReportString(FileStatusDetailLevel.REFERENCES),
+                new Options().forFile().withName("detailLevelJsonReferences", ".json"));
+    }
+
+    @Test
+    void shouldBuildJsonWithCompactions() {
+        // When / Then
+        Approvals.verify(jsonReportString(FileStatusDetailLevel.COMPACTION_JOBS),
+                new Options().forFile().withName("detailLevelJsonCompactions", ".json"));
+    }
+
+    @Test
     void shouldLookUpEachAssignedJobInTrackerWhenShowingCompactions() {
         // Given
         List<String> lookedUpJobIds = recordJobTrackerLookups();

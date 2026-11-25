@@ -55,8 +55,8 @@ public class FileStatusCollector {
     }
 
     /**
-     * Retrieves data from the state store and produces a report on the status of files. If the detail level includes
-     * compaction jobs, also looks up each compaction job assigned to files in the job tracker.
+     * Retrieves data from the state store and produces a report on the status of files. Only includes information
+     * requested by the detail level.
      *
      * @param  maxNumberOFilesWithNoReferencesToCount the maximum number of files that have no references to include in
      *                                                the report
@@ -81,8 +81,9 @@ public class FileStatusCollector {
                 .leafPartitionCount(leafPartitionCount)
                 .nonLeafPartitionCount(nonLeafPartitionCount)
                 .statistics(TableFilesStatistics.from(now, files, partitionTree, compactions, jobTrackerLookup.isTrackerAvailable()))
-                .files(files)
-                .compactions(compactions)
+                .moreThanMax(files.isMoreThanMax())
+                .files(detailLevel.isShowFileReferences() ? files : null)
+                .compactions(detailLevel.isShowCompactionJobs() ? compactions : null)
                 .build();
     }
 

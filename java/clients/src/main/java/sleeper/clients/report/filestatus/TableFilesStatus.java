@@ -45,7 +45,7 @@ public class TableFilesStatus {
         statistics = builder.statistics;
         files = builder.files;
         compactions = builder.compactions;
-        moreThanMax = files.isMoreThanMax();
+        moreThanMax = builder.moreThanMax;
     }
 
     public static Builder builder() {
@@ -66,6 +66,14 @@ public class TableFilesStatus {
 
     public int getFileCount() {
         return statistics.getFileCount();
+    }
+
+    public int getFilesWithReferencesCount() {
+        return statistics.getFilesWithReferencesCount();
+    }
+
+    public int getFilesWithNoReferencesCount() {
+        return statistics.getFilesWithNoReferencesCount();
     }
 
     public long getFileReferenceCount() {
@@ -92,10 +100,20 @@ public class TableFilesStatus {
         return statistics.getNonLeafPartitionFileReferenceStats();
     }
 
+    /**
+     * Retrieves files with references. Only present if the report includes file references.
+     *
+     * @return the files with references
+     */
     public Collection<AllReferencesToAFile> getFilesWithReferences() {
         return files.getFilesWithReferences();
     }
 
+    /**
+     * Retrieves files with no references. Only present if the report includes file references.
+     *
+     * @return the files with no references
+     */
     public Collection<AllReferencesToAFile> getFilesWithNoReferences() {
         return files.getFilesWithNoReferences();
     }
@@ -124,6 +142,11 @@ public class TableFilesStatus {
         return statistics.getTotalRowsInNonLeafPartitionsApprox();
     }
 
+    /**
+     * Retrieves compaction jobs assigned to files. Only present if the report includes compaction jobs.
+     *
+     * @return the compactions
+     */
     public List<TableFilesPartitionCompactions> getCompactions() {
         return compactions;
     }
@@ -148,6 +171,7 @@ public class TableFilesStatus {
         private int leafPartitionCount;
         private int nonLeafPartitionCount;
         private TableFilesStatistics statistics;
+        private boolean moreThanMax;
         private AllReferencesToAllFiles files;
         private List<TableFilesPartitionCompactions> compactions;
 
@@ -205,7 +229,18 @@ public class TableFilesStatus {
         }
 
         /**
-         * Sets the files in the Sleeper table.
+         * Sets whether there were more files with no references than the maximum to retrieve.
+         *
+         * @param  moreThanMax true if the count of files with no references was limited
+         * @return             this builder
+         */
+        public Builder moreThanMax(boolean moreThanMax) {
+            this.moreThanMax = moreThanMax;
+            return this;
+        }
+
+        /**
+         * Sets the files in the Sleeper table. Should only be set if the report includes file references.
          *
          * @param  files the files
          * @return       this builder
@@ -216,7 +251,8 @@ public class TableFilesStatus {
         }
 
         /**
-         * Sets the compaction jobs currently assigned to files.
+         * Sets the compaction jobs currently assigned to files. Should only be set if the report includes compaction
+         * jobs.
          *
          * @param  compactions the compactions
          * @return             this builder

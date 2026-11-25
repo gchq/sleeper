@@ -23,6 +23,8 @@
     },
     "fileReferences": {
       "totalFiles": 3,
+      "filesWithReferences": 3,
+      "filesWithNoReferences": 0,
       "totalReferences": 4,
       "leafPartitions": {
         "minReferences": 1,

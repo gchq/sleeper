@@ -95,11 +95,15 @@ public class FilesStatusReportTestBase {
         return reportStringWithMaxFilesWithNoReferences(StandardFileStatusReporter::new, detailLevel, 100);
     }
 
+    protected String jsonReportString(FileStatusDetailLevel detailLevel) {
+        return reportStringWithMaxFilesWithNoReferences(JsonFileStatusReporter::new, detailLevel, 100);
+    }
+
     protected String verboseReportStringWithMaxFilesWithNoReferences(Function<PrintStream, FileStatusReporter> getReporter, int maxFilesWithNoReferences) {
         return reportStringWithMaxFilesWithNoReferences(getReporter, FileStatusDetailLevel.FULL, maxFilesWithNoReferences);
     }
 
-    protected String reportStringWithMaxFilesWithNoReferences(Function<PrintStream, FileStatusReporter> getReporter, FileStatusDetailLevel detailLevel, int maxFilesWithNoReferences) {
+    private String reportStringWithMaxFilesWithNoReferences(Function<PrintStream, FileStatusReporter> getReporter, FileStatusDetailLevel detailLevel, int maxFilesWithNoReferences) {
         try {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             FileStatusReporter reporter = getReporter.apply(

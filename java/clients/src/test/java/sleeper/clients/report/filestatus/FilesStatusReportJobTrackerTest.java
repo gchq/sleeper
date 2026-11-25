@@ -93,7 +93,7 @@ public class FilesStatusReportJobTrackerTest extends FilesStatusReportTestBase {
         // When / Then
         Approvals.verify(standardReportString(FileStatusDetailLevel.COMPACTION_JOBS),
                 new Options().forFile().withBaseName("jobTrackerStatuses"));
-        Approvals.verify(reportStringWithMaxFilesWithNoReferences(JsonFileStatusReporter::new, FileStatusDetailLevel.COMPACTION_JOBS, 100),
+        Approvals.verify(jsonReportString(FileStatusDetailLevel.COMPACTION_JOBS),
                 new Options().forFile().withName("jobTrackerStatuses", ".json"));
     }
 

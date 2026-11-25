@@ -73,6 +73,8 @@ public class TableFilesStatistics {
                         FileRowsStats.from(fileReferencesInNonLeafPartitions)),
                 new References(
                         files.getFiles().size(),
+                        files.getFilesWithReferences().size(),
+                        files.getFilesWithNoReferences().size(),
                         fileReferences.size(),
                         FileReferencesStats.from(fileReferencesInLeafPartitions),
                         FileReferencesStats.from(fileReferencesInNonLeafPartitions)),
@@ -123,6 +125,14 @@ public class TableFilesStatistics {
         return fileReferences.totalFiles;
     }
 
+    public int getFilesWithReferencesCount() {
+        return fileReferences.filesWithReferences;
+    }
+
+    public int getFilesWithNoReferencesCount() {
+        return fileReferences.filesWithNoReferences;
+    }
+
     public int getFileReferenceCount() {
         return fileReferences.totalReferences;
     }
@@ -159,12 +169,18 @@ public class TableFilesStatistics {
      */
     private static class References {
         private final int totalFiles;
+        private final int filesWithReferences;
+        private final int filesWithNoReferences;
         private final int totalReferences;
         private final FileReferencesStats leafPartitions;
         private final FileReferencesStats nonLeafPartitions;
 
-        private References(int totalFiles, int totalReferences, FileReferencesStats leafPartitions, FileReferencesStats nonLeafPartitions) {
+        private References(
+                int totalFiles, int filesWithReferences, int filesWithNoReferences, int totalReferences,
+                FileReferencesStats leafPartitions, FileReferencesStats nonLeafPartitions) {
             this.totalFiles = totalFiles;
+            this.filesWithReferences = filesWithReferences;
+            this.filesWithNoReferences = filesWithNoReferences;
             this.totalReferences = totalReferences;
             this.leafPartitions = leafPartitions;
             this.nonLeafPartitions = nonLeafPartitions;

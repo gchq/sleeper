@@ -46,8 +46,8 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         out.println("Time of report: " + status.getTimeOfReport());
         out.println("There are " + status.getLeafPartitionCount() + " leaf partitions and " + status.getNonLeafPartitionCount() + " non-leaf partitions");
         out.println("Number of files: " + (status.isMoreThanMax() ? ">" : "") + status.getFileCount());
-        out.println("Number of files with references: " + status.getFilesWithReferences().size());
-        out.println("Number of files with no references, which will be garbage collected: " + (status.isMoreThanMax() ? ">" : "") + status.getFilesWithNoReferences().size());
+        out.println("Number of files with references: " + status.getFilesWithReferencesCount());
+        out.println("Number of files with no references, which will be garbage collected: " + (status.isMoreThanMax() ? ">" : "") + status.getFilesWithNoReferencesCount());
         out.println("Number of references to files: " + status.getFileReferenceCount());
 
         printPartitionStats(status.getLeafPartitionFileReferenceStats(), "leaf");
@@ -121,7 +121,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
     }
 
     private void printCompactionStats(TableFilesStatus status) {
-        if (status.getCompactions().isEmpty()) {
+        if (status.getCompactionsAssignedSummary().getNumJobsAssignedTo() == 0) {
             out.println("No compaction jobs assigned to files");
             return;
         }

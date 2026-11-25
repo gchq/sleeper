@@ -23,6 +23,8 @@
     },
     "fileReferences": {
       "totalFiles": 7,
+      "filesWithReferences": 7,
+      "filesWithNoReferences": 0,
       "totalReferences": 7,
       "leafPartitions": {
         "minReferences": 3,
@@ -71,113 +73,6 @@
       "oldestAssignmentTime": "2022-08-22T01:00:00Z"
     }
   },
-  "files": [
-    {
-      "filename": "created.parquet",
-      "lastUpdateTime": "2022-08-22T14:00:00Z",
-      "totalReferenceCount": 1,
-      "internalReferences": [
-        {
-          "partitionId": "left",
-          "numberOfRows": 100,
-          "jobId": "created-job",
-          "lastUpdateTime": "2022-08-22T14:00:00Z",
-          "countApproximate": false,
-          "onlyContainsDataForThisPartition": true
-        }
-      ]
-    },
-    {
-      "filename": "failed-1.parquet",
-      "lastUpdateTime": "2022-08-22T01:00:00Z",
-      "totalReferenceCount": 1,
-      "internalReferences": [
-        {
-          "partitionId": "left",
-          "numberOfRows": 100,
-          "jobId": "failed-job-1",
-          "lastUpdateTime": "2022-08-22T01:00:00Z",
-          "countApproximate": false,
-          "onlyContainsDataForThisPartition": true
-        }
-      ]
-    },
-    {
-      "filename": "failed-2.parquet",
-      "lastUpdateTime": "2022-08-22T14:00:00Z",
-      "totalReferenceCount": 1,
-      "internalReferences": [
-        {
-          "partitionId": "right",
-          "numberOfRows": 100,
-          "jobId": "failed-job-2",
-          "lastUpdateTime": "2022-08-22T14:00:00Z",
-          "countApproximate": false,
-          "onlyContainsDataForThisPartition": true
-        }
-      ]
-    },
-    {
-      "filename": "finished.parquet",
-      "lastUpdateTime": "2022-08-22T14:00:00Z",
-      "totalReferenceCount": 1,
-      "internalReferences": [
-        {
-          "partitionId": "right",
-          "numberOfRows": 100,
-          "jobId": "finished-job",
-          "lastUpdateTime": "2022-08-22T14:00:00Z",
-          "countApproximate": false,
-          "onlyContainsDataForThisPartition": true
-        }
-      ]
-    },
-    {
-      "filename": "in-progress.parquet",
-      "lastUpdateTime": "2022-08-22T01:00:00Z",
-      "totalReferenceCount": 1,
-      "internalReferences": [
-        {
-          "partitionId": "right",
-          "numberOfRows": 100,
-          "jobId": "in-progress-job",
-          "lastUpdateTime": "2022-08-22T01:00:00Z",
-          "countApproximate": false,
-          "onlyContainsDataForThisPartition": true
-        }
-      ]
-    },
-    {
-      "filename": "uncommitted.parquet",
-      "lastUpdateTime": "2022-08-22T14:00:00Z",
-      "totalReferenceCount": 1,
-      "internalReferences": [
-        {
-          "partitionId": "left",
-          "numberOfRows": 100,
-          "jobId": "uncommitted-job",
-          "lastUpdateTime": "2022-08-22T14:00:00Z",
-          "countApproximate": false,
-          "onlyContainsDataForThisPartition": true
-        }
-      ]
-    },
-    {
-      "filename": "untracked.parquet",
-      "lastUpdateTime": "2022-08-22T01:00:00Z",
-      "totalReferenceCount": 1,
-      "internalReferences": [
-        {
-          "partitionId": "right",
-          "numberOfRows": 100,
-          "jobId": "untracked-job",
-          "lastUpdateTime": "2022-08-22T01:00:00Z",
-          "countApproximate": false,
-          "onlyContainsDataForThisPartition": true
-        }
-      ]
-    }
-  ],
   "compactions": [
     {
       "partitionId": "left",
