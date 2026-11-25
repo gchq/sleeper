@@ -98,6 +98,19 @@ public class CompactionJobStatus {
                 .map(CompactionJobStatus::from);
     }
 
+    /**
+     * Reads compaction job statuses from a stream of status update records held in a tracker, where all records for
+     * each job are consecutive. Only the records for one job are held in memory at a time. Jobs are returned in the
+     * order they occur in the input.
+     *
+     * @param  records the records held in the tracker, grouped by job
+     * @return         the compaction job statuses
+     */
+    public static Stream<CompactionJobStatus> streamFromRecordsGroupedByJob(Stream<JobStatusUpdateRecord> records) {
+        return JobStatusUpdates.streamFromRecordsGroupedByJob(records)
+                .map(CompactionJobStatus::from);
+    }
+
     private static CompactionJobStatus from(JobStatusUpdates updates) {
         return builder()
                 .jobId(updates.getJobId())

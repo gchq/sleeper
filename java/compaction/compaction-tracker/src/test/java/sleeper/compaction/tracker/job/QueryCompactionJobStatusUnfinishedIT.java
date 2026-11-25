@@ -37,10 +37,10 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobT
         // Given
         Partition partition = singlePartition();
         FileReferenceFactory fileFactory = fileFactory(partition);
-        CompactionJob job1 = jobFactory.createCompactionJob(
+        CompactionJob job1 = jobFactory.createCompactionJob("job-1",
                 List.of(fileFactory.rootFile("file1", 123L)),
                 partition.getId());
-        CompactionJob job2 = jobFactory.createCompactionJob(
+        CompactionJob job2 = jobFactory.createCompactionJob("job-2",
                 List.of(fileFactory.rootFile("file2", 456L)),
                 partition.getId());
 
@@ -51,8 +51,8 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobT
         assertThat(tracker.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        compactionJobCreated(job2, ignoredUpdateTime()),
-                        compactionJobCreated(job1, ignoredUpdateTime()));
+                        compactionJobCreated(job1, ignoredUpdateTime()),
+                        compactionJobCreated(job2, ignoredUpdateTime()));
     }
 
     @Test

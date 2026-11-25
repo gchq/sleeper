@@ -94,6 +94,9 @@ public interface CompactionJobTracker {
     /**
      * Retrieves the status of all currently tracked compaction jobs for a Sleeper table. This includes all jobs that
      * have tracked events, unless those events have expired and are no longer held in the tracker.
+     * <p>
+     * The order of the jobs is not defined, and may differ between implementations. Implementations should avoid
+     * holding all jobs in memory at once.
      *
      * @param  tableId                       the internal Sleeper table ID
      * @return                               a stream of job statuses
