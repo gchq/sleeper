@@ -94,7 +94,6 @@ impl ExecutionPlanVisitor for RowCounts {
     fn pre_visit(&mut self, plan: &dyn ExecutionPlan) -> Result<bool, Self::Error> {
         // read output records from final projection stage
         let maybe_sink_stats = plan
-            .as_any()
             .downcast_ref::<DataSinkExec>()
             // Grab metrics from the stage preceeding DataSinkExec as the Parquet sink doesn't record metrics
             .and_then(|sink_exec| sink_exec.input().metrics());
@@ -102,7 +101,6 @@ impl ExecutionPlanVisitor for RowCounts {
         // read stage may not filter precisely to range needed and therefore over-reports
         // number of rows read
         let maybe_parq_read = plan
-            .as_any()
             .downcast_ref::<FilterExec>()
             .and_then(ExecutionPlan::metrics);
         if let Some(m) = maybe_sink_stats {
@@ -113,7 +111,6 @@ impl ExecutionPlanVisitor for RowCounts {
         }
         // Read other metrics on a per file basis
         if let Some(m) = plan
-            .as_any()
             .downcast_ref::<DataSourceExec>()
             .and_then(ExecutionPlan::metrics)
         {
