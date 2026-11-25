@@ -5,19 +5,21 @@ This section documents some of the improvements that we plan to make to Sleeper.
 
 The following improvements are actively being worked on:
 
-- https://github.com/gchq/sleeper/issues/8431 Bugfixes for Q4 of 2026.
+- https://github.com/gchq/sleeper/issues/8431 Analysis from Q4 of 2026.
+- https://github.com/gchq/sleeper/issues/8622 Reduce compaction job status report memory usage.
 
 The following are likely to be worked on in the near future:
 
+- https://github.com/gchq/sleeper/issues/6978 Stabilise long running state store committer.
 - https://github.com/gchq/sleeper/issues/7313 Bulk import reliability.
-- https://github.com/gchq/sleeper/issues/6749 REST API to configure Sleeper tables.
-- https://github.com/gchq/sleeper/issues/4235 Graceful upgrade of a Sleeper instance.
-- https://github.com/gchq/sleeper/issues/6132 Create a Spark DataFrame from a Sleeper table.
-- https://github.com/gchq/sleeper/issues/4215 Optional long running service for queries.
 
 The following improvements will be worked on in future (these are in no particular order):
 
-- https://github.com/gchq/sleeper/issues/6978 Stabilise long running state store committer.
+- https://github.com/gchq/sleeper/issues/4215 Optional long running service for queries.
+- https://github.com/gchq/sleeper/issues/6132 Create a Spark DataFrame from a Sleeper table.
+- https://github.com/gchq/sleeper/issues/5078 Improvements to bulk import.
+- https://github.com/gchq/sleeper/issues/6749 REST API to configure Sleeper tables.
+- https://github.com/gchq/sleeper/issues/4235 Improve graceful upgrade of a Sleeper instance.
 - https://github.com/gchq/sleeper/issues/6977 Improve CloudWatch alarms.
 - https://github.com/gchq/sleeper/issues/5159 Format migration for configuration properties.
 - https://github.com/gchq/sleeper/issues/6059 Data types for floating point value fields.
