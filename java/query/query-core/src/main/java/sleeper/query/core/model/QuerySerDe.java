@@ -40,6 +40,11 @@ import java.util.function.Supplier;
  *
  */
 public class QuerySerDe {
+    /**
+     * The field holding the key in S3 a query was uploaded to, if it was too large to send in a message.
+     */
+    public static final String STORED_QUERY_KEY_FIELD = "queryJsonS3Key";
+
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
     private final SchemaLoader schemaLoader;

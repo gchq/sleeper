@@ -40,10 +40,9 @@ public class QueryMessageUploaderTest {
     private final RangeFactory rangeFactory = new RangeFactory(schema);
     private final PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final QuerySerDe querySerDe = new QuerySerDe(schema);
-    private final QueryMessageSerDe messageSerDe = new QueryMessageSerDe(querySerDe);
     private final InMemoryQueryJsonStore store = new InMemoryQueryJsonStore();
-    private final QueryMessageUploader uploader = new QueryMessageUploader(store, messageSerDe, LENGTH_TO_STORE, () -> "test-uuid");
-    private final QueryMessageReader reader = new QueryMessageReader(store, messageSerDe);
+    private final QueryMessageUploader uploader = new QueryMessageUploader(store, querySerDe, LENGTH_TO_STORE, () -> "test-uuid");
+    private final QueryMessageReader reader = new QueryMessageReader(store, querySerDe);
 
     @Test
     void shouldHoldSmallQueryInMessage() {
@@ -105,7 +104,7 @@ public class QueryMessageUploaderTest {
     @Test
     void shouldFailToReadWhenStoredQueryIsMissing() {
         // Given
-        String message = messageSerDe.toJsonPointingToStoredQuery("test-query", "queries/missing.json");
+        String message = querySerDe.toJsonPointingToStoredQuery("test-query", "queries/missing.json");
 
         // When / Then
         assertThatThrownBy(() -> reader.readAndLoadIfStored(message))

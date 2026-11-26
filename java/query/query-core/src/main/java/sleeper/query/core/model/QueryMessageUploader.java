@@ -36,17 +36,17 @@ public class QueryMessageUploader {
      */
     public static final int DEFAULT_JSON_LENGTH_TO_STORE = 1024 * 200;
 
-    private final QueryMessageSerDe messageSerDe;
+    private final QuerySerDe querySerDe;
     private final QueryJsonStore jsonStore;
     private final int jsonLengthToStore;
     private final Supplier<String> uuidSupplier;
 
     public QueryMessageUploader(QueryJsonStore jsonStore, QuerySerDe querySerDe) {
-        this(jsonStore, new QueryMessageSerDe(querySerDe), DEFAULT_JSON_LENGTH_TO_STORE, () -> UUID.randomUUID().toString());
+        this(jsonStore, querySerDe, DEFAULT_JSON_LENGTH_TO_STORE, () -> UUID.randomUUID().toString());
     }
 
-    public QueryMessageUploader(QueryJsonStore jsonStore, QueryMessageSerDe messageSerDe, int jsonLengthToStore, Supplier<String> uuidSupplier) {
-        this.messageSerDe = messageSerDe;
+    public QueryMessageUploader(QueryJsonStore jsonStore, QuerySerDe querySerDe, int jsonLengthToStore, Supplier<String> uuidSupplier) {
+        this.querySerDe = querySerDe;
         this.jsonStore = jsonStore;
         this.jsonLengthToStore = jsonLengthToStore;
         this.uuidSupplier = uuidSupplier;
@@ -59,7 +59,7 @@ public class QueryMessageUploader {
      * @return       the message body
      */
     public String serialiseAndUploadIfTooBig(Query query) {
-        return uploadIfTooBig(messageSerDe.toJson(query), query.getQueryId(), "query");
+        return uploadIfTooBig(querySerDe.toJson(query), query.getQueryId(), "query");
     }
 
     /**
@@ -69,7 +69,7 @@ public class QueryMessageUploader {
      * @return       the message body
      */
     public String serialiseAndUploadIfTooBig(LeafPartitionQuery query) {
-        return uploadIfTooBig(messageSerDe.toJson(query), query.getQueryId(), query.getSubQueryId());
+        return uploadIfTooBig(querySerDe.toJson(query), query.getQueryId(), query.getSubQueryId());
     }
 
     /**
@@ -91,6 +91,6 @@ public class QueryMessageUploader {
         String key = createKey(queryId, subQueryId, uuidSupplier.get());
         LOGGER.info("Query JSON of length {} is too large for a message, uploading to {}", json.length(), key);
         jsonStore.store(key, json);
-        return messageSerDe.toJsonPointingToStoredQuery(queryId, key);
+        return querySerDe.toJsonPointingToStoredQuery(queryId, key);
     }
 }

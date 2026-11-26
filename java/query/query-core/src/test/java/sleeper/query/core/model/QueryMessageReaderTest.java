@@ -23,20 +23,19 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class QueryMessageSerDeTest {
+public class QueryMessageReaderTest {
 
     private final Schema schema = createSchemaWithKey("key", new LongType());
     private final RangeFactory rangeFactory = new RangeFactory(schema);
     private final QuerySerDe querySerDe = new QuerySerDe(schema);
-    private final QueryMessageSerDe serDe = new QueryMessageSerDe(querySerDe);
+    private final InMemoryQueryJsonStore store = new InMemoryQueryJsonStore();
+    private final QueryMessageReader reader = new QueryMessageReader(store, querySerDe);
     private final Query query = Query.builder()
             .queryId("test-query")
             .tableName("test-table")
@@ -44,44 +43,42 @@ public class QueryMessageSerDeTest {
             .build();
 
     @Test
-    void shouldSerDeMessageHoldingQuery() {
-        // When
-        String message = serDe.toJson(query);
+    void shouldReadMessageHoldingQuery() {
+        // Given
+        String message = querySerDe.toJson(query);
 
-        // Then
-        assertThat(message).doesNotContain("queryJsonS3Key");
-        assertThat(serDe.fromJson(message, noStore()).asParentQuery()).isEqualTo(query);
+        // When / Then
+        assertThat(reader.readAndLoadIfStored(message).asParentQuery()).isEqualTo(query);
     }
 
     @Test
-    void shouldSerDeMessagePointingToStoredQuery() {
-        // When
-        String message = serDe.toJsonPointingToStoredQuery("test-query", "queries/test-query.json");
+    void shouldReadMessagePointingToStoredQuery() {
+        // Given
+        store.store("queries/test-query.json", querySerDe.toJson(query));
+        String message = querySerDe.toJsonPointingToStoredQuery("test-query", "queries/test-query.json");
 
-        // Then
-        assertThat(message).isEqualTo("{\"queryId\":\"test-query\",\"queryJsonS3Key\":\"queries/test-query.json\"}");
-        assertThat(serDe.fromJson(message, store(Map.of("queries/test-query.json", querySerDe.toJson(query)))).asParentQuery())
-                .isEqualTo(query);
+        // When / Then
+        assertThat(reader.readAndLoadIfStored(message).asParentQuery()).isEqualTo(query);
     }
 
     @Test
     void shouldReadMessagePointingToStoredQueryWithNoQueryId() {
         // Given
+        store.store("queries/test-query.json", querySerDe.toJson(query));
         String message = "{\"queryJsonS3Key\":\"queries/test-query.json\"}";
 
         // When / Then
-        assertThat(serDe.fromJson(message, store(Map.of("queries/test-query.json", querySerDe.toJson(query)))).asParentQuery())
-                .isEqualTo(query);
+        assertThat(reader.readAndLoadIfStored(message).asParentQuery()).isEqualTo(query);
     }
 
     @Test
     void shouldFailWhenQueryIdDoesNotMatchStoredQuery() {
         // Given
-        String message = serDe.toJsonPointingToStoredQuery("other-query", "queries/test-query.json");
-        Function<String, String> store = store(Map.of("queries/test-query.json", querySerDe.toJson(query)));
+        store.store("queries/test-query.json", querySerDe.toJson(query));
+        String message = querySerDe.toJsonPointingToStoredQuery("other-query", "queries/test-query.json");
 
         // When / Then
-        assertThatThrownBy(() -> serDe.fromJson(message, store))
+        assertThatThrownBy(() -> reader.readAndLoadIfStored(message))
                 .isInstanceOfSatisfying(QueryValidationException.class,
                         e -> assertThat(e.getQueryId()).contains("other-query"))
                 .hasMessage("Query validation failed for query \"other-query\": " +
@@ -91,10 +88,10 @@ public class QueryMessageSerDeTest {
     @Test
     void shouldReportQueryIdFromMessageWhenStoredQueryCannotBeLoaded() {
         // Given
-        String message = serDe.toJsonPointingToStoredQuery("test-query", "queries/missing.json");
+        String message = querySerDe.toJsonPointingToStoredQuery("test-query", "queries/missing.json");
 
         // When / Then
-        assertThatThrownBy(() -> serDe.fromJson(message, store(Map.of())))
+        assertThatThrownBy(() -> reader.readAndLoadIfStored(message))
                 .isInstanceOfSatisfying(QueryValidationException.class,
                         e -> assertThat(e.getQueryId()).contains("test-query"))
                 .hasMessageContaining("queries/missing.json")
@@ -107,7 +104,7 @@ public class QueryMessageSerDeTest {
         String message = "{\"queryJsonS3Key\":\"queries/missing.json\"}";
 
         // When / Then
-        assertThatThrownBy(() -> serDe.fromJson(message, store(Map.of())))
+        assertThatThrownBy(() -> reader.readAndLoadIfStored(message))
                 .isInstanceOf(NoSuchElementException.class)
                 .hasMessageContaining("queries/missing.json");
     }
@@ -119,38 +116,22 @@ public class QueryMessageSerDeTest {
                 "\"queryJsonS3Key\":\"queries/test-query.json\"}";
 
         // When / Then
-        assertThatThrownBy(() -> serDe.fromJson(message, noStore()))
+        assertThatThrownBy(() -> reader.readAndLoadIfStored(message))
                 .isInstanceOfSatisfying(QueryValidationException.class,
                         e -> assertThat(e.getQueryId()).contains("test-query"))
                 .hasMessageContaining("must only contain the fields queryId and queryJsonS3Key");
+        assertThat(store.getJsonByKey()).isEmpty();
     }
 
     @Test
     void shouldFailWhenStoredQueryPointsToAnotherStoredQuery() {
         // Given
-        String message = serDe.toJsonPointingToStoredQuery("test-query", "queries/a.json");
-        Function<String, String> store = store(Map.of(
-                "queries/a.json", serDe.toJsonPointingToStoredQuery("test-query", "queries/b.json")));
+        store.store("queries/a.json", querySerDe.toJsonPointingToStoredQuery("test-query", "queries/b.json"));
+        String message = querySerDe.toJsonPointingToStoredQuery("test-query", "queries/a.json");
 
         // When / Then
-        assertThatThrownBy(() -> serDe.fromJson(message, store))
+        assertThatThrownBy(() -> reader.readAndLoadIfStored(message))
                 .isInstanceOf(QueryValidationException.class)
                 .hasMessageContaining("points to another stored query");
-    }
-
-    private static Function<String, String> noStore() {
-        return key -> {
-            throw new AssertionError("Unexpected load from store: " + key);
-        };
-    }
-
-    private static Function<String, String> store(Map<String, String> jsonByKey) {
-        return key -> {
-            String json = jsonByKey.get(key);
-            if (json == null) {
-                throw new NoSuchElementException("Not found: " + key);
-            }
-            return json;
-        };
     }
 }
