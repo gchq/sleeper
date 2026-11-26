@@ -16,7 +16,6 @@
 package sleeper.clients.report;
 
 import org.approvaltests.Approvals;
-import org.approvaltests.core.Options;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,6 +40,7 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.testutils.ApprovalTestsHelper.namedApprovalFile;
 
 public class CompactionJobStatusReportTest {
 
@@ -371,7 +371,7 @@ public class CompactionJobStatusReportTest {
         void shouldOutputHelpText() {
             // When / Then
             Approvals.verify(CompactionJobStatusReport.USAGE.createHelpText(),
-                    new Options().forFile().withBaseName("CompactionJobStatusReportHelpText"));
+                    namedApprovalFile("CompactionJobStatusReportHelpText"));
         }
     }
 
