@@ -25,7 +25,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.38.2"
+version = "0.39.0"
 edition = "2024"
 rust-version = "1.96"
 publish = false
@@ -48,7 +48,7 @@ clap = { version = "4.6.0" }                        # Cmd line args processing
 color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
 cxx = { version = "1.0.194" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.192" }
-datafusion = { version = "53.1.0" }
+datafusion = { version = "54.2.0" }
 env_logger = { version = "0.11.10" }                # Standard logging to stderr
 futures = { version = "0.3.32" }                    # Async processing
 human-panic = { version = "2.0.8" }                 # Readable panic messages
@@ -75,7 +75,7 @@ url = { version = "2.5.8" }                         # URL processing for S3
 uuid = { version = "1.23.3", features = ["v4"] }    # UUID generation
 
 [workspace.metadata.datasketches]
-datasketches_cpp_version = "5.3.0"
+datasketches_cpp_version = "5.3.1"
 
 [profile.release]
 incremental = true

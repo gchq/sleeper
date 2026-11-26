@@ -68,10 +68,6 @@ impl CastUDF {
 }
 
 impl ScalarUDFImpl for CastUDF {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
     fn name(&self) -> &'static str {
         "cast_simple"
     }

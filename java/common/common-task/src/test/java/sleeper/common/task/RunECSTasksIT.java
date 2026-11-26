@@ -174,8 +174,8 @@ class RunECSTasksIT {
                     .numberOfTasksToCreate(11));
 
             // Then
-            verify(4, anyRequest());
-            verify(4, runTasksRequestedFor("test-cluster", 10));
+            verify(3, anyRequest());
+            verify(3, runTasksRequestedFor("test-cluster", 10));
         }
 
         @Test

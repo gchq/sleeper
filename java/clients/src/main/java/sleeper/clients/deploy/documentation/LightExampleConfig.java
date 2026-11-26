@@ -28,12 +28,14 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_EPHEMERAL_STORAGE;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_INSTANCES;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_SPARK_EXECUTOR_MEMORY;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
-import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
+import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
 import static sleeper.core.properties.model.OptionalStack.DEFAULT_STACKS;
@@ -50,8 +52,8 @@ public class LightExampleConfig {
         PrintWriter writer = new PrintWriter(out);
         writer.println("""
                 #################################################################################
-                #                    Properties set below are designed for an                   #
-                #                  instance aimed towards reducing running costs                #
+                #              Properties set below are designed for an instance with           #
+                #              modest data volumes aimed towards reducing running costs         #
                 #               and will apply to any bulk import stacks you enable             #
                 #################################################################################""");
         writer.println();
@@ -64,12 +66,14 @@ public class LightExampleConfig {
     private static InstanceProperties createLightInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         // Emr Serverless properties
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES, "2");
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY, "8G");
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK, "60G");
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES, "2");
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES, "2");
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY, "8G");
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES, "2");
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY, "8G");
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK, "60G");
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES, "2");
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS, "2");
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS, "2");
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES, "2");
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY, "8G");
 
         // EKS properties
         instanceProperties.set(BULK_IMPORT_EKS_SPARK_EXECUTOR_CORES, "2");
