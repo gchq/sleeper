@@ -106,4 +106,32 @@ public class CompactionJobRunTest {
                         tuple(DEFAULT_TASK_ID, List.of(started, finished, committed)));
         assertThat(status.isUnstartedOrInProgress()).isFalse();
     }
+
+    @Test
+    public void shouldReportStartTimeFromStartedUpdate() {
+        // Given
+        CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 450L, 300L));
+
+        // When
+        JobRunReport run = jobStatusFromSingleRunUpdates(started, finished).getRunsLatestFirst().get(0);
+
+        // Then
+        assertThat(run.getStartTime()).isEqualTo(Instant.parse("2022-09-24T09:23:30.001Z"));
+        assertThat(run.getStartOrFirstUpdateTime()).isEqualTo(Instant.parse("2022-09-24T09:23:30.001Z"));
+    }
+
+    @Test
+    public void shouldReportNoStartTimeWhenStartedUpdateIsMissing() {
+        // Given
+        CompactionJobFinishedStatus finished = compactionFinishedStatus(
+                summary(Instant.parse("2022-09-24T09:23:30.001Z"), Duration.ofSeconds(30), 450L, 300L));
+
+        // When
+        JobRunReport run = jobStatusFromSingleRunUpdates(finished).getRunsLatestFirst().get(0);
+
+        // Then
+        assertThat(run.getStartTime()).isNull();
+        assertThat(run.getStartOrFirstUpdateTime()).isEqualTo(finished.getUpdateTime());
+    }
 }

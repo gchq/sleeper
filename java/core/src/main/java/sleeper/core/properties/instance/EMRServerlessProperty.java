@@ -130,6 +130,7 @@ public interface EMRServerlessProperty {
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS = Index
             .propertyBuilder("sleeper.default.table.bulk.import.emr.serverless.spark.dynamic.allocation.min.executors")
             .description("(EMR Serverless mode only) The default lower bound for the number of executors when dynamic allocation is enabled. Used to set spark.dynamicAllocation.minExecutors.\n"
+                    + "Must be less than or equal to the initial executors.\n"
                     + "This property is a default which can be overridden by a table property or by a property in the "
                     + "bulk import job specification.\n"
                     + "See https://spark.apache.org/docs/latest/configuration.html.")
@@ -139,6 +140,7 @@ public interface EMRServerlessProperty {
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS = Index
             .propertyBuilder("sleeper.default.table.bulk.import.emr.serverless.spark.dynamic.allocation.initial.executors")
             .description("(EMR Serverless mode only) The default number of executors to start with when dynamic allocation is enabled. Used to set spark.dynamicAllocation.initialExecutors.\n"
+                    + "Must be between the min and max executors, inclusive.\n"
                     + "This property is a default which can be overridden by a table property or by a property in the "
                     + "bulk import job specification.\n"
                     + "See https://spark.apache.org/docs/latest/configuration.html.")
@@ -148,6 +150,7 @@ public interface EMRServerlessProperty {
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS = Index
             .propertyBuilder("sleeper.default.table.bulk.import.emr.serverless.spark.dynamic.allocation.max.executors")
             .description("(EMR Serverless mode only) The default upper bound for the number of executors when dynamic allocation is enabled. Used to set spark.dynamicAllocation.maxExecutors.\n"
+                    + "Must be greater than or equal to the initial executors.\n"
                     + "EMR Serverless does not limit this by default, so this should always be set to bound the cost of a job.\n"
                     + "This property is a default which can be overridden by a table property or by a property in the "
                     + "bulk import job specification.\n"

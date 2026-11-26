@@ -16,7 +16,6 @@
 package sleeper.restapi.addTable;
 
 import org.approvaltests.Approvals;
-import org.approvaltests.core.Options;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -40,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.core.testutils.ApprovalTestsHelper.namedApprovalFile;
 
 class AddTableRequestSerDeTest {
 
@@ -80,7 +80,7 @@ class AddTableRequestSerDeTest {
         void shouldSerialiseInExpectedJsonFormat() {
             Approvals.verify(
                     serDe.toJson(createAddTableRequest(), true),
-                    new Options().forFile().withName("example", ".json"));
+                    namedApprovalFile("example", ".json"));
         }
 
         @Test

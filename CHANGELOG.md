@@ -6,6 +6,70 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.39.0
+
+### 25th November 2026
+
+*Note: this may be a breaking change if you have set EMR Serverless instance properties, see below under Bulk import.*
+
+This includes EMR Serverless improvements with per-table configuration, dynamic resource allocation and Graviton
+support, a new client for bulk export, reading query results through `SleeperClient`, and a script to requeue
+compaction jobs from the state store.
+
+Bulk import:
+- EMR Serverless properties for Spark executors, drivers, parallelism and dynamic allocation can now be set per table.
+  The instance properties have been renamed to start with `sleeper.default.table.bulk.import.emr.serverless`, and
+  can be overridden with table properties starting with `sleeper.table.bulk.import.emr.serverless`. The old instance
+  property names are no longer read, so any values set for them must be moved to the new names. The executor disk
+  property has also been renamed from `sleeper.bulk.import.emr.serverless.spark.emr-serverless.executor.disk` to
+  `sleeper.default.table.bulk.import.emr.serverless.spark.executor.disk`.
+- EMR Serverless now uses Spark dynamic resource allocation by default. The number of executors is set by the min,
+  initial and max executors properties under
+  `sleeper.default.table.bulk.import.emr.serverless.spark.dynamic.allocation`, which can also be set per table. EMR
+  Serverless dynamic allocation optimization is enabled by default, and can be turned off with
+  `sleeper.bulk.import.emr.serverless.dynamic.allocation.optimization.enabled`.
+- EMR Serverless can now run on Graviton, and this is the default. The architecture is set in
+  `sleeper.bulk.import.emr.serverless.architecture`, which must be `x86_64` or `arm64`. Changing it requires a CDK
+  deployment. `JAVA_HOME` is now set automatically for the architecture, so the property
+  `sleeper.bulk.import.emr.serverless.spark.executorEnv.JAVA_HOME` has been removed.
+
+Bulk export:
+- Added `scripts/utility/bulkExport.sh` to submit bulk exports from the command line.
+- Bulk export tasks now process multiple jobs from the queue before terminating. This is configured in the
+  `sleeper.bulk.export.task.*` instance properties for idle time, max alive time and consecutive failures.
+
+Query:
+- Added methods to `SleeperClient` to read the results of a query run via the query lambda. Results can be read once
+  the query has finished, or streamed as each subquery finishes. The number of threads used to read results files can
+  be set in `AwsSleeperClientBuilder`. Also added an option to read the results with `scripts/utility/lambdaQuery.sh`.
+
+Compaction:
+- Added `scripts/maintenance/requeueCompactionJobsFromStateStore.sh` to recreate every compaction job that files in a
+  table are assigned to, and send them back to the compaction job queue. This can be used to recover when files are
+  assigned to compaction jobs that did not succeed, which would otherwise leave them assigned to a job that will never
+  run.
+
+Reporting:
+- `scripts/report/compactionJobStatusReport.sh` can now be given more memory with `--jvm-memory`, e.g.
+  `--jvm-memory 8g`, for tables with a large number of compaction jobs. If the report runs out of memory, it now exits
+  with a message explaining how to give it more.
+
+Build:
+- The Rust builder images can now use an Amazon Linux 2023 package mirror set in `AL2023_REPO_URL`, and
+  `RUSTUP_INIT_URL` can now serve the compiled `rustup-init` program as well as the shell script.
+- Upgraded Ubuntu to 26.04 in the Sleeper Docker tools.
+- Upgraded DataSketches C++ to 5.3.1.
+
+Bugfixes:
+- Queries that request a subset of value fields no longer fail when writing results to S3.
+- The compaction job status report no longer fails when querying a time range that includes a job with no created
+  update in the job tracker.
+- The transaction log follower no longer logs errors for transactions deleted from the transaction log. It now only
+  processes new transactions.
+- The demo deployment no longer logs a failure at the end if the `scripts/generated` directory does not exist. This
+  directory is now created before details of data generation tasks are written.
+
+
 ## Version 0.38.2
 
 ### 10th November 2026

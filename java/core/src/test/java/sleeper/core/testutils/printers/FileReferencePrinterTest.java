@@ -17,7 +17,6 @@
 package sleeper.core.testutils.printers;
 
 import org.approvaltests.Approvals;
-import org.approvaltests.core.Options;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,6 +38,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.referencedAndUnrefer
 import static sleeper.core.statestore.FilesReportTestHelper.referencedFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.unreferencedFiles;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
+import static sleeper.core.testutils.ApprovalTestsHelper.namedApprovalFile;
 
 public class FileReferencePrinterTest {
 
@@ -64,8 +64,7 @@ public class FileReferencePrinterTest {
                     fileReferenceFactory.partitionFile("R", "r2.parquet", 10)));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-multiple-in-partition"));
+            Approvals.verify(printed, namedApprovalFile("file-references-multiple-in-partition"));
         }
 
         @Test
@@ -84,8 +83,7 @@ public class FileReferencePrinterTest {
                     referenceForChildPartition(file2, "R")));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-partial"));
+            Approvals.verify(printed, namedApprovalFile("file-references-partial"));
         }
 
         @Test
@@ -104,8 +102,7 @@ public class FileReferencePrinterTest {
                     leftFile, rightFile));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-partial-and-whole"));
+            Approvals.verify(printed, namedApprovalFile("file-references-partial-and-whole"));
         }
 
         @Test
@@ -133,8 +130,7 @@ public class FileReferencePrinterTest {
                     fileReferenceFactory.partitionFile("RRR", 13)));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-on-leaves"));
+            Approvals.verify(printed, namedApprovalFile("file-references-on-leaves"));
         }
 
         @Test
@@ -152,8 +148,7 @@ public class FileReferencePrinterTest {
                     withJobId("right-job", fileReferenceFactory.partitionFile("R", "r2.parquet", 78))));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-assigned-to-jobs"));
+            Approvals.verify(printed, namedApprovalFile("file-references-assigned-to-jobs"));
         }
     }
 
@@ -175,8 +170,7 @@ public class FileReferencePrinterTest {
                     partitions.buildTree(), referencedFiles(partialFile, wholeFile));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-by-partition-whole-before-partial"));
+            Approvals.verify(printed, namedApprovalFile("file-references-by-partition-whole-before-partial"));
         }
 
         @Test // TODO this is incorrect as the order is determined by the filenames instead of the tree position
@@ -197,8 +191,7 @@ public class FileReferencePrinterTest {
                             referenceForChildPartition(splitFile1, "RR")));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-by-partition-one-also-on-other-partition"));
+            Approvals.verify(printed, namedApprovalFile("file-references-by-partition-one-also-on-other-partition"));
         }
 
         @Test // TODO this is incorrect as the order is determined by the filenames instead of the number of rows
@@ -218,8 +211,7 @@ public class FileReferencePrinterTest {
                             referenceForChildPartition(splitFile1, "R", 25)));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-by-partition-both-also-on-other-partition"));
+            Approvals.verify(printed, namedApprovalFile("file-references-by-partition-both-also-on-other-partition"));
         }
 
         @Test
@@ -250,8 +242,7 @@ public class FileReferencePrinterTest {
                     fileReferenceFactory.partitionFile("RRR", 100)));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-by-partition-location-in-tree"));
+            Approvals.verify(printed, namedApprovalFile("file-references-by-partition-location-in-tree"));
         }
 
         @Test
@@ -282,8 +273,7 @@ public class FileReferencePrinterTest {
                     fileReferenceFactory.partitionFile("base", 100)));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-by-partition-named-by-location"));
+            Approvals.verify(printed, namedApprovalFile("file-references-by-partition-named-by-location"));
         }
 
         @Test
@@ -300,8 +290,7 @@ public class FileReferencePrinterTest {
                     fileReferenceFactory.rootFile("other.parquet", 300)));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-by-partition-sort-by-rows"));
+            Approvals.verify(printed, namedApprovalFile("file-references-by-partition-sort-by-rows"));
         }
 
         @Test
@@ -327,8 +316,7 @@ public class FileReferencePrinterTest {
                     referenceForChildPartition(other, "R")));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-by-partition-sort-by-partial-rows"));
+            Approvals.verify(printed, namedApprovalFile("file-references-by-partition-sort-by-partial-rows"));
         }
 
         @Test
@@ -349,8 +337,7 @@ public class FileReferencePrinterTest {
                     referenceForChildPartition(small, "LR")));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-by-partition-sort-by-appearance"));
+            Approvals.verify(printed, namedApprovalFile("file-references-by-partition-sort-by-appearance"));
         }
     }
 
@@ -371,8 +358,7 @@ public class FileReferencePrinterTest {
                     Map.of("table-1", files, "table-2", files));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-tables-identical"));
+            Approvals.verify(printed, namedApprovalFile("file-references-tables-identical"));
         }
 
         @Test
@@ -390,8 +376,7 @@ public class FileReferencePrinterTest {
                     Map.of("table-1", files1, "table-2", files2, "table-3", files1));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-tables-one-different"));
+            Approvals.verify(printed, namedApprovalFile("file-references-tables-one-different"));
         }
 
         @Test
@@ -407,8 +392,7 @@ public class FileReferencePrinterTest {
                     Map.of("table-1", files));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-tables-single"));
+            Approvals.verify(printed, namedApprovalFile("file-references-tables-single"));
         }
     }
 
@@ -430,8 +414,7 @@ public class FileReferencePrinterTest {
                             List.of("oldFile1.parquet", "oldFile2.parquet")));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-unreferenced-all"));
+            Approvals.verify(printed, namedApprovalFile("file-references-unreferenced-all"));
         }
 
         @Test
@@ -444,8 +427,7 @@ public class FileReferencePrinterTest {
                     unreferencedFiles("oldFile1.parquet", "oldFile2.parquet"));
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-unreferenced-only"));
+            Approvals.verify(printed, namedApprovalFile("file-references-unreferenced-only"));
         }
 
         @Test
@@ -457,8 +439,7 @@ public class FileReferencePrinterTest {
             String printed = FileReferencePrinter.printFiles(partitions.buildTree(), noFiles());
 
             // Then see approved output
-            Approvals.verify(printed, new Options().forFile()
-                    .withBaseName("file-references-none"));
+            Approvals.verify(printed, namedApprovalFile("file-references-none"));
         }
     }
 

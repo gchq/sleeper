@@ -28,7 +28,6 @@ use datafusion::{
     scalar::ScalarValue,
 };
 use std::{
-    any::Any,
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -126,10 +125,6 @@ impl TryFrom<i64> for AgeOff {
 }
 
 impl ScalarUDFImpl for AgeOff {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
     fn name(&self) -> &'static str {
         "age_off"
     }
