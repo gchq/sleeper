@@ -15,8 +15,6 @@
  */
 package sleeper.query.core.model;
 
-import com.google.gson.Gson;
-
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -32,7 +30,6 @@ public class QueryMessageSerDe {
 
     public static final String STORED_QUERY_KEY_FIELD = "queryJsonS3Key";
 
-    private final Gson gson = new Gson();
     private final QuerySerDe querySerDe;
 
     public QueryMessageSerDe(QuerySerDe querySerDe) {
@@ -67,7 +64,7 @@ public class QueryMessageSerDe {
      * @return         the message body
      */
     public String toJsonPointingToStoredQuery(String queryId, String key) {
-        return gson.toJson(QueryJson.pointingToStoredQuery(queryId, key));
+        return querySerDe.toJsonPointingToStoredQuery(queryId, key);
     }
 
     /**
@@ -78,7 +75,7 @@ public class QueryMessageSerDe {
      * @return           the query
      */
     public QueryOrLeafPartitionQuery fromJson(String message, Function<String, String> loadQuery) {
-        QueryJson json = gson.fromJson(message, QueryJson.class);
+        QueryJson json = querySerDe.parseQueryJson(message);
         String key = json.getQueryJsonS3Key();
         if (key == null) {
             return querySerDe.fromQueryJson(json);
@@ -106,7 +103,7 @@ public class QueryMessageSerDe {
             }
             throw new QueryValidationException(messageQueryId, null, e);
         }
-        QueryJson stored = gson.fromJson(storedJson, QueryJson.class);
+        QueryJson stored = querySerDe.parseQueryJson(storedJson);
         if (stored.getQueryJsonS3Key() != null) {
             throw new QueryValidationException(messageQueryId, null, "Stored query at " + key + " points to another stored query");
         }

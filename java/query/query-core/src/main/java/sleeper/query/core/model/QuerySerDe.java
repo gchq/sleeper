@@ -116,8 +116,7 @@ public class QuerySerDe {
      * @return      a Sleeper query
      */
     public Query fromJson(String json) {
-        QueryJson queryJson = gson.fromJson(json, QueryJson.class);
-        return queryJson.toParentQuery(schemaLoader);
+        return parseQueryJson(json).toParentQuery(schemaLoader);
     }
 
     /**
@@ -131,7 +130,29 @@ public class QuerySerDe {
      * @return      a Sleeper query or leaf partition query
      */
     public QueryOrLeafPartitionQuery fromJsonOrLeafQuery(String json) {
-        return fromQueryJson(gson.fromJson(json, QueryJson.class));
+        return fromQueryJson(parseQueryJson(json));
+    }
+
+    /**
+     * Creates JSON pointing to a query that has been stored separately because it was too large.
+     *
+     * @param  queryId the query ID, or null if not known
+     * @param  key     the key the query JSON is stored under
+     * @return         the JSON
+     */
+    String toJsonPointingToStoredQuery(String queryId, String key) {
+        return gson.toJson(QueryJson.pointingToStoredQuery(queryId, key));
+    }
+
+    /**
+     * Parses JSON into the JSON model for a query, without converting it into a query. This allows the JSON to be
+     * checked for a pointer to a stored query.
+     *
+     * @param  json the JSON
+     * @return      the parsed JSON model
+     */
+    QueryJson parseQueryJson(String json) {
+        return gson.fromJson(json, QueryJson.class);
     }
 
     /**
