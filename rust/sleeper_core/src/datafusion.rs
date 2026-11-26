@@ -197,16 +197,16 @@ impl<'a> SleeperOperations<'a> {
             );
             ParquetReadOptions::default()
         };
-        // As `DataFusion`s cached Parquet metadata reader will read (and therefore cache) page indexes
-        // https://docs.rs/datafusion/latest/datafusion/datasource/physical_plan/parquet/metadata/struct.DFParquetMetadata.html
-        // then if the read_page_indexes is true, we don't need to take any other action. If read_page_indexes is false,
-        // then we need to take action to prepopulate DF's metadata cache. We read the Parquet metadata without page indexes
-        // and put it in the cache. Therefore, when DF runs the query, it will already see the metadata in the cache and
-        // will not attempt to do so itself.
+        // By default, DataFusion's cached Parquet metadata reader will read (and therefore cache) page indexes
+        // https://docs.rs/datafusion/latest/datafusion/datasource/physical_plan/parquet/metadata/struct.DFParquetMetadata.html.
+        // For compactions and most queries we don't want the page indexes to be read since it results in extra GET
+        // requests in return for no benefit. If we are returning results via Arrow stream and reading page indexes is
+        // enabled, then take no action and DataFusion will cache as normal. However, if reading page indexes is
+        // disabled, we need to pre-populate the metadata cache without reading page indexes to prevent DataFusion
+        // doing so later.
         //
-        // If we are writing an output file, we also need to know the total number of input rows to work out the size of
-        // the row groups, so we
-        // prepopulate the cache in that case too. Page indexes are then loaded if configured, matching what DF would do.
+        // If file output is selected, then we also need to pre-populate the cache, since that allows us to check the
+        // maximum row group row count.
         let writing_file = matches!(self.config.output(), OutputType::File { .. });
         if !self.config.read_page_indexes() || writing_file {
             let metadata_size_hint = ctx
@@ -217,6 +217,8 @@ impl<'a> SleeperOperations<'a> {
                 .execution
                 .parquet
                 .metadata_size_hint;
+            // Since we will pre-populate the cache if file output is selected, we must make sure to honour the page
+            // indexing policy correctly.
             let page_index_policy = if self.config.read_page_indexes() {
                 PageIndexPolicy::Optional
             } else {

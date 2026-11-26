@@ -47,7 +47,7 @@ use url::Url;
 /// The number of rows in the file, as recorded in its Parquet metadata.
 ///
 /// # Errors
-/// An error will be retuned if the object store couldn't retrieve data or the Parquet file was invalid.
+/// An error will be returned if the object store couldn't retrieve data or the Parquet file was invalid.
 async fn load_metadata(
     cache: Arc<dyn FileMetadataCache>,
     store: Arc<dyn ObjectStore>,

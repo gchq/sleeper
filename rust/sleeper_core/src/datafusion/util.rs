@@ -765,6 +765,8 @@ mod tests {
 
     #[test]
     fn should_increase_row_group_size_when_input_exceeds_row_group_limit() {
+        // If there are more rows in the file than the number of rows per row group multiplied by the maximum
+        // number of row groups then the row group size should increase
         let rows = 100_000 * MAX_ROW_GROUPS_PER_FILE + 1;
         assert_eq!(calculate_max_row_group_size(100_000, rows), 100_001);
     }
