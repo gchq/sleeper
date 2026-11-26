@@ -25,7 +25,7 @@ import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
 import sleeper.core.properties.SleeperPropertiesValidationCriteria;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.EmrServerlessDynamicAllocationBounds;
+import sleeper.core.properties.model.SparkDynamicAllocationBounds;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.table.TableStatus;
@@ -98,7 +98,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     @Override
     protected List<SleeperPropertiesValidationCriteria<TableProperty>> getValidationCriteria() {
-        return List.of(EmrServerlessDynamicAllocationBounds.tableValidationCriteria());
+        return SparkDynamicAllocationBounds.tableValidationCriteria();
     }
 
     @Override

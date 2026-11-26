@@ -22,8 +22,8 @@ import sleeper.core.properties.SleeperPropertiesPrettyPrinter.Builder;
 import sleeper.core.properties.SleeperPropertiesValidationCriteria;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.model.CompactionProgressCheckSettings;
-import sleeper.core.properties.model.EmrServerlessDynamicAllocationBounds;
 import sleeper.core.properties.model.PersistentEMRManagedScalingBounds;
+import sleeper.core.properties.model.SparkDynamicAllocationBounds;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -35,6 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DNS_SUFFIX;
@@ -82,10 +83,12 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
     @Override
     protected List<SleeperPropertiesValidationCriteria<InstanceProperty>> getValidationCriteria() {
-        return List.of(
-                PersistentEMRManagedScalingBounds.validationCriteria(),
-                CompactionProgressCheckSettings.validationCriteria(),
-                EmrServerlessDynamicAllocationBounds.instanceDefaultsValidationCriteria());
+        return Stream.concat(
+                Stream.of(
+                        PersistentEMRManagedScalingBounds.validationCriteria(),
+                        CompactionProgressCheckSettings.validationCriteria()),
+                SparkDynamicAllocationBounds.instanceDefaultsValidationCriteria().stream())
+                .toList();
     }
 
     /**

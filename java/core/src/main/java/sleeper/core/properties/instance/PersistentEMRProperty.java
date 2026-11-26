@@ -134,6 +134,7 @@ public interface PersistentEMRProperty {
             .description(
                     "(Persistent EMR mode only) The default lower bound for the number of executors for a job when "
                             + "dynamic allocation is enabled. Used to set spark.dynamicAllocation.minExecutors.\n"
+                            + "Must be less than or equal to the initial executors.\n"
                             + "This property is a default which can be overridden by a table property or by a property "
                             + "in the bulk import job specification.\n"
                             + "See https://spark.apache.org/docs/latest/configuration.html.")
@@ -144,6 +145,7 @@ public interface PersistentEMRProperty {
             .propertyBuilder("sleeper.default.table.bulk.import.persistent.emr.spark.dynamic.allocation.initial.executors")
             .description("(Persistent EMR mode only) The default number of executors a job starts with when dynamic "
                     + "allocation is enabled. Used to set spark.dynamicAllocation.initialExecutors.\n"
+                    + "Must be between the min and max executors, inclusive.\n"
                     + "This property is a default which can be overridden by a table property or by a property in the "
                     + "bulk import job specification.\n"
                     + "See https://spark.apache.org/docs/latest/configuration.html.")
@@ -155,6 +157,7 @@ public interface PersistentEMRProperty {
             .description(
                     "(Persistent EMR mode only) The default upper bound for the number of executors for a job when "
                             + "dynamic allocation is enabled. Used to set spark.dynamicAllocation.maxExecutors.\n"
+                            + "Must be greater than or equal to the initial executors.\n"
                             + "This limits how much of the shared persistent EMR cluster a single job can use.\n"
                             + "This property is a default which can be overridden by a table property or by a property "
                             + "in the bulk import job specification.\n"
