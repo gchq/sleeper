@@ -19,7 +19,6 @@ package sleeper.clients.util;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.approvaltests.Approvals;
-import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -46,6 +45,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
+import static sleeper.core.testutils.ApprovalTestsHelper.namedApprovalFile;
 
 public class ShowPageIndexesIT {
     @TempDir
@@ -71,7 +71,7 @@ public class ShowPageIndexesIT {
 
         // When/Then
         Approvals.verify(runShowPageIndexes(file),
-                new Options().forFile().withBaseName("ShowPageIndexes-" + parquetVersion + "-oneRowKeyField"));
+                namedApprovalFile("ShowPageIndexes-" + parquetVersion + "-oneRowKeyField"));
     }
 
     @ParameterizedTest
@@ -92,7 +92,7 @@ public class ShowPageIndexesIT {
 
         // When/Then
         Approvals.verify(runShowPageIndexes(file),
-                new Options().forFile().withBaseName("ShowPageIndexes-" + parquetVersion + "-multipleRowKeyFields"));
+                namedApprovalFile("ShowPageIndexes-" + parquetVersion + "-multipleRowKeyFields"));
     }
 
     @ParameterizedTest
@@ -114,7 +114,7 @@ public class ShowPageIndexesIT {
 
         // When/Then
         Approvals.verify(runShowPageIndexes(file),
-                new Options().forFile().withBaseName("ShowPageIndexes-" + parquetVersion + "-rowKeySortKeyAndValueFields"));
+                namedApprovalFile("ShowPageIndexes-" + parquetVersion + "-rowKeySortKeyAndValueFields"));
     }
 
     @ParameterizedTest
@@ -132,7 +132,7 @@ public class ShowPageIndexesIT {
 
         // When/Then
         Approvals.verify(runShowPageIndexes(file),
-                new Options().forFile().withBaseName("ShowPageIndexes-" + parquetVersion + "-multiplePages"));
+                namedApprovalFile("ShowPageIndexes-" + parquetVersion + "-multiplePages"));
     }
 
     @ParameterizedTest
@@ -150,7 +150,7 @@ public class ShowPageIndexesIT {
 
         // When/Then
         Approvals.verify(runShowPageIndexes(file),
-                new Options().forFile().withBaseName("ShowPageIndexes-" + parquetVersion + "-multipleRowGroups"));
+                namedApprovalFile("ShowPageIndexes-" + parquetVersion + "-multipleRowGroups"));
     }
 
     private static void writeRows(Path file, TableProperties tableProperties,

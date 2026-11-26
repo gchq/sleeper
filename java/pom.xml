@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.38.3-SNAPSHOT</version>
+    <version>0.39.1-SNAPSHOT</version>
 
     <modules>
         <module>analytics-integration</module>
@@ -187,7 +187,7 @@
         <opentelemetry.version>1.68.0</opentelemetry.version>
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
-        <zookeeper.version>3.9.7</zookeeper.version>
+        <zookeeper.version>3.10.0</zookeeper.version>
         <jackson.version>2.23.0</jackson.version>
         <jackson.annotations.version>2.23</jackson.annotations.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
@@ -247,10 +247,10 @@
         <handlebars.version>4.5.8</handlebars.version>
         <assertj.version>3.27.7</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <approvaltests.version>31.2.0</approvaltests.version>
+        <approvaltests.version>32.1.0</approvaltests.version>
         <json-path.version>3.0.0</json-path.version>
         <xmlunit.version>2.14.0</xmlunit.version>
-        <jsonunit.version>6.4.0</jsonunit.version>
+        <jsonunit.version>6.4.1</jsonunit.version>
         <checkstyle.version>12.3.1</checkstyle.version>
         <sleeper.system.test.short.id />
         <sleeper.system.test.vpc.id />
