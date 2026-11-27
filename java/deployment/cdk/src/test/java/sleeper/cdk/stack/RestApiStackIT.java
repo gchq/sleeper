@@ -16,10 +16,11 @@
 package sleeper.cdk.stack;
 
 import org.approvaltests.Approvals;
-import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 
 import sleeper.cdk.testutil.SleeperStackTestBase;
+
+import static sleeper.core.testutils.ApprovalTestsHelper.namedApprovalFile;
 
 public class RestApiStackIT extends SleeperStackTestBase {
 
@@ -32,8 +33,7 @@ public class RestApiStackIT extends SleeperStackTestBase {
         RestApiStack stack = new RestApiStack(rootStack, "RestApi", instanceProperties, instanceArtefacts(), core);
 
         // Then
-        Approvals.verify(printer.toJson(stack), new Options()
-                .forFile().withName("rest-api", ".json"));
+        Approvals.verify(printer.toJson(stack), namedApprovalFile("rest-api", ".json"));
     }
 
 }

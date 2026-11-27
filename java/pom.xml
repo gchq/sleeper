@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.38.3-SNAPSHOT</version>
+    <version>0.39.1-SNAPSHOT</version>
 
     <modules>
         <module>analytics-integration</module>
@@ -141,7 +141,7 @@
         Spark and Hadoop disagree on the version of Dropwizard Metrics to use.
         -->
         <dropwizard-metrics-4.version>4.2.40</dropwizard-metrics-4.version>
-        <aws-java-sdk-v2.version>2.59.5</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.59.8</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         It's not compatible with the latest version, so we match the version that it provides.
@@ -155,7 +155,7 @@
         Verify with EmrServerlessBulkImportST.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.44.5</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.50.0</aws-crt.version>
+        <aws-crt.version>0.50.1</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.12.2</aws-lambda-java-runtime-interface-client.version>
@@ -187,7 +187,7 @@
         <opentelemetry.version>1.68.0</opentelemetry.version>
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
-        <zookeeper.version>3.9.7</zookeeper.version>
+        <zookeeper.version>3.10.0</zookeeper.version>
         <jackson.version>2.23.0</jackson.version>
         <jackson.annotations.version>2.23</jackson.annotations.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
@@ -198,7 +198,7 @@
         <google.http-client.version>2.2.0</google.http-client.version>
         <google.grpc.version>1.85.1</google.grpc.version>
         <google.j2objc.version>3.1</google.j2objc.version>
-        <cdk.version>2.277.0</cdk.version>
+        <cdk.version>2.278.0</cdk.version>
         <constructs.version>10.8.1</constructs.version>
         <cdk.kubectl.35.version>2.2.2</cdk.kubectl.35.version>
         <jsii.version>1.143.0</jsii.version>
@@ -247,10 +247,10 @@
         <handlebars.version>4.5.8</handlebars.version>
         <assertj.version>3.27.7</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <approvaltests.version>31.1.0</approvaltests.version>
+        <approvaltests.version>32.2.0</approvaltests.version>
         <json-path.version>3.0.0</json-path.version>
         <xmlunit.version>2.14.0</xmlunit.version>
-        <jsonunit.version>6.4.0</jsonunit.version>
+        <jsonunit.version>6.4.1</jsonunit.version>
         <checkstyle.version>12.3.1</checkstyle.version>
         <sleeper.system.test.short.id />
         <sleeper.system.test.vpc.id />

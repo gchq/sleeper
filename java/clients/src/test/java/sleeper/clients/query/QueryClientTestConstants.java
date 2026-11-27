@@ -29,6 +29,9 @@ public class QueryClientTestConstants {
     public static final String YES_OPTION = "y";
     public static final String NO_OPTION = "n";
     public static final String EXIT_OPTION = "";
+    public static final String NO_SQL_OPTION = "";
+    public static final String MIN_ROW_KEY = "3";
+    public static final String MAX_ROW_KEY = "6";
     public static final String PROMPT_QUERY_TYPE = "Exact (e), range (r), or file of keys/ranges (f) query? \n";
     public static final String PROMPT_QUERY_FILE = "Enter path to file of keys/ranges, one per line (single value for an exact query, min,max for a range): \n";
     public static final String PROMPT_EXACT_KEY_LONG_TYPE = "Enter a key for row key field key of type LongType{}: \n";

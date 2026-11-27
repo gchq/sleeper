@@ -16,7 +16,6 @@
 package sleeper.cdk.artefacts;
 
 import org.approvaltests.Approvals;
-import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
@@ -25,6 +24,8 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 
 import sleeper.cdk.testutil.StackPrinter;
+
+import static sleeper.core.testutils.ApprovalTestsHelper.namedApprovalFile;
 
 public class SleeperArtefactRepositoriesIT {
 
@@ -39,8 +40,7 @@ public class SleeperArtefactRepositoriesIT {
         SleeperArtefactRepositories.Builder.create(stack, "test-deployment").build();
 
         // Then
-        Approvals.verify(printer.toJson(stack), new Options()
-                .forFile().withName("repositories", ".json"));
+        Approvals.verify(printer.toJson(stack), namedApprovalFile("repositories", ".json"));
     }
 
     private Stack createRootStack(String deploymentId) {

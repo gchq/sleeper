@@ -60,7 +60,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.query.QueryClientTestConstants.EXACT_QUERY_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.EXIT_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.FILE_QUERY_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.MAX_ROW_KEY;
+import static sleeper.clients.query.QueryClientTestConstants.MIN_ROW_KEY;
 import static sleeper.clients.query.QueryClientTestConstants.NO_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.NO_SQL_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_EXACT_KEY_LONG_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_INCLUSIVE;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_ROW_KEY_LONG_TYPE;
@@ -155,7 +158,7 @@ public class QueryClientTest {
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
-                    "3", "6", "",
+                    MIN_ROW_KEY, MAX_ROW_KEY, NO_SQL_OPTION,
                     EXIT_OPTION);
             runQueryClient();
 

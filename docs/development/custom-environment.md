@@ -60,6 +60,24 @@ export RUSTUP_UPDATE_ROOT=https://rustup.internal.example.com/rustup
 
 Any variable can be set independently. If all are unset, the builder images are built against the public rustup servers.
 
+`RUSTUP_INIT_URL` can serve either the `rustup-init.sh` shell script or the compiled `rustup-init` program. If it
+serves the compiled program, it must be the build for the architecture of the machine building the image.
+
+### `AL2023_REPO_URL`
+
+Overrides the Amazon Linux 2023 package repository used by `dnf` when building the builder images. The value replaces
+`cdn.amazonlinux.com/al2023` in the image's repository configuration, so the mirror must keep the same layout below that
+path, e.g. `core/mirrors/<release>/<architecture>/mirror.list`. Give the host and path only, without `https://`.
+
+Example:
+
+```bash
+export AL2023_REPO_URL=al2023.internal.example.com/al2023
+./rust/builders/build.sh
+```
+
+If unset, the builder images use the public Amazon Linux repositories.
+
 ### `EXTRA_CARGO_CONFIG`
 
 Appends arbitrary TOML to the Cargo configuration used for the current Rust build. The content is appended to the configuration from `rust/.cargo/config.toml` without modifying the checked‑in file.

@@ -16,7 +16,6 @@
 package sleeper.compaction.core.job.commit;
 
 import org.approvaltests.Approvals;
-import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -41,6 +40,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.core.testutils.ApprovalTestsHelper.namedApprovalFile;
 import static sleeper.core.testutils.SupplierTestHelper.exampleUUID;
 import static sleeper.core.testutils.SupplierTestHelper.numberedUUID;
 
@@ -98,8 +98,7 @@ public class CompactionCommitMessageSerDeTest {
         CompactionCommitMessage message = new CompactionCommitMessage(tableId, createExampleFilesRequestOfRepresentativeSize());
 
         // When / Then
-        Approvals.verify(serDe.toJsonPrettyPrint(message), new Options().forFile()
-                .withName("example-compaction-commit", ".json"));
+        Approvals.verify(serDe.toJsonPrettyPrint(message), namedApprovalFile("example-compaction-commit", ".json"));
     }
 
     @Test

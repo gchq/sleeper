@@ -154,10 +154,6 @@ macro_rules! key_type_helper {
 }
 
 impl AggregateUDFImpl for MapAggregator {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
     fn name(&self) -> &'static str {
         "map_agg"
     }

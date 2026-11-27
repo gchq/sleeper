@@ -19,6 +19,7 @@ ARG RUST_VERSION=1.96
 ARG RUSTUP_INIT_URL=https://sh.rustup.rs
 ARG RUSTUP_DIST_SERVER
 ARG RUSTUP_UPDATE_ROOT
+ARG AL2023_REPO_URL
 
 # Copy certs/ if it exists, skip silently if not. The glob pattern cert[s]/ matches "certs/" when
 # present but matches nothing (instead of failing) when absent — Docker's COPY fails on missing
@@ -27,6 +28,10 @@ ARG RUSTUP_UPDATE_ROOT
 COPY cert[s]/ /etc/pki/ca-trust/source/anchors/
 # Only rebuild the trust bundle if certs are present in the anchors dir
 RUN [ -z "$(ls -A /etc/pki/ca-trust/source/anchors 2>/dev/null)" ] || update-ca-trust extract
+
+# Point dnf at an Amazon Linux mirror if one is set. Must come before any dnf command.
+RUN [ -z "${AL2023_REPO_URL}" ] \
+    || sed -i "s|cdn.amazonlinux.com/al2023|${AL2023_REPO_URL}|g" /etc/yum.repos.d/amazonlinux.repo
 
 RUN mkdir -p /opt/sysroot/x86_64/var/cache /opt/sysroot/aarch64/var/cache
 
@@ -47,11 +52,14 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/.cargo \
     PATH=/usr/local/.cargo/bin:${PATH}
 
-# Install Rust and add both required targets to toolchain
-RUN curl --proto '=https' --tlsv1.2 --fail --show-error --silent --output /tmp/rustup-init.sh \
+# Install Rust and add both required targets to toolchain.
+# The installer is run directly rather than through sh, so RUSTUP_INIT_URL can
+# serve either the rustup-init.sh script or the compiled rustup-init.
+RUN curl --proto '=https' --tlsv1.2 --fail --show-error --silent --output /tmp/rustup-init \
     ${RUSTUP_INIT_URL} \
-    && sh /tmp/rustup-init.sh -y --no-modify-path --profile minimal --default-toolchain ${RUST_VERSION} \
-    && rm -f /tmp/rustup-init.sh \
+    && chmod 755 /tmp/rustup-init \
+    && /tmp/rustup-init -y --no-modify-path --profile minimal --default-toolchain ${RUST_VERSION} \
+    && rm -f /tmp/rustup-init \
     && rustup target add aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu --toolchain ${RUST_VERSION}
 
 # Create two sysroots, whichever one matches the host architecture should skip downloading repo metadata.

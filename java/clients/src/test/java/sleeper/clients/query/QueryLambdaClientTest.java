@@ -69,7 +69,10 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.query.QueryClientTestConstants.DEFAULT_RESULTS_READ_THREADS_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.EXIT_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.MAX_ROW_KEY;
+import static sleeper.clients.query.QueryClientTestConstants.MIN_ROW_KEY;
 import static sleeper.clients.query.QueryClientTestConstants.NO_OPTION;
+import static sleeper.clients.query.QueryClientTestConstants.NO_SQL_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.PRINT_AS_SUBQUERIES_FINISH_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.PRINT_WHEN_FINISHED_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MAX_INCLUSIVE;
@@ -89,6 +92,14 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryLambdaClientTest {
+    private static final String MIN_ROW_KEY_MATCHING_NO_ROWS = "100";
+    private static final String MAX_ROW_KEY_MATCHING_NO_ROWS = "200";
+    private static final String COUNT_ROWS_SQL = "SELECT count(*) FROM query_results";
+    private static final String ONE_RESULTS_READ_THREAD = "1";
+    private static final String TWO_RESULTS_READ_THREADS = "2";
+    private static final String ZERO_RESULTS_READ_THREADS = "0";
+    private static final String NON_NUMERIC_RESULTS_READ_THREADS = "abc";
+
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final ToStringConsoleOutput out = new ToStringConsoleOutput();
@@ -118,7 +129,7 @@ public class QueryLambdaClientTest {
                 SEND_TO_S3_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
-                "3", "6", "",
+                MIN_ROW_KEY, MAX_ROW_KEY, NO_SQL_OPTION,
                 EXIT_OPTION);
         runQueryClient(query -> {
         }, tracker);
@@ -146,7 +157,7 @@ public class QueryLambdaClientTest {
                 SEND_TO_S3_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
-                "3", "6", "",
+                MIN_ROW_KEY, MAX_ROW_KEY, NO_SQL_OPTION,
                 EXIT_OPTION);
         runQueryClient(query -> {
         }, tracker);
@@ -174,7 +185,7 @@ public class QueryLambdaClientTest {
                 SEND_TO_S3_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
-                "3", "6", "",
+                MIN_ROW_KEY, MAX_ROW_KEY, NO_SQL_OPTION,
                 EXIT_OPTION);
         runQueryClient();
 
@@ -209,7 +220,7 @@ public class QueryLambdaClientTest {
                 DEFAULT_RESULTS_READ_THREADS_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
-                "3", "6", "",
+                MIN_ROW_KEY, MAX_ROW_KEY, NO_SQL_OPTION,
                 EXIT_OPTION);
         runQueryClient();
 
@@ -224,6 +235,38 @@ public class QueryLambdaClientTest {
                         "Row{key=4}\n" +
                         "Row{key=5}\n" +
                         "Row{key=6}");
+    }
+
+    @Test
+    void shouldPrintFieldsComputedBySqlThatAreNotInTheTableSchema() throws Exception {
+        // Given
+        createTable("test-table", createSchemaWithKey("key"));
+        List<Query> queries = new ArrayList<>();
+        QuerySender querySender = query -> {
+            queries.add(query);
+            resultsByQueryId.put(query.getQueryId(), List.of(new Row(Map.of("count(*)", 3L))));
+            queryTracker.queryCompleted(query, new ResultsOutputInfo(1,
+                    List.of(new ResultsOutputLocation("s3", "test.parquet"))));
+        };
+
+        // When
+        // - An SQL query is provided that changes the schema
+        in.enterNextPrompts(
+                SEND_TO_CONSOLE_OPTION,
+                PRINT_WHEN_FINISHED_OPTION,
+                DEFAULT_RESULTS_READ_THREADS_OPTION,
+                RANGE_QUERY_OPTION,
+                NO_OPTION, YES_OPTION,
+                MIN_ROW_KEY, MAX_ROW_KEY, COUNT_ROWS_SQL,
+                EXIT_OPTION);
+        runQueryClient(querySender, queryTracker);
+
+        // Then
+        assertThat(queries).extracting(query -> query.getProcessingConfig().getSqlQuery())
+                .containsExactly(COUNT_ROWS_SQL);
+        assertThat(out.toString())
+                .contains("Returned Rows:\n" +
+                        "Row{values={count(*)=3}}");
     }
 
     @Test
@@ -243,7 +286,7 @@ public class QueryLambdaClientTest {
                 DEFAULT_RESULTS_READ_THREADS_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
-                "3", "6", "",
+                MIN_ROW_KEY, MAX_ROW_KEY, NO_SQL_OPTION,
                 EXIT_OPTION);
         runQueryClient();
 
@@ -273,10 +316,10 @@ public class QueryLambdaClientTest {
         in.enterNextPrompts(
                 SEND_TO_CONSOLE_OPTION,
                 PRINT_WHEN_FINISHED_OPTION,
-                "2",
+                TWO_RESULTS_READ_THREADS,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
-                "3", "6", "",
+                MIN_ROW_KEY, MAX_ROW_KEY, NO_SQL_OPTION,
                 EXIT_OPTION);
         runQueryClient();
 
@@ -301,7 +344,7 @@ public class QueryLambdaClientTest {
         in.enterNextPrompts(
                 SEND_TO_CONSOLE_OPTION,
                 PRINT_WHEN_FINISHED_OPTION,
-                "0", "abc", "1",
+                ZERO_RESULTS_READ_THREADS, NON_NUMERIC_RESULTS_READ_THREADS, ONE_RESULTS_READ_THREAD,
                 EXIT_OPTION);
         runQueryClient();
 
@@ -322,7 +365,7 @@ public class QueryLambdaClientTest {
                 SEND_TO_S3_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
-                "3", "6", "",
+                MIN_ROW_KEY, MAX_ROW_KEY, NO_SQL_OPTION,
                 EXIT_OPTION);
         runQueryClient();
 
@@ -346,7 +389,7 @@ public class QueryLambdaClientTest {
                 DEFAULT_RESULTS_READ_THREADS_OPTION,
                 RANGE_QUERY_OPTION,
                 NO_OPTION, YES_OPTION,
-                "100", "200", "",
+                MIN_ROW_KEY_MATCHING_NO_ROWS, MAX_ROW_KEY_MATCHING_NO_ROWS, NO_SQL_OPTION,
                 EXIT_OPTION);
         runQueryClient();
 

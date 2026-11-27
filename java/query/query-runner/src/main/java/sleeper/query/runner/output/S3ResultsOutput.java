@@ -36,11 +36,9 @@ import sleeper.query.core.output.ResultsOutputLocation;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -119,17 +117,6 @@ public class S3ResultsOutput implements ResultsOutput {
     }
 
     private Schema writerSchema(QueryOrLeafPartitionQuery query) {
-        Schema schema = tableProperties.getSchema();
-        List<String> requestedValueFields = query.getProcessingConfig().getRequestedValueFields();
-        if (requestedValueFields == null) {
-            return schema;
-        }
-        return Schema.builder()
-                .rowKeyFields(schema.getRowKeyFields())
-                .sortKeyFields(schema.getSortKeyFields())
-                .valueFields(schema.getValueFields().stream()
-                        .filter(field -> requestedValueFields.contains(field.getName()))
-                        .collect(Collectors.toList()))
-                .build();
+        return query.getProcessingConfig().narrowToRequestedValueFields(tableProperties.getSchema());
     }
 }
