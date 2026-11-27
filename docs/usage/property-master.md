@@ -4,6 +4,7 @@
 
 Below you can find all properties that can be set for a Sleeper instance by the user.
 
+[API](properties/instance/user/api.md)<br>
 [Athena](properties/instance/user/athena.md)<br>
 [Bulk Export](properties/instance/user/bulk_export.md)<br>
 [Bulk Import](properties/instance/user/bulk_import.md)<br>
@@ -22,6 +23,7 @@ Below you can find all properties that can be set for a Sleeper instance by the 
 
 Below you can find all properties that can be set for a Sleeper instance by the CDK during deployment.
 
+[API](properties/instance/cdk/api.md)<br>
 [Bulk Export](properties/instance/cdk/bulk_export.md)<br>
 [Bulk Import](properties/instance/cdk/bulk_import.md)<br>
 [Common](properties/instance/cdk/common.md)<br>

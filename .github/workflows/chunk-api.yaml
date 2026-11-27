@@ -1,0 +1,19 @@
+name: Build API Modules
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/chunk-api.yaml'
+      - '.github/workflows/chunk.yaml'
+      - '.github/config/chunks.yaml'
+      - 'code-style/checkstyle*.xml'
+      - 'code-style/spotbugs*.xml'
+      - 'java/pom.xml'
+      - 'java/api/pom.xml'
+      - 'java/api/api-auth/**'
+      - 'java/core/**'
+
+jobs:
+  chunk-workflow:
+    uses: ./.github/workflows/chunk.yaml
+    with:
+      chunkId: api

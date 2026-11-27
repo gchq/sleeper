@@ -88,6 +88,18 @@ public class InstancePropertyGroup {
     public static final PropertyGroup ATHENA = instanceGroup("Athena")
             .description("The following instance properties relate to the integration with Athena.")
             .build();
+    public static final PropertyGroup API = instanceGroup("API")
+            .description("The following instance properties relate to the Sleeper REST API, " +
+                    "including how clients authenticate and which clients are authorised.")
+            .details("The API rejects all access unless at least one authentication source is configured. " +
+                    "An authentication source is either an OIDC issuer listed in sleeper.rest.api.auth.oidc.issuers, " +
+                    "a Cognito user pool created by setting sleeper.rest.api.auth.cognito.enabled, or IAM " +
+                    "authentication, which is enabled by default.\n" +
+                    "\n" +
+                    "Authentication establishes who a client is. It never grants them any permissions. " +
+                    "Permissions come only from the principal allow-list, so a claim in a token cannot grant " +
+                    "a Sleeper role.")
+            .build();
     public static final PropertyGroup TABLE_PROPERTY_DEFAULT = instanceGroup("Table Property Defaults")
             .description("The following instance properties relate to default values used by table properties.")
             .build();

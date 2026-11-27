@@ -243,6 +243,66 @@ public class SleeperPropertyValueUtils {
     }
 
     /**
+     * Checks if a property value is a valid list of OIDC issuers for the Sleeper REST API. An unset value is valid,
+     * and means no OIDC issuers are configured.
+     *
+     * @param  string the issuers as a JSON array
+     * @return        true if the string represents a valid list of issuers
+     */
+    public static boolean isValidOidcIssuers(String string) {
+        try {
+            OidcIssuerConfigSerDe.readList(string);
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Checks if a property value is a valid list of principals for the Sleeper REST API. Each principal is written as
+     * iam#&lt;ARN&gt; or jwt#&lt;issuer&gt;#&lt;subject&gt;. An unset value is valid, and means no principals are listed.
+     *
+     * @param  value the list of principals
+     * @return       true if every principal in the list could be read
+     */
+    public static boolean isValidPrincipalList(String value) {
+        return readList(value).stream().allMatch(SleeperPropertyValueUtils::isValidPrincipal);
+    }
+
+    private static boolean isValidPrincipal(String principal) {
+        if (principal.startsWith("iam#")) {
+            return isArnForIamPrincipal(principal.substring("iam#".length()));
+        } else if (principal.startsWith("jwt#")) {
+            String issuerAndSubject = principal.substring("jwt#".length());
+            int separator = issuerAndSubject.indexOf('#');
+            return separator > 0
+                    && !issuerAndSubject.substring(0, separator).isBlank()
+                    && !issuerAndSubject.substring(separator + 1).isBlank();
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean isArnForIamPrincipal(String arn) {
+        String[] parts = arn.split(":", 6);
+        if (parts.length < 6 || !"arn".equals(parts[0]) || parts[1].isEmpty() || parts[2].isEmpty()) {
+            return false;
+        }
+        String resource = parts[5];
+        if ("root".equals(resource)) {
+            return true;
+        } else if (resource.startsWith("assumed-role/")) {
+            String afterPrefix = resource.substring("assumed-role/".length());
+            int separator = afterPrefix.indexOf('/');
+            return !(separator < 0 ? afterPrefix : afterPrefix.substring(0, separator)).isBlank();
+        } else if (resource.startsWith("role/") || resource.startsWith("user/")) {
+            return !resource.substring(resource.lastIndexOf('/') + 1).isBlank();
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * Checks if a property value is a valid number of bytes to configure the Hadoop AWS integration.
      *
      * @param  numberOfBytes the value
