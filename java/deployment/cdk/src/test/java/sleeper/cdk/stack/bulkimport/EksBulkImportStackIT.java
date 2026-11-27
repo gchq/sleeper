@@ -16,7 +16,6 @@
 package sleeper.cdk.stack.bulkimport;
 
 import org.approvaltests.Approvals;
-import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 
 import sleeper.cdk.stack.SleeperCoreStacks;
@@ -28,6 +27,7 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AUTOM
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_AWSCLI_LAYER_ARN;
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_EKS_CLUSTER_TYPE;
 import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
+import static sleeper.core.testutils.ApprovalTestsHelper.namedApprovalFile;
 
 public class EksBulkImportStackIT extends SleeperStackTestBase {
 
@@ -43,8 +43,7 @@ public class EksBulkImportStackIT extends SleeperStackTestBase {
                 rootStack, "EksBulkImport", instanceProperties, instanceArtefacts(), bucket, core);
 
         // Then
-        Approvals.verify(printer.toJson(stack), new Options()
-                .forFile().withName("eks-bulk-import", ".json"));
+        Approvals.verify(printer.toJson(stack), namedApprovalFile("eks-bulk-import", ".json"));
     }
 
     @Test
@@ -60,8 +59,7 @@ public class EksBulkImportStackIT extends SleeperStackTestBase {
                 rootStack, "EksBulkImport", instanceProperties, instanceArtefacts(), bucket, core);
 
         // Then
-        Approvals.verify(printer.toJson(stack), new Options()
-                .forFile().withName("eks-bulk-import-automode", ".json"));
+        Approvals.verify(printer.toJson(stack), namedApprovalFile("eks-bulk-import-automode", ".json"));
     }
 
     @Test
@@ -77,8 +75,7 @@ public class EksBulkImportStackIT extends SleeperStackTestBase {
                 rootStack, "EksBulkImport", instanceProperties, instanceArtefacts(), bucket, core);
 
         // Then
-        Approvals.verify(printer.toJson(stack), new Options()
-                .forFile().withName("eks-bulk-import-automode-nodepool-disabled", ".json"));
+        Approvals.verify(printer.toJson(stack), namedApprovalFile("eks-bulk-import-automode-nodepool-disabled", ".json"));
     }
 
     @Test
@@ -95,8 +92,7 @@ public class EksBulkImportStackIT extends SleeperStackTestBase {
                 rootStack, "EksBulkImport", instanceProperties, instanceArtefacts(), bucket, core);
 
         // Then
-        Approvals.verify(printer.toJson(stack), new Options()
-                .forFile().withName("eks-bulk-import-automode-logging-disabled", ".json"));
+        Approvals.verify(printer.toJson(stack), namedApprovalFile("eks-bulk-import-automode-logging-disabled", ".json"));
     }
 
     @Test
@@ -112,8 +108,7 @@ public class EksBulkImportStackIT extends SleeperStackTestBase {
                 rootStack, "EksBulkImport", instanceProperties, instanceArtefacts(), bucket, core);
 
         // Then
-        Approvals.verify(printer.toJson(stack), new Options()
-                .forFile().withName("eks-bulk-import-admin-roles", ".json"));
+        Approvals.verify(printer.toJson(stack), namedApprovalFile("eks-bulk-import-admin-roles", ".json"));
     }
 
     @Test
@@ -130,8 +125,7 @@ public class EksBulkImportStackIT extends SleeperStackTestBase {
                 rootStack, "EksBulkImport", instanceProperties, instanceArtefacts(), bucket, core);
 
         // Then
-        Approvals.verify(printer.toJson(stack), new Options()
-                .forFile().withName("eks-bulk-import-awscli-layer", ".json"));
+        Approvals.verify(printer.toJson(stack), namedApprovalFile("eks-bulk-import-awscli-layer", ".json"));
     }
 
 }

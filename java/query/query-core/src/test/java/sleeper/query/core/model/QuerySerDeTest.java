@@ -16,7 +16,6 @@
 package sleeper.query.core.model;
 
 import org.approvaltests.Approvals;
-import org.approvaltests.core.Options;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
@@ -53,6 +52,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.core.testutils.ApprovalTestsHelper.namedApprovalFile;
 
 public class QuerySerDeTest {
 
@@ -155,14 +155,14 @@ public class QuerySerDeTest {
         void shouldGenerateExpectedJsonForParentQuery() {
             Approvals.verify(
                     createSerDe().toJsonPrettyPrint(query),
-                    new Options().forFile().withName("all-fields-parent-query", ".json"));
+                    namedApprovalFile("all-fields-parent-query", ".json"));
         }
 
         @Test
         void shouldGenerateExpectedJsonForLeafQuery() {
             Approvals.verify(
                     createSerDe().toJsonPrettyPrint(leafPartitionQuery),
-                    new Options().forFile().withName("all-fields-leaf-query", ".json"));
+                    namedApprovalFile("all-fields-leaf-query", ".json"));
         }
 
         private static Stream<Arguments> serDeConstructors() {
