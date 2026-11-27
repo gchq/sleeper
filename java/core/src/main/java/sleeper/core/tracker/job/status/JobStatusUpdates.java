@@ -17,11 +17,16 @@ package sleeper.core.tracker.job.status;
 
 import sleeper.core.tracker.job.run.JobRuns;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Updates held in a job tracker for a job. These are sorted by the latest update first, and are organised by
@@ -67,6 +72,22 @@ public class JobStatusUpdates {
         return builder.stream();
     }
 
+    /**
+     * Creates and streams instances of this class from status update records, where all records for each job are
+     * consecutive. Only the records for one job are held in memory at a time. Jobs are returned in the order they
+     * occur in the input. If the records for a job are not consecutive, that job will be returned more than once, with
+     * each instance holding only some of its records.
+     *
+     * @param  records the status update records, grouped by job
+     * @return         a stream of instances of this class, each for a different job
+     */
+    public static Stream<JobStatusUpdates> streamFromRecordsGroupedByJob(Stream<JobStatusUpdateRecord> records) {
+        Iterator<JobStatusUpdates> iterator = new GroupedByJobIterator(records.iterator());
+        return StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED | Spliterator.NONNULL), false)
+                .onClose(records::close);
+    }
+
     public String getJobId() {
         return jobId;
     }
@@ -104,5 +125,42 @@ public class JobStatusUpdates {
         return records.stream()
                 .sorted(Comparator.comparing(JobStatusUpdateRecord::getUpdateTime).reversed())
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Iterates through jobs by gathering consecutive status update records with the same job ID. Reads ahead by one
+     * record to find the end of each job.
+     */
+    private static class GroupedByJobIterator implements Iterator<JobStatusUpdates> {
+        private final Iterator<JobStatusUpdateRecord> records;
+        private JobStatusUpdateRecord nextRecord;
+
+        GroupedByJobIterator(Iterator<JobStatusUpdateRecord> records) {
+            this.records = records;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return nextRecord != null || records.hasNext();
+        }
+
+        @Override
+        public JobStatusUpdates next() {
+            JobStatusUpdateRecord firstRecord = nextRecord != null ? nextRecord : records.next();
+            nextRecord = null;
+            String jobId = firstRecord.getJobId();
+            List<JobStatusUpdateRecord> jobRecords = new ArrayList<>();
+            jobRecords.add(firstRecord);
+            while (records.hasNext()) {
+                JobStatusUpdateRecord record = records.next();
+                if (jobId.equals(record.getJobId())) {
+                    jobRecords.add(record);
+                } else {
+                    nextRecord = record;
+                    break;
+                }
+            }
+            return from(jobId, jobRecords);
+        }
     }
 }

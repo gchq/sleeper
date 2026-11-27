@@ -30,30 +30,59 @@ import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.com
 public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
-    public void shouldReturnMultipleCompactionJobsSortedMostRecentFirst() {
+    public void shouldReturnMultipleCompactionJobsSortedByJobId() {
         // Given
         Partition partition = singlePartition();
         FileReferenceFactory fileFactory = fileFactory(partition);
-        CompactionJob job1 = jobFactory.createCompactionJob(
+        CompactionJob job1 = jobFactory.createCompactionJob("job-1",
                 List.of(fileFactory.rootFile("file1", 123L)),
                 partition.getId());
-        CompactionJob job2 = jobFactory.createCompactionJob(
+        CompactionJob job2 = jobFactory.createCompactionJob("job-2",
                 List.of(fileFactory.rootFile("file2", 456L)),
                 partition.getId());
-        CompactionJob job3 = jobFactory.createCompactionJob(
+        CompactionJob job3 = jobFactory.createCompactionJob("job-3",
                 List.of(fileFactory.rootFile("file3", 789L)),
                 partition.getId());
 
         // When
-        storeJobsCreated(job1, job2, job3);
+        storeJobsCreated(job3, job1, job2);
 
         // Then
         assertThat(tracker.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        compactionJobCreated(job3, ignoredUpdateTime()),
+                        compactionJobCreated(job1, ignoredUpdateTime()),
                         compactionJobCreated(job2, ignoredUpdateTime()),
-                        compactionJobCreated(job1, ignoredUpdateTime()));
+                        compactionJobCreated(job3, ignoredUpdateTime()));
+    }
+
+    @Test
+    public void shouldReturnAllUpdatesForEachJobWhenUpdatesAreInterleavedBetweenJobs() {
+        // Given
+        Partition partition = singlePartition();
+        FileReferenceFactory fileFactory = fileFactory(partition);
+        CompactionJob job1 = jobFactory.createCompactionJob("job-1",
+                List.of(fileFactory.rootFile("file1", 123L)),
+                partition.getId());
+        CompactionJob job2 = jobFactory.createCompactionJob("job-2",
+                List.of(fileFactory.rootFile("file2", 456L)),
+                partition.getId());
+
+        // When
+        storeJobsCreated(job1, job2);
+        tracker.jobStarted(job1.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).jobRunId("run-1").build());
+        tracker.jobStarted(job2.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).jobRunId("run-2").build());
+        tracker.jobFinished(job1.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).jobRunId("run-1").build());
+        tracker.jobFinished(job2.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).jobRunId("run-2").build());
+        tracker.jobCommitted(job1.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).jobRunId("run-1").build());
+        tracker.jobCommitted(job2.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).jobRunId("run-2").build());
+
+        // Then
+        assertThat(tracker.getAllJobs(tableId))
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .containsExactly(
+                        finishedThenCommittedStatusWithDefaults(job1),
+                        finishedThenCommittedStatusWithDefaults(job2));
     }
 
     @Test

@@ -158,8 +158,16 @@ class DynamoDBCompactionJobStatusFormat {
         return Hex.encodeHexString(bytes);
     }
 
+    /**
+     * Reads compaction job statuses from items in the job updates table. The items must be in the order returned by a
+     * DynamoDB query, sorted by the range key. Since the range key starts with the job ID, all items for each job will
+     * be consecutive, and only one job will be held in memory at a time.
+     *
+     * @param  items the items from the job updates table, in range key order
+     * @return       the compaction job statuses
+     */
     static Stream<CompactionJobStatus> streamJobStatuses(Stream<Map<String, AttributeValue>> items) {
-        return CompactionJobStatus.streamFrom(items
+        return CompactionJobStatus.streamFromRecordsGroupedByJob(items
                 .map(DynamoDBCompactionJobStatusFormat::getStatusUpdateRecord));
     }
 
