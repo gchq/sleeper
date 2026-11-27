@@ -34,7 +34,7 @@ from sleeper.ingest import IngestJob, IngestJobSender
 from sleeper.ingest_batcher import IngestBatcherSender, IngestBatcherSubmitRequest
 from sleeper.properties import CommonCdkProperty, IngestCdkProperty, InstanceProperties, QueryCdkProperty, load_instance_properties
 from sleeper.properties.cdk_defined_properties import queue_name_from_url
-from sleeper.query import Query, Region
+from sleeper.query import Query, QuerySender, Region
 from sleeper.rest import AddTableResponse, RestApiClient, TableSchema
 from sleeper.web_socket_query import WebSocketQueryProcessor
 
@@ -315,19 +315,15 @@ class SleeperClient:
         first query will be significantly slower than subsequent ones as the lambda needs to start up, unless the
         KeepLambdaWarm stack is deployed.
 
+        If the query is too large to fit in an SQS message, it is written to the query results bucket and the message
+        only holds its location. This requires permission to write to the query results bucket.
+
         :param query: the query
 
         :return: list of the result rows
         """
-        message = query.to_dict()
-        logger.debug(message)
-        message_json = json.dumps(message)
-
-        query_queue_name = queue_name_from_url(self._instance_properties.get(QueryCdkProperty.QUERY_QUEUE_URL))
-        query_queue_sqs = self._sqs_resource.get_queue_by_name(QueueName=query_queue_name)
-        query_queue_sqs.send_message(MessageBody=message_json)
-
-        logger.debug(f"Submitted query with id {query.query_id}")
+        logger.debug(query.to_dict())
+        QuerySender(self._sqs_resource, self._s3_client, self._instance_properties).send(query)
 
         located_rows = _receive_messages(self._instance_properties, self._s3_resource, self._s3_fs, self._dynamo_resource, self._deserialiser, query.query_id)
         return located_rows

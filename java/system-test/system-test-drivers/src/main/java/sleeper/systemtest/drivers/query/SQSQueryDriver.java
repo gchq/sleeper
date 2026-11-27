@@ -32,6 +32,7 @@ import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
+import sleeper.query.runner.S3QueryJsonStore;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.systemtest.drivers.util.ReadRowsFromS3;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -75,7 +76,9 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     public void send(Query query) {
         sqsClient.sendMessage(request -> request
                 .queueUrl(instance.getInstanceProperties().get(QUERY_QUEUE_URL))
-                .messageBody(new QuerySerDe(new SchemaLoaderFromInstanceContext(instance)).toJson(query)));
+                .messageBody(S3QueryJsonStore.createUploader(instance.getInstanceProperties(),
+                        new QuerySerDe(new SchemaLoaderFromInstanceContext(instance)), s3Client)
+                        .serialiseAndUploadIfTooBig(query)));
     }
 
     @Override

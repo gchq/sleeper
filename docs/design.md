@@ -357,9 +357,17 @@ If the ranges span multiple leaf partitions, then the query is split up into mul
 partition.
 
 Queries can be executed directly from Java. Sleeper also allows queries to be executed in
-lambdas. Queries are sent to an SQS queue. A lambda picks up this message. If the query only overlaps one partition
-then it is executed by that lambda. Otherwise the query is broken into subqueries that are placed back on the queue
-so that they can be executed in parallel.
+lambdas. Queries are sent to an SQS queue. A lambda picks up this message and breaks the query into one subquery per
+leaf partition. The subqueries are sent to a separate leaf partition query queue, where they are executed in parallel by
+another lambda.
+
+An SQS message has a maximum size of 256KiB. A query with many ranges, or a subquery that reads many files, can be too
+large to fit in a message. In this case the query is written to a file in the query results bucket in S3, and the
+message only contains the S3 key of that file, and optionally the query ID. The lambda that receives the message reads
+the query from S3. If the query ID is set in the message, it must match the ID of the query in S3, and if the query
+cannot be read then the failure is reported against that ID. The files are not deleted after the query is read, so that
+the message can be retried. They are deleted by the expiry rule on the query results bucket, after the number of days
+set in `sleeper.query.results.bucket.expiry.days`.
 
 ## Athena integration
 

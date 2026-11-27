@@ -322,6 +322,50 @@ public class QuerySerDeTest {
         }
     }
 
+    @Nested
+    @DisplayName("Pointer to stored query")
+    class PointerToStoredQuery {
+
+        @Test
+        void shouldWriteAndParsePointerToStoredQuery() {
+            // When
+            String json = createSerDe().toJsonPointingToStoredQuery("test-query", "queries/test-query.json");
+            QueryJson parsed = createSerDe().parseQueryJson(json);
+
+            // Then
+            assertThat(json).isEqualTo("{\"queryId\":\"test-query\",\"queryJsonS3Key\":\"queries/test-query.json\"}");
+            assertThat(parsed.getQueryId()).isEqualTo("test-query");
+            assertThat(parsed.getQueryJsonS3Key()).isEqualTo("queries/test-query.json");
+            assertThat(parsed.isOnlyPointerToStoredQuery()).isTrue();
+        }
+
+        @Test
+        void shouldWritePointerWithNoQueryId() {
+            // When
+            String json = createSerDe().toJsonPointingToStoredQuery(null, "queries/test-query.json");
+
+            // Then
+            assertThat(json).isEqualTo("{\"queryJsonS3Key\":\"queries/test-query.json\"}");
+        }
+
+        @Test
+        void shouldNotIncludeStoredQueryKeyWhenWritingQuery() {
+            // Given
+            Query query = Query.builder()
+                    .queryId("test-query")
+                    .tableName("my-table")
+                    .regions(List.of(regionWithOneRange(factory -> factory.createRange("key", 10, 20))))
+                    .build();
+
+            // When
+            String json = createSerDe().toJson(query);
+
+            // Then
+            assertThat(json).doesNotContain("queryJsonS3Key");
+            assertThat(createSerDe().parseQueryJson(json).getQueryJsonS3Key()).isNull();
+        }
+    }
+
     private QuerySerDe createSerDe() {
         return new QuerySerDe(new FixedTablePropertiesProvider(tableProperties));
     }

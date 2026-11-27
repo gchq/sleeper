@@ -22782,6 +22782,43 @@
                       ]
                     }
                   ]
+                },
+                {
+                  "Action": [
+                    "s3:GetObject*",
+                    "s3:GetBucket*",
+                    "s3:List*",
+                    "s3:DeleteObject*",
+                    "s3:PutObject",
+                    "s3:PutObjectLegalHold",
+                    "s3:PutObjectRetention",
+                    "s3:PutObjectTagging",
+                    "s3:PutObjectVersionTagging",
+                    "s3:Abort*"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "QueryResultsBucketA33A3E24",
+                        "Arn"
+                      ]
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Fn::GetAtt": [
+                              "QueryResultsBucketA33A3E24",
+                              "Arn"
+                            ]
+                          },
+                          "/*"
+                        ]
+                      ]
+                    }
+                  ]
                 }
               ]
             },
@@ -23048,47 +23085,6 @@
             ]
           }
         },
-        "QueryExecutorLambdaServiceRoleA47BCEB3": {
-          "Type": "AWS::IAM::Role",
-          "Properties": {
-            "ManagedPolicyArns": [
-              {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition"
-                    },
-                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                  ]
-                ]
-              }
-            ],
-            "AssumeRolePolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "Service": "lambda.amazonaws.com"
-                  }
-                }
-              ]
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "Query"
-              },
-              {
-                "Key": "InstanceID",
-                "Value": "test-instance"
-              }
-            ]
-          }
-        },
         "QueryResultsBucketA33A3E24": {
           "Type": "AWS::S3::Bucket",
           "DeletionPolicy": "Retain",
@@ -23115,6 +23111,47 @@
                 {
                   "ExpirationInDays": 7,
                   "Status": "Enabled"
+                }
+              ]
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Query"
+              },
+              {
+                "Key": "InstanceID",
+                "Value": "test-instance"
+              }
+            ]
+          }
+        },
+        "QueryExecutorLambdaServiceRoleA47BCEB3": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "ManagedPolicyArns": [
+              {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                  ]
+                ]
+              }
+            ],
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": "sts:AssumeRole",
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                  }
                 }
               ]
             },

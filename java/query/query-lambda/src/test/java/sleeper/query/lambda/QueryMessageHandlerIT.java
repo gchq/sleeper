@@ -28,8 +28,11 @@ import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.type.LongType;
 import sleeper.local.aws.test.LocalAwsTestBase;
+import sleeper.query.core.model.InMemoryQueryJsonStore;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryMessageReader;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
+import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.tracker.QueryState;
 import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
@@ -56,7 +59,9 @@ public class QueryMessageHandlerIT extends LocalAwsTestBase {
     }
 
     private final TableProperties tableProperties = createTable("table-1");
-    private final QueryMessageHandler queryMessageHandler = new QueryMessageHandler(new FixedTablePropertiesProvider(tableProperties),
+    private final InMemoryQueryJsonStore queryJsonStore = new InMemoryQueryJsonStore();
+    private final QueryMessageHandler queryMessageHandler = new QueryMessageHandler(
+            new QueryMessageReader(queryJsonStore, new QuerySerDe(new FixedTablePropertiesProvider(tableProperties))),
             queryTracker, () -> "invalid-query-id");
 
     @Nested
@@ -235,6 +240,84 @@ public class QueryMessageHandlerIT extends LocalAwsTestBase {
                 .regions(List.of(new Region(rangeFactory().createRange("key", 123L, 456L))))
                 .build()));
         assertThat(queryTracker.getFailedQueries()).isEmpty();
+    }
+
+    @Nested
+    @DisplayName("Stored query")
+    class StoredQuery {
+        private final String storedJson = "{" +
+                "  \"queryId\": \"my-query\"," +
+                "  \"type\": \"Query\"," +
+                "  \"resultsPublisherConfig\": {}," +
+                "  \"tableName\": \"table-1\"," +
+                "  \"regions\": [{" +
+                "    \"key\": {" +
+                "        \"min\": \"123\"," +
+                "        \"minInclusive\": true," +
+                "        \"max\": \"456\"," +
+                "        \"maxInclusive\": false" +
+                "      }" +
+                "  }]" +
+                "}";
+
+        @Test
+        void shouldLoadStoredQuery() {
+            // Given
+            queryJsonStore.store("queries/my-query.json", storedJson);
+            String message = "{\"queryId\":\"my-query\",\"queryJsonS3Key\":\"queries/my-query.json\"}";
+
+            // When
+            Optional<QueryOrLeafPartitionQuery> query = queryMessageHandler.deserialiseAndValidate(message);
+
+            // Then
+            assertThat(query).contains(new QueryOrLeafPartitionQuery(Query.builder()
+                    .tableName("table-1")
+                    .queryId("my-query")
+                    .regions(List.of(new Region(rangeFactory().createRange("key", 123L, 456L))))
+                    .build()));
+            assertThat(queryTracker.getFailedQueries()).isEmpty();
+        }
+
+        @Test
+        void shouldReportQueryIdFromMessageWhenItDoesNotMatchStoredQuery() {
+            // Given
+            queryJsonStore.store("queries/my-query.json", storedJson);
+            String message = "{\"queryId\":\"other-query\",\"queryJsonS3Key\":\"queries/my-query.json\"}";
+
+            // When
+            Optional<QueryOrLeafPartitionQuery> query = queryMessageHandler.deserialiseAndValidate(message);
+
+            // Then
+            assertThat(query).isNotPresent();
+            assertThat(queryTracker.getFailedQueries())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                    .containsExactly(TrackedQuery.builder()
+                            .queryId("other-query")
+                            .lastKnownState(QueryState.FAILED)
+                            .errorMessage("Query validation failed for query \"other-query\": " +
+                                    "Query ID in message does not match stored query at queries/my-query.json, found \"my-query\"")
+                            .build());
+        }
+
+        @Test
+        void shouldReportQueryIdFromMessageWhenStoredQueryIsMissing() {
+            // Given
+            String message = "{\"queryId\":\"my-query\",\"queryJsonS3Key\":\"queries/missing.json\"}";
+
+            // When
+            Optional<QueryOrLeafPartitionQuery> query = queryMessageHandler.deserialiseAndValidate(message);
+
+            // Then
+            assertThat(query).isNotPresent();
+            assertThat(queryTracker.getFailedQueries())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                    .containsExactly(TrackedQuery.builder()
+                            .queryId("my-query")
+                            .lastKnownState(QueryState.FAILED)
+                            .errorMessage("Query validation failed for query \"my-query\": " +
+                                    "Query JSON not found: queries/missing.json")
+                            .build());
+        }
     }
 
     private static InstanceProperties createInstanceProperties() {

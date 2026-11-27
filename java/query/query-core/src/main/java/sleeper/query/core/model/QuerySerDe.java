@@ -40,6 +40,11 @@ import java.util.function.Supplier;
  *
  */
 public class QuerySerDe {
+    /**
+     * The field holding the key in S3 a query was uploaded to, if it was too large to send in a message.
+     */
+    public static final String STORED_QUERY_KEY_FIELD = "queryJsonS3Key";
+
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
     private final SchemaLoader schemaLoader;
@@ -116,8 +121,7 @@ public class QuerySerDe {
      * @return      a Sleeper query
      */
     public Query fromJson(String json) {
-        QueryJson queryJson = gson.fromJson(json, QueryJson.class);
-        return queryJson.toParentQuery(schemaLoader);
+        return parseQueryJson(json).toParentQuery(schemaLoader);
     }
 
     /**
@@ -131,7 +135,38 @@ public class QuerySerDe {
      * @return      a Sleeper query or leaf partition query
      */
     public QueryOrLeafPartitionQuery fromJsonOrLeafQuery(String json) {
-        QueryJson queryJson = gson.fromJson(json, QueryJson.class);
+        return fromQueryJson(parseQueryJson(json));
+    }
+
+    /**
+     * Creates JSON pointing to a query that has been stored separately because it was too large.
+     *
+     * @param  queryId the query ID, or null if not known
+     * @param  key     the key the query JSON is stored under
+     * @return         the JSON
+     */
+    String toJsonPointingToStoredQuery(String queryId, String key) {
+        return gson.toJson(QueryJson.pointingToStoredQuery(queryId, key));
+    }
+
+    /**
+     * Parses JSON into the JSON model for a query, without converting it into a query. This allows the JSON to be
+     * checked for a pointer to a stored query.
+     *
+     * @param  json the JSON
+     * @return      the parsed JSON model
+     */
+    QueryJson parseQueryJson(String json) {
+        return gson.fromJson(json, QueryJson.class);
+    }
+
+    /**
+     * Converts a parsed JSON model into either a Sleeper Query or a LeafPartitionQuery object.
+     *
+     * @param  queryJson the parsed JSON model
+     * @return           a Sleeper query or leaf partition query
+     */
+    QueryOrLeafPartitionQuery fromQueryJson(QueryJson queryJson) {
         return queryJson.toQueryOrLeafQuery(schemaLoader);
     }
 

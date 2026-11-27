@@ -15,12 +15,14 @@
  */
 package sleeper.clients.api;
 
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.query.core.model.Query;
-import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.core.model.QueryMessageUploader;
+import sleeper.query.runner.S3QueryJsonStore;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 
@@ -37,18 +39,21 @@ public interface QuerySender {
     void sendQuery(Query query);
 
     /**
-     * Creates a sender that will submit queries to an SQS queue.
+     * Creates a sender that will submit queries to an SQS queue. Queries that are too large for an SQS message will
+     * be uploaded to S3.
      *
      * @param  instanceProperties      the instance properties
      * @param  tablePropertiesProvider the table properties provider
      * @param  sqsClient               the SQS client
+     * @param  s3Client                the S3 client
      * @return                         the sender
      */
-    static QuerySender toSqs(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, SqsClient sqsClient) {
-        QuerySerDe querySerDe = new QuerySerDe(tablePropertiesProvider);
+    static QuerySender toSqs(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            SqsClient sqsClient, S3Client s3Client) {
+        QueryMessageUploader messageUploader = S3QueryJsonStore.createUploader(instanceProperties, tablePropertiesProvider, s3Client);
         return query -> {
             sqsClient.sendMessage(request -> request.queueUrl(instanceProperties.get(QUERY_QUEUE_URL))
-                    .messageBody(querySerDe.toJson(query)));
+                    .messageBody(messageUploader.serialiseAndUploadIfTooBig(query)));
         };
     }
 

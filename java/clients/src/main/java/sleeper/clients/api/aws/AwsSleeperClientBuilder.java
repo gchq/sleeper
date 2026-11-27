@@ -87,7 +87,7 @@ public class AwsSleeperClientBuilder {
                 .bulkExportQuerySender(BulkExportQuerySender.toSqs(instanceProperties, awsClients.sqs()))
                 .queryWebSocketSender(QueryWebSocketSender.query(instanceProperties, tablePropertiesProvider,
                         awsClients.awsCredentialsProvider()))
-                .querySender(QuerySender.toSqs(instanceProperties, tablePropertiesProvider, awsClients.sqs()))
+                .querySender(QuerySender.toSqs(instanceProperties, tablePropertiesProvider, awsClients.sqs(), awsClients.s3()))
                 .queryResultsReader(QueryResultsReader.fromS3(instanceProperties, tablePropertiesProvider, hadoop)
                         .withFileReadThreads(queryResultsFileReadThreads))
                 .queryTrackerStore(new DynamoDBQueryTracker(instanceProperties, awsClients.dynamo()))
