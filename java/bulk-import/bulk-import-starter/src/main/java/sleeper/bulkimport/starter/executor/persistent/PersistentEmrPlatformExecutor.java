@@ -25,10 +25,15 @@ import software.amazon.awssdk.services.emr.model.ClusterSummary;
 import software.amazon.awssdk.services.emr.model.EmrException;
 import software.amazon.awssdk.services.emr.model.StepConfig;
 
+import sleeper.bulkimport.core.configuration.BulkImportPlatformSpec;
+import sleeper.bulkimport.core.configuration.SparkConfigurationUtils;
+import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportArguments;
 import sleeper.bulkimport.starter.executor.EmrJarLocation;
 import sleeper.bulkimport.starter.executor.PlatformExecutor;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 
 import java.util.regex.Pattern;
 
@@ -40,29 +45,36 @@ public class PersistentEmrPlatformExecutor implements PlatformExecutor {
     private final EmrClient emrClient;
     private final ReturnBulkImportJobToQueue returnToQueueWhenClusterIsFull;
     private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
     private final String clusterId;
     private final String clusterName;
 
     public PersistentEmrPlatformExecutor(
             EmrClient emrClient,
             ReturnBulkImportJobToQueue returnToQueueWhenClusterIsFull,
-            InstanceProperties instanceProperties) {
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider) {
         this.emrClient = emrClient;
         this.returnToQueueWhenClusterIsFull = returnToQueueWhenClusterIsFull;
         this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
         this.clusterName = instanceProperties.get(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME);
         this.clusterId = getClusterIdFromName(emrClient, clusterName);
     }
 
     @Override
     public void runJobOnPlatform(BulkImportArguments arguments) {
+        BulkImportJob bulkImportJob = arguments.getBulkImportJob();
+        TableProperties tableProperties = tablePropertiesProvider.getByName(bulkImportJob.getTableName());
+        BulkImportPlatformSpec platformSpec = new BulkImportPlatformSpec(tableProperties, bulkImportJob);
         StepConfig stepConfig = StepConfig.builder()
-                .name("Bulk Load (job id " + arguments.getBulkImportJob().getId() + ")")
+                .name("Bulk Load (job id " + bulkImportJob.getId() + ")")
                 .actionOnFailure(ActionOnFailure.CONTINUE)
                 .hadoopJarStep(step -> step
                         .jar("command-runner.jar")
                         .args(arguments.sparkSubmitCommandForEMRCluster(
-                                clusterName, EmrJarLocation.getJarLocation(instanceProperties))))
+                                clusterName, EmrJarLocation.getJarLocation(instanceProperties),
+                                SparkConfigurationUtils.getSparkPersistentEmrDynamicAllocationConfiguration(platformSpec))))
                 .build();
         AddJobFlowStepsRequest addJobFlowStepsRequest = AddJobFlowStepsRequest.builder()
                 .jobFlowId(clusterId)

@@ -302,9 +302,9 @@ the cdk deploy.
 By default, EMR managed auto-scaling is enabled for this cluster.
 The `sleeper.bulk.import.persistent.emr.use.managed.scaling` instance property determines whether managed scaling is
 used for this cluster. If this is set to false then the number of executors in the cluster is set
-to `sleeper.bulk.import.persistent.emr.min.instances`. If it is set to true then the number of executors automatically
-scales up and down between `sleeper.bulk.import.persistent.emr.min.instances`
-and `sleeper.bulk.import.persistent.emr.max.instances`.
+to `sleeper.bulk.import.persistent.emr.min.capacity`. If it is set to true then the number of executors automatically
+scales up and down between `sleeper.bulk.import.persistent.emr.min.capacity`
+and `sleeper.bulk.import.persistent.emr.max.capacity`.
 
 The other properties of the cluster are controlled using similar properties to the non-persistent EMR cluster, e.g.
 
@@ -313,8 +313,8 @@ sleeper.bulk.import.persistent.emr.instance.architecture=x86_64
 sleeper.bulk.import.persistent.emr.master.x86.instance.types=m6i.xlarge
 sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m6i.4xlarge
 sleeper.bulk.import.persistent.emr.use.managed.scaling=true
-sleeper.bulk.import.persistent.emr.min.instances=1
-sleeper.bulk.import.persistent.emr.max.instances=10
+sleeper.bulk.import.persistent.emr.min.capacity=1
+sleeper.bulk.import.persistent.emr.max.capacity=10
 ```
 
 There is an additional property `sleeper.bulk.import.persistent.emr.step.concurrency.level` that is not applicable to
@@ -324,8 +324,36 @@ The URL of the SQS queue to which messages should be sent is given by the instan
 `sleeper.bulk.import.persistent.emr.job.queue.url`which can be found in the config
 object in the bucket named `sleeper-<instance-id>-config`.
 
-Note however that as there is one persistent EMR cluster deployed for the whole instance there are no per-table
-persistent EMR properties, and it does not make sense to change the cluster properties on a per-job basis.
+As there is one persistent EMR cluster deployed for the whole instance, the cluster's properties apply to all tables,
+and it does not make sense to change them on a per-job basis. The exception is how many executors each job uses, which
+can be set per table with dynamic resource allocation, as described below.
+
+##### Dynamic resource allocation on persistent EMR
+
+By default, each bulk import job on the persistent EMR cluster uses Spark dynamic resource allocation. A job starts with
+a small number of executors, and Spark adds executors while there are tasks waiting to run, up to a maximum. Executors
+that are idle are released, so that other jobs running on the cluster at the same time can use them. This also lets EMR
+managed scaling grow and shrink the cluster to match the work being done.
+
+The number of executors for each job is set by these table properties. Each one defaults to the matching instance
+property starting with `sleeper.default.table.bulk.import.persistent.emr.spark.dynamic.allocation.`:
+
+```properties
+sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.enabled=true
+sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.min.executors=0
+sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.initial.executors=3
+sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.max.executors=29
+```
+
+The max executors limits how much of the shared cluster a single job can use. The total size of the cluster is still
+limited by the managed scaling min and max capacity.
+
+These can be overridden for a single job by setting the table property names in `platformSpec`, or by setting Spark
+configuration directly in `sparkConf`.
+
+To use a fixed number of executors for a table instead, set
+`sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.enabled=false`. Each job then uses the number of
+executors set for the cluster in `sleeper.bulk.import.emr.spark.executor.instances`.
 
 #### Instance properties common to the EMR and persistent EMR stacks
 
@@ -404,7 +432,7 @@ created by setting the following instance properties:
 sleeper.bulk.import.persistent.emr.master.x86.instance.types=m6i.xlarge
 sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m6i.4xlarge
 sleeper.bulk.import.persistent.emr.use.managed.scaling=false
-sleeper.bulk.import.persistent.emr.min.instances=10
+sleeper.bulk.import.persistent.emr.min.capacity=10
 sleeper.bulk.import.persistent.emr.step.concurrency.level=2
 ```
 

@@ -65,6 +65,10 @@ import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_
 import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_MIN_DISTRIBUTION_PERCENT;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_MIN_ROWS;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.properties.instance.PersistentEMRProperty.DEFAULT_BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION;
+import static sleeper.core.properties.instance.PersistentEMRProperty.DEFAULT_BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
+import static sleeper.core.properties.instance.PersistentEMRProperty.DEFAULT_BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
+import static sleeper.core.properties.instance.PersistentEMRProperty.DEFAULT_BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MIN_EXECUTORS;
 import static sleeper.core.properties.instance.QueryProperty.DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS;
@@ -764,6 +768,45 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
     TableProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_SQL_SHUFFLE_PARTITIONS = Index.propertyBuilder("sleeper.table.bulk.import.emr.serverless.spark.sql.shuffle.partitions")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_SPARK_SQL_SHUFFLE_PARTITIONS)
             .description("(EMR Serverless mode only) The number of partitions used in a Spark SQL/dataframe shuffle operation. Used to set spark.sql.shuffle.partitions.\n" +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .build();
+    TableProperty BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION = Index.propertyBuilder("sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.enabled")
+            .defaultProperty(DEFAULT_BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION)
+            .description("(Persistent EMR mode only) Whether Spark should use dynamic allocation to scale the " +
+                    "executors used by jobs for this table on the persistent EMR cluster. Used to set spark.dynamicAllocation.enabled.\n" +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .build();
+    TableProperty BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MIN_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.min.executors")
+            .defaultProperty(DEFAULT_BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MIN_EXECUTORS)
+            .description("(Persistent EMR mode only) The lower bound for the number of executors for a job when " +
+                    "dynamic allocation is enabled. Used to set spark.dynamicAllocation.minExecutors.\n" +
+                    "Must be less than or equal to the initial executors.\n" +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .build();
+    TableProperty BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.initial.executors")
+            .defaultProperty(DEFAULT_BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS)
+            .description("(Persistent EMR mode only) The number of executors a job starts with when dynamic " +
+                    "allocation is enabled. Used to set spark.dynamicAllocation.initialExecutors.\n" +
+                    "Must be between the min and max executors, inclusive.\n" +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .build();
+    TableProperty BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.persistent.emr.spark.dynamic.allocation.max.executors")
+            .defaultProperty(DEFAULT_BULK_IMPORT_PERSISTENT_EMR_DYNAMIC_ALLOCATION_MAX_EXECUTORS)
+            .description("(Persistent EMR mode only) The upper bound for the number of executors for a job when " +
+                    "dynamic allocation is enabled. Used to set spark.dynamicAllocation.maxExecutors.\n" +
+                    "Must be greater than or equal to the initial executors.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
