@@ -195,4 +195,36 @@ class SleeperPropertyValueUtilsTest {
         }
     }
 
+    @Nested
+    @DisplayName("Validate lists of principals")
+    class ValidatePrincipalLists {
+
+        @Test
+        void shouldAllowNoPrincipals() {
+            assertThat(SleeperPropertyValueUtils.isValidPrincipalList(null)).isTrue();
+            assertThat(SleeperPropertyValueUtils.isValidPrincipalList("")).isTrue();
+        }
+
+        @Test
+        void shouldAllowSeveralPrincipals() {
+            assertThat(SleeperPropertyValueUtils.isValidPrincipalList(
+                    "iam#arn:aws:iam::123456789012:role/SleeperAdmin, jwt#https://idp.internal/realms/sleeper#a1b2c3"))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldRefuseAListWithOnePrincipalThatCannotBeRead() {
+            assertThat(SleeperPropertyValueUtils.isValidPrincipalList(
+                    "iam#arn:aws:iam::123456789012:role/SleeperAdmin,arn:aws:iam::123456789012:role/Typo"))
+                    .isFalse();
+        }
+
+        @Test
+        void shouldRefuseAnEmptyEntryInAList() {
+            assertThat(SleeperPropertyValueUtils.isValidPrincipalList(
+                    "iam#arn:aws:iam::123456789012:role/SleeperAdmin,,jwt#https://idp.internal/realms/sleeper#a1b2c3"))
+                    .isFalse();
+        }
+    }
+
 }
