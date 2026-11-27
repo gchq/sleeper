@@ -55,14 +55,14 @@ public class WhileCompactionST {
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "1"));
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
+        sleeper.updateTableProperties(Map.of(
+                INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
     }
 
     @Test
     void shouldAllowQueriesWhileCompactionsAreRunning(SleeperDsl sleeper) throws Exception {
-        // Given many files requiring compaction
-        sleeper.updateTableProperties(Map.of(
-                INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
 
+        // Given many files requiring compaction
         for (int i = 0; i < 20; i++) {
             sleeper.ingest().direct(tempDir)
                     .numberedRows(LongStream.range(0, 100));
@@ -72,12 +72,14 @@ public class WhileCompactionST {
         BackgroundQueries queries = sleeper.directQuery()
                 .startContinuousQueries();
 
-        CompactionDsl compaction = sleeper.compaction();
-        compaction.createJobs(20)
-                .waitForTasks(1)
-                .waitForJobs();
-
-        queries.stopAndWait();
+        try {
+            CompactionDsl compaction = sleeper.compaction();
+            compaction.createJobs(20)
+                    .waitForTasks(1)
+                    .waitForJobs();
+        } finally {
+            queries.stopAndWait();
+        }
 
         // Then queries succeed
         assertThat(queries.getFailures()).isEmpty();
