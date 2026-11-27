@@ -16,14 +16,20 @@
 
 package sleeper.clients.admin.screen;
 
+import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.TableSelectHelper;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.report.FilesStatusReport;
 import sleeper.clients.report.TableNamesReport;
+import sleeper.clients.report.filestatus.CompactionJobTrackerLookup;
+import sleeper.clients.report.filestatus.FileStatusDetailLevel;
 import sleeper.clients.report.filestatus.StandardFileStatusReporter;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.core.properties.table.TableProperties;
+
+import java.time.Instant;
+import java.util.function.Supplier;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
@@ -31,13 +37,18 @@ public class FilesStatusReportScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final AdminClientPropertiesStore store;
+    private final AdminClientTrackerFactory trackers;
     private final TableSelectHelper tableSelectHelper;
+    private final Supplier<Instant> timeSupplier;
 
-    public FilesStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, TableNamesReport tableNamesReport) {
+    public FilesStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, AdminClientTrackerFactory trackers, TableNamesReport tableNamesReport,
+            Supplier<Instant> timeSupplier) {
         this.out = out;
         this.in = in;
         this.store = store;
+        this.trackers = trackers;
         this.tableSelectHelper = new TableSelectHelper(out, in, store, tableNamesReport);
+        this.timeSupplier = timeSupplier;
     }
 
     public void chooseTableAndPrint(String instanceId) {
@@ -63,7 +74,10 @@ public class FilesStatusReportScreen {
         }
         boolean verbose = in.promptLine("Run report in verbose mode? (y/N): ").equalsIgnoreCase("y");
 
-        new FilesStatusReport(store.loadStateStore(instanceId, tableProperties), maxReadyForGCFiles, verbose,
-                new StandardFileStatusReporter(out.printStream())).run();
+        new FilesStatusReport(store.loadStateStore(instanceId, tableProperties), maxReadyForGCFiles,
+                verbose ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY,
+                new StandardFileStatusReporter(out.printStream()),
+                CompactionJobTrackerLookup.from(trackers.loadCompactionJobTracker(tableProperties.getInstanceProperties())),
+                timeSupplier).run();
     }
 }

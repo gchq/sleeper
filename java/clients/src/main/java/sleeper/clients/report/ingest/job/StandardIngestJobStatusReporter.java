@@ -93,7 +93,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
             if (!statusList.isEmpty()) {
                 out.println();
-                out.println("For more information concerning any failure reasons, please consult the more detailed report.");
+                out.println("For more information concerning any failure reasons, please use the detailed query type.");
             }
         }
     }

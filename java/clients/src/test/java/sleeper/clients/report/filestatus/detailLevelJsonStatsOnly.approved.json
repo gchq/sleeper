@@ -1,0 +1,62 @@
+{
+  "timeOfReport": "2022-08-22T15:00:00.001Z",
+  "moreThanMax": false,
+  "leafPartitionCount": 4,
+  "nonLeafPartitionCount": 3,
+  "statistics": {
+    "rows": {
+      "allPartitions": {
+        "totalRows": 1000,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 1000
+      },
+      "leafPartitions": {
+        "totalRows": 800,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 800
+      },
+      "nonLeafPartitions": {
+        "totalRows": 200,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 200
+      }
+    },
+    "fileReferences": {
+      "totalFiles": 11,
+      "filesWithReferences": 9,
+      "filesWithNoReferences": 2,
+      "totalReferences": 9,
+      "leafPartitions": {
+        "minReferences": 2,
+        "maxReferences": 5,
+        "meanReferences": 3.5,
+        "medianReferences": 3.5,
+        "percentile90": 4.7,
+        "percentile99": 4.97,
+        "totalReferences": 7
+      },
+      "nonLeafPartitions": {
+        "minReferences": 1,
+        "maxReferences": 1,
+        "meanReferences": 1.0,
+        "medianReferences": 1.0,
+        "percentile90": 1.0,
+        "percentile99": 1.0,
+        "totalReferences": 2
+      }
+    },
+    "compactions": {
+      "assigned": {
+        "numJobsAssignedTo": 3,
+        "onNumPartitions": 2,
+        "numReferencesAssigned": 6
+      },
+      "assignedMoreThan12HoursAgo": {
+        "numJobsAssignedTo": 0,
+        "onNumPartitions": 0,
+        "numReferencesAssigned": 0
+      },
+      "oldestAssignmentTime": "2022-08-22T14:21:00Z"
+    }
+  }
+}

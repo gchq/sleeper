@@ -84,7 +84,7 @@ public class FileReferencePrinter {
             if (partitionFiles == null) {
                 return;
             }
-            String locationName = PartitionsPrinter.buildPartitionLocationName(partition, partitionTree);
+            String locationName = partitionTree.buildLocationName(partition);
             out.print("Partition at " + locationName + ":");
             if (partitionFiles.size() > 1) {
                 out.println();

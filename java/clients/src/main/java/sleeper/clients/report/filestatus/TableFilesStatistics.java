@@ -16,12 +16,13 @@
 
 package sleeper.clients.report.filestatus;
 
-import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -35,31 +36,34 @@ import java.util.stream.Collectors;
 public class TableFilesStatistics {
     private final Rows rows;
     private final References fileReferences;
+    private final Compactions compactions;
 
-    private TableFilesStatistics(Rows rows, References fileReferences) {
+    private TableFilesStatistics(Rows rows, References fileReferences, Compactions compactions) {
         this.rows = rows;
         this.fileReferences = fileReferences;
+        this.compactions = compactions;
     }
 
     /**
      * Computes statistics on files in a Sleeper table.
      *
-     * @param  files         the files held in the table
-     * @param  partitionById all partitions in the table, indexed by their ID
-     * @return               the statistics
+     * @param  timeNow           the time now
+     * @param  files             the files held in the table
+     * @param  partitions        the table's partition tree
+     * @param  compactions       compaction file assignments in the table
+     * @param  jobTrackerChecked whether the compaction jobs were looked up in the job tracker
+     * @return                   the statistics
      */
-    public static TableFilesStatistics from(AllReferencesToAllFiles files, Map<String, Partition> partitionById) {
+    static TableFilesStatistics from(Instant timeNow, AllReferencesToAllFiles files, PartitionTree partitions, List<TableFilesPartitionCompactions> compactions, boolean jobTrackerChecked) {
 
         List<FileReference> fileReferences = files.getFilesWithReferences().stream()
                 .flatMap(file -> file.getReferences().stream())
                 .collect(Collectors.toUnmodifiableList());
         List<FileReference> fileReferencesInLeafPartitions = fileReferences.stream()
-                .filter(f -> partitionById.containsKey(f.getPartitionId()))
-                .filter(f -> partitionById.get(f.getPartitionId()).isLeafPartition())
+                .filter(f -> partitions.isLeafPartition(f.getPartitionId()))
                 .collect(Collectors.toList());
         List<FileReference> fileReferencesInNonLeafPartitions = fileReferences.stream()
-                .filter(f -> partitionById.containsKey(f.getPartitionId()))
-                .filter(f -> !partitionById.get(f.getPartitionId()).isLeafPartition())
+                .filter(f -> partitions.isNonLeafPartition(f.getPartitionId()))
                 .collect(Collectors.toList());
 
         return new TableFilesStatistics(
@@ -69,9 +73,12 @@ public class TableFilesStatistics {
                         FileRowsStats.from(fileReferencesInNonLeafPartitions)),
                 new References(
                         files.getFiles().size(),
+                        files.getFilesWithReferences().size(),
+                        files.getFilesWithNoReferences().size(),
                         fileReferences.size(),
                         FileReferencesStats.from(fileReferencesInLeafPartitions),
-                        FileReferencesStats.from(fileReferencesInNonLeafPartitions)));
+                        FileReferencesStats.from(fileReferencesInNonLeafPartitions)),
+                Compactions.from(timeNow, compactions, jobTrackerChecked));
     }
 
     public long getReferencesInLeafPartitions() {
@@ -118,8 +125,28 @@ public class TableFilesStatistics {
         return fileReferences.totalFiles;
     }
 
+    public int getFilesWithReferencesCount() {
+        return fileReferences.filesWithReferences;
+    }
+
+    public int getFilesWithNoReferencesCount() {
+        return fileReferences.filesWithNoReferences;
+    }
+
     public int getFileReferenceCount() {
         return fileReferences.totalReferences;
+    }
+
+    public CompactionJobsSummary getCompactionsAssignedSummary() {
+        return compactions.assigned;
+    }
+
+    public CompactionJobsSummary getCompactionsAssignedMoreThan12HoursAgoSummary() {
+        return compactions.assignedMoreThan12HoursAgo;
+    }
+
+    public Instant getOldestCompactionAssignmentTime() {
+        return compactions.oldestAssignmentTime;
     }
 
     /**
@@ -142,15 +169,60 @@ public class TableFilesStatistics {
      */
     private static class References {
         private final int totalFiles;
+        private final int filesWithReferences;
+        private final int filesWithNoReferences;
         private final int totalReferences;
         private final FileReferencesStats leafPartitions;
         private final FileReferencesStats nonLeafPartitions;
 
-        private References(int totalFiles, int totalReferences, FileReferencesStats leafPartitions, FileReferencesStats nonLeafPartitions) {
+        private References(
+                int totalFiles, int filesWithReferences, int filesWithNoReferences, int totalReferences,
+                FileReferencesStats leafPartitions, FileReferencesStats nonLeafPartitions) {
             this.totalFiles = totalFiles;
+            this.filesWithReferences = filesWithReferences;
+            this.filesWithNoReferences = filesWithNoReferences;
             this.totalReferences = totalReferences;
             this.leafPartitions = leafPartitions;
             this.nonLeafPartitions = nonLeafPartitions;
+        }
+    }
+
+    /**
+     * Statistics on compactions assigned to file references in the state store.
+     */
+    private static class Compactions {
+        private final CompactionJobsSummary assigned;
+        private final CompactionJobsSummary assignedMoreThan12HoursAgo;
+        private final Instant oldestAssignmentTime;
+
+        private Compactions(
+                CompactionJobsSummary all, CompactionJobsSummary assignedMoreThan12HoursAgo,
+                Instant oldestAssignmentTime) {
+            this.assigned = all;
+            this.assignedMoreThan12HoursAgo = assignedMoreThan12HoursAgo;
+            this.oldestAssignmentTime = oldestAssignmentTime;
+        }
+
+        static Compactions from(Instant timeNow, List<TableFilesPartitionCompactions> compactions, boolean jobTrackerChecked) {
+            CompactionJobsSummary.Builder assigned = CompactionJobsSummary.builder().countTrackerStatuses(jobTrackerChecked);
+            CompactionJobsSummary.Builder assignedMoreThan12HoursAgo = CompactionJobsSummary.builder().countTrackerStatuses(jobTrackerChecked);
+            Instant oldestTime = null;
+            Instant time12HoursAgo = timeNow.minus(Duration.ofHours(12));
+            for (TableFilesPartitionCompactions partition : compactions) {
+                assigned.startPartition();
+                assignedMoreThan12HoursAgo.startPartition();
+                for (TableFilesCompaction job : partition.getJobs()) {
+                    assigned.addJob(job);
+                    Instant assignmentTime = job.getAssignmentTime();
+                    if (oldestTime == null || assignmentTime.isBefore(oldestTime)) {
+                        oldestTime = assignmentTime;
+                    }
+                    if (assignmentTime.isBefore(time12HoursAgo)) {
+                        assignedMoreThan12HoursAgo.addJob(job);
+                    }
+                }
+            }
+            return new Compactions(assigned.build(), assignedMoreThan12HoursAgo.build(), oldestTime);
         }
     }
 

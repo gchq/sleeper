@@ -23,6 +23,8 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.report.compaction.task.StandardCompactionTaskStatusReporter;
+import sleeper.clients.report.filestatus.CompactionJobTrackerLookup;
+import sleeper.clients.report.filestatus.FileStatusDetailLevel;
 import sleeper.clients.report.filestatus.StandardFileStatusReporter;
 import sleeper.clients.report.job.query.UnfinishedJobsQuery;
 import sleeper.clients.report.partitions.PartitionsStatusReporter;
@@ -39,6 +41,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.statestore.StateStoreFactory;
+
+import java.time.Instant;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
@@ -80,7 +84,9 @@ public class StatusReport {
         new PartitionsStatusReport(stateStore, tableProperties, new PartitionsStatusReporter(System.out)).run();
 
         // Data files
-        new FilesStatusReport(stateStore, 1000, verbose, new StandardFileStatusReporter()).run();
+        new FilesStatusReport(stateStore, 1000,
+                verbose ? FileStatusDetailLevel.FULL : FileStatusDetailLevel.STATS_ONLY,
+                new StandardFileStatusReporter(), CompactionJobTrackerLookup.from(compactionJobTracker), Instant::now).run();
 
         // Jobs
         new CompactionJobStatusReport(compactionJobTracker,

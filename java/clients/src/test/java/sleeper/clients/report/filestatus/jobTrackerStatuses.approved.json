@@ -1,0 +1,164 @@
+{
+  "timeOfReport": "2022-08-22T15:01:00.001Z",
+  "moreThanMax": false,
+  "leafPartitionCount": 2,
+  "nonLeafPartitionCount": 1,
+  "statistics": {
+    "rows": {
+      "allPartitions": {
+        "totalRows": 700,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 700
+      },
+      "leafPartitions": {
+        "totalRows": 700,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 700
+      },
+      "nonLeafPartitions": {
+        "totalRows": 0,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 0
+      }
+    },
+    "fileReferences": {
+      "totalFiles": 7,
+      "filesWithReferences": 7,
+      "filesWithNoReferences": 0,
+      "totalReferences": 7,
+      "leafPartitions": {
+        "minReferences": 3,
+        "maxReferences": 4,
+        "meanReferences": 3.5,
+        "medianReferences": 3.5,
+        "percentile90": 3.9,
+        "percentile99": 3.99,
+        "totalReferences": 7
+      },
+      "nonLeafPartitions": {
+        "totalReferences": 0
+      }
+    },
+    "compactions": {
+      "assigned": {
+        "numJobsAssignedTo": 7,
+        "onNumPartitions": 2,
+        "numReferencesAssigned": 7,
+        "trackerStatusCounts": {
+          "numJobsByStatus": {
+            "CREATED": 1,
+            "IN_PROGRESS": 1,
+            "UNCOMMITTED": 1,
+            "FINISHED": 1,
+            "FAILED": 2
+          },
+          "numJobsNotInTracker": 1
+        }
+      },
+      "assignedMoreThan12HoursAgo": {
+        "numJobsAssignedTo": 3,
+        "onNumPartitions": 2,
+        "numReferencesAssigned": 3,
+        "trackerStatusCounts": {
+          "numJobsByStatus": {
+            "CREATED": 0,
+            "IN_PROGRESS": 1,
+            "UNCOMMITTED": 0,
+            "FINISHED": 0,
+            "FAILED": 1
+          },
+          "numJobsNotInTracker": 1
+        }
+      },
+      "oldestAssignmentTime": "2022-08-22T01:00:00Z"
+    }
+  },
+  "compactions": [
+    {
+      "partitionId": "left",
+      "partitionLocation": "L",
+      "jobs": [
+        {
+          "jobId": "created-job",
+          "assignmentTime": "2022-08-22T14:00:00Z",
+          "inputFiles": [
+            "created.parquet"
+          ],
+          "inJobTracker": true,
+          "trackerStatus": "CREATED",
+          "trackerRuns": 0,
+          "lastTrackerUpdateTime": "2022-08-22T14:00:10Z"
+        },
+        {
+          "jobId": "failed-job-1",
+          "assignmentTime": "2022-08-22T01:00:00Z",
+          "inputFiles": [
+            "failed-1.parquet"
+          ],
+          "inJobTracker": true,
+          "trackerStatus": "FAILED",
+          "trackerRuns": 1,
+          "lastTrackerUpdateTime": "2022-08-22T01:02:00.123Z"
+        },
+        {
+          "jobId": "uncommitted-job",
+          "assignmentTime": "2022-08-22T14:00:00Z",
+          "inputFiles": [
+            "uncommitted.parquet"
+          ],
+          "inJobTracker": true,
+          "trackerStatus": "UNCOMMITTED",
+          "trackerRuns": 1,
+          "lastTrackerUpdateTime": "2022-08-22T14:02:00.123Z"
+        }
+      ]
+    },
+    {
+      "partitionId": "right",
+      "partitionLocation": "R",
+      "jobs": [
+        {
+          "jobId": "failed-job-2",
+          "assignmentTime": "2022-08-22T14:00:00Z",
+          "inputFiles": [
+            "failed-2.parquet"
+          ],
+          "inJobTracker": true,
+          "trackerStatus": "FAILED",
+          "trackerRuns": 1,
+          "lastTrackerUpdateTime": "2022-08-22T14:02:00.123Z"
+        },
+        {
+          "jobId": "finished-job",
+          "assignmentTime": "2022-08-22T14:00:00Z",
+          "inputFiles": [
+            "finished.parquet"
+          ],
+          "inJobTracker": true,
+          "trackerStatus": "FINISHED",
+          "trackerRuns": 1,
+          "lastTrackerUpdateTime": "2022-08-22T14:03:00.123Z"
+        },
+        {
+          "jobId": "in-progress-job",
+          "assignmentTime": "2022-08-22T01:00:00Z",
+          "inputFiles": [
+            "in-progress.parquet"
+          ],
+          "inJobTracker": true,
+          "trackerStatus": "IN_PROGRESS",
+          "trackerRuns": 1,
+          "lastTrackerUpdateTime": "2022-08-22T01:01:00.123Z"
+        },
+        {
+          "jobId": "untracked-job",
+          "assignmentTime": "2022-08-22T01:00:00Z",
+          "inputFiles": [
+            "untracked.parquet"
+          ],
+          "inJobTracker": false
+        }
+      ]
+    }
+  ]
+}

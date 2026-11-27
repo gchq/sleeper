@@ -626,7 +626,7 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
 
     private static String printPartitionLocationNamesAndIds(List<Partition> partitions, PartitionTree tree) {
         return partitions.stream()
-                .map(partition -> PartitionsPrinter.buildPartitionLocationName(partition, tree) + ": " + partition.getId())
+                .map(partition -> tree.buildLocationName(partition) + ": " + partition.getId())
                 .collect(joining("\n"));
     }
 }

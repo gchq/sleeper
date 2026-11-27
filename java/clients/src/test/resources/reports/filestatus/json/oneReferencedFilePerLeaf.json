@@ -1,4 +1,5 @@
 {
+  "timeOfReport": "2022-08-22T15:01:00.001Z",
   "moreThanMax": false,
   "leafPartitionCount": 8,
   "nonLeafPartitionCount": 7,
@@ -22,18 +23,52 @@
     },
     "fileReferences": {
       "totalFiles": 8,
+      "filesWithReferences": 8,
+      "filesWithNoReferences": 0,
       "totalReferences": 8,
       "leafPartitions": {
         "minReferences": 1,
         "maxReferences": 1,
         "meanReferences": 1.0,
         "medianReferences": 1.0,
-        "percentile90":1.0,
-        "percentile99":1.0,
+        "percentile90": 1.0,
+        "percentile99": 1.0,
         "totalReferences": 8
       },
       "nonLeafPartitions": {
         "totalReferences": 0
+      }
+    },
+    "compactions": {
+      "assigned": {
+        "numJobsAssignedTo": 0,
+        "onNumPartitions": 0,
+        "numReferencesAssigned": 0,
+        "trackerStatusCounts": {
+          "numJobsByStatus": {
+            "CREATED": 0,
+            "FAILED": 0,
+            "IN_PROGRESS": 0,
+            "UNCOMMITTED": 0,
+            "FINISHED": 0
+          },
+          "numJobsNotInTracker": 0
+        }
+      },
+      "assignedMoreThan12HoursAgo": {
+        "numJobsAssignedTo": 0,
+        "onNumPartitions": 0,
+        "numReferencesAssigned": 0,
+        "trackerStatusCounts": {
+          "numJobsByStatus": {
+            "CREATED": 0,
+            "FAILED": 0,
+            "IN_PROGRESS": 0,
+            "UNCOMMITTED": 0,
+            "FINISHED": 0
+          },
+          "numJobsNotInTracker": 0
+        }
       }
     }
   },
@@ -150,5 +185,6 @@
         }
       ]
     }
-  ]
+  ],
+  "compactions": []
 }

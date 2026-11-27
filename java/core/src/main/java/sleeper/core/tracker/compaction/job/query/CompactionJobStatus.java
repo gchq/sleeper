@@ -245,6 +245,10 @@ public class CompactionJobStatus {
         return jobRuns.firstTime().orElseThrow();
     }
 
+    public Instant getLastUpdateTime() {
+        return jobRuns.lastTime().orElse(createUpdateTime);
+    }
+
     public List<CompactionJobRun> getRunsLatestFirst() {
         return runsLatestFirst;
     }

@@ -1,0 +1,31 @@
+
+Files Status Report:
+--------------------------
+Time of report: 2022-08-22T15:00:00.001Z
+There are 2 leaf partitions and 1 non-leaf partitions
+Number of files: 7
+Number of files with references: 7
+Number of files with no references, which will be garbage collected: 0
+Number of references to files: 7
+Number of file references in leaf partitions: min = 3, max = 4, mean = 3.500, median = 3.500, 90th percentile = 3.900, 99th percentile = 3.990, total = 7
+Number of file references in non-leaf partitions: 0
+Number of rows referenced in partitions: 700
+Number of rows in non-leaf partitions: 0
+Number of rows in leaf partitions: 700
+Percentage of rows in leaf partitions: 100.0
+Number of compaction jobs assigned to files: 7, in 2 partitions, with 7 file references (100.00% of references)
+	By job tracker status: CREATED: 1, IN_PROGRESS: 1, UNCOMMITTED: 1, FINISHED: 1, FAILED: 2, not in tracker: 1
+Number of compaction jobs assigned more than 12 hours ago: 3, in 2 partitions, with 3 file references (42.86% of references)
+	By job tracker status: IN_PROGRESS: 1, FAILED: 1, not in tracker: 1
+Oldest file assignment time: 2022-08-22T01:00:00Z
+
+Compactions assigned to files:
+Partition left has 3 jobs, at location L
+	Job created-job with 1 files assigned at 2022-08-22T14:00:00Z, tracker shows status CREATED with 0 runs, last tracker update at 2022-08-22T14:00:10Z
+	Job failed-job-1 with 1 files assigned at 2022-08-22T01:00:00Z, tracker shows status FAILED with 1 run, last tracker update at 2022-08-22T01:02:00.123Z
+	Job uncommitted-job with 1 files assigned at 2022-08-22T14:00:00Z, tracker shows status UNCOMMITTED with 1 run, last tracker update at 2022-08-22T14:02:00.123Z
+Partition right has 4 jobs, at location R
+	Job failed-job-2 with 1 files assigned at 2022-08-22T14:00:00Z, tracker shows status FAILED with 1 run, last tracker update at 2022-08-22T14:02:00.123Z
+	Job finished-job with 1 files assigned at 2022-08-22T14:00:00Z, tracker shows status FINISHED with 1 run, last tracker update at 2022-08-22T14:03:00.123Z
+	Job in-progress-job with 1 files assigned at 2022-08-22T01:00:00Z, tracker shows status IN_PROGRESS with 1 run, last tracker update at 2022-08-22T01:01:00.123Z
+	Job untracked-job with 1 files assigned at 2022-08-22T01:00:00Z, not in job tracker

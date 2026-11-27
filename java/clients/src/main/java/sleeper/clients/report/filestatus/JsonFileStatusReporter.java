@@ -37,6 +37,7 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     private final Gson gson = ClientsGsonConfig.standardBuilder()
             .serializeSpecialFloatingPointValues()
             .registerTypeAdapter(AllReferencesToAllFiles.class, allFileReferencesJsonSerializer())
+            .registerTypeAdapter(TableFilesCompaction.class, compactionJsonSerializer())
             .create();
     private final PrintStream out;
 
@@ -49,12 +50,32 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     }
 
     @Override
-    public void report(TableFilesStatus status, boolean verbose) {
+    public void report(TableFilesStatus status, FileStatusDetailLevel detailLevel) {
         out.println(gson.toJson(status));
     }
 
     private static JsonSerializer<AllReferencesToAllFiles> allFileReferencesJsonSerializer() {
         return (files, type, context) -> createAllFileReferencesJson(files, context);
+    }
+
+    private static JsonSerializer<TableFilesCompaction> compactionJsonSerializer() {
+        return (files, type, context) -> createCompactionJson(files, context);
+    }
+
+    private static JsonElement createCompactionJson(TableFilesCompaction compaction, JsonSerializationContext context) {
+        JsonObject object = new JsonObject();
+        object.addProperty("jobId", compaction.getJobId());
+        object.add("assignmentTime", context.serialize(compaction.getAssignmentTime()));
+        object.add("inputFiles", context.serialize(compaction.getFileReferences().stream().map(FileReference::getFilename).toList()));
+        if (compaction.isCheckedInJobTracker()) {
+            object.addProperty("inJobTracker", compaction.getTrackedStatus().isPresent());
+            compaction.getTrackedStatus().ifPresent(status -> {
+                object.addProperty("trackerStatus", status.getFurthestStatusType().toString());
+                object.addProperty("trackerRuns", status.getRunsLatestFirst().size());
+                object.add("lastTrackerUpdateTime", context.serialize(status.getLastUpdateTime()));
+            });
+        }
+        return object;
     }
 
     private static JsonElement createAllFileReferencesJson(AllReferencesToAllFiles files, JsonSerializationContext context) {

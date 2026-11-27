@@ -18,7 +18,9 @@ package sleeper.clients.report.filestatus;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 
+import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * A report on the status of files within a Sleeper table. This includes statistics on the number of partitions, how
@@ -26,6 +28,7 @@ import java.util.Collection;
  */
 public class TableFilesStatus {
 
+    private final Instant timeOfReport;
     private final boolean moreThanMax;
     private final int leafPartitionCount;
     private final int nonLeafPartitionCount;
@@ -33,17 +36,24 @@ public class TableFilesStatus {
     private final TableFilesStatistics statistics;
 
     private final AllReferencesToAllFiles files;
+    private final List<TableFilesPartitionCompactions> compactions;
 
     private TableFilesStatus(Builder builder) {
+        timeOfReport = builder.timeOfReport;
         leafPartitionCount = builder.leafPartitionCount;
         nonLeafPartitionCount = builder.nonLeafPartitionCount;
         statistics = builder.statistics;
         files = builder.files;
-        moreThanMax = files.isMoreThanMax();
+        compactions = builder.compactions;
+        moreThanMax = builder.moreThanMax;
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public Instant getTimeOfReport() {
+        return timeOfReport;
     }
 
     public int getLeafPartitionCount() {
@@ -56,6 +66,14 @@ public class TableFilesStatus {
 
     public int getFileCount() {
         return statistics.getFileCount();
+    }
+
+    public int getFilesWithReferencesCount() {
+        return statistics.getFilesWithReferencesCount();
+    }
+
+    public int getFilesWithNoReferencesCount() {
+        return statistics.getFilesWithNoReferencesCount();
     }
 
     public long getFileReferenceCount() {
@@ -82,10 +100,20 @@ public class TableFilesStatus {
         return statistics.getNonLeafPartitionFileReferenceStats();
     }
 
+    /**
+     * Retrieves files with references. Only present if the report includes file references.
+     *
+     * @return the files with references
+     */
     public Collection<AllReferencesToAFile> getFilesWithReferences() {
         return files.getFilesWithReferences();
     }
 
+    /**
+     * Retrieves files with no references. Only present if the report includes file references.
+     *
+     * @return the files with no references
+     */
     public Collection<AllReferencesToAFile> getFilesWithNoReferences() {
         return files.getFilesWithNoReferences();
     }
@@ -115,19 +143,54 @@ public class TableFilesStatus {
     }
 
     /**
+     * Retrieves compaction jobs assigned to files. Only present if the report includes compaction jobs.
+     *
+     * @return the compactions
+     */
+    public List<TableFilesPartitionCompactions> getCompactions() {
+        return compactions;
+    }
+
+    public CompactionJobsSummary getCompactionsAssignedSummary() {
+        return statistics.getCompactionsAssignedSummary();
+    }
+
+    public CompactionJobsSummary getCompactionsAssignedMoreThan12HoursAgoSummary() {
+        return statistics.getCompactionsAssignedMoreThan12HoursAgoSummary();
+    }
+
+    public Instant getOldestCompactionAssignmentTime() {
+        return statistics.getOldestCompactionAssignmentTime();
+    }
+
+    /**
      * A builder for the status of files in a Sleeper table.
      */
     public static final class Builder {
+        private Instant timeOfReport;
         private int leafPartitionCount;
         private int nonLeafPartitionCount;
         private TableFilesStatistics statistics;
+        private boolean moreThanMax;
         private AllReferencesToAllFiles files;
+        private List<TableFilesPartitionCompactions> compactions;
 
         private Builder() {
         }
 
         public static Builder builder() {
             return new Builder();
+        }
+
+        /**
+         * Sets the time this report was generated.
+         *
+         * @param  timeOfReport the time of the report
+         * @return              this builder
+         */
+        public Builder timeOfReport(Instant timeOfReport) {
+            this.timeOfReport = timeOfReport;
+            return this;
         }
 
         /**
@@ -166,13 +229,36 @@ public class TableFilesStatus {
         }
 
         /**
-         * Sets the files in the Sleeper table.
+         * Sets whether there were more files with no references than the maximum to retrieve.
+         *
+         * @param  moreThanMax true if the count of files with no references was limited
+         * @return             this builder
+         */
+        public Builder moreThanMax(boolean moreThanMax) {
+            this.moreThanMax = moreThanMax;
+            return this;
+        }
+
+        /**
+         * Sets the files in the Sleeper table. Should only be set if the report includes file references.
          *
          * @param  files the files
          * @return       this builder
          */
         public Builder files(AllReferencesToAllFiles files) {
             this.files = files;
+            return this;
+        }
+
+        /**
+         * Sets the compaction jobs currently assigned to files. Should only be set if the report includes compaction
+         * jobs.
+         *
+         * @param  compactions the compactions
+         * @return             this builder
+         */
+        public Builder compactions(List<TableFilesPartitionCompactions> compactions) {
+            this.compactions = compactions;
             return this;
         }
 

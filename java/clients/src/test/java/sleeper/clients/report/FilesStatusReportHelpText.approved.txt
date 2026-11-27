@@ -1,0 +1,22 @@
+Usage: <instance-id> <table-name>
+Available options: --help, --detail, --format, --job-tracker, --max-no-ref-files
+
+Creates a report on the status of files in a Sleeper table.
+
+Note that further information on compaction jobs is available in the compaction job status report, which can show full details of compactions that have run.
+
+--detail <level>
+Level of detail to include in the report. Defaults to stats_only. One of:
+stats_only: statistics on the files in the table.
+compaction_jobs: statistics, and compaction jobs assigned to files.
+references: statistics, and all files and their references.
+full: statistics, all files and their references, and compaction jobs assigned to files.
+
+--format <format>
+Output format. One of CSV, JSON, STANDARD. Defaults to STANDARD.
+
+--job-tracker
+Look up compaction jobs assigned to files in the compaction job tracker, to report their status. Only used when the detail level includes compaction jobs. Defaults to true. Set --job-tracker=false to disable this.
+
+--max-no-ref-files <number>
+Maximum number of files with no references to count. Defaults to 1000.

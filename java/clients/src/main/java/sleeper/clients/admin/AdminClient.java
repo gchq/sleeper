@@ -50,8 +50,10 @@ import sleeper.core.table.TableIndex;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class AdminClient {
     private final TableIndex tableIndex;
@@ -62,10 +64,12 @@ public class AdminClient {
     private final ConsoleInput in;
     private final QueueMessageCount.Client queueClient;
     private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
+    private final Supplier<Instant> timeSupplier;
 
     public AdminClient(TableIndex tableIndex, AdminClientPropertiesStore store, AdminClientTrackerFactory trackers,
             PropertiesEditor editor, ConsoleOutput out, ConsoleInput in,
-            QueueMessageCount.Client queueClient, Function<InstanceProperties, Map<String, Integer>> getStepCount) {
+            QueueMessageCount.Client queueClient, Function<InstanceProperties, Map<String, Integer>> getStepCount,
+            Supplier<Instant> timeSupplier) {
         this.tableIndex = tableIndex;
         this.store = store;
         this.trackers = trackers;
@@ -74,6 +78,7 @@ public class AdminClient {
         this.in = in;
         this.queueClient = queueClient;
         this.getStepCount = getStepCount;
+        this.timeSupplier = timeSupplier;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -108,7 +113,8 @@ public class AdminClient {
             errorCode = start(instanceId, propertiesStore, AdminClientTrackerFactory.from(dynamoClient), out, in,
                     new CommandLinePropertiesEditor(Path.of("/tmp")),
                     QueueMessageCount.withSqsClient(sqsClient),
-                    properties -> PersistentEmrStepCount.byStatus(properties, emrClient));
+                    properties -> PersistentEmrStepCount.byStatus(properties, emrClient),
+                    Instant::now);
         }
         System.exit(errorCode);
     }
@@ -117,7 +123,8 @@ public class AdminClient {
             AdminClientPropertiesStore propertiesStore, AdminClientTrackerFactory trackerFactory,
             ConsoleOutput out, ConsoleInput in, PropertiesEditor editor,
             QueueMessageCount.Client queueClient,
-            Function<InstanceProperties, Map<String, Integer>> getStepCount) throws InterruptedException {
+            Function<InstanceProperties, Map<String, Integer>> getStepCount,
+            Supplier<Instant> timeSupplier) throws InterruptedException {
         TableIndex tableIndex;
         try {
             tableIndex = propertiesStore.loadTableIndex(instanceId);
@@ -131,7 +138,7 @@ public class AdminClient {
                 trackerFactory,
                 editor,
                 out, in,
-                queueClient, getStepCount)
+                queueClient, getStepCount, timeSupplier)
                 .start(instanceId);
         return 0;
     }
@@ -153,7 +160,7 @@ public class AdminClient {
     }
 
     public FilesStatusReportScreen filesStatusReportScreen() {
-        return new FilesStatusReportScreen(out, in, store, tableNamesReport());
+        return new FilesStatusReportScreen(out, in, store, trackers, tableNamesReport(), timeSupplier);
     }
 
     public CompactionStatusReportScreen compactionStatusReportScreen() {
