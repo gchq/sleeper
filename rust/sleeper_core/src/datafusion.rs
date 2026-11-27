@@ -27,9 +27,9 @@ use crate::{
         sketch::Sketcher,
         unalias::unalias_view_projection_columns,
         util::{
-            add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
-            calculate_upload_size, find_topmost_sort_ordering, output_partition_count,
-            register_store, remove_coalesce_physical_stage,
+            add_numeric_casts, apply_full_sort_ordering, apply_max_row_group_size,
+            calculate_metadata_size_hint, calculate_upload_size, find_topmost_sort_ordering,
+            output_partition_count, register_store, remove_coalesce_physical_stage,
             remove_non_schema_columns_from_ordering, retrieve_input_size,
         },
     },
@@ -45,6 +45,7 @@ use datafusion::{
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
     logical_expr::{Expr, LogicalPlanBuilder, SortExpr, ident},
+    parquet::file::metadata::PageIndexPolicy,
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
         ExecutionPlan, expressions::Column, sorts::sort_preserving_merge::SortPreservingMergeExec,
@@ -196,13 +197,18 @@ impl<'a> SleeperOperations<'a> {
             );
             ParquetReadOptions::default()
         };
-        // As `DataFusion`s cached Parquet metadata reader will read (and therefore cache) page indexes
-        // https://docs.rs/datafusion/latest/datafusion/datasource/physical_plan/parquet/metadata/struct.DFParquetMetadata.html
-        // then if the read_page_indexes is true, we don't need to take any other action. If read_page_indexes is false,
-        // then we need to take action to prepopulate DF's metadata cache. We read the Parquet metadata without page indexes
-        // and put it in the cache. Therefore, when DF runs the query, it will already see the metadata in the cache and
-        // will not attempt to do so itself.
-        if !self.config.read_page_indexes() {
+        // By default, DataFusion's cached Parquet metadata reader will read (and therefore cache) page indexes
+        // https://docs.rs/datafusion/latest/datafusion/datasource/physical_plan/parquet/metadata/struct.DFParquetMetadata.html.
+        // For compactions and most queries we don't want the page indexes to be read since it results in extra GET
+        // requests in return for no benefit. If we are returning results via Arrow stream and reading page indexes is
+        // enabled, then take no action and DataFusion will cache as normal. However, if reading page indexes is
+        // disabled, we need to pre-populate the metadata cache without reading page indexes to prevent DataFusion
+        // doing so later.
+        //
+        // If file output is selected, then we also need to pre-populate the cache, since that allows us to check the
+        // maximum row group row count.
+        let writing_file = matches!(self.config.output(), OutputType::File { .. });
+        if !self.config.read_page_indexes() || writing_file {
             let metadata_size_hint = ctx
                 .state_ref()
                 .read()
@@ -211,8 +217,24 @@ impl<'a> SleeperOperations<'a> {
                 .execution
                 .parquet
                 .metadata_size_hint;
-            prepopulate_metadata_cache(ctx, self.config.input_files(), metas, metadata_size_hint)
-                .await?;
+            // Since we will pre-populate the cache if file output is selected, we must make sure to honour the page
+            // indexing policy correctly.
+            let page_index_policy = if self.config.read_page_indexes() {
+                PageIndexPolicy::Optional
+            } else {
+                PageIndexPolicy::Skip
+            };
+            let total_input_rows = prepopulate_metadata_cache(
+                ctx,
+                self.config.input_files(),
+                metas,
+                metadata_size_hint,
+                page_index_policy,
+            )
+            .await?;
+            if writing_file {
+                apply_max_row_group_size(ctx, total_input_rows);
+            }
         }
         // Read Parquet files and apply sort order
         let frame = ctx

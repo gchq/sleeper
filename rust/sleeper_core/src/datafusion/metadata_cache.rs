@@ -33,43 +33,56 @@ use datafusion::{
         cache::cache_manager::{CachedFileMetadataEntry, FileMetadataCache},
         context::SessionContext,
     },
-    parquet::file::metadata::{PageIndexPolicy, ParquetMetaDataReader},
+    parquet::file::metadata::{PageIndexPolicy, ParquetMetaData, ParquetMetaDataReader},
 };
 use log::debug;
 use object_store::{ObjectMeta, ObjectStore};
 use std::sync::Arc;
 use url::Url;
 
-/// Loads the Parquet metadata for the given file. The [`ObjectStore`] instance is used to retrieve the data, it should
-/// be the same one that created the [`ObjectMeta`].
+/// Loads the Parquet metadata for the given file into the cache, if not already present. The [`ObjectStore`] instance is
+/// used to retrieve the data, it should be the same one that created the [`ObjectMeta`].
+///
+/// # Returns
+/// The number of rows in the file, as recorded in its Parquet metadata.
 ///
 /// # Errors
-/// An error will be retuned if the object store couldn't retrieve data or the Parquet file was invalid.
+/// An error will be returned if the object store couldn't retrieve data or the Parquet file was invalid.
 async fn load_metadata(
     cache: Arc<dyn FileMetadataCache>,
     store: Arc<dyn ObjectStore>,
     meta: ObjectMeta,
     metadata_size_hint: Option<usize>,
-) -> Result<bool, DataFusionError> {
-    Ok(if cache.contains_key(&meta.location.clone()) {
-        false
-    } else {
-        debug!("Pre-fetching {} to metadata cache", meta.location);
-        let metadata = ParquetMetaDataReader::new()
+    page_index_policy: PageIndexPolicy,
+) -> Result<u64, DataFusionError> {
+    if let Some(cached) = cache.get(&meta.location)
+        && cached.is_valid_for(&meta)
+        && let Some(cached_parquet) = cached
+            .file_metadata
+            .as_any()
+            .downcast_ref::<CachedParquetMetaData>()
+    {
+        return Ok(row_count(cached_parquet.parquet_metadata()));
+    }
+    debug!("Pre-fetching {} to metadata cache", meta.location);
+    let metadata = Arc::new(
+        ParquetMetaDataReader::new()
             .with_prefetch_hint(metadata_size_hint)
-            .with_page_index_policy(PageIndexPolicy::Skip)
+            .with_page_index_policy(page_index_policy)
             .load_and_finish(ObjectStoreFetch::new(&store, &meta), meta.size)
-            .await?;
+            .await?,
+    );
+    let rows = row_count(&metadata);
+    cache.put(
+        &meta.location.clone(),
+        CachedFileMetadataEntry::new(meta, Arc::new(CachedParquetMetaData::new(metadata))),
+    );
+    Ok(rows)
+}
 
-        cache.put(
-            &meta.location.clone(),
-            CachedFileMetadataEntry::new(
-                meta,
-                Arc::new(CachedParquetMetaData::new(Arc::new(metadata))),
-            ),
-        );
-        true
-    })
+/// Number of rows in a Parquet file according to its metadata. Negative values are treated as zero.
+fn row_count(metadata: &ParquetMetaData) -> u64 {
+    u64::try_from(metadata.file_metadata().num_rows()).unwrap_or(0)
 }
 
 struct UrlWrap<'a>(&'a Url);
@@ -80,7 +93,10 @@ impl AsRef<Url> for UrlWrap<'_> {
     }
 }
 
-/// Prepopulates the cache with Parquet metadata without page indexes.
+/// Prepopulates the cache with Parquet metadata, loading page indexes according to the given policy.
+///
+/// # Returns
+/// The total number of rows across all the given files, as recorded in their Parquet metadata.
 ///
 /// # Errors
 /// Errors can occur due to failures in communicating with the object store or decoding Parquet metadata.
@@ -89,7 +105,8 @@ pub async fn prepopulate_metadata_cache(
     input_files: &[Url],
     object_metas: &[ObjectMeta],
     metadata_size_hint: Option<usize>,
-) -> Result<(), DataFusionError> {
+    page_index_policy: PageIndexPolicy,
+) -> Result<u64, DataFusionError> {
     let file_metadata_cache = ctx.runtime_env().cache_manager.get_file_metadata_cache();
 
     let mut handles = Vec::new();
@@ -100,13 +117,15 @@ pub async fn prepopulate_metadata_cache(
             store,
             meta.clone(),
             metadata_size_hint,
+            page_index_policy,
         )));
     }
+    let mut total_rows = 0u64;
     for handle in handles {
-        handle
+        total_rows += handle
             .await
             .map_err(|e| DataFusionError::External(e.into()))?
             .map_err(|e| DataFusionError::External(e.into()))?;
     }
-    Ok(())
+    Ok(total_rows)
 }

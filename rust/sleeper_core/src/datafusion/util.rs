@@ -33,7 +33,7 @@ use datafusion::{
         sorts::{sort::SortExec, sort_preserving_merge::SortPreservingMergeExec},
     },
 };
-use log::debug;
+use log::{debug, info, warn};
 use num_format::{Locale, ToFormattedString};
 use object_store::{ObjectMeta, ObjectStoreExt};
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -94,6 +94,53 @@ pub fn calculate_upload_size(total_input_size: u64) -> Result<usize, DataFusionE
         upload_size.to_formatted_string(&Locale::en)
     );
     Ok(upload_size)
+}
+
+/// The maximum number of row groups we want to have in a single output Parquet file. The maximum number is 32767, we
+/// leave some headroom below that.
+pub const MAX_ROW_GROUPS_PER_FILE: u64 = 30_000;
+/// Name of the Sleeper table property that sets the maximum rows per row group. Used in log messages.
+const ROW_GROUP_SIZE_TABLE_PROPERTY: &str = "sleeper.table.parquet.rowgroup.rows.max";
+
+/// Calculate the maximum rows per row group to use when writing an output file, given the total number of input rows.
+///
+/// The configured value is treated as a hint. It is used unless it would produce more than [`MAX_ROW_GROUPS_PER_FILE`]
+/// row groups, in which case it is increased so that all input rows fit in that many row groups.
+pub fn calculate_max_row_group_size(configured: usize, total_input_rows: u64) -> usize {
+    let required =
+        usize::try_from(total_input_rows.div_ceil(MAX_ROW_GROUPS_PER_FILE)).unwrap_or(usize::MAX);
+    if required > configured {
+        warn!(
+            "Using max row group size of {} rows. Overrode the table property {} value of {} rows, as {} input rows \
+            would produce more than {} row groups in the output file",
+            required.to_formatted_string(&Locale::en),
+            ROW_GROUP_SIZE_TABLE_PROPERTY,
+            configured.to_formatted_string(&Locale::en),
+            total_input_rows.to_formatted_string(&Locale::en),
+            MAX_ROW_GROUPS_PER_FILE.to_formatted_string(&Locale::en)
+        );
+        required
+    } else {
+        info!(
+            "Using max row group size of {} rows from table property {}",
+            configured.to_formatted_string(&Locale::en),
+            ROW_GROUP_SIZE_TABLE_PROPERTY
+        );
+        configured
+    }
+}
+
+/// Increases the maximum rows per Parquet row group in the session config if needed, so the output file will not exceed
+/// the Parquet limit on the number of row groups in a file. The configured maximum is treated as a hint.
+///
+/// This must be called before the [`DataFrame`] is created, as the frame takes a copy of the session state, which
+/// the Parquet writer options are read from.
+pub fn apply_max_row_group_size(ctx: &SessionContext, total_input_rows: u64) {
+    let state = ctx.state_ref();
+    let mut state = state.write();
+    let parquet = &mut state.config_mut().options_mut().execution.parquet;
+    parquet.max_row_group_size =
+        calculate_max_row_group_size(parquet.max_row_group_size, total_input_rows);
 }
 
 /// Calculate the metadata size hint to use based on the largest file size. This value will be clamped
@@ -394,8 +441,9 @@ pub fn add_numeric_casts(
 #[cfg(test)]
 mod tests {
     use crate::datafusion::util::{
-        MIN_PUT_SIZE, add_numeric_casts, apply_full_sort_ordering, calculate_metadata_size_hint,
-        calculate_upload_size, find_topmost_sort_ordering, remove_coalesce_physical_stage,
+        MAX_ROW_GROUPS_PER_FILE, MIN_PUT_SIZE, add_numeric_casts, apply_full_sort_ordering,
+        calculate_max_row_group_size, calculate_metadata_size_hint, calculate_upload_size,
+        find_topmost_sort_ordering, remove_coalesce_physical_stage,
         remove_non_schema_columns_from_ordering,
     };
     use color_eyre::eyre::Error;
@@ -697,6 +745,38 @@ mod tests {
 
         // Then
         assert_eq!(metadata_size, 10 * 1024 * 1024);
+    }
+
+    #[test]
+    fn should_use_configured_row_group_size_when_input_is_small() {
+        assert_eq!(calculate_max_row_group_size(100_000, 1_000_000), 100_000);
+    }
+
+    #[test]
+    fn should_use_configured_row_group_size_with_no_input() {
+        assert_eq!(calculate_max_row_group_size(100_000, 0), 100_000);
+    }
+
+    #[test]
+    fn should_use_configured_row_group_size_at_row_group_limit() {
+        let rows = 100_000 * MAX_ROW_GROUPS_PER_FILE;
+        assert_eq!(calculate_max_row_group_size(100_000, rows), 100_000);
+    }
+
+    #[test]
+    fn should_increase_row_group_size_when_input_exceeds_row_group_limit() {
+        // If there are more rows in the file than the number of rows per row group multiplied by the maximum
+        // number of row groups then the row group size should increase
+        let rows = 100_000 * MAX_ROW_GROUPS_PER_FILE + 1;
+        assert_eq!(calculate_max_row_group_size(100_000, rows), 100_001);
+    }
+
+    #[test]
+    fn should_scale_row_group_size_to_fit_large_input() {
+        let rows = 10_000_000_000u64;
+        let size = calculate_max_row_group_size(100_000, rows);
+        assert_eq!(size, 333_334);
+        assert!(rows.div_ceil(size as u64) <= MAX_ROW_GROUPS_PER_FILE);
     }
 
     #[test]

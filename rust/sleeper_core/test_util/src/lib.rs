@@ -121,6 +121,13 @@ pub fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Vec<i32>, Error
     Ok(data)
 }
 
+#[allow(clippy::missing_errors_doc)]
+pub fn read_row_group_count(path: &Url) -> Result<usize, Error> {
+    let file = File::open(local_path(path)?)?;
+    let metadata = ArrowReaderMetadata::load(&file, ArrowReaderOptions::default())?;
+    Ok(metadata.metadata().num_row_groups())
+}
+
 #[allow(clippy::missing_panics_doc)]
 #[allow(clippy::missing_errors_doc)]
 pub async fn read_sketch_min_max_ints(path: &Url) -> Result<[i32; 2], Error> {
