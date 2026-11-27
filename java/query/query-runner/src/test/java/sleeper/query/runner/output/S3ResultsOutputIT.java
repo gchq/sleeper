@@ -18,13 +18,13 @@ package sleeper.query.runner.output;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetFileReader;
-import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -134,12 +134,7 @@ class S3ResultsOutputIT {
         assertThat(outputInfo.getError()).isNull();
         assertThat(outputInfo.getRowCount()).isEqualTo(rowList.size());
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
-        Schema narrowedSchema = Schema.builder()
-                .rowKeyFields(schema.getRowKeyFields())
-                .sortKeyFields(schema.getSortKeyFields())
-                .valueFields(new Field("count", new LongType()))
-                .build();
-        assertThat(getRowsFromOutput(pathToResultsFile, narrowedSchema)).as("Results list matches rows").isEqualTo(narrowedRows);
+        assertThat(getRowsFromOutput(pathToResultsFile)).as("Results list matches rows").isEqualTo(narrowedRows);
     }
 
     @Test
@@ -201,20 +196,10 @@ class S3ResultsOutputIT {
     }
 
     private List<Row> getRowsFromOutput(String path) {
-        return getRowsFromOutput(path, schema);
-    }
-
-    private List<Row> getRowsFromOutput(String path, Schema schema) {
         List<Row> rows = new ArrayList<>();
-        try {
-            ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new org.apache.hadoop.fs.Path(path), schema).build();
-
-            Row row = reader.read();
-            while (null != row) {
-                rows.add(new Row(row));
-                row = reader.read();
-            }
-            reader.close();
+        try (CloseableIterator<Row> iterator = ParquetRowReaderFactory.parquetGenericRowIterator(
+                new org.apache.hadoop.fs.Path(path), new Configuration())) {
+            iterator.forEachRemaining(rows::add);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

@@ -25,6 +25,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -297,6 +298,25 @@ public abstract class QueryCommandLineClient {
                         .sqlQuery(sqlQuery)
                         .build())
                 .build();
+    }
+
+    /**
+     * Formats a row returned by a query. If the query had an SQL statement applied to the results then all the fields
+     * in the row are printed. If there was no SQL statement then the fields are shown in the order they appear in the
+     * table schema, omitting any value fields that were not requested.
+     *
+     * @param  row         the row
+     * @param  query       the query that returned the row
+     * @param  tableSchema the schema of the table that was queried
+     * @return             the string to print
+     */
+    protected static String formatRow(Row row, Query query, Schema tableSchema) {
+        QueryProcessingConfig processingConfig = query.getProcessingConfig();
+        if (processingConfig.getSqlQuery() != null) {
+            return row.toString();
+        } else {
+            return row.toString(processingConfig.narrowToRequestedValueFields(tableSchema));
+        }
     }
 
     private String promptTableName() {

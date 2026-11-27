@@ -150,7 +150,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                 .getResults(query.getTableName(), query.getQueryId())) {
             out.println("Returned Rows:");
             while (rows.hasNext()) {
-                out.println(rows.next().toString(schema));
+                out.println(formatRow(rows.next(), query, schema));
             }
         } catch (RuntimeException e) {
             out.println("Encountered an error while reading results of query " + query.getQueryId());
@@ -177,7 +177,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                         () -> getTrackedQueryOrNull(query.getQueryId()), STREAM_RESULTS_POLL)) {
             out.println("Returned Rows:");
             while (rows.hasNext()) {
-                out.println(rows.next().toString(schema));
+                out.println(formatRow(rows.next(), query, schema));
                 count++;
             }
             out.println("Query finished, returned " + count + " rows");

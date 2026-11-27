@@ -116,7 +116,7 @@ public class QueryClient extends QueryCommandLineClient {
             out.println("Returned Rows:");
             long count = 0L;
             while (rows.hasNext()) {
-                out.println(rows.next().toString(schema));
+                out.println(formatRow(rows.next(), query, schema));
                 count++;
             }
             out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + count + " rows");

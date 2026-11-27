@@ -19,7 +19,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.ConcatenatingIterator;
@@ -27,9 +26,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.row.Row;
-import sleeper.core.schema.Schema;
 import sleeper.core.util.PollWithRetries;
-import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
@@ -137,7 +134,6 @@ public interface QueryResultsReader {
             TableHadoopConfigurationProvider hadoopProvider) {
         return (tableName, queryId) -> {
             TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
-            Schema schema = tableProperties.getSchema();
             Configuration conf = hadoopProvider.getConfiguration(tableProperties);
             Path resultsPath = new Path(instanceProperties.get(FILE_SYSTEM)
                     + instanceProperties.get(QUERY_RESULTS_BUCKET) + "/query-" + queryId);
@@ -146,7 +142,7 @@ public interface QueryResultsReader {
                 return Stream.of(fileSystem.listStatus(resultsPath))
                         .map(FileStatus::getPath)
                         .sorted(Comparator.comparing(Path::getName))
-                        .map(file -> new ResultsFile(file.getName(), () -> openResultsFile(file, schema, conf)))
+                        .map(file -> new ResultsFile(file.getName(), () -> openResultsFile(file, conf)))
                         .toList();
             } catch (FileNotFoundException e) {
                 return List.of();
@@ -156,11 +152,11 @@ public interface QueryResultsReader {
         };
     }
 
-    private static CloseableIterator<Row> openResultsFile(Path file, Schema schema, Configuration conf) {
+    // Use the generic Parquet reader as the results may not match the table schema (e.g. because the query requested
+    // a subset of the value fields, or applied an SQL statement which changed the schema).
+    private static CloseableIterator<Row> openResultsFile(Path file, Configuration conf) {
         try {
-            ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(file, schema)
-                    .withConf(conf).build();
-            return new ParquetReaderIterator(reader);
+            return ParquetRowReaderFactory.parquetGenericRowIterator(file, conf);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed opening results file " + file, e);
         }

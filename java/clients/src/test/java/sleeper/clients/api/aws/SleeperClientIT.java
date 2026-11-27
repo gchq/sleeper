@@ -30,13 +30,16 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.ThreadSleepTestHelper;
 import sleeper.local.aws.test.LocalAwsTestBase;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.runner.results.QueryResultsNotFoundException;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
@@ -121,6 +124,44 @@ public class SleeperClientIT extends LocalAwsTestBase {
                 new Row(Map.of("key", "A")),
                 new Row(Map.of("key", "B")),
                 new Row(Map.of("key", "C")));
+    }
+
+    @Test
+    void shouldReadQueryResultsWhenSubsetOfValueFieldsRequested() throws Exception {
+        // Given
+        Schema tableSchema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(
+                        new Field("value1", new StringType()),
+                        new Field("value2", new LongType()))
+                .build();
+        String tableName = "requested-value-fields-table";
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, tableSchema);
+        tableProperties.set(TABLE_NAME, tableName);
+        sleeperClient.addTable(tableProperties, List.of());
+        createBucket(instanceProperties.get(QUERY_RESULTS_BUCKET));
+        Query query = Query.builder()
+                .tableName(tableName)
+                .queryId("test-query")
+                .regions(List.of(new Region(new RangeFactory(tableSchema).createRange("key", "A", "C"))))
+                .processingConfig(QueryProcessingConfig.none().withRequestedValueFields(List.of("value2")))
+                .build();
+        Schema resultsSchema = query.getProcessingConfig().narrowToRequestedValueFields(tableSchema);
+        writeQueryResults(query, "file-1.parquet", resultsSchema, List.of(
+                new Row(Map.of("key", "A", "value2", 1L))));
+        writeQueryResults(query, "file-2.parquet", resultsSchema, List.of(
+                new Row(Map.of("key", "B", "value2", 2L))));
+
+        // When
+        List<Row> rows = new ArrayList<>();
+        try (CloseableIterator<Row> iterator = sleeperClient.getQueryResults(query)) {
+            iterator.forEachRemaining(rows::add);
+        }
+
+        // Then
+        assertThat(rows).containsExactly(
+                new Row(Map.of("key", "A", "value2", 1L)),
+                new Row(Map.of("key", "B", "value2", 2L)));
     }
 
     @Test
@@ -294,6 +335,10 @@ public class SleeperClientIT extends LocalAwsTestBase {
     }
 
     private void writeQueryResults(Query query, String filename, List<Row> rows) throws IOException {
+        writeQueryResults(query, filename, schema, rows);
+    }
+
+    private void writeQueryResults(Query query, String filename, Schema schema, List<Row> rows) throws IOException {
         Path path = new Path("s3a://" + instanceProperties.get(QUERY_RESULTS_BUCKET)
                 + "/query-" + query.getQueryId() + "/" + filename);
         try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema, hadoopConf)) {

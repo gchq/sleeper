@@ -16,6 +16,8 @@
 
 package sleeper.query.core.model;
 
+import sleeper.core.schema.Schema;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -82,6 +84,27 @@ public class QueryProcessingConfig {
 
     public List<String> getRequestedValueFields() {
         return requestedValueFields;
+    }
+
+    /**
+     * Narrows the schema of a table to the fields that are returned by a query with this configuration. If the query
+     * requested specific value fields, only those value fields are kept. The row key and sort key fields are always
+     * kept. This does not account for an SQL query, which may return fields that are not in the table.
+     *
+     * @param  tableSchema the schema of the table being queried
+     * @return             the schema of the fields returned
+     */
+    public Schema narrowToRequestedValueFields(Schema tableSchema) {
+        if (requestedValueFields == null) {
+            return tableSchema;
+        }
+        return Schema.builder()
+                .rowKeyFields(tableSchema.getRowKeyFields())
+                .sortKeyFields(tableSchema.getSortKeyFields())
+                .valueFields(tableSchema.getValueFields().stream()
+                        .filter(field -> requestedValueFields.contains(field.getName()))
+                        .toList())
+                .build();
     }
 
     /**
