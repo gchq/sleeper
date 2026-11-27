@@ -44,6 +44,7 @@ import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
 import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
 import static sleeper.core.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS;
+import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_INITIAL_EXECUTORS;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MAX_EXECUTORS;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION_MIN_EXECUTORS;
@@ -166,6 +167,29 @@ public class SleeperPropertiesValidationTest {
             // When / Then
             assertThatThrownBy(instanceProperties::validate)
                     .hasMessageContaining(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE.getPropertyName());
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"ON_DEMAND", "SPOT", "on_demand", "spot"})
+        void shouldPassValidationForSupportedEmrExecutorMarketType(String marketType) {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, marketType);
+
+            // When / Then
+            assertThatCode(instanceProperties::validate).doesNotThrowAnyException();
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"ONDEMAND", "OTHER"})
+        void shouldFailValidationForUnsupportedEmrExecutorMarketType(String marketType) {
+            // Given
+            InstanceProperties instanceProperties = createTestInstanceProperties();
+            instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, marketType);
+
+            // When / Then
+            assertThatThrownBy(instanceProperties::validate)
+                    .hasMessageContaining(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE.getPropertyName());
         }
     }
 

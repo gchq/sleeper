@@ -46,6 +46,7 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -182,6 +183,29 @@ class BulkImportExecutorTest {
                     .containsExactly(ingestJobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), validationTime,
                                     "Job Ids must only contain lowercase alphanumerics and dashes.")));
+        }
+
+        @Test
+        void shouldFailValidationIfExecutorMarketTypeIsInvalid() {
+            // Given
+            BulkImportJob importJob = jobForTable()
+                    .id("my-job")
+                    .files(Lists.newArrayList("file1.parquet"))
+                    .platformSpec(Map.of(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE.getPropertyName(), "madeUp"))
+                    .build();
+            Instant validationTime = Instant.parse("2023-06-02T15:41:00Z");
+
+            // When
+            executor(atTime(validationTime)).runJob(importJob);
+
+            // Then
+            assertThat(objectKeyToJobFile).isEmpty();
+            assertThat(runJobInvocations).isEmpty();
+            assertThat(tracker.getAllJobs(tableId))
+                    .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                    .containsExactly(ingestJobStatus(importJob.toIngestJob(),
+                            rejectedRun(importJob.toIngestJob(), validationTime,
+                                    "Property sleeper.table.bulk.import.emr.executor.market.type was invalid. It was \"madeUp\".")));
         }
     }
 

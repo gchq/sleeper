@@ -187,6 +187,39 @@ class EmrPlatformExecutorTest {
         }
 
         @Test
+        void shouldUseOnDemandMarketTypeDefinedInLowerCase() {
+            // Given
+            BulkImportJob myJob = singleFileJobBuilder()
+                    .platformSpec(Map.of(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE.getPropertyName(), "on_demand"))
+                    .build();
+
+            // When
+            executorWithInstanceGroups().runJob(myJob);
+
+            // Then
+            assertThat(requestedInstanceGroups(InstanceRoleType.CORE))
+                    .extracting(InstanceGroupConfig::market)
+                    .containsExactly(MarketType.ON_DEMAND);
+        }
+
+        @Test
+        void shouldUseSpotMarketTypeDefinedInLowerCase() {
+            // Given
+            tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "ON_DEMAND");
+            BulkImportJob myJob = singleFileJobBuilder()
+                    .platformSpec(Map.of(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE.getPropertyName(), "spot"))
+                    .build();
+
+            // When
+            executorWithInstanceGroups().runJob(myJob);
+
+            // Then
+            assertThat(requestedInstanceGroups(InstanceRoleType.CORE))
+                    .extracting(InstanceGroupConfig::market)
+                    .containsExactly(MarketType.SPOT);
+        }
+
+        @Test
         void shouldSetSingleSubnetForInstanceGroup() {
             // Given
             instanceProperties.set(SUBNETS, "test-subnet");
@@ -310,6 +343,23 @@ class EmrPlatformExecutorTest {
             assertThat(requestedInstanceFleets(InstanceFleetType.CORE))
                     .extracting(InstanceFleetConfig::targetOnDemandCapacity, InstanceFleetConfig::targetSpotCapacity)
                     .containsExactly(tuple(null, 5));
+        }
+
+        @Test
+        void shouldUseOnDemandMarketTypeDefinedInLowerCase() {
+            // Given
+            tableProperties.set(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY, "5");
+            BulkImportJob myJob = singleFileJobBuilder()
+                    .platformSpec(Map.of(BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE.getPropertyName(), "on_demand"))
+                    .build();
+
+            // When
+            executorWithInstanceFleets().runJob(myJob);
+
+            // Then
+            assertThat(requestedInstanceFleets(InstanceFleetType.CORE))
+                    .extracting(InstanceFleetConfig::targetOnDemandCapacity, InstanceFleetConfig::targetSpotCapacity)
+                    .containsExactly(tuple(5, null));
         }
 
         @Test
